@@ -1,0 +1,56 @@
+$var maxargs = 16  $$ Maximum length of Values arguments we want to support.
+
+/**
+ * \internal
+ * aysnc_templates.h - templates for asynchronous tasks
+ *
+ * Assumptions: 
+ *   1) up to $maxargs user function arguments.
+ *   2) function arguments are passed by values!
+ * \endinternal
+ */
+
+/// \cond SHOW_INTERNAL
+
+#pragma once
+
+namespace upcxx
+{
+  /*************************************/
+  /* Active Message argument templates */
+  /*************************************/
+
+  $range i 1..maxargs
+  $for i [[
+  $range j 1..i
+
+  template <typename Function, $for j, [[typename T$j]]>
+  struct generic_arg$i {
+    Function kernel;
+    $for j 
+    [[T$j arg$j;]] 
+   
+    generic_arg$i(Function k, $for j, [[T$j a$j]]) :
+      kernel(k), $for j, [[arg$j(a$j)]] { }
+  };
+  ]] $$ end of for i
+               
+  /************************************/
+  /* Active Message wrapper functions */
+  /************************************/
+
+  $range i 1..maxargs 
+  $for i [[
+  $range j 1..i
+  
+  template<typename Function, $for j, [[typename T$j]]>
+  void async_wrapper$i(void *args)
+  {
+    generic_arg$i<Function, $for j, [[T$j]]> *a = 
+      (generic_arg$i<Function, $for j, [[T$j]]> *)args;
+
+    (*a->kernel)($for j, [[a->arg$j]]);
+  }
+  ]] $$ end of for i
+
+} // end of namespace upcxx
