@@ -8,9 +8,15 @@
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
 #endif
 
+upcxx::team team_all;
+
 namespace upcxx
 {
-  team *team_all;
+  uint32_t my_team_seq = 1;
+  gasnet_hsl_t team::_tid_lock = GASNET_HSL_INITIALIZER;
+
+#define TEAM_ID_BITS 8
+#define TEAM_ID_SEQ_MASK 0xFF
 
   int team::split(uint32_t color,
                   uint32_t key,
@@ -30,21 +36,26 @@ namespace upcxx
       = gasnete_coll_team_split(_gasnet_team, color, key, &scratch_seg);
     assert(new_gasnet_team != NULL);
   
-    uint32_t *members;
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);
-    members = (uint32_t *)malloc(sizeof(uint32_t) * team_sz);
-    assert(members != NULL);
-    for (uint32_t i = 0; i < team_sz; i++) {
-      members[i] =  gasnete_coll_team_rank2node(new_gasnet_team, i);
-    }
-    new_team = new upcxx::team(0, // \Todo fix the team id!!
+    range r_tmp = range(0,0,0);
+    new_team = new upcxx::team(new_team_id(),
                                team_sz, // size
                                key, // rank
-                               members, // need to have a public interface in GASNet to to expose this
+                               r_tmp,
                                new_gasnet_team);
+    
     assert(new_team != NULL);
-    free(members);
     
     return UPCXX_SUCCESS;
   } // team::split
+  
+  uint32_t team::new_team_id()
+  {
+    gasnet_hsl_lock(&team::_tid_lock);
+    assert(my_team_seq < TEAM_ID_SEQ_MASK);
+    uint32_t new_tid = (MYTHREAD << TEAM_ID_BITS) + my_team_seq++;
+    gasnet_hsl_unlock(&team::_tid_lock);
+    return new_tid;
+  }
+  
 } // namespace upcxx

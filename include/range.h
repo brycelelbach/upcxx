@@ -62,7 +62,7 @@ namespace upcxx
     }
     
 
-    int operator [] (int i)
+    int operator [] (int i) const
     {
       assert(i < this->count());
       return (_begin + i * _step);

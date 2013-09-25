@@ -23,22 +23,29 @@
 namespace upcxx
 {
   struct team {
-    team(uint32_t team_id, uint32_t size, uint32_t myrank, uint32_t *members,
+    team() {}
+    
+    team(uint32_t team_id, uint32_t size, uint32_t myrank, range &mbr,
          gasnet_team_handle_t gasnet_team = NULL)
-      : _team_id(team_id), _size(size), _myrank(myrank), 
+      : _team_id(team_id), _size(size), _myrank(myrank), _mbr(mbr),
         _gasnet_team(gasnet_team)
-    {
-      assert(members != NULL);
-      _members = (uint32_t *)malloc(sizeof(uint32_t) * size);
-      assert(_members != NULL);
-      memcpy(_members, members, sizeof(uint32_t) * size);
-    }
+    {}
 
     ~team()
     {
-      if (_members) {
-        free(_members);
-      }
+      //      if (_gasnet_team != NULL) {
+      //        gasnete_coll_team_free(_gasnet_team);
+      //      }
+    }
+
+    inline void init(uint32_t team_id, uint32_t size, uint32_t myrank,
+                     range &mbr, gasnet_team_handle_t gasnet_team = NULL)
+    {
+      _team_id = team_id;
+      _size = size;
+      _myrank = myrank;
+      _mbr = mbr;
+      _gasnet_team = gasnet_team;
     }
 
     inline uint32_t myrank() const { return _myrank; }
@@ -47,12 +54,17 @@ namespace upcxx
     
     inline uint32_t team_id() const { return _team_id; }
     
+    inline void set_team_id(uint32_t team_id)
+    {
+      _team_id = team_id;
+    }
+    
     // YZ: We can use a compact format to represent team members and only store
     // log2 number of neighbors on each node
     inline uint32_t member(uint32_t i) const
     {
       assert(i < _size);
-      return _members[i];
+      return _mbr[i];
     }
 
     inline bool is_team_all()
@@ -60,24 +72,24 @@ namespace upcxx
       return (_team_id == 0); // team_all has team_id 0
     }
 
-    inline uint32_t team_get_global_rank(upcxx::team t, uint32_t team_rank)
+    inline int team_get_global_rank(upcxx::team t,
+                                    uint32_t team_rank,
+                                    uint32_t *global_rank)
     {
-      if (_members != NULL) {
-        assert(team_rank < _size);
-        return _members[team_rank];
-      } else if (_member_range != NULL) {
-        // if the team members are represented by a range
-        
-      } else {
-        // error: the team is not appropriately initialized
+      if (team_rank < _mbr.count()) {
+        *global_rank = _mbr[team_rank];
+        return UPCXX_SUCCESS;
       }
 
-      return -1; 
+      return UPCXX_ERROR;
     }
+    
+    // Initialize the underlying gasnet team if necessary
+    int init_gasnet_team();
     
     // void create_gasnet_team();
     int split(uint32_t color, uint32_t relrank, team *&new_team);
-
+    
     inline int barrier()
     {
       int rv;
@@ -131,21 +143,29 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
     
+    static gasnet_hsl_t _tid_lock;
+    static uint32_t new_team_id();
+
   private:
     uint32_t _team_id;
     uint32_t _size;
     uint32_t _myrank;
-    uint32_t *_members;
-    range *_member_range;
+    range _mbr;
     gasnet_team_handle_t _gasnet_team;
+
   }; // end of struct team
   
-  int team_size(upcxx::team t, uint32_t &size);
-
-  int team_rank(upcxx::team t, uint32_t &rank);
+  inline
+  std::ostream& operator<<(std::ostream& out, const team& t)
+  {
+    return out << "team: id " << t.team_id()
+               << ", size " << t.size() << ", myrank " << t.myrank();
+  }
+  
 
 } // namespace upcxx
 
 extern upcxx::team team_all;
+
 
 

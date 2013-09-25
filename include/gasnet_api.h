@@ -40,6 +40,9 @@ extern "C"
 } // end of extern "C"
 #endif
 
+// In gasnet_team_coll.h
+void gasnete_coll_team_free(gasnet_team_handle_t team);
+
 /* GASNET AM functions */
 enum am_index_t {
   // 128 is the beginning AM number for GASNet client

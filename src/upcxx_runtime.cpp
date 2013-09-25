@@ -97,13 +97,8 @@ namespace upcxx
     my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment
 
     // Initialize Team All
-    uint32_t *members = (uint32_t *)malloc(sizeof(uint32_t) * gasnet_nodes());
-    assert(members != NULL);
-    for (uint32_t i = 0; i < gasnet_nodes(); i++) {
-      members[i] = i;
-    }
-    team team_all(0, gasnet_nodes(), gasnet_mynode(), members, GASNET_TEAM_ALL);
-    free(members);
+    range r_all(0, gasnet_nodes());
+    team_all.init(0, gasnet_nodes(), gasnet_mynode(), r_all, GASNET_TEAM_ALL);
 
     // Because we assume the data and text segments of processes are
     // aligned (offset is always 0).  We are not using the offsets arrays for
