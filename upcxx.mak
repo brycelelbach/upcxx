@@ -1,11 +1,12 @@
-ROOT=$(HOME)/Dropbox/degas/upcxx
+ROOT=/global/u1/d/driscoll/carver/upcxx
 #GASNET_PATH=$(HOME)/install/bupc_mic/opt
 #GASNET_PATH=$(HOME)/install/gasnet_babbage
 #GASNET_PATH=$(HOME)/gasnet_install
-GASNET_PATH=$(HOME)/work/upc_runtime_install/opt
+GASNET_PATH=/usr/common/ftg/upc/2.16.2/bupc-2.16.2-gcc-4.7.0/runtime/inst/opt_inst
 #include $(ROOT)/make_rules/icc-mic.mak
 #include $(ROOT)/make_rules/icc-linux.mak
-include $(ROOT)/make_rules/clang-macos.mak
+#include $(ROOT)/make_rules/clang-macos.mak
+include $(ROOT)/make_rules/carver-gnu.mak
 
 BUILDDIR=$(ROOT)/build
 VPATH = $(ROOT)/include:$(ROOT)/src:$(BUILDDIR)
@@ -19,7 +20,7 @@ include $(GASNET_PATH)/include/$(GASNET_CONDUIT)-conduit/$(GASNET_CONDUIT_MAKEFI
 ## check if CC == $(GASNET_CC)?
 
 ## Update compiler and linker flags
-UPCXX_FLAGS = -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES 
+UPCXX_FLAGS = -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES 
 INCLUDE = -I. -I$(ROOT)/include
 CFLAGS += $(INCLUDE) $(GASNET_CFLAGS) $(UPCXX_FLAGS) # -Wall
 CXXFLAGS += $(INCLUDE) $(GASNET_CPPFLAGS) -I $(ROOT) $(UPCXX_FLAGS)
