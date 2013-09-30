@@ -2,17 +2,17 @@ ROOT=$(HOME)/upcxx
 #GASNET_PATH=$(HOME)/install/bupc_mic/opt
 #GASNET_PATH=$(HOME)/install/gasnet_babbage
 #GASNET_PATH=$(HOME)/gasnet_install
-GASNET_PATH?=$(HOME)/install/bupc2.18_xlc/opt
+GASNET_PATH?=$(WORK)/install/bupc2.18/opt
 #include $(ROOT)/make_rules/icc-mic.mak
-#include $(ROOT)/make_rules/icc-linux.mak
+include $(ROOT)/make_rules/icc-linux.mak
 #include $(ROOT)/make_rules/clang-macos.mak
-include $(ROOT)/make_rules/ibm-bgq.mak
+#include $(ROOT)/make_rules/ibm-bgq.mak
 
 BUILDDIR=$(ROOT)/build
 VPATH = $(ROOT)/include:$(ROOT)/src:$(BUILDDIR)
 
 ## GASNet
-GASNET_CONDUIT = mpi
+GASNET_CONDUIT = ibv
 GASNET_PAR_MODE = seq
 GASNET_CONDUIT_MAKEFILE = $(GASNET_CONDUIT)-$(GASNET_PAR_MODE).mak
 include $(GASNET_PATH)/include/$(GASNET_CONDUIT)-conduit/$(GASNET_CONDUIT_MAKEFILE)

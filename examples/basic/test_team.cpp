@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   if (MYTHREAD == 0)
     cout << "Testing collectives on team_all...\n";
   
-  team_all.barrier():
+  team_all.barrier();
     //test_bcast();
   team_all.barrier();
 

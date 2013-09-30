@@ -1,10 +1,10 @@
 ## Makefile for building examples
 
 EXES = hello test_shared_var test_ptr_to_shared testperf2 test_async \
-	test_event test_am_bcast test_shared_array test_reduce test_team
+	test_event test_am_bcast test_shared_array test_reduce # test_team
   #test_domain
 
-CXX11_EXES = test_async2 
+#CXX11_EXES = test_async2 
 
 all: 
 	make $(EXES) $(CXX11_EXES)

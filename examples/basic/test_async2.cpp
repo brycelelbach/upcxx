@@ -19,8 +19,8 @@
 
 // #include <future>
 
-#include "degas.h"
-#include "startup.h" // for single-thread execution model emulation
+#include "upcxx.h"
+#include "forkjoin.h" // for single-thread execution model emulation
 
 int main(int argc, char **argv)
 {
