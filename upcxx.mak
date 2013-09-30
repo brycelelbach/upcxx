@@ -1,12 +1,12 @@
-ROOT=/global/u1/d/driscoll/carver/upcxx
+ROOT=$(HOME)/upcxx
 #GASNET_PATH=$(HOME)/install/bupc_mic/opt
 #GASNET_PATH=$(HOME)/install/gasnet_babbage
 #GASNET_PATH=$(HOME)/gasnet_install
-GASNET_PATH=/usr/common/ftg/upc/2.16.2/bupc-2.16.2-gcc-4.7.0/runtime/inst/opt_inst
+GASNET_PATH?=$(HOME)/install/bupc2.18_xlc/opt
 #include $(ROOT)/make_rules/icc-mic.mak
 #include $(ROOT)/make_rules/icc-linux.mak
 #include $(ROOT)/make_rules/clang-macos.mak
-include $(ROOT)/make_rules/carver-gnu.mak
+include $(ROOT)/make_rules/ibm-bgq.mak
 
 BUILDDIR=$(ROOT)/build
 VPATH = $(ROOT)/include:$(ROOT)/src:$(BUILDDIR)
