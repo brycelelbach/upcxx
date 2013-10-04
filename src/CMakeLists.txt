@@ -1,3 +1,5 @@
+add_definitions(${GASNET_DEFINES})
+
 add_library(upcxx STATIC
    active_coll.cpp
    async.cpp

@@ -1,4 +1,8 @@
-include_directories(${GASNET_INCLUDE_PATH} ${GASNET_CONDUIT_INCLUDE_PATH})
+find_package(UPCXX REQUIRED)
+
+include_directories(${UPCXX_INCLUDE_DIR})
+link_directories(${UPCXX_LIBRARY_PATH})
+add_definitions(${UPCXX_DEFINES})
 
 add_executable(gups gups.cpp)
-target_link_libraries(gups ${GASNET_LIBRARIES} upcxx)
+target_link_libraries(gups ${UPCXX_LIBRARIES})
