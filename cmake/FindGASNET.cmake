@@ -48,8 +48,12 @@ find_path(GASNET_LIBRARY_PATH
 
 add_definitions( -DGASNET_SEQ -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS )
 
-SET(GASNET_LIBRARIES gasnet-mpi-seq ammpi ${MPI_CXX_LIBRARIES})
-
+if (APPLE)
+  SET(GASNET_LIBRARIES gasnet-mpi-seq ammpi ${MPI_CXX_LIBRARIES})
+else ()
+  SET(GASNET_LIBRARIES gasnet-mpi-seq ammpi ${MPI_CXX_LIBRARIES} pthread dl hugetlbfs )
+endif ()
+  
 find_package_handle_standard_args(GASNET DEFAULT_MSG
     GASNET_INCLUDE_DIR
     GASNET_CONDUIT_INCLUDE_DIR
