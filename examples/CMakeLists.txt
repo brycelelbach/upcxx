@@ -4,8 +4,6 @@ message(STATUS "Skipping directory LULESH: undefined upcxx-related functions whe
 message(STATUS "Skipping directory axpy: requires missing degas.h file.")
 #add_subdirectory(axpy)
 
-message(STATUS "Skipping directory fft2d: requires MKL and FFTW support in build system.")
-#add_subdirectory(fft2d)
-
+add_subdirectory(fft2d)
 add_subdirectory(basic)
 add_subdirectory(gups)
