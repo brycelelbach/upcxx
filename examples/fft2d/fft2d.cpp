@@ -9,8 +9,6 @@
  *
  */
 
-// #include <phalanx/platform/os/timing.h>
-
 #include <upcxx.h>
 #include <forkjoin.h> // for single-thread execution model emulation
 
