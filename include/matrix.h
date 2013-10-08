@@ -263,7 +263,7 @@ namespace upcxx
         for (int j = 0; j< _n_blks; j += _pgrid_ncol) {
           for (int myrow = 0; myrow < _pgrid_nrow; myrow++) {
             for (int mycol = 0; mycol < _pgrid_ncol; mycol++) {
-              upcxx_free<T>((*this)(i+myrow, j+mycol));
+              upcxx::deallocate<T>((*this)(i+myrow, j+mycol));
             }
           }
         }

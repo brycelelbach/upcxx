@@ -337,7 +337,7 @@ namespace upcxx
    * \param ptr the pointer to which the memory space should be freed
    */
   template<typename T>
-  int upcxx_free(ptr_to_shared<T> ptr)
+  int deallocate(ptr_to_shared<T> ptr)
   {
     if (ptr.where().islocal() == true) {
 #ifdef USE_GASNET_FAST_SEGMENT

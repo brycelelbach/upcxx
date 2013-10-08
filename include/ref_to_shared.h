@@ -50,6 +50,33 @@ namespace upcxx
       return *this;
     }
 
+    ref_to_shared<T>& operator += (const T &rhs)
+    {
+      int pla_id = _pla.id();
+      if (pla_id == gasnet_mynode()) {
+        *_ptr ^= rhs;
+      } else {
+        // if not local
+        T tmp;
+        gasnet_get(&tmp, pla_id, _ptr, sizeof(T));
+        tmp += rhs;
+        gasnet_put(pla_id, _ptr, (void *)&tmp, sizeof(T));
+      }
+      return *this;
+    }
+
+    T get()
+    {
+      if (_pla.id() == my_node.id()) {
+        return (*_ptr);
+      } else {
+        // if not local
+        T tmp;
+        gasnet_get(&tmp, _pla.id(), _ptr, sizeof(T));
+        return tmp;
+      }
+    }
+
     operator T() const
     {
       if (_pla.id() == my_node.id()) {

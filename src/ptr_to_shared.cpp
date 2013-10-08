@@ -16,7 +16,7 @@ int upcxx::copy(ptr_to_shared<void> src, ptr_to_shared<void> dst, size_t nbytes)
     assert(buf != NULL);
     gasnet_get(buf, src.where().node_id(), src.raw_ptr(), nbytes);
     gasnet_put(dst.where().node_id(), dst.raw_ptr(), buf, nbytes);
-    free(buf);
+    ::free(buf);
   }
 
   return UPCXX_SUCCESS;

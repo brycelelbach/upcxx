@@ -522,9 +522,9 @@ int main(int argc, char **argv)
          nx, ny, nprocs, elapsedtime);
 
   for (i=0; i<nprocs; i++) {
-    upcxx_free(Input[i]);
-    upcxx_free(Output[i]);
-    upcxx_free(W[i]);
+    upcxx::deallocate(Input[i]);
+    upcxx::deallocate(Output[i]);
+    upcxx::deallocate(W[i]);
   }
 
   delete [] Input;

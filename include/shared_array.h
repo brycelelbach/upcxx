@@ -37,7 +37,7 @@ namespace upcxx
       node = block_id % nplaces;
     }
 
-    shared_array(size_t size)
+    shared_array(size_t size=0)
     {
 #ifdef DEBUG
       printf("In shared_array constructor, size %lu\n", size);
@@ -50,11 +50,12 @@ namespace upcxx
 
     inline size_t size() { return _size; }
 
-    void init(T val = (T)0)
+    void init(size_t sz=0)
     {
       if (_data != NULL) return;
 
       int nplaces = global_machine.node_count();
+      if (sz != 0) _size = sz;
       _local_size = (_size + nplaces - 1) / nplaces;
       
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -69,9 +70,9 @@ namespace upcxx
       _alldata = (T **)malloc(nplaces * sizeof(T*));
       assert(_alldata != NULL);
 
-      for (size_t i=0; i<_local_size; i++) {
-        _data[i] = val;
-      }
+      // for (size_t i=0; i<_local_size; i++) {
+      //   _data[i] = val;
+      // }
 
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_gather_all(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
