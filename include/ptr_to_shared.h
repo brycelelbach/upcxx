@@ -187,10 +187,10 @@ namespace upcxx
   struct ptr_to_shared<void> : public base_ptr<void, node>
   {
   public:
-    inline ptr_to_shared(void *ptr = NULL) :
-    base_ptr<void, node>(ptr, my_node) {}
+//     inline ptr_to_shared(void *ptr = NULL) :
+//     base_ptr<void, node>(ptr, my_node) {}
 
-    inline ptr_to_shared(void *ptr, node pla = my_node) :
+    inline ptr_to_shared(void *ptr = NULL, node pla = my_node) :
     base_ptr<void, node>(ptr, pla) {}
 
     inline ptr_to_shared(const base_ptr<void, node> &p)

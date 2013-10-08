@@ -194,5 +194,11 @@ namespace upcxx
     gasnet_coll_gather_all(GASNET_TEAM_ALL, dst, src, nbytes,
                            UPCXX_GASNET_COLL_FLAG);
   }
+
+  static inline void upcxx_alltoall(void *src, void *dst, size_t nbytes)
+  {
+    gasnet_coll_exchange(GASNET_TEAM_ALL, dst, src, nbytes,
+                         UPCXX_GASNET_COLL_FLAG);
+  }
   
 } // end of namespace upcxx
