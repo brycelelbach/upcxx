@@ -24,6 +24,8 @@ namespace upcxx
 
 #define MAX_NUM_DONE_CB 16
 
+#define USE_EVENT_LOCK
+
   /**
    * \addtogroup asyncgroup Asynchronous task execution and Progress
    * @{

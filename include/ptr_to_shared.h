@@ -251,6 +251,15 @@ namespace upcxx
                  size_t bytes,
                  event *e = NULL);
 
+  gasnet_handle_t async_copy2(ptr_to_shared<void> src,
+                              ptr_to_shared<void> dst,
+                              size_t bytes);
+  
+  inline void sync_nb(gasnet_handle_t h)
+  {
+    gasnet_wait_syncnb(h);
+  }
+
   /**
    * \ingroup gasgroup
    * \brief Non-blocking copy data from cpu to cpu
@@ -272,6 +281,16 @@ namespace upcxx
                       (ptr_to_shared<void>)dst,
                       nbytes,
                       e);
+  }
+
+  template<typename T>
+  gasnet_handle_t async_copy2(ptr_to_shared<T> src,
+                              ptr_to_shared<T> dst,
+                              size_t count)
+  {
+    size_t nbytes = count * sizeof(T);
+    return async_copy((ptr_to_shared<void>)src, (ptr_to_shared<void>)dst, 
+                      nbytes);
   }
 
   inline void async_copy_fence()
