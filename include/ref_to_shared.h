@@ -54,7 +54,7 @@ namespace upcxx
     {
       int pla_id = _pla.id();
       if (pla_id == gasnet_mynode()) {
-        *_ptr ^= rhs;
+        *_ptr += rhs;
       } else {
         // if not local
         T tmp;
