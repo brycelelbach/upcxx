@@ -289,8 +289,8 @@ namespace upcxx
                               size_t count)
   {
     size_t nbytes = count * sizeof(T);
-    return async_copy((ptr_to_shared<void>)src, (ptr_to_shared<void>)dst, 
-                      nbytes);
+    return async_copy2((ptr_to_shared<void>)src, (ptr_to_shared<void>)dst, 
+                       nbytes);
   }
 
   inline void async_copy_fence()
