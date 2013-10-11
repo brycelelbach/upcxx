@@ -21,6 +21,7 @@ namespace upcxx {
   void alloc_reply_handler(gasnet_token_t token, void *reply, size_t nbytes);
   void free_cpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
   void free_gpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
+  void inc_am_handler(gasnet_token_t token, void *am, size_t nbytes);
 }
 
 #endif /* UPCXX_INTERNAL_H_ */

@@ -49,7 +49,8 @@ namespace upcxx
     {FREE_CPU_AM,             (void (*)())free_cpu_am_handler},
     {LOCK_AM,                 (void (*)())shared_lock::lock_am_handler},
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
-    {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler}
+    {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
+    {INC_AM,                  (void (*)())inc_am_handler}
   };
 
   int *gpu_id_map;
@@ -129,6 +130,13 @@ namespace upcxx
   }
 
   // Active Message handlers
+  void inc_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
+  {
+    struct inc_am_t *am = (struct inc_am_t *)buf;
+    long *tmp = (long *)am->ptr;
+    (*tmp)++;
+  }
+
   void async_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
     async_task *task;
