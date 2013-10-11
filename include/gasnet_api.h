@@ -55,7 +55,8 @@ enum am_index_t {
   LOCK_REPLY,       // reply message for LOCK_AM
   UNLOCK_AM,        // inter-node unlock
   AM_BCAST,         // active broadcast
-  AM_BCAST_REPLY    // active broadcast reply
+  AM_BCAST_REPLY,   // active broadcast reply
+  INC_AM,   // active broadcast reply
 };
 
 #endif // GASNET_API_H_

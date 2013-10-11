@@ -34,6 +34,11 @@ namespace upcxx
     void *ptr;
   };
 
+  struct inc_am_t
+  {
+    void *ptr;
+  };
+
   template<typename T, typename place_t>
   struct base_ptr
   {
@@ -373,6 +378,16 @@ namespace upcxx
     }
     return UPCXX_SUCCESS;
   }
+
+  inline int remote_inc(ptr_to_shared<long> ptr)
+  {
+    inc_am_t am;
+    am.ptr = ptr.raw_ptr();
+    GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where().node_id(), 
+                                        INC_AM, &am, sizeof(am)));
+    return UPCXX_SUCCESS;
+  }
+ 
 }  // namespace upcxx
 
 
