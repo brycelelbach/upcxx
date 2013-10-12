@@ -35,6 +35,18 @@ namespace upcxx
       return *this;
     }
 
+    ref_to_shared<T>& operator = (const ref_to_shared<T> &rhs)
+    {
+      T val = rhs.get();
+      if (_pla.id() == my_node.id()) {
+        *_ptr = val;
+      } else {
+        // if not local
+        gasnet_put(_pla.id(), _ptr, (void *)&val, sizeof(T));
+      }
+      return *this;
+    }
+
     ref_to_shared<T>& operator ^= (const T &rhs)
     {
       int pla_id = _pla.id();
@@ -65,7 +77,7 @@ namespace upcxx
       return *this;
     }
 
-    T get()
+    T get() const
     {
       if (_pla.id() == my_node.id()) {
         return (*_ptr);
