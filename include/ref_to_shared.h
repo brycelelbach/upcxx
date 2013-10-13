@@ -14,6 +14,8 @@
 
 namespace upcxx
 {
+  template<typename T> struct ptr_to_shared;
+
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = node>
   struct ref_to_shared
@@ -100,11 +102,19 @@ namespace upcxx
         return tmp;
       }
     }
-
-    T* operator &()
+    
+    ptr_to_shared<T> operator &()
     {
-      return _ptr;
+      return ptr_to_shared<T>(_ptr, _pla);
     }
+
+    // YZ: todo: specialize for T = ptr_to_shared<T2>
+    //     template <>
+    //     template <typename T2>
+    //     ref_to_shared<typename T2::value_type> operator [] (size_t i)
+    //     {
+    //       return (*_ptr)[i];
+    //     }
 
   private:
     place_t _pla;

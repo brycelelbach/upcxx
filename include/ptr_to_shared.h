@@ -9,6 +9,7 @@
 #include "allocate.h"
 #include "machine.h"
 #include "event.h"
+#include "ref_to_shared.h"
 
 using namespace std;
 
@@ -60,6 +61,11 @@ namespace upcxx
       return _place;
     }
 
+    int tid() const
+    {
+      return _place.id();
+    }
+
     T * raw_ptr() const
     {
       return _ptr;
@@ -102,6 +108,8 @@ namespace upcxx
   template<typename T>
   struct ptr_to_shared : public base_ptr<T, node>
   {
+    typedef T value_type;
+
   public:
     inline
     ptr_to_shared() :
@@ -149,6 +157,11 @@ namespace upcxx
       return this->raw_ptr();
     }
 
+    ref_to_shared<T> operator [] (int i)
+    {
+      return ref_to_shared<T>(this->where(), (T *)this->raw_ptr() + i);
+    }
+
     // type casting operator for placed pointers
     template<typename T2>
     operator ptr_to_shared<T2>()
@@ -169,7 +182,8 @@ namespace upcxx
     }
 
     // pointer arithmetic
-    const ptr_to_shared<T> operator +(size_t i) const
+    template <typename T2>
+    const ptr_to_shared<T> operator +(T2 i) const
     {
       return ptr_to_shared<T>(((T *)this->raw_ptr()) + i, this->where());
     }

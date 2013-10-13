@@ -21,9 +21,9 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-//#define DEBUG
+#define DEBUG
 
-//#define VERIFY
+#define VERIFY
 
 #define SFMT_MEXP 19937
 
@@ -34,12 +34,13 @@ extern "C" {
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
 #define SAMPLES_PER_THREAD 128
-#define KEYS_PER_THREAD 4 * 1024 * 1024
+//#define KEYS_PER_THREAD 4 * 1024 * 1024
+#define KEYS_PER_THREAD 4
 
 typedef struct {
   // shared void *ptr;
   ptr_to_shared<void> ptr;
-  size_t nbytes;
+  uint64_t nbytes;
 } buffer_t;
 
 // shared [THREADS] buffer_t all_buffers[THREADS][THREADS];
@@ -53,8 +54,8 @@ ELEMENT_T *splitters;
 
 shared_array<ELEMENT_T, 1> keys;
  
-// shared size_t sorted_key_counts[THREADS];
-shared_array<size_t, 1> sorted_key_counts;
+// shared uint64_t sorted_key_counts[THREADS];
+shared_array<uint64_t, 1> sorted_key_counts;
 
 sfmt_t sfmt;
 
@@ -65,17 +66,17 @@ double mysecond()
   return tv.tv_sec + ((double) tv.tv_usec / 1000000);
 }
 
-void init_keys(ELEMENT_T *my_keys, size_t my_key_size)
+void init_keys(ELEMENT_T *my_keys, uint64_t my_key_size)
 {
 #ifdef DEBUG
   printf("Thread %d, my_key_size %llu\n", MYTHREAD, my_key_size);
 #endif
   sfmt_init_gen_rand(&sfmt, RANDOM_SEED + MYTHREAD);
   // The sfmt library only takes integer type of size
-  size_t i;
+  uint64_t i;
 
   for (i = 0; i < my_key_size; i++) {
-    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt); // % (KEYS_PER_THREAD * THREADS);
+    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt) % (KEYS_PER_THREAD * THREADS);
   }
 }
 
@@ -91,9 +92,12 @@ int compare_element(const void * a, const void * b)
 
 }
 
-void compute_splitters(size_t key_count, 
+void compute_splitters(uint64_t key_count, 
                        int samples_per_thread)
 {
+  splitters = (ELEMENT_T *)malloc(sizeof(ELEMENT_T) * THREADS);
+  assert(splitters != NULL);
+
   if (MYTHREAD == 0) {
     ELEMENT_T *candidates;
     int candidate_count = THREADS * samples_per_thread;
@@ -104,8 +108,6 @@ void compute_splitters(size_t key_count,
 
     ELEMENT_T *my_splitters = (ELEMENT_T *)malloc(sizeof(ELEMENT_T) * THREADS);
     assert(my_splitters != NULL);
-    splitters = (ELEMENT_T *)malloc(sizeof(ELEMENT_T) * THREADS);
-    assert(splitters != NULL);
 
     // Sample the key space to find the partition splitters
     // Oversample by a factor "samples_per_thread"
@@ -142,22 +144,21 @@ void compute_splitters(size_t key_count,
 }
 
 // re-distribute the keys according the splitters
-void redistribute(size_t key_count)
+void redistribute(uint64_t key_count)
 {
-  size_t i;
+  uint64_t i;
   int k;
-  size_t offset;
-  size_t *hist;
+  uint64_t offset;
+  uint64_t *hist;
   ELEMENT_T *my_splitters = (ELEMENT_T *)&splitters[0];
   ELEMENT_T *my_keys = (ELEMENT_T *)&keys[MYTHREAD];
   ELEMENT_T my_new_key_count;
 
-  hist = (size_t *)malloc(sizeof(size_t) * THREADS);
+  hist = (uint64_t *)malloc(sizeof(uint64_t) * THREADS);
   assert(hist != NULL);
 
-
 #ifdef DEBUG
-  barrier();
+  upcxx::barrier();
   for (k = 0; k < THREADS; k++) {
     int t;
     if (MYTHREAD == k) {
@@ -167,7 +168,7 @@ void redistribute(size_t key_count)
       }
       printf("\n");
     }
-    barrier();
+    upcxx::barrier();
   }
 #endif
 
@@ -175,7 +176,7 @@ void redistribute(size_t key_count)
   qsort(my_keys, KEYS_PER_THREAD, sizeof(ELEMENT_T), compare_element);
 
   // compute the local histogram from the splitters
-  bzero(hist, sizeof(size_t) * THREADS);
+  bzero(hist, sizeof(uint64_t) * THREADS);
   k = 0;
   for (i = 0; i < KEYS_PER_THREAD; i++) {
     if (my_keys[i] < my_splitters[k+1]) {
@@ -253,11 +254,11 @@ void redistribute(size_t key_count)
     // Send data only if the size is non-zero
     if (all_buffers_dst[i].nbytes) {
 #ifdef DEBUG
-      printf("Thread %d, copy %llu bytes from (%d, %llu) to (%d, %llu)\n",
+      printf("Thread %d, copy %llu bytes from (%d, %p) to (%d, %p)\n",
              MYTHREAD, all_buffers_dst[i].nbytes,
-             (int)(all_buffers_dst[i].ptr.where()),
+             (int)(all_buffers_dst[i].ptr.tid()),
              all_buffers_dst[i].ptr.raw_ptr(),
-             (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).where(),
+             (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).tid(),
              (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).raw_ptr());
 #endif               
 //       upc_memcpy(sorted[MYTHREAD] + offset / sizeof(ELEMENT_T),
@@ -270,58 +271,64 @@ void redistribute(size_t key_count)
     }
   }
   upcxx::async_copy_fence();
-  barrier();
+  upcxx::barrier();
 
 #ifdef DEBUG
-  barrier();
+  upcxx::barrier();
   for (k = 0; k < THREADS; k++) {
     int i;
     if (MYTHREAD == k) {
       printf("Thread %d:\n", k);
       for (i = 0; i < MIN(64, sorted_key_counts[k]); i++) {
-        printf("my_sorted[%d]=%llu ", i, sorted[k][i]);
+        printf("my_sorted[%d]=%llu ", i, sorted[k].get()[i].get());
       }
       printf("\n");
     }
-    barrier();
+  upcxx:barrier();
   }
 #endif
 }
 
 // Parallel sort across multiple threads
-void sample_sort(size_t key_count)
+void sample_sort(uint64_t key_count)
 {
   // shared int *result_keys;
   ptr_to_shared<int> result_keys;
   // shared unsigned int *histogram;
   ptr_to_shared<unsigned int> histogram;
   
-  upcxx::barrier();
-
+  double starttime = mysecond();
   compute_splitters(KEYS_PER_THREAD, SAMPLES_PER_THREAD);
-
   upcxx::barrier();
+  double cs_time = mysecond() - starttime;
+
   // Re-distribute the keys based on the splitters
   // Cannot use upc_all_exchange here because it's an alltoallv operation.
   redistribute(key_count);
+  // There is a barrier at the end of redistribute().
+  double rd_time = mysecond() - cs_time;
 
-  upcxx::barrier();
   // local sort
   // printf("qsort, sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
   qsort((ELEMENT_T *)sorted[MYTHREAD].get(), 
-        sorted_key_counts[MYTHREAD], sizeof(ELEMENT_T), 
+        sorted_key_counts[MYTHREAD].get(), sizeof(ELEMENT_T), 
         compare_element);
-
   upcxx::barrier();
+  double sort_time = mysecond() - rd_time;
+
+  if (MYTHREAD == 0) {
+    printf("Time for computing the splitters: %lg\n", cs_time);
+    printf("Time for redistributing the keys: %lg\n", rd_time);
+    printf("Time for the final local sort: %lg\n", sort_time);
+  }
 }
 
 int main(int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
 
-  size_t my_key_size = KEYS_PER_THREAD; // assume key_size is a multiple of THREADS
-  size_t total_key_size = KEYS_PER_THREAD * THREADS;
-
+  uint64_t my_key_size = KEYS_PER_THREAD; // assume key_size is a multiple of THREADS
+  uint64_t total_key_size = KEYS_PER_THREAD * THREADS;
 
   // keys = upc_all_alloc(total_key_size, sizeof(ELEMENT_T));
   // assert(keys != NULL);
@@ -330,7 +337,8 @@ int main(int argc, char **argv)
   sorted_key_counts.init(THREADS);
 
 #ifdef VERIFY
-    shared [] ELEMENT_T *keys_copy;
+  // shared [] ELEMENT_T *keys_copy;
+  ptr_to_shared<ELEMENT_T>keys_copy;
 #endif
      
   // initialize the keys with random numbers
@@ -341,10 +349,12 @@ int main(int argc, char **argv)
   if (MYTHREAD == 0) {
     int t;
     // gather the keys to thread 0
-    keys_copy = upc_alloc(sizeof(ELEMENT_T) * total_key_size);
+    // keys_copy = upc_alloc(sizeof(ELEMENT_T) * total_key_size);
+    keys_copy = upcxx::allocate<ELEMENT_T>(MYTHREAD, total_key_size);
     assert(keys_copy != NULL);
     for (t = 0; t < THREADS; t++) {
-      upc_memcpy(&keys_copy[KEYS_PER_THREAD * t], &keys[t], sizeof(ELEMENT_T)*KEYS_PER_THREAD);
+      // upc_memcpy(&keys_copy[KEYS_PER_THREAD * t], &keys[t], sizeof(ELEMENT_T)*KEYS_PER_THREAD);
+      upcxx::copy<ELEMENT_T>(&keys[t], keys_copy + (KEYS_PER_THREAD * t), KEYS_PER_THREAD);
     }
   }
 
@@ -353,7 +363,7 @@ int main(int argc, char **argv)
     int i;
     printf("Before sorting...\n");
     for (i = 0; i < MIN(64, total_key_size); i++) {
-      printf("keys[%d]=%llu, ", i, keys[i]);
+      printf("keys[%d]=%llu, ", i, keys[i].get());
     }
     printf("\n");
   }
@@ -366,22 +376,30 @@ int main(int argc, char **argv)
   /*
     upc_all_gather(keys_copy, // shared void * restrict dst,
     keys,      // shared const void * restrict src, 
-    my_key_size * sizeof(ELEMENT_T), // size_t nbytes,
+    my_key_size * sizeof(ELEMENT_T), // uint64_t nbytes,
     UPC_IN_MYSYNC | UPC_OUT_MYSYNC);
   */
-  barrier();
 #endif
 
+  if (MYTHREAD == 0){
+    printf("Somple sort... number of keys %llu.\n", total_key_size);
+  }
+
+  barrier();
+  double starttime = mysecond();
   sample_sort(total_key_size);
   barrier();
+  double total_time = mysecond() - starttime;
 
-  // printf("sample_sort time = %f ms\n", t.elapsed_ms());
+  if (MYTHREAD == 0) {
+    printf("Sample sort time = %lg sec, %lg keys/s \n", total_time, 
+           (double)total_key_size/total_time);
+  }
 
 #ifdef VERIFY
   if (MYTHREAD == 0) {
-    size_t i, num_errors;
+    uint64_t i, num_errors;
     ELEMENT_T *local_copy = (ELEMENT_T *)keys_copy;
-   
 
     if (total_key_size > 1024 * 1024) {
       printf("Warning: total_key_size %llu is large, verification time may be long.\n",
@@ -417,7 +435,7 @@ int main(int argc, char **argv)
     // compare sorted with keys
     num_errors = 0;
     int t = 0;
-    size_t index = 0;
+    uint64_t index = 0;
     ELEMENT_T current;
     for (i = 0; i < total_key_size; i++) {
 #ifdef DEBUG
@@ -425,7 +443,7 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      current = sorted[t][index];
+      current = sorted[t].get()[index];
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
@@ -441,7 +459,7 @@ int main(int argc, char **argv)
     }
 
     if (num_errors) {
-      printf("Verification errors %lu.\n", num_errors);
+      printf("Verification errors %llu.\n", num_errors);
     } else {
       printf("Verification successful!\n");
     }
@@ -454,9 +472,9 @@ int main(int argc, char **argv)
     int i, t;
     printf("After sorting...\n");
     for (t = 0; t < THREADS; t++) {
-      printf("sorted_key_counts[%d] = %llu\n", t, sorted_key_counts[t]);
+      printf("sorted_key_counts[%d] = %llu\n", t, sorted_key_counts[t].get());
       for (i = 0; i < MIN(64, sorted_key_counts[t]); i++) {
-        printf("sorted[%d]=%llu, ", i, sorted[t][i]);
+        printf("sorted[%d]=%llu, ", i, sorted[t].get()[i].get());
       }
       printf("\n");
     }
