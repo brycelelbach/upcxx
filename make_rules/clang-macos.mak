@@ -1,9 +1,9 @@
 # Clang compilers.  Preferably the same as for building GASNet
 CXX = clang++
-CXXFLAGS = -g #-std=c++11 -stdlib=libc++ -Wreserved-user-defined-literal # -restrict -Wall
+CXXFLAGS = -O3 # -g #-std=c++11 -stdlib=libc++ -Wreserved-user-defined-literal # -restrict -Wall
 
 CC = clang
-CFLAGS = -g # -restrict -Wall
+CFLAGS = -O3 -g # -restrict -Wall
 
 MPI_PATH = /Users/yzheng/work/mpich2-1.5_install/bin
 

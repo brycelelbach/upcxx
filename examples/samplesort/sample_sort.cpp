@@ -21,9 +21,9 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-#define DEBUG
+// #define DEBUG
 
-#define VERIFY
+// #define VERIFY
 
 #define SFMT_MEXP 19937
 
@@ -34,11 +34,12 @@ extern "C" {
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
 #define SAMPLES_PER_THREAD 128
-//#define KEYS_PER_THREAD 4 * 1024 * 1024
-#define KEYS_PER_THREAD 4
+#define KEYS_PER_THREAD 8 * 1024 * 1024
+//#define KEYS_PER_THREAD 128
 
 typedef struct {
   // shared void *ptr;
+  // ptr_to_shared<ELEMENT_T> ptr;
   ptr_to_shared<void> ptr;
   uint64_t nbytes;
 } buffer_t;
@@ -264,8 +265,8 @@ void redistribute(uint64_t key_count)
 //       upc_memcpy(sorted[MYTHREAD] + offset / sizeof(ELEMENT_T),
 //                  all_buffers[i][MYTHREAD].ptr,
 //                  all_buffers[i][MYTHREAD].nbytes);
-      upcxx::async_copy(all_buffers_dst[i].ptr,
-                        sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T),  
+      upcxx::async_copy((ptr_to_shared<void>)all_buffers_dst[i].ptr,
+                        (ptr_to_shared<void>)(sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)),  
                         all_buffers_dst[i].nbytes);    
       offset += all_buffers_dst[i].nbytes;
     }
@@ -317,9 +318,9 @@ void sample_sort(uint64_t key_count)
   double sort_time = mysecond() - rd_time;
 
   if (MYTHREAD == 0) {
-    printf("Time for computing the splitters: %lg\n", cs_time);
-    printf("Time for redistributing the keys: %lg\n", rd_time);
-    printf("Time for the final local sort: %lg\n", sort_time);
+    printf("Time for computing the splitters: %g\n", cs_time);
+    printf("Time for redistributing the keys: %g\n", rd_time);
+    printf("Time for the final local sort: %g\n", sort_time);
   }
 }
 
@@ -354,7 +355,7 @@ int main(int argc, char **argv)
     assert(keys_copy != NULL);
     for (t = 0; t < THREADS; t++) {
       // upc_memcpy(&keys_copy[KEYS_PER_THREAD * t], &keys[t], sizeof(ELEMENT_T)*KEYS_PER_THREAD);
-      upcxx::copy<ELEMENT_T>(&keys[t], keys_copy + (KEYS_PER_THREAD * t), KEYS_PER_THREAD);
+      upcxx::copy(&keys[t], keys_copy + (KEYS_PER_THREAD * t), KEYS_PER_THREAD);
     }
   }
 
@@ -392,7 +393,7 @@ int main(int argc, char **argv)
   double total_time = mysecond() - starttime;
 
   if (MYTHREAD == 0) {
-    printf("Sample sort time = %lg sec, %lg keys/s \n", total_time, 
+    printf("Sample sort time = %g sec, %g keys/s \n", total_time, 
            (double)total_key_size/total_time);
   }
 
@@ -480,6 +481,9 @@ int main(int argc, char **argv)
     }
   }
 #endif
-
+                                                
+  upcxx::barrier();
+  upcxx::finalize();
+  
   return 0;
 }

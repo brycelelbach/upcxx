@@ -43,7 +43,7 @@ namespace upcxx
   template<typename T, typename place_t>
   struct base_ptr
   {
-  private:
+  protected:
     place_t _place;
     T *_ptr;
 
@@ -66,7 +66,7 @@ namespace upcxx
       return _place.id();
     }
 
-    T * raw_ptr() const
+    T* raw_ptr() const
     {
       return _ptr;
     }
@@ -218,9 +218,11 @@ namespace upcxx
     inline ptr_to_shared(const ptr_to_shared<void> &p)
     : base_ptr<void, node>(p) {}
 
+    // Implicit type conversion to ptr_to_shared<void> is very
+    // dangerous!
     template<typename T2>
-    inline ptr_to_shared(const ptr_to_shared<T2> &p)
-        : base_ptr<void, node>(p.raw_ptr(), p.where()) {}
+    inline explicit ptr_to_shared(const ptr_to_shared<T2> &p)
+      : base_ptr<void, node>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
     operator void*() {
@@ -232,6 +234,14 @@ namespace upcxx
     operator ptr_to_shared<T2>()
     {
       return ptr_to_shared<T2>((T2 *)this->raw_ptr(), this->where());
+    }
+
+    template<typename T2>
+    ptr_to_shared<void>& operator = (const ptr_to_shared<T2> &p)
+    {
+      _ptr = p.raw_ptr();
+      _place = p.where();
+      return *this;
     }
   };
 
