@@ -15,8 +15,6 @@
 
 #include <upcxx.h>
 
-#define async_copy upcxx::copy
-
 using namespace upcxx;
 
 /* Comm Routines */
@@ -26,85 +24,85 @@ using namespace upcxx;
 #define ALLOW_UNPACKED_COL   false
 
 /*
- define one of these three symbols:
+  define one of these three symbols:
  
- SEDOV_SYNC_POS_VEL_NONE
- SEDOV_SYNC_POS_VEL_EARLY
- SEDOV_SYNC_POS_VEL_LATE
- */
+  SEDOV_SYNC_POS_VEL_NONE
+  SEDOV_SYNC_POS_VEL_EARLY
+  SEDOV_SYNC_POS_VEL_LATE
+*/
 
 // #define SEDOV_SYNC_POS_VEL_EARLY 1
 
 /*
- There are coherence issues for packing and unpacking message
- buffers.  Ideally, you would like a lot of threads to
- cooperate in the assembly/disassembly of each message.
- To do that, each thread should really be operating in a
- different coherence zone.
+  There are coherence issues for packing and unpacking message
+  buffers.  Ideally, you would like a lot of threads to
+  cooperate in the assembly/disassembly of each message.
+  To do that, each thread should really be operating in a
+  different coherence zone.
  
- Let's assume we have three fields, f1 through f3, defined on
- a 61x61x61 cube.  If we want to send the block boundary
- information for each field to each neighbor processor across
- each cube face, then we have three cases for the
- memory layout/coherence of data on each of the six cube
- boundaries:
+  Let's assume we have three fields, f1 through f3, defined on
+  a 61x61x61 cube.  If we want to send the block boundary
+  information for each field to each neighbor processor across
+  each cube face, then we have three cases for the
+  memory layout/coherence of data on each of the six cube
+  boundaries:
  
- (a) Two of the faces will be in contiguous memory blocks
- (b) Two of the faces will be comprised of pencils of
- contiguous memory.
- (c) Two of the faces will have large strides between
- every value living on the face.
+  (a) Two of the faces will be in contiguous memory blocks
+  (b) Two of the faces will be comprised of pencils of
+  contiguous memory.
+  (c) Two of the faces will have large strides between
+  every value living on the face.
  
- How do you pack and unpack this data in buffers to
- simultaneous achieve the best memory efficiency and
- the most thread independence?
+  How do you pack and unpack this data in buffers to
+  simultaneous achieve the best memory efficiency and
+  the most thread independence?
  
- Do do you pack field f1 through f3 tightly to reduce message
- size?  Do you align each field on a cache coherence boundary
- within the message so that threads can pack and unpack each
- field independently?  For case (b), do you align each
- boundary pencil of each field separately?  This increases
- the message size, but could improve cache coherence so
- each pencil could be processed independently by a separate
- thread with no conflicts.
+  Do do you pack field f1 through f3 tightly to reduce message
+  size?  Do you align each field on a cache coherence boundary
+  within the message so that threads can pack and unpack each
+  field independently?  For case (b), do you align each
+  boundary pencil of each field separately?  This increases
+  the message size, but could improve cache coherence so
+  each pencil could be processed independently by a separate
+  thread with no conflicts.
  
- Also, memory access for case (c) would best be done without
- going through the cache (the stride is so large it just causes
- a lot of useless cache evictions).  Is it worth creating
- a special case version of the packing algorithm that uses
- non-coherent load/store opcodes?
- */
+  Also, memory access for case (c) would best be done without
+  going through the cache (the stride is so large it just causes
+  a lot of useless cache evictions).  Is it worth creating
+  a special case version of the packing algorithm that uses
+  non-coherent load/store opcodes?
+*/
 
 /*
- Currently, all message traffic occurs at once.
- We could spread message traffic out like this:
+  Currently, all message traffic occurs at once.
+  We could spread message traffic out like this:
  
- CommRecv(domain) ;
- forall(domain.views()-attr("chunk & boundary")) {
- ... do work in parallel ...
- }
- CommSend(domain) ;
- forall(domain.views()-attr("chunk & ~boundary")) {
- ... do work in parallel ...
- }
- CommSBN() ;
+  CommRecv(domain) ;
+  forall(domain.views()-attr("chunk & boundary")) {
+  ... do work in parallel ...
+  }
+  CommSend(domain) ;
+  forall(domain.views()-attr("chunk & ~boundary")) {
+  ... do work in parallel ...
+  }
+  CommSBN() ;
  
- or the CommSend() could function as a semaphore
- for even finer granularity.  When the last chunk
- on a boundary marks the boundary as complete, the
- send could happen immediately:
+  or the CommSend() could function as a semaphore
+  for even finer granularity.  When the last chunk
+  on a boundary marks the boundary as complete, the
+  send could happen immediately:
  
- CommRecv(domain) ;
- forall(domain.views()-attr("chunk & boundary")) {
- ... do work in parallel ...
- CommSend(domain) ;
- }
- forall(domain.views()-attr("chunk & ~boundary")) {
- ... do work in parallel ...
- }
- CommSBN() ;
+  CommRecv(domain) ;
+  forall(domain.views()-attr("chunk & boundary")) {
+  ... do work in parallel ...
+  CommSend(domain) ;
+  }
+  forall(domain.views()-attr("chunk & ~boundary")) {
+  ... do work in parallel ...
+  }
+  CommSBN() ;
  
- */
+*/
 
 // Every node posts its own Recv and Send buffers
 // #define MAX_PROCS 4096
@@ -126,7 +124,7 @@ void CommRecv_upcxx(Domain& domain, int msgType, Index_t xferFields,
     return ;
   
   /* post recieve buffers for all incoming messages */
-  int myRank = upcxx::my_node.id();
+  int myRank = MYTHREAD;
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;
   Index_t maxEdgeComm  = xferFields * domain.maxEdgeSize() ;
   Index_t pmsg = 0 ; /* plane comm msg */
@@ -158,10 +156,10 @@ void CommRecv_upcxx(Domain& domain, int msgType, Index_t xferFields,
   }
   
   /*
-   for (Index_t i=0; i<26; ++i) {
-   domain.recvRequest[i] = MPI_REQUEST_NULL ;
-   }
-   */
+    for (Index_t i=0; i<26; ++i) {
+    domain.recvRequest[i] = MPI_REQUEST_NULL ;
+    }
+  */
   
   // MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
   
@@ -441,7 +439,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
     return ;
   
   /* post receive buffers for all incoming messages */
-  int myRank = upcxx::my_node.id();
+  int myRank = MYTHREAD;
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;
   Index_t maxEdgeComm  = xferFields * domain.maxEdgeSize() ;
   Index_t pmsg = 0 ; /* plane comm msg */
@@ -473,9 +471,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
     planeMax = false ;
   }
   
-//  if (myRank == 0) {
-//    cerr << "CommSend_upcxx is being used!\n";
-//  }
+  //  if (myRank == 0) {
+  //    cerr << "CommSend_upcxx is being used!\n";
+  //  }
   
   packable = true ;
   for (Index_t i=0; i<xferFields-2; ++i) {
@@ -485,10 +483,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
     }
   }
   /*
-   for (Index_t i=0; i<26; ++i) {
-   domain.sendRequest[i] = MPI_REQUEST_NULL ;
-   }
-   */
+    for (Index_t i=0; i<26; ++i) {
+    domain.sendRequest[i] = MPI_REQUEST_NULL ;
+    }
+  */
   // MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
   
   /* post sends */
@@ -536,14 +534,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
         destAddr = &fieldData[0][offset] ;
       }
       /*
-       MPI_Isend(destAddr, (packPlane ? xferFields*sendCount : 1),
-       msgTypePlane, myRank + domain.tp()*domain.tp(), msgType,
-       MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
-       */
+        MPI_Isend(destAddr, (packPlane ? xferFields*sendCount : 1),
+        msgTypePlane, myRank + domain.tp()*domain.tp(), msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+      */
       int target_rank = myRank + domain.tp()*domain.tp();
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
     
@@ -564,14 +562,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       
       /*
-       MPI_Isend(destAddr, (packPlane ? xferFields*sendCount : 1),
-       msgTypePlane, myRank - domain.tp()*domain.tp(), msgType,
-       MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
-       */
+        MPI_Isend(destAddr, (packPlane ? xferFields*sendCount : 1),
+        msgTypePlane, myRank - domain.tp()*domain.tp(), msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+      */
       int target_rank = myRank - domain.tp()*domain.tp();
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
   } // end of if (planeMin | planeMax)
@@ -626,14 +624,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
         destAddr = &fieldData[0][offset] ;
       }
       /*
-       MPI_Isend(destAddr, (packRow ? xferFields*sendCount : 1),
-       msgTypeRow, myRank + domain.tp(), msgType,
-       MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
-       */
+        MPI_Isend(destAddr, (packRow ? xferFields*sendCount : 1),
+        msgTypeRow, myRank + domain.tp(), msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+      */
       int target_rank = myRank + domain.tp();
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
     
@@ -655,14 +653,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
         destAddr = fieldData[0] ;
       }
       /*
-       MPI_Isend(destAddr, (packRow ? xferFields*sendCount : 1),
-       msgTypeRow, myRank - domain.tp(), msgType,
-       MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
-       */
+        MPI_Isend(destAddr, (packRow ? xferFields*sendCount : 1),
+        msgTypeRow, myRank - domain.tp(), msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+      */
       int target_rank = myRank - domain.tp();
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
     
@@ -722,14 +720,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
         destAddr = &fieldData[0][offset] ;
       }
       /*
-      MPI_Isend(destAddr, (packCol ? xferFields*sendCount : 1),
-                msgTypeCol, myRank + 1, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+        MPI_Isend(destAddr, (packCol ? xferFields*sendCount : 1),
+        msgTypeCol, myRank + 1, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank + 1;
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
     
@@ -752,14 +750,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
         destAddr = fieldData[0] ;
       }
       /*
-       MPI_Isend(destAddr, (packCol ? xferFields*sendCount : 1),
-       msgTypeCol, myRank - 1, msgType,
-       MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
-       */
+        MPI_Isend(destAddr, (packCol ? xferFields*sendCount : 1),
+        msgTypeCol, myRank - 1, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
+      */
       int target_rank = myRank - 1;
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
-                 xferFields * sendCount);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
+                         xferFields * sendCount);
       ++pmsg ;
     }
     
@@ -782,14 +780,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dz ;
       /*
-      MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+        MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
       ptr_to_shared<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dz);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dz);
       ++emsg ;
     } // end of if (rowMax && colMax && doSend)
     
@@ -807,14 +805,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dx ;
       /*
-      MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dx);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dx);
       ++emsg ;
     } // end of (rowMax && planeMax && doSend)
     
@@ -832,14 +830,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dy ;
       /*
-      MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dy);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dy);
       ++emsg ;
     } // end of if (colMax && planeMax && doSend)
     
@@ -857,14 +855,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dz ;
       /*
-      MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+        MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dz);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dz);
       ++emsg ;
     } // end of if (rowMin && colMin)
     
@@ -881,14 +879,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dx ;
       /*
-      MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+        MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dx);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dx);
       ++emsg ;
     } // end of if (rowMin && planeMin)
     
@@ -905,14 +903,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dy ;
       /*
-      MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+        MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dy);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dy);
       ++emsg ;
     } // end of if (colMin && planeMin)
     
@@ -931,14 +929,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dz ;
       /*
-      MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+        MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dz);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dz);
       ++emsg ;
     } // end of if (rowMin && colMax)
     
@@ -956,14 +954,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dx ;
       /*
-      MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dx);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dx);
       ++emsg ;
     } // end of if (rowMax && planeMin)
     
@@ -981,14 +979,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dy ;
       /*
-      MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dy);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dy);
       ++emsg ;
     } // end of if (colMax && planeMin)
     
@@ -1007,14 +1005,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dz ;
       /*
-      MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dz);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dz);
       ++emsg ;
     }
     
@@ -1032,14 +1030,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dx ;
       /*
-      MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dx);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dx);
       ++emsg ;
     }
     
@@ -1057,14 +1055,14 @@ void CommSend_upcxx(Domain& domain, int msgType,
       }
       destAddr -= xferFields*dy ;
       /*
-      MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
-       */
+        MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy(ptr_to_shared<Real_t>(destAddr, my_node),
-                 target_ptr,
-                 xferFields * dy);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
+      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+                         target_ptr,
+                         xferFields * dy);
       ++emsg ;
     }
     
@@ -1082,15 +1080,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1105,15 +1103,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1129,15 +1127,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1152,15 +1150,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1176,15 +1174,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1199,15 +1197,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1223,15 +1221,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][idx] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
     
@@ -1245,15 +1243,15 @@ void CommSend_upcxx(Domain& domain, int msgType,
         comBuf[fi] = fieldData[fi][0] ;
       }
       /*
-      MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
-                MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
-       */
+        MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
+        MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
+      */
       ptr_to_shared<Real_t> target_ptr =
-      AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
-      + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy(ptr_to_shared<Real_t>(comBuf, my_node),
-                 target_ptr,
-                 xferFields);
+        AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
+        + cmsg * CACHE_COHERENCE_PAD_REAL;
+      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+                         target_ptr,
+                         xferFields);
       ++cmsg ;
     }
   } // end of if (!planeOnly)
@@ -2137,7 +2135,7 @@ void CommMonoQ_upcxx(Domain& domain)
   if (domain.numRanks() == 1)
     return ;
   
-  int myRank = upcxx::my_node.id();
+  int myRank = MYTHREAD;
   Index_t xferFields = 3 ; /* delv_xi, delv_eta, delv_zeta */
   Real_t *fieldData[3] ;
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;

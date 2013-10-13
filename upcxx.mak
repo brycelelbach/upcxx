@@ -1,14 +1,14 @@
-ROOT?=$(HOME)/Dropbox/degas/upcxx
+ROOT?=$(HOME)/upcxx_edison
 
-GASNET_PATH?=$(HOME)/work/upc_runtime_install/opt
+GASNET_PATH?=$(HOME)/install/bupc_edison_icc/opt
 
-include $(ROOT)/make_rules/clang-macos.mak
+include $(ROOT)/make_rules/cray.mak
 
 BUILDDIR=$(ROOT)/build
 VPATH = $(ROOT)/include:$(ROOT)/src:$(BUILDDIR)
 
 ## GASNet
-GASNET_CONDUIT = mpi
+GASNET_CONDUIT = aries
 GASNET_PAR_MODE = seq
 GASNET_CONDUIT_MAKEFILE = $(GASNET_CONDUIT)-$(GASNET_PAR_MODE).mak
 include $(GASNET_PATH)/include/$(GASNET_CONDUIT)-conduit/$(GASNET_CONDUIT_MAKEFILE)
@@ -30,8 +30,8 @@ LIBS += $(GASNET_LIBS)
 %.o : %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-%.o : %.cc
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+#%.o : %.cc
+#	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 UPCXX_HEADERS = upcxx.h ptr_to_shared.h queue.h lock.h async.h event.h \
 	shared_var.h gasnet_api.h forkjoin.h async_templates.h machine.h \

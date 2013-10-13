@@ -1,10 +1,10 @@
 #default build suggestion of MPI + OPENMP with gcc on Livermore machines you might have to change the compiler name
 
 SHELL = /bin/sh
-.SUFFIXES: .cc .o
+#.SUFFIXES: .cc .o
 
 #LULESH_EXEC = lulesh2.0 # lulesh2.0-upcxx
-LULESH_EXEC = lulesh2.0-upcxx
+LULESH_EXEC = lulesh2.0-upcxx lulesh2.0-mpi lulesh2.0
 all: $(LULESH_EXEC)
 
 TOPDIR=../..
@@ -17,6 +17,14 @@ SERCXX = CC
 MPICXX = CC
 #CXX = $(MPICXX) -DUSE_MPI=1 -DUSE_UPCXX=0 -DUSE_OMP=1
 CXX = $(MPICXX) -fast -DUSE_OMP=1 -fopenmp
+
+SOURCES2.0 = \
+	lulesh.cc \
+	lulesh-comm.cc \
+	lulesh-viz.cc \
+	lulesh-util.cc \
+	lulesh-init.cc 
+OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
 
 SOURCES2.0MPI = \
 	lulesh.cc \
@@ -49,13 +57,21 @@ OBJECTS2.0UPCXX = $(SOURCES2.0UPCXX:.cc=.upcxx.o)
 #CXXFLAGS = -g -openmp -DVIZ_MESH -I${SILO_INCDIR} -Wall -Wno-pragmas
 #LDFLAGS = -g -L${SILO_LIBDIR} -Wl,-rpath -Wl,${SILO_LIBDIR} -lsiloh5 -lhdf5
 
+%.o: %.cc lulesh.h
+	@echo "Building $<"
+	$(CXX) -c -DUSE_MPI=0 -DUSE_UPCXX=0 -o $@ $<
+
 %.mpi.o: %.cc lulesh.h
 	@echo "Building $<"
-	$(CXX) -c $(CXXFLAGS) -DUSE_MPI=1 -DUSE_UPCXX=0 -o $@ $<
+	$(CXX) -c -DUSE_MPI=1 -DUSE_UPCXX=0 -o $@ $<
 
 %.upcxx.o: %.cc lulesh.h
 	@echo "Building $<"
 	$(CXX) -c $(CXXFLAGS) -DUSE_MPI=0 -DUSE_UPCXX=1 -o $@ $<
+
+lulesh2.0: $(OBJECTS2.0) 
+	@echo "Linking"
+	$(CXX) $(LDFLAGS) $(OBJECTS2.0) -lm -o $@
 
 lulesh2.0-mpi: $(OBJECTS2.0MPI) 
 	@echo "Linking"
