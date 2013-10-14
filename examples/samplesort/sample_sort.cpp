@@ -1,7 +1,7 @@
 /**
  * sample_sort.cpp -- a modified version of the sample sort algorithm
  *
- * The most difficult case is that some of the keys are identical,
+ * The most difficult case is when some of the keys are identical,
  * which requires careful handling to be correct!
  *
  * Use the Mersenne Twister random number generator (SFMT)
@@ -38,24 +38,20 @@ extern "C" {
 //#define KEYS_PER_THREAD 128
 
 typedef struct {
-  // shared void *ptr;
   // ptr_to_shared<ELEMENT_T> ptr;
   ptr_to_shared<void> ptr;
   uint64_t nbytes;
 } buffer_t;
 
-// shared [THREADS] buffer_t all_buffers[THREADS][THREADS];
 buffer_t *all_buffers_src;
 buffer_t *all_buffers_dst;
 
-// shared [] ELEMENT_T * shared sorted[THREADS];
 shared_array< ptr_to_shared<ELEMENT_T>, 1 > sorted; 
 
 ELEMENT_T *splitters;
 
 shared_array<ELEMENT_T, 1> keys;
- 
-// shared uint64_t sorted_key_counts[THREADS];
+
 shared_array<uint64_t, 1> sorted_key_counts;
 
 sfmt_t sfmt;
@@ -77,7 +73,7 @@ void init_keys(ELEMENT_T *my_keys, uint64_t my_key_size)
   uint64_t i;
 
   for (i = 0; i < my_key_size; i++) {
-    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt) % (KEYS_PER_THREAD * THREADS);
+    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt); // % (KEYS_PER_THREAD * THREADS);
   }
 }
 
@@ -124,22 +120,13 @@ void compute_splitters(uint64_t key_count,
     for (i = 1; i < THREADS; i++) {
       my_splitters[i] = candidates[i * samples_per_thread]; 
     }
-    /*
-    upc_all_broadcast(splitters, my_splitters, 
-                      THREADS*sizeof(ELEMENT_T), 
-                      UPC_IN_MYSYNC | UPC_OUT_MYSYNC);
-    */
+
     upcxx::upcxx_bcast(my_splitters, splitters, sizeof(ELEMENT_T)*THREADS, 0);
 
     free(candidates);
     free(my_splitters);
   } else {
     // MYTHREAD != 0
-    /*
-    upc_all_broadcast(splitters, my_splitters, 
-                      THREADS*sizeof(ELEMENT_T), 
-                      UPC_IN_MYSYNC | UPC_OUT_MYSYNC);
-    */
     upcxx::upcxx_bcast(NULL, splitters, sizeof(ELEMENT_T)*THREADS, 0);
   }
 }
@@ -243,7 +230,6 @@ void redistribute(uint64_t key_count)
 
   // printf("sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
 
-  // sorted[MYTHREAD] = (shared [] ELEMENT_T *)upc_alloc(offset * sizeof(ELEMENT_T));
   sorted[MYTHREAD] = upcxx::allocate<ELEMENT_T>(MYTHREAD, offset);
   assert(sorted[MYTHREAD].get() != NULL);
 
@@ -262,9 +248,6 @@ void redistribute(uint64_t key_count)
              (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).tid(),
              (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).raw_ptr());
 #endif               
-//       upc_memcpy(sorted[MYTHREAD] + offset / sizeof(ELEMENT_T),
-//                  all_buffers[i][MYTHREAD].ptr,
-//                  all_buffers[i][MYTHREAD].nbytes);
       upcxx::async_copy((ptr_to_shared<void>)all_buffers_dst[i].ptr,
                         (ptr_to_shared<void>)(sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)),  
                         all_buffers_dst[i].nbytes);    
@@ -293,9 +276,7 @@ void redistribute(uint64_t key_count)
 // Parallel sort across multiple threads
 void sample_sort(uint64_t key_count)
 {
-  // shared int *result_keys;
   ptr_to_shared<int> result_keys;
-  // shared unsigned int *histogram;
   ptr_to_shared<unsigned int> histogram;
   
   double starttime = mysecond();
@@ -304,7 +285,6 @@ void sample_sort(uint64_t key_count)
   double cs_time = mysecond() - starttime;
 
   // Re-distribute the keys based on the splitters
-  // Cannot use upc_all_exchange here because it's an alltoallv operation.
   redistribute(key_count);
   // There is a barrier at the end of redistribute().
   double rd_time = mysecond() - cs_time;
@@ -329,16 +309,13 @@ int main(int argc, char **argv)
   upcxx::init(&argc, &argv);
 
   uint64_t my_key_size = KEYS_PER_THREAD; // assume key_size is a multiple of THREADS
-  uint64_t total_key_size = KEYS_PER_THREAD * THREADS;
+  uint64_t total_key_size = (uint64_t)KEYS_PER_THREAD * THREADS;
 
-  // keys = upc_all_alloc(total_key_size, sizeof(ELEMENT_T));
-  // assert(keys != NULL);
   keys.init(total_key_size);
   sorted.init(THREADS);
   sorted_key_counts.init(THREADS);
 
 #ifdef VERIFY
-  // shared [] ELEMENT_T *keys_copy;
   ptr_to_shared<ELEMENT_T>keys_copy;
 #endif
      
@@ -350,11 +327,9 @@ int main(int argc, char **argv)
   if (MYTHREAD == 0) {
     int t;
     // gather the keys to thread 0
-    // keys_copy = upc_alloc(sizeof(ELEMENT_T) * total_key_size);
     keys_copy = upcxx::allocate<ELEMENT_T>(MYTHREAD, total_key_size);
     assert(keys_copy != NULL);
     for (t = 0; t < THREADS; t++) {
-      // upc_memcpy(&keys_copy[KEYS_PER_THREAD * t], &keys[t], sizeof(ELEMENT_T)*KEYS_PER_THREAD);
       upcxx::copy(&keys[t], keys_copy + (KEYS_PER_THREAD * t), KEYS_PER_THREAD);
     }
   }
@@ -369,17 +344,6 @@ int main(int argc, char **argv)
     printf("\n");
   }
 #endif
-
-  // Cannot use upc_all_gather because it requires a blocked layout
-  // of the array, which is cyclic in out case!
-  // Maybe we can still use upc_all_gather by casting "keys" to
-  // (shared [KEYS_PER_THREAD] ELEMENT_T *) first.
-  /*
-    upc_all_gather(keys_copy, // shared void * restrict dst,
-    keys,      // shared const void * restrict src, 
-    my_key_size * sizeof(ELEMENT_T), // uint64_t nbytes,
-    UPC_IN_MYSYNC | UPC_OUT_MYSYNC);
-  */
 #endif
 
   if (MYTHREAD == 0){

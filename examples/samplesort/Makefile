@@ -13,7 +13,7 @@ include $(TOPDIR)/upcxx.mak
 
 LIBS += -L $(BUILDDIR)/ -lupcxx 
 
-CXXFLAGS += -O3 
+CXXFLAGS += -g -O3 
 
 sfmt.o: ../SFMT/SFMT.c
 	$(CC) $(CFLAGS) -I ../SMFT -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing -Wmissing-prototypes -Wall -std=c99 -DSFMT_MEXP=19937 -c -o sfmt.o ../SFMT/SFMT.c
