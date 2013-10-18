@@ -1,9 +1,10 @@
 ## Makefile for building examples
 
 EXES = hello test_shared_var test_ptr_to_shared testperf2 test_async \
-	test_event test_am_bcast test_shared_array test_reduce test_remote_inc
-	 # test_team
-  #test_domain
+	test_event test_am_bcast test_shared_array test_reduce test_remote_inc test_finish
+
+#test_team
+ #test_domain
 
 #CXX11_EXES = test_async2 
 
