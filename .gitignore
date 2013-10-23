@@ -1,19 +1,24 @@
+# common build directory name
 build
 
+# vim tmp files
+.*.swp
+
+# objects and libraries
 *.o
 *.lo
 *.a
 *.la
 *.in
 
+# autotools dirs
 .deps
 .libs
 
+# generated files
 Makefile
-
 config.h
 config.h.in~
-
 aclocal.m4
 autom4te.cache
 compile

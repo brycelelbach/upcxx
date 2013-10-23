@@ -18,4 +18,13 @@ AC_CONFIG_FILES([
 
 AC_PROG_CXX
 
+AC_ARG_WITH([gasnet],
+  [AS_HELP_STRING([--with-gasnet],
+    [path to gasnet conduit-specific makefile])],
+  [AC_CHECK_FILE(["$withval"],
+    AC_SUBST([GASNET_MAKEFILE], ["$withval"]),
+    AC_MSG_FAILURE([Could not find GASNet Makefile.]))],
+  [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=/opt/gasnet/smp-conduit/smp-seq.mak etc.])]
+)
+
 AC_OUTPUT

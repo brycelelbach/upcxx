@@ -1,4 +1,4 @@
-include /Users/mbdriscoll/opt/gasnet-1.20.2/include/smp-conduit/smp-seq.mak
+include $(GASNET_MAKEFILE)
 
 bin_PROGRAMS = \
   hello \
