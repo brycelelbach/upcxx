@@ -4,10 +4,17 @@ AC_PREREQ([2.59])
 AM_INIT_AUTOMAKE([1.10 no-define])
 
 LT_INIT()
-AC_CONFIG_MACRO_DIR([m4])
+LT_LANG([C++])
 
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile include/Makefile src/Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  include/Makefile
+  src/Makefile
+  examples/Makefile
+  examples/basic/Makefile
+])
 
 AC_PROG_CXX
 

@@ -1,0 +1,11 @@
+hello
+test_am_bcast
+test_async
+test_event
+test_finish
+test_ptr_to_shared
+test_reduce
+test_remote_inc
+test_shared_array
+test_shared_var
+testperf2

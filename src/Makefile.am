@@ -1,4 +1,4 @@
-include /Users/mbdriscoll/opt/gasnet-1.20.2/include/mpi-conduit/mpi-seq.mak
+include /Users/mbdriscoll/opt/gasnet-1.20.2/include/smp-conduit/smp-seq.mak
 
 lib_LTLIBRARIES = libupcxx.la
 
