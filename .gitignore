@@ -1,1 +1,15 @@
 build
+
+*.o
+*.lo
+*.a
+*.la
+*.in
+
+.deps
+.libs
+
+Makefile
+
+config.h
+config.h.in~
