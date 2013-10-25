@@ -142,7 +142,7 @@ namespace upcxx
     int _pgrid_nrow;
     int _pgrid_ncol;
     int _allocated; // flag for whether _blocks are allocated
-    ptr_to_shared<T> _blocks[MAX_BLOCKS]; // makes copy easier than dynamic allocation
+    global_ptr<T> _blocks[MAX_BLOCKS]; // makes copy easier than dynamic allocation
     
   public:
     
@@ -169,7 +169,7 @@ namespace upcxx
     }
 
     // get (i,j)th block for the global matrix
-    inline ptr_to_shared<T> &
+    inline global_ptr<T> &
     operator() (int i, int j)
     {
 #ifdef DEBUG
@@ -278,7 +278,7 @@ namespace upcxx
     {
       matrix<T> *local;
       matrix<T> tmp(_blk_sz, _blk_sz);
-      ptr_to_shared<T> pTmp(tmp.data());
+      global_ptr<T> pTmp(tmp.data());
 
       local = new matrix<T> (this->m(), this->n());
       assert(local != NULL);

@@ -1,0 +1,4 @@
+autoreconf -i
+./configure --with-gasnet=/path/to/smp-seq.mak --prefix=`pwd`/inst
+make
+make install

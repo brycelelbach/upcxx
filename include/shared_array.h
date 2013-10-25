@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "ref_to_shared.h"
+#include "global_ref.h"
 
 // #define DEBUG
 
@@ -98,7 +98,7 @@ namespace upcxx
       if (_alldata) free(_alldata);
     }
 
-    ref_to_shared<T> operator [] (size_t global_index)
+    global_ref<T> operator [] (size_t global_index)
     {
       // address translation
       size_t local_index;
@@ -113,7 +113,7 @@ namespace upcxx
              global_index, local_index, n.id());
 #endif
       // only works with statically declared (and presumably aligned) data
-      return ref_to_shared<T>(n, &_alldata[n.id()][local_index]);
+      return global_ref<T>(n, &_alldata[n.id()][local_index]);
     }
   }; // struct shared_array
 

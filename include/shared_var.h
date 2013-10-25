@@ -105,9 +105,9 @@ namespace upcxx
       return get_value();
     }
 
-    inline ptr_to_shared<T> operator &()
+    inline global_ptr<T> operator &()
     {
-      return ptr_to_shared<T>(&_val, node(0));
+      return global_ptr<T>(&_val, node(0));
     }
 
   }; // struct shared_var

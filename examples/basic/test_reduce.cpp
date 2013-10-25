@@ -9,8 +9,8 @@ using namespace upcxx;
 template<class T>
 void test(upcxx_datatype_t dt, size_t count)
 {
-  ptr_to_shared<T> src;
-  ptr_to_shared<T> dst;
+  global_ptr<T> src;
+  global_ptr<T> dst;
   
   src = allocate<T>(my_node, count);
   dst = allocate<T>(my_node, count);

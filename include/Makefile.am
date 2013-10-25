@@ -15,10 +15,10 @@ include_HEADERS =  \
   lock.h \
   machine.h \
   matrix.h \
-  ptr_to_shared.h \
+  global_ptr.h \
   queue.h \
   range.h \
-  ref_to_shared.h \
+  global_ref.h \
   shared_array.h \
   shared_var.h \
   team.h \

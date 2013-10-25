@@ -14,19 +14,19 @@
 
 namespace upcxx
 {
-  template<typename T> struct ptr_to_shared;
+  template<typename T> struct global_ptr;
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = node>
-  struct ref_to_shared
+  struct global_ref
   {
-    ref_to_shared(place_t pla, T *ptr)
+    global_ref(place_t pla, T *ptr)
     {
       _pla = pla;
       _ptr = ptr;
     }
 
-    ref_to_shared<T>& operator = (const T &rhs)
+    global_ref<T>& operator = (const T &rhs)
     {
       if (_pla.id() == my_node.id()) {
         *_ptr = rhs;
@@ -37,7 +37,7 @@ namespace upcxx
       return *this;
     }
 
-    ref_to_shared<T>& operator = (const ref_to_shared<T> &rhs)
+    global_ref<T>& operator = (const global_ref<T> &rhs)
     {
       T val = rhs.get();
       if (_pla.id() == my_node.id()) {
@@ -49,7 +49,7 @@ namespace upcxx
       return *this;
     }
 
-    ref_to_shared<T>& operator ^= (const T &rhs)
+    global_ref<T>& operator ^= (const T &rhs)
     {
       int pla_id = _pla.id();
       if (pla_id == gasnet_mynode()) {
@@ -64,7 +64,7 @@ namespace upcxx
       return *this;
     }
 
-    ref_to_shared<T>& operator += (const T &rhs)
+    global_ref<T>& operator += (const T &rhs)
     {
       int pla_id = _pla.id();
       if (pla_id == gasnet_mynode()) {
@@ -103,15 +103,15 @@ namespace upcxx
       }
     }
     
-    ptr_to_shared<T> operator &()
+    global_ptr<T> operator &()
     {
-      return ptr_to_shared<T>(_ptr, _pla);
+      return global_ptr<T>(_ptr, _pla);
     }
 
-    // YZ: todo: specialize for T = ptr_to_shared<T2>
+    // YZ: todo: specialize for T = global_ptr<T2>
     //     template <>
     //     template <typename T2>
-    //     ref_to_shared<typename T2::value_type> operator [] (size_t i)
+    //     global_ref<typename T2::value_type> operator [] (size_t i)
     //     {
     //       return (*_ptr)[i];
     //     }
@@ -120,7 +120,7 @@ namespace upcxx
     place_t _pla;
     T *_ptr;
 
-  }; // struct ref_to_shared
+  }; // struct global_ref
   /// \endcond
 
 } // namespace upcxx

@@ -9,7 +9,7 @@
 #include "allocate.h"
 #include "machine.h"
 #include "event.h"
-#include "ref_to_shared.h"
+#include "global_ref.h"
 
 using namespace std;
 
@@ -106,29 +106,29 @@ namespace upcxx
    * \see test_global_ptr.cpp
    */
   template<typename T>
-  struct ptr_to_shared : public base_ptr<T, node>
+  struct global_ptr : public base_ptr<T, node>
   {
     typedef T value_type;
 
   public:
     inline
-    ptr_to_shared() :
+    global_ptr() :
     base_ptr<T, node>(NULL, my_node) {}
 
     inline
-    ptr_to_shared(T *ptr) :
+    global_ptr(T *ptr) :
     base_ptr<T, node>(ptr, my_node) {}
 
     inline
-    ptr_to_shared(T *ptr, node pla) :
+    global_ptr(T *ptr, node pla) :
       base_ptr<T, node>(ptr, pla) {}
 
     inline
-    ptr_to_shared(const base_ptr<T, node> &p)
+    global_ptr(const base_ptr<T, node> &p)
       : base_ptr<T, node>(p) {}
 
     inline
-    ptr_to_shared(const ptr_to_shared<T> &p)
+    global_ptr(const global_ptr<T> &p)
     : base_ptr<T, node>(p.raw_ptr(), p.where()) {}
 
     /*
@@ -157,35 +157,35 @@ namespace upcxx
       return this->raw_ptr();
     }
 
-    ref_to_shared<T> operator [] (int i)
+    global_ref<T> operator [] (int i)
     {
-      return ref_to_shared<T>(this->where(), (T *)this->raw_ptr() + i);
+      return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
     // type casting operator for placed pointers
     template<typename T2>
-    operator ptr_to_shared<T2>()
+    operator global_ptr<T2>()
     {
-      return ptr_to_shared<T2>((T2 *)this->raw_ptr(), this->where());
+      return global_ptr<T2>((T2 *)this->raw_ptr(), this->where());
     }
 
     // pointer arithmetic
-    const ptr_to_shared<T> operator +(int i) const
+    const global_ptr<T> operator +(int i) const
     {
-      return ptr_to_shared<T>(((T *)this->raw_ptr()) + i, this->where());
+      return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
     }
 
     // pointer arithmetic
-    const ptr_to_shared<T> operator +(long i) const
+    const global_ptr<T> operator +(long i) const
     {
-      return ptr_to_shared<T>(((T *)this->raw_ptr()) + i, this->where());
+      return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
     }
 
     // pointer arithmetic
     template <typename T2>
-    const ptr_to_shared<T> operator +(T2 i) const
+    const global_ptr<T> operator +(T2 i) const
     {
-      return ptr_to_shared<T>(((T *)this->raw_ptr()) + i, this->where());
+      return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
     }
 
     // pointer arithmetic
@@ -201,27 +201,27 @@ namespace upcxx
     }
   };
 
-  // ptr_to_shared<T, node>
+  // global_ptr<T, node>
   template<>
-  struct ptr_to_shared<void> : public base_ptr<void, node>
+  struct global_ptr<void> : public base_ptr<void, node>
   {
   public:
-//     inline ptr_to_shared(void *ptr = NULL) :
+//     inline global_ptr(void *ptr = NULL) :
 //     base_ptr<void, node>(ptr, my_node) {}
 
-    inline ptr_to_shared(void *ptr = NULL, node pla = my_node) :
+    inline global_ptr(void *ptr = NULL, node pla = my_node) :
     base_ptr<void, node>(ptr, pla) {}
 
-    inline ptr_to_shared(const base_ptr<void, node> &p)
+    inline global_ptr(const base_ptr<void, node> &p)
     : base_ptr<void, node>(p) {}
 
-    inline ptr_to_shared(const ptr_to_shared<void> &p)
+    inline global_ptr(const global_ptr<void> &p)
     : base_ptr<void, node>(p) {}
 
-    // Implicit type conversion to ptr_to_shared<void> is very
+    // Implicit type conversion to global_ptr<void> is very
     // dangerous!
     template<typename T2>
-    inline explicit ptr_to_shared(const ptr_to_shared<T2> &p)
+    inline explicit global_ptr(const global_ptr<T2> &p)
       : base_ptr<void, node>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
@@ -231,13 +231,13 @@ namespace upcxx
 
     // type casting operator for placed pointers
     template<typename T2>
-    operator ptr_to_shared<T2>()
+    operator global_ptr<T2>()
     {
-      return ptr_to_shared<T2>((T2 *)this->raw_ptr(), this->where());
+      return global_ptr<T2>((T2 *)this->raw_ptr(), this->where());
     }
 
     template<typename T2>
-    ptr_to_shared<void>& operator = (const ptr_to_shared<T2> &p)
+    global_ptr<void>& operator = (const global_ptr<T2> &p)
     {
       _ptr = p.raw_ptr();
       _place = p.where();
@@ -246,7 +246,7 @@ namespace upcxx
   };
 
   template<typename T>
-  inline std::ostream& operator<<(std::ostream& out, ptr_to_shared<T> ptr)
+  inline std::ostream& operator<<(std::ostream& out, global_ptr<T> ptr)
   {
     return out << "{ " << ptr.where() << " addr: " << ptr.raw_ptr() << " }";
   }
@@ -255,7 +255,7 @@ namespace upcxx
   // Implement copy, allocate and free with ptr for GASNet backend
   // **************************************************************************
 
-  int copy(ptr_to_shared<void> src, ptr_to_shared<void> dst, size_t nbytes);
+  int copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes);
 
   /**
    * \ingroup gasgroup
@@ -269,19 +269,19 @@ namespace upcxx
    * \see test_global_ptr.cpp
    */
   template<typename T>
-  int copy(ptr_to_shared<T> src, ptr_to_shared<T> dst, size_t count)
+  int copy(global_ptr<T> src, global_ptr<T> dst, size_t count)
   {
     size_t nbytes = count * sizeof(T);
-    return copy((ptr_to_shared<void>)src, (ptr_to_shared<void>)dst, nbytes);
+    return copy((global_ptr<void>)src, (global_ptr<void>)dst, nbytes);
   }
 
-  int async_copy(ptr_to_shared<void> src,
-                 ptr_to_shared<void> dst,
+  int async_copy(global_ptr<void> src,
+                 global_ptr<void> dst,
                  size_t bytes,
                  event *e = NULL);
 
-  gasnet_handle_t async_copy2(ptr_to_shared<void> src,
-                              ptr_to_shared<void> dst,
+  gasnet_handle_t async_copy2(global_ptr<void> src,
+                              global_ptr<void> dst,
                               size_t bytes);
   
   inline void sync_nb(gasnet_handle_t h)
@@ -300,25 +300,25 @@ namespace upcxx
    * \param e the event which should be notified after the completion of the copy
    */
   template<typename T>
-  int async_copy(ptr_to_shared<T> src,
-                 ptr_to_shared<T> dst,
+  int async_copy(global_ptr<T> src,
+                 global_ptr<T> dst,
                  size_t count,
                  event *e = NULL)
   {
     size_t nbytes = count * sizeof(T);
-    return async_copy((ptr_to_shared<void>)src,
-                      (ptr_to_shared<void>)dst,
+    return async_copy((global_ptr<void>)src,
+                      (global_ptr<void>)dst,
                       nbytes,
                       e);
   }
 
   template<typename T>
-  gasnet_handle_t async_copy2(ptr_to_shared<T> src,
-                              ptr_to_shared<T> dst,
+  gasnet_handle_t async_copy2(global_ptr<T> src,
+                              global_ptr<T> dst,
                               size_t count)
   {
     size_t nbytes = count * sizeof(T);
-    return async_copy2((ptr_to_shared<void>)src, (ptr_to_shared<void>)dst, 
+    return async_copy2((global_ptr<void>)src, (global_ptr<void>)dst, 
                        nbytes);
   }
 
@@ -343,7 +343,7 @@ namespace upcxx
    * \param pla the node where the memory space should be allocated
    */
   template<typename T>
-  ptr_to_shared<T> allocate(node pla, size_t count)
+  global_ptr<T> allocate(node pla, size_t count)
   {
     void *addr;
     size_t nbytes = count * sizeof(T);
@@ -366,7 +366,7 @@ namespace upcxx
       e.wait();
     }
 
-    ptr_to_shared<T> ptr((T *)addr, pla);
+    global_ptr<T> ptr((T *)addr, pla);
 
 #ifdef DEBUG
     fprintf(stderr, "allocated %llu bytes at cpu %d\n",
@@ -385,7 +385,7 @@ namespace upcxx
    * \param ptr the pointer to which the memory space should be freed
    */
   template<typename T>
-  int deallocate(ptr_to_shared<T> ptr)
+  int deallocate(global_ptr<T> ptr)
   {
     if (ptr.where().islocal() == true) {
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -403,7 +403,7 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-  inline int remote_inc(ptr_to_shared<long> ptr)
+  inline int remote_inc(global_ptr<long> ptr)
   {
     inc_am_t am;
     am.ptr = ptr.raw_ptr();

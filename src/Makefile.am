@@ -15,6 +15,6 @@ libupcxx_la_SOURCES = \
   event.cpp          \
   lock.cpp           \
   machine.cpp        \
-  ptr_to_shared.cpp  \
+  global_ptr.cpp  \
   team.cpp           \
   upcxx_runtime.cpp

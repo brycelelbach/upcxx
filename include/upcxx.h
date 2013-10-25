@@ -24,7 +24,7 @@
 #include "gasnet_api.h"
 #include "event.h"
 #include "machine.h"
-#include "ptr_to_shared.h"
+#include "global_ptr.h"
 #include "queue.h"
 #include "lock.h"
 #include "shared_var.h"

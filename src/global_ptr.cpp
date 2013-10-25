@@ -1,6 +1,6 @@
 #include "upcxx.h"
 
-int upcxx::copy(ptr_to_shared<void> src, ptr_to_shared<void> dst, size_t nbytes)
+int upcxx::copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes)
 {
 #ifdef DEBUG
   fprintf(stderr, "src id %d, src ptr %p, nbytes %llu, dst id %d, dst ptr %p\n",
@@ -22,8 +22,8 @@ int upcxx::copy(ptr_to_shared<void> src, ptr_to_shared<void> dst, size_t nbytes)
   return UPCXX_SUCCESS;
 }
 
-int upcxx::async_copy(ptr_to_shared<void> src,
-                      ptr_to_shared<void> dst,
+int upcxx::async_copy(global_ptr<void> src,
+                      global_ptr<void> dst,
                       size_t nbytes,
                       event *e)
 {
@@ -68,8 +68,8 @@ int upcxx::async_copy(ptr_to_shared<void> src,
   return UPCXX_SUCCESS;
 }
 
-gasnet_handle_t upcxx::async_copy2(ptr_to_shared<void> src,
-                                   ptr_to_shared<void> dst,
+gasnet_handle_t upcxx::async_copy2(global_ptr<void> src,
+                                   global_ptr<void> dst,
                                    size_t nbytes)
 {
   // explicit non-blocking copy, need event->wait()/test() to

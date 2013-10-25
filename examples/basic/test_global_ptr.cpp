@@ -14,7 +14,7 @@
 using namespace std;
 using namespace upcxx;
 
-shared_var < ptr_to_shared<double> > tmp_ptr;
+shared_var < global_ptr<double> > tmp_ptr;
 
 int main (int argc, char **argv)
 {
@@ -31,8 +31,8 @@ int main (int argc, char **argv)
     there = 0; // node 0
   }
 
-  ptr_to_shared<double> ptr1;
-  ptr_to_shared<double> ptr2;
+  global_ptr<double> ptr1;
+  global_ptr<double> ptr2;
 
   if (MYTHREAD == 0) {
     ptr1 = allocate<double>(there, count);
