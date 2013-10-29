@@ -13,9 +13,9 @@ extern "C"
 #include <gasnet.h>
 #include <gasnet_tools.h>
 #include <gasnet_coll.h>
-#ifdef __CUDACC__
-#include <gasnet_extended_gpu.h>
-#endif
+
+#define THREADS gasnet_nodes()
+#define MYTHREAD gasnet_mynode()
 
 #define GASNET_SAFE(fncall) do {                                      \
     int _retval;                                                      \

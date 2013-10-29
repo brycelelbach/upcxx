@@ -8,7 +8,7 @@
 
 #include "global_ref.h"
 
-// #define DEBUG
+// #define UPCXX_UPCXX_DEBUG
 
 namespace upcxx
 {
@@ -39,7 +39,7 @@ namespace upcxx
 
     shared_array(size_t size=0)
     {
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
       printf("In shared_array constructor, size %lu\n", size);
 #endif
       _data = NULL;
@@ -77,7 +77,7 @@ namespace upcxx
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_gather_all(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
                              GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL);
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
       printf("my node %d, _data %p\n", my_cpu_place.id(), _data);
       for (int i=0; i<nplaces; i++) {
         printf("_alldata[%d]=%p ", i, _alldata[i]);
@@ -98,6 +98,10 @@ namespace upcxx
       if (_alldata) free(_alldata);
     }
 
+    // Collectively allocate a shared array of nblocks with count elements per block
+
+    // void all_alloc(size_t nblocks, size_t count);
+
     global_ref<T> operator [] (size_t global_index)
     {
       // address translation
@@ -108,7 +112,7 @@ namespace upcxx
       // assert(_data != NULL);
       // assert(_alldata != NULL);
 
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
       printf("shared_array [], gi %lu, li %lu, nid %d\n",
              global_index, local_index, n.id());
 #endif

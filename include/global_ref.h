@@ -10,7 +10,7 @@
 #include "gasnet_api.h"
 #include "async.h"
 
-// #define DEBUG
+// #define UPCXX_DEBUG
 
 namespace upcxx
 {
@@ -117,9 +117,8 @@ namespace upcxx
     //     }
 
   private:
-    place_t _pla;
     T *_ptr;
-
+    place_t _pla;
   }; // struct global_ref
   /// \endcond
 

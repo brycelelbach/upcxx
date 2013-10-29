@@ -18,10 +18,10 @@
 #include <cassert>
 #include <ios>
 
+#include "gasnet_api.h"
 #include "upcxx_types.h"
 #include "upcxx_runtime.h"
 #include "allocate.h"
-#include "gasnet_api.h"
 #include "event.h"
 #include "machine.h"
 #include "global_ptr.h"
@@ -34,8 +34,5 @@
 #include "team.h"
 #include "collective.h"
 #include "shared_array.h"
-
-#define THREADS gasnet_nodes()
-#define MYTHREAD gasnet_mynode()
 
 #endif /* UPCXX_H_ */

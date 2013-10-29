@@ -1,6 +1,9 @@
 # common build directory name
 build
 
+# emacs backup files
+*~
+
 # vim tmp files
 .*.swp
 

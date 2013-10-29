@@ -34,7 +34,7 @@ namespace upcxx
 
     inline int id() const { return _id; }
 
-    inline operator int() const {return _id; } // a hack for now
+    inline operator int() const {return _id; }
 
     inline int node_id() const { return _id; }
 

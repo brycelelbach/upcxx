@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "gasnet_api.h"
+
 namespace upcxx
 {
   // **************************************************************************
@@ -11,13 +13,14 @@ namespace upcxx
   // **************************************************************************
   
   /*
-   * shared_var_offset = shared_var_addr_P0 - my_shared_var_addr;
+   * shared_var_addr = shared_var_addr_P0 - my_shared_var_addr;
    *
    * where shared_var_addr_P0 is the local address of a global
    * datum on node 0 and my_shared_var_addr is the local address of
    * the datum on my node.
    */
-  extern size_t shared_var_offset; 
+  extern void *shared_var_addr;
+  extern size_t total_shared_var_sz;
 
   /**
    * \ingroup gasgroup
@@ -25,7 +28,7 @@ namespace upcxx
    *
    * shared_var variables can only be defined in the file scope
    * (not inside a function).  Global data reside on CPU place 0
-   * (node 0). It only supports basic data types/classes that can
+   * (node 0). It only supports contiguous data types that can
    * use direct data memcpy (shallow copy) for assignment operations
    * without a customized copy function (deep copy) because the
    * system doesn't have a general mechanism to perform deep copy
@@ -35,7 +38,7 @@ namespace upcxx
    *   shared_var<int> x=123;
    *
    *   void foo() { // can be executed on any cpu place
-   *     int y = x.get_value();
+   *     int y = x.get();
    *     x = 456;
    *   }
    *
@@ -46,47 +49,49 @@ namespace upcxx
   struct shared_var
   {
   private:
+    size_t _my_offset;
     T _val;
 
   public:
     shared_var() { }
       
-    shared_var(const T &val) : _val(val) { }
+    inline shared_var(const T &val) : _val(val)
+    {
+      _my_offset = total_shared_var_sz;
+      total_shared_var_sz += sizeof(val);
+    }
 
     // copy constructor
     inline
-    shared_var(const shared_var<T> &g) : _val(g._val) { }
-
-    T& get_value()
+    shared_var(const shared_var<T> &g) : _val(g._val)
     {
-      if (my_node.id() != 0) {
-        gasnet_get(&_val, 0, (char *)&_val+shared_var_offset, sizeof(T)); 
-      }
+      _my_offset = total_shared_var_sz;
+      total_shared_var_sz += sizeof(_val);
+    }
 
+    T& get()
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
       return _val;
     }
     
-    void put_value(const T &val)
+    void put(const T &val)
     {
       _val = val;
-      if (my_node.id() != 0) {
-        gasnet_put(0, (char *)&_val+shared_var_offset, &_val, sizeof(T));
-      }
+      gasnet_put(0, (char *)shared_var_addr+_my_offset, &_val, sizeof(T));
     }
       
     shared_var<T>& operator =(const T &val)
     {
-      put_value(val);
+      put(val);
       return *this;
     }
 
     shared_var<T>& operator +=(const T &a)
     {
-      if (my_node.id() != 0) {
-        gasnet_get(&_val, 0, (char *)&_val+shared_var_offset, sizeof(T));
-      }
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
       _val += a;
-      put_value(_val);
+      put(_val);
       return *this;
     }
 
@@ -94,7 +99,7 @@ namespace upcxx
     shared_var<T>& operator =(shared_var<T> &g)
     {
       if (this != &g) {
-        put_value(g.get_value());
+        put(g.get());
       }
       return *this;
     }
@@ -102,7 +107,7 @@ namespace upcxx
     // type conversion operator
     operator T() 
     { 
-      return get_value();
+      return get();
     }
 
     inline global_ptr<T> operator &()

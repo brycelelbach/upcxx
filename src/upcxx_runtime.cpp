@@ -60,7 +60,8 @@ namespace upcxx
   int init_flag = 0;  //  equals 1 if the backend is initialized
 
   // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
-  size_t shared_var_offset = 0;
+  void *shared_var_addr = NULL;
+  size_t total_shared_var_sz = 0;
 
   int init(int *pargc, char ***pargv)
   {
@@ -92,10 +93,23 @@ namespace upcxx
     node *all_nodes = new node[node_count];
 
     gasnet_coll_gather_all(GASNET_TEAM_ALL, all_nodes, &my_node, sizeof(node),
-                           GASNET_COLL_IN_MYSYNC|GASNET_COLL_OUT_MYSYNC|GASNET_COLL_LOCAL);
+                           UPCXX_GASNET_COLL_FLAG);
 
     global_machine.init(node_count, all_nodes, my_node_id);
     my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment
+
+    // Allocate gasnet segment space for shared_var
+    if (total_shared_var_sz != 0) {
+#ifdef USE_GASNET_FAST_SEGMENT
+      shared_var_addr = gasnet_seg_alloc(total_shared_var_sz);
+#else
+      shared_var_addr = malloc(total_shared_var_sz);
+#endif
+      assert(shared_var_addr != NULL);
+      void *tmp_addr = shared_var_addr;
+      gasnet_coll_broadcast(GASNET_TEAM_ALL, &shared_var_addr, 0, &tmp_addr,
+                            sizeof(void *), UPCXX_GASNET_COLL_FLAG);
+    }
 
     // Initialize Team All
     range r_all(0, gasnet_nodes());
