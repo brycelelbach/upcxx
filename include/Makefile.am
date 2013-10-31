@@ -25,4 +25,5 @@ include_HEADERS =  \
   upcxx.h \
   upcxx_internal.h \
   upcxx_runtime.h \
-  upcxx_types.h
+  upcxx_types.h \
+  upcxx.mak

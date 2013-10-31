@@ -11,6 +11,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
   Makefile
   include/Makefile
+  include/upcxx.mak
   src/Makefile
   examples/Makefile
   examples/basic/Makefile
