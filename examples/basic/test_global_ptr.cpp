@@ -22,21 +22,13 @@ int main (int argc, char **argv)
   init(&argc, &argv);
   
   size_t count = 128;
-  uint32_t there;
-
-
-  if (MYTHREAD == 0) {
-    there =1; // node 1
-  } else {
-    there = 0; // node 0
-  }
 
   global_ptr<double> ptr1;
   global_ptr<double> ptr2;
 
   if (MYTHREAD == 0) {
-    ptr1 = allocate<double>(there, count);
-    ptr2 = allocate<double>(there, count);
+    ptr1 = allocate<double>(0, count);
+    ptr2 = allocate<double>(1, count);
 
     cerr << "ptr1 " << ptr1 << "\n";
     cerr << "ptr2 " << ptr2 << "\n";
@@ -48,7 +40,7 @@ int main (int argc, char **argv)
       local_ptr1[i] = (double)i + MYTHREAD * 1e6;
     }
     
-    copy(ptr1, ptr2, count);
+    upcxx::copy(ptr1, ptr2, count);
   }
 
   barrier();

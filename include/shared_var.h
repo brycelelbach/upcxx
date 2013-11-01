@@ -53,12 +53,16 @@ namespace upcxx
     T _val;
 
   public:
-    shared_var() { }
+    shared_var()
+    {
+      _my_offset = total_shared_var_sz;
+      total_shared_var_sz += sizeof(T);
+    }
       
     inline shared_var(const T &val) : _val(val)
     {
       _my_offset = total_shared_var_sz;
-      total_shared_var_sz += sizeof(val);
+      total_shared_var_sz += sizeof(T);
     }
 
     // copy constructor
@@ -66,7 +70,7 @@ namespace upcxx
     shared_var(const shared_var<T> &g) : _val(g._val)
     {
       _my_offset = total_shared_var_sz;
-      total_shared_var_sz += sizeof(_val);
+      total_shared_var_sz += sizeof(T);
     }
 
     T& get()

@@ -8,7 +8,7 @@
 #include "upcxx.h"
 #include "upcxx_internal.h"
 
-// #define DEBUG
+// #define UPCXX_DEBUG
 
 using namespace std;
 
@@ -65,7 +65,7 @@ namespace upcxx
 
   int init(int *pargc, char ***pargv)
   {
-#ifdef DEBUG    
+#ifdef UPCXX_DEBUG
     cerr << "upcxx::init()" << endl;
 #endif
 
@@ -110,6 +110,11 @@ namespace upcxx
       gasnet_coll_broadcast(GASNET_TEAM_ALL, &shared_var_addr, 0, &tmp_addr,
                             sizeof(void *), UPCXX_GASNET_COLL_FLAG);
     }
+
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "thread %u, total_shared_var_sz %lu, shared_var_addr %p\n",
+            MYTHREAD, total_shared_var_sz, shared_var_addr);
+#endif
 
     // Initialize Team All
     range r_all(0, gasnet_nodes());
@@ -160,7 +165,7 @@ namespace upcxx
     memcpy(task, buf, nbytes);
       
     assert(async_task_queue != NULL);
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
     cerr << my_node << " is about to enqueue an async task.\n";
     cerr << *task << endl;
 #endif
@@ -176,7 +181,7 @@ namespace upcxx
     assert(nbytes == sizeof(alloc_am_t));
     alloc_am_t *am = (alloc_am_t *)buf;
 
-#ifdef DEBUG      
+#ifdef UPCXX_DEBUG
     cerr << my_node << " is inside alloc_cpu_am_handler.\n";
 #endif
 
@@ -188,7 +193,7 @@ namespace upcxx
     reply.ptr = malloc(am->nbytes);
 #endif
 
-#ifdef DEBUG      
+#ifdef UPCXX_DEBUG
     cerr << my_node << " allocated " << am->nbytes << " memory at " << reply.ptr << "\n";
 #endif
 
@@ -204,7 +209,7 @@ namespace upcxx
     assert(nbytes == sizeof(alloc_reply_t));
     alloc_reply_t *reply = (alloc_reply_t *)buf;
 
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
     cerr << my_node << " is in alloc_reply_handler. reply->ptr " 
          << reply->ptr << "\n";
 #endif
@@ -251,7 +256,7 @@ namespace upcxx
       task = (async_task *)queue_dequeue(async_task_queue);
       gasnet_hsl_unlock(&async_lock);
       if (task != NULL) {
-#ifdef DEBUG
+#ifdef UPCXX_DEBUG
         cerr << my_node << " is about to execute async task.\n";
         cerr << *task << endl;
 #endif
