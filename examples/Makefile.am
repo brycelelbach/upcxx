@@ -1,1 +1,1 @@
-SUBDIRS = basic gups
+SUBDIRS = basic gups fft2d

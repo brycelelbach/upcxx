@@ -33,7 +33,7 @@ using namespace upcxx;
 size_t NX_default = 4; // = 8*1024; 
 size_t NY_default = 4; //  = NX;
 
-ptr_to_shared<complex_t> *Input, *Output;
+global_ptr<complex_t> *Input, *Output;
 
 double mysecond()
 {
@@ -87,8 +87,8 @@ complex_t random_complex(void)
 }
 
 template<typename T>
-void alltoall(ptr_to_shared<T> src[],
-              ptr_to_shared<T> dst[],
+void alltoall(global_ptr<T> src[],
+              global_ptr<T> dst[],
               size_t count[],
               int nprocs)
 {
@@ -202,29 +202,29 @@ template<typename T>
 static inline
 void transpose(T *in,
                T *out,
-               ptr_to_shared< ptr_to_shared<T> > all_Ws,
+               global_ptr< global_ptr<T> > all_Ws,
                size_t nx, // # of rows
                size_t ny, // # of columns
                int nprocs)
 {
-  ptr_to_shared<T> *src = new ptr_to_shared<T> [nprocs];
+  global_ptr<T> *src = new global_ptr<T> [nprocs];
   assert(src != NULL);
-  ptr_to_shared<T> *dst = new ptr_to_shared<T> [nprocs];
+  global_ptr<T> *dst = new global_ptr<T> [nprocs];
   assert(dst != NULL);
   size_t count[nprocs];
   int i;
   size_t msgsz_per_p  = (nx/nprocs) * (ny/nprocs);
   size_t nx_per_p = nx / nprocs;
   int myrank = my_node.id();
-  ptr_to_shared<T> tmp_in;
-  ptr_to_shared<T> *W = new ptr_to_shared<T> [nprocs];
+  global_ptr<T> tmp_in;
+  global_ptr<T> *W = new global_ptr<T> [nprocs];
   assert(W != NULL);
 
   assert(nx == ny); // only handle the square case for now
 
   // copy all_Ws to local
   upcxx::copy(all_Ws,
-              ptr_to_shared< ptr_to_shared<T> >(W),
+              global_ptr< global_ptr<T> >(W),
               nprocs);
 
 #ifdef DEBUG
@@ -366,7 +366,7 @@ void fft2d(complex_t *my_A,
            complex_t *my_W,
            size_t nx, // # of rows
            size_t ny, // # of columns
-           ptr_to_shared<ptr_to_shared<complex_t> > all_Ws)
+           global_ptr<global_ptr<complex_t> > all_Ws)
 {
   int nprocs = global_machine.node_count();
   complex_t *tmp;
@@ -450,7 +450,7 @@ void fft2d(complex_t *my_A,
    */
 #ifdef VERIFY
   if (myrank == 0) {
-    ptr_to_shared<complex_t> all_in, all_out;
+    global_ptr<complex_t> all_in, all_out;
     all_in = allocate<complex_t>(my_node, nx * ny);
     all_out = allocate<complex_t>(my_node, nx * ny);
     for (int i = 0; i < nprocs; i++) {
@@ -470,13 +470,13 @@ int main(int argc, char **argv)
   int i;
   int nprocs = global_machine.node_count();
   // event_t *e[nprocs];
-  Input = new ptr_to_shared<complex_t> [nprocs];
-  Output = new ptr_to_shared<complex_t> [nprocs];
+  Input = new global_ptr<complex_t> [nprocs];
+  Output = new global_ptr<complex_t> [nprocs];
   size_t nx, ny;
-  ptr_to_shared<ptr_to_shared<complex_t> > all_Ws;
-  all_Ws = allocate< ptr_to_shared<complex_t> > (my_node, nprocs);
-  ptr_to_shared<complex_t> *W
-  = (ptr_to_shared<complex_t> *)all_Ws.raw_ptr();
+  global_ptr<global_ptr<complex_t> > all_Ws;
+  all_Ws = allocate< global_ptr<complex_t> > (my_node, nprocs);
+  global_ptr<complex_t> *W
+  = (global_ptr<complex_t> *)all_Ws.raw_ptr();
 
   int tmp = 0;
 
