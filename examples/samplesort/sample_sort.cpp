@@ -38,15 +38,15 @@ extern "C" {
 //#define KEYS_PER_THREAD 128
 
 typedef struct {
-  // ptr_to_shared<ELEMENT_T> ptr;
-  ptr_to_shared<void> ptr;
+  // global_ptr<ELEMENT_T> ptr;
+  global_ptr<void> ptr;
   uint64_t nbytes;
 } buffer_t;
 
 buffer_t *all_buffers_src;
 buffer_t *all_buffers_dst;
 
-shared_array< ptr_to_shared<ELEMENT_T>, 1 > sorted; 
+shared_array< global_ptr<ELEMENT_T>, 1 > sorted;
 
 ELEMENT_T *splitters;
 
@@ -248,8 +248,8 @@ void redistribute(uint64_t key_count)
              (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).tid(),
              (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).raw_ptr());
 #endif               
-      upcxx::async_copy((ptr_to_shared<void>)all_buffers_dst[i].ptr,
-                        (ptr_to_shared<void>)(sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)),  
+      upcxx::async_copy((global_ptr<void>)all_buffers_dst[i].ptr,
+                        (global_ptr<void>)(sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)),
                         all_buffers_dst[i].nbytes);    
       offset += all_buffers_dst[i].nbytes;
     }
@@ -276,18 +276,18 @@ void redistribute(uint64_t key_count)
 // Parallel sort across multiple threads
 void sample_sort(uint64_t key_count)
 {
-  ptr_to_shared<int> result_keys;
-  ptr_to_shared<unsigned int> histogram;
-  
-  double starttime = mysecond();
+  global_ptr<int> result_keys;
+  global_ptr<unsigned int> histogram;
+
+  double start_time = mysecond();
   compute_splitters(KEYS_PER_THREAD, SAMPLES_PER_THREAD);
   upcxx::barrier();
-  double cs_time = mysecond() - starttime;
+  double cs_time = mysecond();
 
   // Re-distribute the keys based on the splitters
   redistribute(key_count);
   // There is a barrier at the end of redistribute().
-  double rd_time = mysecond() - cs_time;
+  double rd_time = mysecond();
 
   // local sort
   // printf("qsort, sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
@@ -295,12 +295,12 @@ void sample_sort(uint64_t key_count)
         sorted_key_counts[MYTHREAD].get(), sizeof(ELEMENT_T), 
         compare_element);
   upcxx::barrier();
-  double sort_time = mysecond() - rd_time;
+  double sort_time = mysecond();
 
   if (MYTHREAD == 0) {
-    printf("Time for computing the splitters: %g\n", cs_time);
-    printf("Time for redistributing the keys: %g\n", rd_time);
-    printf("Time for the final local sort: %g\n", sort_time);
+    printf("Time for computing the splitters: %lg sec.\n", cs_time - start_time);
+    printf("Time for redistributing the keys: %lg sec.\n", rd_time - cs_time);
+    printf("Time for the final local sort: %lg sec.\n", sort_time - rd_time);
   }
 }
 
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
   sorted_key_counts.init(THREADS);
 
 #ifdef VERIFY
-  ptr_to_shared<ELEMENT_T>keys_copy;
+  global_ptr<ELEMENT_T>keys_copy;
 #endif
      
   // initialize the keys with random numbers
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
   double total_time = mysecond() - starttime;
 
   if (MYTHREAD == 0) {
-    printf("Sample sort time = %g sec, %g keys/s \n", total_time, 
+    printf("Sample sort time = %lg sec, %lg keys/s \n", total_time, 
            (double)total_key_size/total_time);
   }
 

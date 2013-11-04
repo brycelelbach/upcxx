@@ -1,1 +1,1 @@
-SUBDIRS = basic gups fft2d
+SUBDIRS = basic gups samplesort

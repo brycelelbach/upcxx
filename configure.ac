@@ -1,7 +1,7 @@
 AC_INIT([upcxx], [0.1], [yzheng@lbl.gov], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
-AM_INIT_AUTOMAKE([1.10 no-define])
+AM_INIT_AUTOMAKE([1.10 no-define foreign])
 
 LT_INIT()
 LT_LANG([C++])
@@ -16,6 +16,7 @@ AC_CONFIG_FILES([
   examples/Makefile
   examples/basic/Makefile
   examples/gups/Makefile
+  examples/samplesort/Makefile
 ])
 
 AC_PROG_CXX
