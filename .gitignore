@@ -1,8 +1,10 @@
 # common build directory name
 build
 
-# emacs backup files
+# backup files
 *~
+*.bak
+BAK
 
 # vim tmp files
 .*.swp
