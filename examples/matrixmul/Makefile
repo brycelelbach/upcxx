@@ -1,4 +1,4 @@
-EXES = fft2d
+EXES = matmul # matmul_hybrid
 
 .PHONY: all clean 
 
@@ -8,12 +8,14 @@ all: clean
 clean:
 	-rm -f *.o $(EXES)
 
-TOPDIR=../..
-include $(TOPDIR)/upcxx.mak
+UPCXX_INSTALL_DIR=/home/yzheng/upcxx_install
+include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
 
-LIBS += -L $(BUILDDIR)/ -lupcxx 
+VPATH=$(UPCXX_INSTALL_DIR)/include
+ 
+#LIBS += -L $(UPCXX_INSTALL_DIR)/lib -lupcxx 
 
-EXES = matmul # matmul_hybrid
+CXX=mpicxx -mkl
 
 ## module load mkl  
 
@@ -32,17 +34,15 @@ ESSL = -L/soft/apps/ESSL-4.4.1-1/lib -lesslsmpbg -L/soft/apps/ibmcmp/xlmass/bg/4
 #BLAS = $(ESSL)
 #BLAS = $(MKL)
 
-LDFLAGS +=  -framework Accelerate 
-
-CUBLAS = -lcublas
+#LDFLAGS +=  -framework Accelerate 
 
 #CXXFLAGS += -I$(MKL_INC)
 
 matmul.o: matmul.cpp matrix.h verify.cpp
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(UPCXX_CXXFLAGS) -o $@ -c $<
 
 ## need to link with Intel MKL or other BLAS/LAPACK library for
 ## functions in lapack_api.h
-matmul: matmul.o $(UPCXX_LIBS) 
-	$(LINK) $(LDFLAGS) -o $@ $^ $(LIBS) $(BLAS)
+matmul: matmul.o 
+	$(CXX) $(LDFLAGS) $(UPCXX_LDFLAGS) -o $@ $^ $(UPCXX_LDLIBS) $(BLAS)
 

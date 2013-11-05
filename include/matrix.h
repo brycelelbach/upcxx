@@ -9,7 +9,7 @@
 #include <cassert>
 
 #include "upcxx.h"
-#include "other/blas.h"
+#include "lapack_api.h"
 
 using namespace upcxx;
 

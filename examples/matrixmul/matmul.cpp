@@ -66,19 +66,19 @@ void gen_matrix()
   int foo = 1;
   
   // copy the global matrix view to local
-  ptr_to_shared<global_matrix<double> > pA(&A);
-  ptr_to_shared<global_matrix<double> > pA_shared = &A_shared;
+  global_ptr<global_matrix<double> > pA(&A);
+  global_ptr<global_matrix<double> > pA_shared = &A_shared;
 
   // cerr << "pA: " << pA << ", pA_shared: " << pA_shared << "\n";
 
-  upcxx::copy(&A_shared, ptr_to_shared<global_matrix<double> >(&A), 1);
-  upcxx::copy(&B_shared, ptr_to_shared<global_matrix<double> >(&B), 1);
-  upcxx::copy(&C_shared, ptr_to_shared<global_matrix<double> >(&C), 1);
+  upcxx::copy(&A_shared, global_ptr<global_matrix<double> >(&A), 1);
+  upcxx::copy(&B_shared, global_ptr<global_matrix<double> >(&B), 1);
+  upcxx::copy(&C_shared, global_ptr<global_matrix<double> >(&C), 1);
 
   // Generate the data only for my local blocks
   for (int i = 0; i < A.m_blks(); i++) {
     for (int j = 0; j < A.n_blks(); j++) {
-      ptr_to_shared<double> curr_block = A(i, j);
+      global_ptr<double> curr_block = A(i, j);
       if (curr_block.where().islocal()) {
         std::generate((double *)curr_block.raw_ptr(), // begin
                       (double *)curr_block.raw_ptr() + (A.blk_sz() * A.blk_sz()),
@@ -92,7 +92,7 @@ void gen_matrix()
 
   for (int i = 0; i < B.m_blks(); i++) {
     for (int j = 0; j < B.n_blks(); j++) {
-      ptr_to_shared<double > curr_block = B(i, j);
+      global_ptr<double > curr_block = B(i, j);
       if (curr_block.where().islocal()) {
         std::generate((double *)curr_block.raw_ptr(), // begin
                       (double *)curr_block.raw_ptr() + (B.blk_sz() * B.blk_sz()),
@@ -103,7 +103,7 @@ void gen_matrix()
   
   for (int i = 0; i < C.m_blks(); i++) {
     for (int j = 0; j < C.n_blks(); j++) {
-      ptr_to_shared<double > curr_block = C(i, j);
+      global_ptr<double > curr_block = C(i, j);
       if (curr_block.where().islocal()) {
         memset(curr_block.raw_ptr(), 0, sizeof(double) * C.blk_sz() * C.blk_sz()); // begin
       }
@@ -119,8 +119,8 @@ void summa(global_matrix<T> &A, global_matrix<T> &B, global_matrix<T> &C)
   // Should check if the size and distribution of A, B and C are conforming
 
 	matrix<T> tmp1(blk_sz, blk_sz), tmp2(blk_sz, blk_sz);
-  ptr_to_shared<T> pTmp1(tmp1.data());
-  ptr_to_shared<T> pTmp2(tmp2.data());
+  global_ptr<T> pTmp1(tmp1.data());
+  global_ptr<T> pTmp2(tmp2.data());
 
   int m_blks = A.m_blks();
   int l_blks = A.n_blks();
