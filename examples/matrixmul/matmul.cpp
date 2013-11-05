@@ -66,14 +66,19 @@ void gen_matrix()
   int foo = 1;
   
   // copy the global matrix view to local
+  /*
   global_ptr<global_matrix<double> > pA(&A);
   global_ptr<global_matrix<double> > pA_shared = &A_shared;
+  */
 
   // cerr << "pA: " << pA << ", pA_shared: " << pA_shared << "\n";
 
-  upcxx::copy(&A_shared, global_ptr<global_matrix<double> >(&A), 1);
-  upcxx::copy(&B_shared, global_ptr<global_matrix<double> >(&B), 1);
-  upcxx::copy(&C_shared, global_ptr<global_matrix<double> >(&C), 1);
+  // upcxx::copy(&A_shared, global_ptr<global_matrix<double> >(&A), 1);
+  // upcxx::copy(&B_shared, global_ptr<global_matrix<double> >(&B), 1);
+  // upcxx::copy(&C_shared, global_ptr<global_matrix<double> >(&C), 1);
+  A = A_shared.get();
+  B = B_shared.get();
+  C = C_shared.get();
 
   // Generate the data only for my local blocks
   for (int i = 0; i < A.m_blks(); i++) {
