@@ -1,2 +1,2 @@
 ### UPC\+\+ is a PGAS extension for C\+\+. ###
-Please see https://bitbucket.org/upcxx/upcxx/wiki/Home for more info.
+Please see [Wiki](https://bitbucket.org/upcxx/upcxx/wiki) for more info.
