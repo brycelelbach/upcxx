@@ -151,6 +151,7 @@ int main(int argc, char **argv)
   }
 #endif
   
+  barrier();
   upcxx::finalize();
 
   return 0;

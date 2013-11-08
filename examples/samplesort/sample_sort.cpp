@@ -347,7 +347,7 @@ int main(int argc, char **argv)
 #endif
 
   if (MYTHREAD == 0){
-    printf("Somple sort... number of keys %llu.\n", total_key_size);
+    printf("Sample sort... number of keys %llu.\n", total_key_size);
   }
 
   barrier();
