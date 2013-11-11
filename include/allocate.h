@@ -35,7 +35,7 @@ static inline void init_gasnet_seg_mspace()
   my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
 
   _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
-                                       my_gasnet_seginfo->size, 1);
+                                           my_gasnet_seginfo->size, 1);
   assert(_gasnet_mspace != 0);
 
   // Set the mspace limit to the gasnet segment size so it won't go outside.
