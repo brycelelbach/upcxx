@@ -117,7 +117,7 @@ namespace upcxx
   };
   /// @}
 
-typedef struct event future;
+  typedef struct event future;
 
   inline
   std::ostream& operator<<(std::ostream& out, const event& e)
@@ -131,6 +131,11 @@ typedef struct event future;
 
   extern event default_event; // defined in upcxx.cpp
 
+  /* event stack interface used by finish */
+  void push_event(event *);
+  void pop_event();
+  event *peek_event();
+
   inline void wait(event *e)
   {
     if (e != NULL) {
@@ -143,7 +148,7 @@ typedef struct event future;
     wait(&default_event);
   }
 
-  inline int test(event *e = &default_event)
+  inline int test(event *e = peek_event())
   {
     if (e == NULL) {
       return 1;
