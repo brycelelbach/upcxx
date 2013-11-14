@@ -52,9 +52,9 @@ namespace upcxx
   };
 
 #if __cplusplus < 201103L
-  event_stack events;
+  static event_stack events;
 #else
-  thread_local event_stack events;
+  static thread_local event_stack events;
 #endif
 
   void push_event(event *e)
