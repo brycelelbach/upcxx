@@ -52,6 +52,25 @@ namespace upcxx
   int progress();
 
   /**
+   * \ingroup asyncgroup
+   * Poll the task queue (once) and process any asynchronous
+   * tasks received until either the queue is empty or the optional
+   * user-specified maximum number of tasks have been processed.
+   * Like progress(), drain cannot be called in any GASNet AM
+   * handlers because it calls gasnet_AMPoll().
+   */
+  int drain(int max_dispatched = 0);
+
+  /**
+   * \ingroup asyncgroup
+   * Poll the task queue, returning 0 if it is empty and 1 otherwise.
+   * This function does not modify the task queue. However, like
+   * progress(), peek() cannot be called in any GASNet AM handlers
+   * because it calls gasnet_AMPoll().
+   */
+  int peek();
+
+  /**
    * \defgroup syncgroup Synchronization primitives
    * Functions for node synchronization
    */
