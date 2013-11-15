@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <vector>
 
 #include "upcxx.h"
 
@@ -41,5 +42,33 @@ namespace upcxx
     while (!test()) {
       gasnett_sched_yield();
     }
+  }
+
+  struct event_stack {
+    vector<event *> stack;
+    event_stack() {
+      stack.push_back(&default_event);
+    }
+  };
+
+#if __cplusplus < 201103L
+  static event_stack events;
+#else
+  static thread_local event_stack events;
+#endif
+
+  void push_event(event *e)
+  {
+    events.stack.push_back(e);
+  }
+
+  void pop_event()
+  {
+    events.stack.pop_back();
+  }
+
+  event *peek_event()
+  {
+    return events.stack.back();
   }
 } // namespace upcxx

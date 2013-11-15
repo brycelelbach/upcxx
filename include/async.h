@@ -418,13 +418,13 @@ namespace upcxx
    */
 
   inline gasnet_launcher<node> async(int node_id,
-                                     event *e = &default_event)
+                                     event *e = peek_event())
   {
     return gasnet_launcher<node>(node(node_id), e);
   }
 
   inline gasnet_launcher<node> async(node there,
-                                     event *e = &default_event)
+                                     event *e = peek_event())
   {
     return gasnet_launcher<node>(there, e);
   }
@@ -442,14 +442,14 @@ namespace upcxx
    */
   template<typename dest>
   inline gasnet_launcher<dest> async(dest there,
-                                     event *e = &default_event)
+                                     event *e = peek_event())
   {
     return gasnet_launcher<dest>(there, e);
   }
 
 //  template<typename who>
   inline gasnet_launcher<range> async(range r,
-                                      event *e = &default_event)
+                                      event *e = peek_event())
   {
     gasnet_launcher<range> launcher(r, e);
     launcher.set_group(group(r.count(), -1));
@@ -470,7 +470,7 @@ namespace upcxx
 //  inline gasnet_launcher<node_range> async(who who,
 //                                           node_range there,
 //                                           parallel_group pg,
-//                                           event *e = &default_event)
+//                                           event *e = peek_event())
 //  {
 //    int start = global_machine.node_count() - pg.size();
 //    int end = global_machine.node_count();
@@ -485,6 +485,6 @@ namespace upcxx
 //  inline gasnet_launcher<place> async(who who,
 //                                      place there,
 //                                      parallel_group group,
-//                                      event *e = &default_event);
+//                                      event *e = peek_event());
 
 } // namespace upcxx
