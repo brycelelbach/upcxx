@@ -30,8 +30,8 @@ using namespace upcxx;
 
 #include <cstdlib>
 
-size_t NX_default = 4; // = 8*1024; 
-size_t NY_default = 4; //  = NX;
+size_t NX_default = 1024; // = 8*1024; 
+size_t NY_default = 1024; //  = NX;
 
 global_ptr<complex_t> *Input, *Output;
 
@@ -354,7 +354,7 @@ void verify(complex_t *X, complex_t *Z, int nx,  int ny)
   free(tmp);
 
   if (failed) {
-    printf("FFT2D verification failed: %llu elements are different, max_diff: %g.\n", 
+    printf("FFT2D verification failed: %lu elements are different, max_diff: %g.\n", 
            failed, max_diff);
   } else {
     printf("FFT2D verification passed.\n");
@@ -516,7 +516,7 @@ int main(int argc, char **argv)
   upcxx::wait();
   
   double elapsedtime = mysecond() - starttime;
-  printf("fft2d (nx %llu, ny %llu), np %d, time = %f s\n",
+  printf("fft2d (nx %lu, ny %lu), np %d, time = %f s\n",
          nx, ny, nprocs, elapsedtime);
 
   for (i=0; i<nprocs; i++) {

@@ -4,6 +4,7 @@ bin_PROGRAMS = \
   hello \
   test_am_bcast \
   test_async \
+  test_dynamic_finish \
   test_event \
   test_finish \
   test_global_ptr \
@@ -16,6 +17,7 @@ bin_PROGRAMS = \
 hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
 test_async_SOURCES = test_async.cpp
+test_dynamic_finish_SOURCES = test_dynamic_finish.cpp
 test_event_SOURCES = test_event.cpp
 test_finish_SOURCES = test_finish.cpp
 test_global_ptr_SOURCES = test_global_ptr.cpp

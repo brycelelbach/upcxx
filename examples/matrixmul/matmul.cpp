@@ -177,35 +177,43 @@ int main(int argc, char **argv)
       print_usage(argv[0]);
       return 0;
     }
+
     M = atoi(argv[1]);
+    if (M < 2) {
+      M = default_matrix_sz;
+    }
+
+    if (argc > 2) {
+      blk_sz = atoi(argv[2]);
+    }
+    // try to fix blk_sz if it is incorrect
+    if (blk_sz < 1) {
+      blk_sz = default_blk_sz;
+    }
+    
+    if (argc > 3) {
+      pgrid_nrow = atoi(argv[3]);
+    }
+    // try to fix pgrid_nrow if it is incorrect
+    if (pgrid_nrow < 1 || pgrid_nrow > THREADS) {
+      pgrid_nrow = default_pgrid_nrow;
+    }
+    pgrid_ncol = THREADS / pgrid_nrow;
+    assert(pgrid_nrow * pgrid_ncol == THREADS);
+
+    assert((M % (blk_sz * pgrid_nrow)) == 0);
+    assert((M % (blk_sz * pgrid_ncol)) == 0);
+  } else {
+    // default parameters
+    blk_sz = default_blk_sz;
+    pgrid_nrow = 1;
+    pgrid_ncol = THREADS;
+    M = blk_sz * pgrid_ncol;  
   }
-  // try to fix the matrix size if it is incorrect
-  if (M < 2) {
-    M = default_matrix_sz;
-  }
+
+  // Use square matrices for simpilicity
   N = M;
   L = M;
-
-  if (argc > 2) {
-    blk_sz = atoi(argv[2]);
-  }
-  // try to fix blk_sz if it is incorrect
-  if (blk_sz < 1) {
-    blk_sz = default_blk_sz;
-  }
-  if (blk_sz > M) {
-    blk_sz = M;
-  }
-
-  if (argc > 3) {
-    pgrid_nrow = atoi(argv[3]);
-  }
-  // try to fix pgrid_nrow if it is incorrect
-  if (pgrid_nrow < 1 || pgrid_nrow > THREADS) {
-    pgrid_nrow = default_pgrid_nrow;
-  }
-  pgrid_ncol = THREADS / pgrid_nrow;
-  assert(pgrid_nrow * pgrid_ncol == THREADS);
 
   int foo;
   int m_blks = M / blk_sz;
