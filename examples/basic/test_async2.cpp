@@ -25,11 +25,11 @@
 int main(int argc, char **argv)
 {
   printf("node %d will spawn %d tasks...\n",
-         my_node.id(), global_machine.node_count());
+         MYTHREAD, THREADS);
 
-  for (int i = 0; i < global_machine.node_count(); i++) {
+  for (int i = 0; i < THREADS; i++) {
     printf("node %d spawns a task at node %d\n",
-           my_node.id(), i);
+           MYTHREAD, i);
 
     // std::async([] (int num) {
     //            printf("num:  %d\n", num);
