@@ -32,9 +32,6 @@ int main(int argc, char **argv)
     upcxx::wait_for_incoming_tasks();
   }
 
-  upcxx::barrier();
-  // cout << "CPU place " << gasnet::my_cpu_place << " done.\n";
-
   upcxx::finalize();
 
   return rv;

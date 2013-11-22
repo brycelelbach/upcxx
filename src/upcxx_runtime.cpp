@@ -143,7 +143,7 @@ namespace upcxx
     
   int finalize()
   {
-    //barrier();
+    barrier();
     gasnet_exit(0);
     return UPCXX_SUCCESS;
   }
