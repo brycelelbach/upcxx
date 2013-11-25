@@ -51,7 +51,7 @@ namespace upcxx
     }
   };
 
-#if __cplusplus < 201103L
+#if __cplusplus < 201103L || !defined(USE_THREAD_LOCAL_TMPS)
   static event_stack events;
 #else
   static thread_local event_stack events;
