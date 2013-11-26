@@ -1,6 +1,7 @@
 include_HEADERS =  \
   active_coll.h \
   allocate.h \
+  array.h \
   async.h \
   async_templates.h \
   collective.h \
