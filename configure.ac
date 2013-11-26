@@ -17,6 +17,7 @@ AC_CONFIG_FILES([
   examples/basic/Makefile
   examples/gups/Makefile
   examples/samplesort/Makefile
+  examples/stencil/Makefile
 ])
 
 AC_PROG_CXX
