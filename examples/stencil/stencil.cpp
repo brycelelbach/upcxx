@@ -133,10 +133,10 @@ static void probe(int steps) {
     if (targetsA[1] != NULL) {
       targetsA[1].copy(sourcesA[1]);
     }
-#  ifdef SYNC_BETWEEN_DIM
+#ifdef SYNC_BETWEEN_DIM
     // Handle.syncNBI();
     barrier();
-#  endif
+#endif
     // now y dimension
     if (targetsA[2] != NULL) {
       targetsA[2].copy(sourcesA[2]);
@@ -144,10 +144,10 @@ static void probe(int steps) {
     if (targetsA[3] != NULL) {
       targetsA[3].copy(sourcesA[3]);
     }
-#  ifdef SYNC_BETWEEN_DIM
+#ifdef SYNC_BETWEEN_DIM
     Handle.syncNBI();
     barrier();
-#  endif
+#endif
     // finally z dimension
     if (targetsA[4] != NULL) {
       targetsA[4].copy(sourcesA[4]);
@@ -218,8 +218,8 @@ int main(int argc, char **args) {
 
 #if DEBUG
   if (MYTHREAD == 0) {
-    for (int i = 0; i < threads; i++) {
-      point<3> pos = threadToPos([xparts,yparts,zparts], THREADS, i);
+    for (int i = 0; i < THREADS; i++) {
+      point<3> pos = threadToPos(POINT(xparts,yparts,zparts), THREADS, i);
       cout << i << " -> " << pos << ", " << pos << " -> "
            << posToThread(POINT(xparts,yparts,zparts), THREADS, pos) << endl;
       ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts), THREADS, i);
@@ -236,7 +236,7 @@ int main(int argc, char **args) {
                               THREADS);
   myDomain = allDomains[MYTHREAD];
 #if DEBUG
-  cout << MYTHREAD ": thread domain is " << myDomain;
+  cout << MYTHREAD << ": thread domain is " << myDomain << endl;
 #endif
 
   myGridA = ndarray<double, 3>(myDomain.accrete(GHOST_WIDTH));
@@ -245,7 +245,7 @@ int main(int argc, char **args) {
   allGridsB = ARRAY(global_ndarray<double COMMA 3>, ((0), (THREADS)));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
-        
+
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts),
                                         THREADS, MYTHREAD);
