@@ -290,4 +290,6 @@ int main(int argc, char **args) {
       cout << "Verification value: " << val << endl;
     }
   }
+
+  barrier(); // wait for completion before exiting
 }
