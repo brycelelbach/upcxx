@@ -291,5 +291,5 @@ int main(int argc, char **args) {
     }
   }
 
-  barrier(); // wait for completion before exiting
+  finalize(); // wait for completion before exiting
 }

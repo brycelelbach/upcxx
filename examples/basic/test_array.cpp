@@ -165,5 +165,6 @@ int main() {
   }
 
   cout << "done." << endl;
+  finalize();
   return 0;
 }

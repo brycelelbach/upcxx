@@ -105,5 +105,6 @@ int main(int argc, char **argv) {
   test_copy();
   barrier();
   if (MYTHREAD == 0) println("done.");
+  finalize();
   return 0;
 }
