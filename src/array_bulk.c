@@ -1118,7 +1118,7 @@ void gather_init(){
   char *preallocstr;
   char *pipeliningstr;
 
-  preallocstr = (char *) getenvMaster("TI_PREALLOC");
+  preallocstr = (char *) gasnet_getenv("TI_PREALLOC");
   if (preallocstr == NULL){
     tic_prealloc = 0;
   }
@@ -1131,7 +1131,7 @@ void gather_init(){
       tic_prealloc *= 1024;
     }
   }
-  pipeliningstr = (char *) getenvMaster("TI_PIPELINING");
+  pipeliningstr = (char *) gasnet_getenv("TI_PIPELINING");
   if (pipeliningstr == NULL){
     tic_pipelining = 0;
   }
