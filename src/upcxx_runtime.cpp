@@ -7,6 +7,7 @@
 
 #include "upcxx.h"
 #include "upcxx_internal.h"
+#include "array_bulk.h"
 
 // #define UPCXX_DEBUG
 
@@ -50,7 +51,27 @@ namespace upcxx
     {LOCK_AM,                 (void (*)())shared_lock::lock_am_handler},
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
-    {INC_AM,                  (void (*)())inc_am_handler}
+    {INC_AM,                  (void (*)())inc_am_handler},
+
+    /* array_bulk.c */
+    gasneti_handler_tableentry_with_bits(misc_null_reply),
+    gasneti_handler_tableentry_with_bits(misc_delete_request),
+    gasneti_handler_tableentry_with_bits(misc_alloc_request),
+    gasneti_handler_tableentry_with_bits(misc_alloc_reply),
+    gasneti_handler_tableentry_with_bits(strided_pack_request),
+    gasneti_handler_tableentry_with_bits(strided_pack_reply),
+    gasneti_handler_tableentry_with_bits(strided_unpackAll_request),
+    gasneti_handler_tableentry_with_bits(strided_unpack_reply),
+    gasneti_handler_tableentry_with_bits(strided_unpackOnly_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleScatter_request),
+    gasneti_handler_tableentry_with_bits(sparse_done_reply),
+    gasneti_handler_tableentry_with_bits(sparse_generalScatter_request),
+    gasneti_handler_tableentry_with_bits(sparse_largeScatterNoDelete_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleGather_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleGather_reply),
+    gasneti_handler_tableentry_with_bits(sparse_generalGather_request),
+    gasneti_handler_tableentry_with_bits(sparse_largeGather_request),
+    gasneti_handler_tableentry_with_bits(sparse_largeGather_reply)
   };
 
   int *gpu_id_map;

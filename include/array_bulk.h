@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <gasnet.h>
+#include <gasnet_handler.h>
 
 /*
   initialize prealloc and pipelining by reading console environment variables
