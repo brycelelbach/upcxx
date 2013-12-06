@@ -3,6 +3,7 @@
 #include <array_bulk.h>
 #include "gasnet_api.h"
 #include <portable_inttypes.h>
+#include "allocate.h"
 
 #define AM2_HAS_HUGE_SEGMENTS 0 /* can't assume GASNet SEGMENT_EVERYTHING configuration */ 
 #define AM2_REPLY_REQUIRED    0
@@ -38,11 +39,11 @@
 
 #define TIC_LONG_HANDLER TIC_MEDIUM_HANDLER
 
-#define ti_malloc_handlersafe(s) malloc(s)
-#define ti_free_handlersafe(p)   free(p)                   
-#define ti_malloc_atomic_uncollectable(s) malloc(s)
-#define ti_malloc_atomic_huge(s) malloc(s)
-#define ti_free(p) free(p)
+#define ti_malloc_handlersafe(s) gasnet_seg_alloc(s)
+#define ti_free_handlersafe(p)   gasnet_seg_free(p)
+#define ti_malloc_atomic_uncollectable(s) gasnet_seg_alloc(s)
+#define ti_malloc_atomic_huge(s) gasnet_seg_alloc(s)
+#define ti_free(p) gasnet_seg_free(p)
 
 /* look into how to sync puts in UPC++ */
 #define ti_write_sync()
