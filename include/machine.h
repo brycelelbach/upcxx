@@ -124,9 +124,9 @@ namespace upcxx
 
       assert(_cpu_count_prefix_sums != NULL);
 
-      // compute _node_id and _local_id from global_cpu_id;
+      // compute _node_id and _local_id from global_id;
       for (i = 0; i < _node_count - 1; i++) {
-        if (local_id < _cpu_count_prefix_sums[i + 1]) {
+        if (global_id < _cpu_count_prefix_sums[i + 1]) {
           node_id = i;
           local_id = i - _cpu_count_prefix_sums[i];
           // cerr << "cpu(" << _node_id << "," << _local_id << ")\n";
