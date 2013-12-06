@@ -156,6 +156,9 @@ namespace upcxx
     async_task_queue = queue_new();
     assert(async_task_queue != NULL);;
 
+    // Initialize array bulk operations
+    gather_init();
+
     barrier();
 
     init_flag = 1;
