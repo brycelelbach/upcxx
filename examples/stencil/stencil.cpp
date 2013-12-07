@@ -128,34 +128,37 @@ static void probe(int steps) {
     // Copy ghost zones from previous timestep.
     // first x dimension
     if (targetsA[0] != NULL) {
-      targetsA[0].copy(sourcesA[0]);
+      targetsA[0].copy_nbi(sourcesA[0]);
     }
     if (targetsA[1] != NULL) {
-      targetsA[1].copy(sourcesA[1]);
+      targetsA[1].copy_nbi(sourcesA[1]);
     }
 #ifdef SYNC_BETWEEN_DIM
     // Handle.syncNBI();
+    async_copy_fence();
     barrier();
 #endif
     // now y dimension
     if (targetsA[2] != NULL) {
-      targetsA[2].copy(sourcesA[2]);
+      targetsA[2].copy_nbi(sourcesA[2]);
     }
     if (targetsA[3] != NULL) {
-      targetsA[3].copy(sourcesA[3]);
+      targetsA[3].copy_nbi(sourcesA[3]);
     }
 #ifdef SYNC_BETWEEN_DIM
-    Handle.syncNBI();
+    // Handle.syncNBI();
+    async_copy_fence();
     barrier();
 #endif
     // finally z dimension
     if (targetsA[4] != NULL) {
-      targetsA[4].copy(sourcesA[4]);
+      targetsA[4].copy_nbi(sourcesA[4]);
     }
     if (targetsA[5] != NULL) {
-      targetsA[5].copy(sourcesA[5]);
+      targetsA[5].copy_nbi(sourcesA[5]);
     }
     // Handle.syncNBI();
+    async_copy_fence();
     barrier(); // wait for puts from all nodes
 
     foreach (p, myDomain) {
