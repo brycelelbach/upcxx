@@ -3,6 +3,9 @@
 #include "globals.h"
 #include "LocalSparseMat.h"
 #include "Vector.h"
+#ifdef TIMERS_ENABLED
+# include "Timer.h"
+#endif
 
 /* This class represents a distributed sparse square matrix (in CSR format).  Each
    proc should have an equal (or off by one) number of rows of the sparse matrix.

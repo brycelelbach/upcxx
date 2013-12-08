@@ -1,6 +1,9 @@
 #pragma once
 
 #include "globals.h"
+#ifdef TIMERS_ENABLED
+# include "Timer.h"
+#endif
 
 /*  This class represents a distributed vector.  The vector is
     processor column-partitioned across all the processors. */
@@ -8,6 +11,10 @@
 class Vector {
  public:
   ndarray<global_ndarray<double, 1>, 1> allArrays;   // distributedly stores actual vector data (in global coordinates)
+
+#ifdef TIMERS_ENABLED
+  static Timer reduceTimer;
+#endif
 
  private:
   static int N;                              // length of global vector

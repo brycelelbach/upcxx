@@ -3,6 +3,9 @@
 #include "MatGen.h"
 #include "Util.h"
 #include "CG.h"
+#if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
+# include "Reduce.h"
+#endif
 
 int CGDriver::niter;
 #ifdef COUNTERS_ENABLED
@@ -157,7 +160,9 @@ void CGDriver::main(int argc, char **argv) {
   Driver.x->oneOut();
 
   // reset SpMV counters and timers for actual run
-  // Driver.myTotalTimer.reset();
+#ifdef TIMERS_ENABLED
+  Driver.myTotalTimer.reset();
+#endif
   Driver.A->resetProfile();
 #ifdef COUNTERS_ENABLED
   Driver.myTotalCounter.clear();
@@ -166,7 +171,7 @@ void CGDriver::main(int argc, char **argv) {
   // now we can start profiling
   COUNTER_START(Driver.myTotalCounter);
   barrier();
-  // Driver.myTotalTimer.start();
+  TIMER_START(Driver.myTotalTimer);
 
   // inverse power method iterations
   for (int iterNum = 1; iterNum <= Driver.niter; iterNum++) {
@@ -178,7 +183,7 @@ void CGDriver::main(int argc, char **argv) {
     Driver.x->copy(*Driver.z);                                   // copy z into x
   }
 
-  // Driver.myTotalTimer.stop();
+  TIMER_STOP(Driver.myTotalTimer);
   COUNTER_STOP(Driver.myTotalCounter);
 
   // end of profiling
@@ -210,36 +215,43 @@ void CGDriver::main(int argc, char **argv) {
   // gather and print profiling information
   Driver.A->printSummary();
 
-  // double myTotalTime = Driver.myTotalTimer.secs();
-  // double maxTotalTime = Reduce.max(myTotalTime);
+#ifdef TIMERS_ENABLED
+  double myTotalTime = Driver.myTotalTimer.secs();
+  double maxTotalTime = Reduce::max(myTotalTime);
+
+  double redTime = Vector::reduceTimer.secs();
+  double minRedTime = Reduce::min(redTime);
+  double meanRedTime = Reduce::add(redTime) / THREADS;
+  double maxRedTime = Reduce::max(redTime);
+  double commTime = redTime + Driver.A->spmvCommTime;
+  double minCommTime = Reduce::min(commTime);
+  double meanCommTime = Reduce::add(commTime) / THREADS;
+  double maxCommTime = Reduce::max(commTime);
+#endif
 #ifdef COUNTERS_ENABLED
   long myTotalCount = Driver.myTotalCounter.getCounterValue();
-  long allTotalCount = Reduce.add(myTotalCount);
+  long allTotalCount = Reduce::add(myTotalCount);
 #endif
-  // double redTime = Vector.reduceTimer.secs();
-  // double minRedTime = Reduce.min(redTime);
-  // double meanRedTime = Reduce.add(redTime) / THREADS;
-  // double maxRedTime = Reduce.max(redTime);
-  // double commTime = redTime + Driver.A->spmvCommTime;
-  // double minCommTime = Reduce.min(commTime);
-  // double meanCommTime = Reduce.add(commTime) / THREADS;
-  // double maxCommTime = Reduce.max(commTime);
 	
   if (MYTHREAD == 0) {
-    // println("\nTotal:");
-    // println("Max time over all processors:\t\t " << maxTotalTime);
+#ifdef TIMERS_ENABLED
+    println("\nTotal:");
+    println("Max time over all processors:\t\t " << maxTotalTime);
+#endif
 #ifdef COUNTERS_ENABLED
     println("Total count over all processors:\t " << allTotalCount);
 #endif
-    // println();
-    // println("Vector reduction time" << ": " <<
-    //                    minRedTime << ", " << meanRedTime <<
-    //                    ", " << maxRedTime);
-    // println();
-    // println("Total communication time" << ": " <<
-    //                    minCommTime << ", " << meanCommTime <<
-    //                    ", " << maxCommTime);
-    // println();
+#ifdef TIMERS_ENABLED
+    println("");
+    println("Vector reduction time" << ": " <<
+            minRedTime << ", " << meanRedTime <<
+            ", " << maxRedTime);
+    println("");
+    println("Total communication time" << ": " <<
+            minCommTime << ", " << meanCommTime <<
+            ", " << maxCommTime);
+    println("");
+#endif
   }
 
   Driver.A->printProfile();

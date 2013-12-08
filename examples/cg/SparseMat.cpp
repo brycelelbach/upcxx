@@ -1,5 +1,9 @@
 #include "SparseMat.h"
 #include "Util.h"
+#ifdef TIMERS_ENABLED
+# include "CGDriver.h"
+# include "Reduce.h"
+#endif
 
 // timer index for "myTimes" array, and the first two are for the "myCounts" array:
 #define T_SPMV_LOCAL_COMP 1
@@ -65,28 +69,28 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 #ifdef TIMERS_ENABLED
   spmvCommTime = 0;
 
-  myTimer = new Timer();
+  // myTimer = new Timer();
   numTimers = 6;
   myTimes = ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((1), (numTimers+1)));
 
   // set up arrays for storing times
   myTimes[T_SPMV_LOCAL_COMP] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myTimes[T_SPMV_REDUCTION_COMP] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter * log2numProcCols + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #ifdef TEAMS
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
 #else
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter * log2numProcCols + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #endif
   myTimes[T_SPMV_REDUCTION_BARRIER_POLLS] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter * log2numProcCols + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
   myTimes[T_SPMV_DIAGONAL_SWAP_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myTimes[T_SPMV_DIAGONAL_SWAP_BARRIER_POLLS] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver.niter + 1)));
+    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
 #endif
 
 #ifdef COUNTERS_ENABLED
@@ -96,9 +100,9 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 
   // set up arrays for storing counts
   myCounts[T_SPMV_LOCAL_COMP] =
-    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver.niter + 1)));
+    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myCounts[T_SPMV_REDUCTION_COMP] =
-    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver.niter * log2numProcCols + 1)));
+    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #endif
 
 #ifdef TEAMS
@@ -364,9 +368,9 @@ void SparseMat::printSummary() {
     if (timerIdx != T_SPMV_LOCAL_COMP)
       totalCommTime += totalComponentTime;
 
-    double minTotalComponentTime = Reduce.min(totalComponentTime);
-    double sumTotalComponentTime = Reduce.add(totalComponentTime);
-    double maxTotalComponentTime = Reduce.max(totalComponentTime);
+    double minTotalComponentTime = Reduce::min(totalComponentTime);
+    double sumTotalComponentTime = Reduce::add(totalComponentTime);
+    double maxTotalComponentTime = Reduce::max(totalComponentTime);
 	    
     if (MYTHREAD == 0) {
       println("Time: " << minTotalComponentTime << ", " << (sumTotalComponentTime/THREADS) << ", " << maxTotalComponentTime);
@@ -379,9 +383,9 @@ void SparseMat::printSummary() {
         totalComponentCount += myCounts[timerIdx][count];
       }
 		
-      long minTotalComponentCount = Reduce.min(totalComponentCount);
-      long sumTotalComponentCount = Reduce.add(totalComponentCount);
-      long maxTotalComponentCount = Reduce.max(totalComponentCount);
+      long minTotalComponentCount = Reduce::min(totalComponentCount);
+      long sumTotalComponentCount = Reduce::add(totalComponentCount);
+      long maxTotalComponentCount = Reduce::max(totalComponentCount);
 		
       if (MYTHREAD == 0) {
         println("Count: " << minTotalComponentCount << ", " << (sumTotalComponentCount/THREADS) << ", " << maxTotalComponentCount);
@@ -392,16 +396,16 @@ void SparseMat::printSummary() {
 #endif // defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
 
 #ifdef TIMERS_ENABLED
-  double minTotalTime = Reduce.min(totalTime);
-  double sumTotalTime = Reduce.add(totalTime);
-  double maxTotalTime = Reduce.max(totalTime);
-  double minTotalCommTime = Reduce.min(totalCommTime);
-  double sumTotalCommTime = Reduce.add(totalCommTime);
-  double maxTotalCommTime = Reduce.max(totalCommTime);
+  double minTotalTime = Reduce::min(totalTime);
+  double sumTotalTime = Reduce::add(totalTime);
+  double maxTotalTime = Reduce::max(totalTime);
+  double minTotalCommTime = Reduce::min(totalCommTime);
+  double sumTotalCommTime = Reduce::add(totalCommTime);
+  double maxTotalCommTime = Reduce::max(totalCommTime);
   spmvCommTime = totalCommTime;
 
   if (MYTHREAD == 0) {
-    println();
+    println("");
     println("SPMV TOTAL COMMUNICATION");
     println("Time: " << minTotalCommTime << ", " << (sumTotalCommTime/THREADS) << ", " << maxTotalCommTime);
     println("SPMV TOTAL");
@@ -461,9 +465,9 @@ void SparseMat::printProfile() {
         numReadingsPerProc++;
       }
 		
-      double gminTime = Reduce.min(lminTime);
-      double gmax = Reduce.max(lmaxTime);
-      double gsumTime = Reduce.add(lsumTime);
+      double gminTime = Reduce::min(lminTime);
+      double gmax = Reduce::max(lmaxTime);
+      double gsumTime = Reduce::add(lsumTime);
 		
       if (MYTHREAD == 0) {
         println("Num Readings Per Proc:\t" << numReadingsPerProc);
@@ -504,9 +508,9 @@ void SparseMat::printProfile() {
           numReadingsPerProc++;
         }
 		    
-        long gminCount = Reduce.min(lminCount);
-        long gmaxCount = Reduce.max(lmaxCount);
-        long gsumCount = Reduce.add(lsumCount);
+        long gminCount = Reduce::min(lminCount);
+        long gmaxCount = Reduce::max(lmaxCount);
+        long gsumCount = Reduce::add(lsumCount);
 		    
         if (MYTHREAD == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);

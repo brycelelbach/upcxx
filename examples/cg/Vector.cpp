@@ -3,14 +3,16 @@
 #include "Vector.h"
 #include "Util.h"
 
+#ifdef TIMERS_ENABLED
+Timer Vector::reduceTimer;
+#endif
+
 int Vector::N;                              // length of global vector
 bool Vector::initialized = false;
 int Vector::iStart;
 int Vector::iEnd;
 int Vector::numProcRows;
 int Vector::numProcCols;
-
-// Timer Vector::reduceTimer;
 
 #ifdef TEAMS
 Team Vector::rowTeam;

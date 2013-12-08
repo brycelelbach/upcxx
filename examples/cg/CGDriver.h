@@ -3,6 +3,9 @@
 #include "globals.h"
 #include "SparseMat.h"
 #include "Vector.h"
+#ifdef TIMERS_ENABLED
+# include "Timer.h"
+#endif
 
 class CGDriver {
  private:
@@ -17,7 +20,9 @@ class CGDriver {
   static int niter;    // the number of outer iterations performed
 
   // profiling information
-  // Timer myTotalTimer;
+#ifdef TIMERS_ENABLED
+  Timer myTotalTimer;
+#endif
 #ifdef COUNTERS_ENABLED
   static PAPICounter myTotalCounter;
 #endif

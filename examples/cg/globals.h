@@ -2,7 +2,7 @@
 
 /* PROFILING */
 
-/* #define TIMERS_ENABLED */
+#define TIMERS_ENABLED
 
 /*#define COUNTERS_ENABLED*/
 /* the following is valid only if counters are enabled */
