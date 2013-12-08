@@ -18,10 +18,10 @@ class LocalSparseMat {
   int procRowSize;                           // number of rows in a processor row
 
  LocalSparseMat(int paramN, int numProcRows, int numProcCols)
-   : N(paramN), procRowPos(Util::procRowPos), procColPos(Util::procColPos),
-    procRowSize(Util::procRowSize),
-    rowRectDomains(ndarray<RectDomain<1>, 1>(RECTDOMAIN((Util::rowStart),
-                                                        (Util::rowEnd+1)))) {}
+   : rowRectDomains(ndarray<RectDomain<1>, 1>(RECTDOMAIN((Util::rowStart),
+                                                         (Util::rowEnd+1)))),
+    N(paramN), procRowPos(Util::procRowPos), procColPos(Util::procColPos),
+    procRowSize(Util::procRowSize) {}
 
  public:
   /*  This populates the local arrays above (which are zero-based) from the passed

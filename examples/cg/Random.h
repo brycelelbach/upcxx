@@ -1,6 +1,12 @@
 #pragma once
 
-#include <portable_inttypes.h>
+/* #if USE_UPCXX */
+/* # include <portable_inttypes.h> */
+/* #elif __cplusplus >= 201103L */
+/* # include <cstdint> */
+/* #else */
+/* typedef long long int64_t; */
+/* #endif */
 
 class Random {
   public:
@@ -10,11 +16,11 @@ class Random {
     //Random Number Multiplier
     double amult; //=Math.pow(5.0,13);
     //constants
-    static double d2m46;
-    static int64_t i246m1;
+    /* static double d2m46; */
+    /* static int64_t i246m1; */
     
   Random() : tran(314159265.0), amult(1220703125.0) {}
-  Random(double sd) : tran(314159265.0), amult(1220703125.0), seed(sd) {}
+  Random(double sd) : seed(sd), tran(314159265.0), amult(1220703125.0) {}
 
   //Random number generator with an external seed
   double randlc(double x, double a);

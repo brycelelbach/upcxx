@@ -1,8 +1,14 @@
 #pragma once
 
+#ifndef USE_UPCXX
+# define USE_UPCXX 1
+#endif
+
 /* PROFILING */
 
-#define TIMERS_ENABLED
+#if USE_UPCXX
+# define TIMERS_ENABLED
+#endif
 
 /*#define COUNTERS_ENABLED*/
 /* the following is valid only if counters are enabled */
@@ -63,8 +69,12 @@
 #endif
 
 #include <iostream>
-#include <upcxx.h>
-#include <array.h>
+#if USE_UPCXX
+# include <upcxx.h>
+# include <array.h>
+#else
+# include "../../include/upcxx-arrays/array.h"
+#endif
 #define print(s) std::cout << s
 #define println(s) std::cout << s << std::endl
 
@@ -72,3 +82,11 @@
 #define RectDomain rectdomain
 
 using namespace upcxx;
+
+#if !USE_UPCXX
+# define barrier()
+# define THREADS 1
+# define MYTHREAD 0
+static void init(int *argc, char ***argv) {}
+static void finalize() {}
+#endif

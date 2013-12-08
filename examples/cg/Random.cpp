@@ -1,8 +1,8 @@
 #include <cmath>
 #include "Random.h"
 
-double Random::d2m46=pow(0.5,46);
-int64_t Random::i246m1 = (int64_t)pow(2,46)-1;
+// double Random::d2m46=pow(0.5,46);
+// int64_t Random::i246m1 = (int64_t)pow(2,46)-1;
 
 double Random::randlc(double x, double a){
   double r23,r46,t23,t46,t1,t2,t3,t4,a1,a2,x1,x2,z;

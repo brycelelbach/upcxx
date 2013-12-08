@@ -52,7 +52,7 @@ namespace upcxx
     typedef T value_type;
 
     base_ptr(T *ptr, const place_t &pla) :
-      _ptr(ptr), _place(pla)
+    _place(pla), _ptr(ptr)
     {
     }
 

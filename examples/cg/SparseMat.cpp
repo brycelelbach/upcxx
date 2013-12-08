@@ -19,8 +19,8 @@ int SparseMat::multiplyCallCount = 0;
 
 SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
                      int paramNumProcCols, int paramN)
-  : mySparseMat(paramMySparseMat), numProcRows(paramNumProcRows),
-    numProcCols(paramNumProcCols), N(paramN) {
+  : mySparseMat(paramMySparseMat), N(paramN), numProcRows(paramNumProcRows),
+    numProcCols(paramNumProcCols) {
 
   // // tempSparseMatGrid is indexed by proc number, and is used to create sparseMatGrid
   // LocalSparseMat [1d] tempSparseMatGrid = new LocalSparseMat [0:(THREADS-1)];
