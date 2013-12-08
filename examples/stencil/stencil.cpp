@@ -3,6 +3,22 @@
 #include <upcxx.h>
 #include <array.h>
 
+#ifndef ENABLE_TIMERS
+#  define ENABLE_TIMERS 1
+#endif
+
+#if ENABLE_TIMERS
+#  include "../cg/Timer.h"
+#  include "../cg/Reduce.h"
+#  define TIMER_START(t) t.start()
+#  define TIMER_STOP(t) t.stop()
+#  define TIMER_RESET(t) t.reset()
+#else
+#  define TIMER_START(t)
+#  define TIMER_STOP(t)
+#  define TIMER_RESET(t)
+#endif
+
 using namespace std;
 using namespace upcxx;
 
@@ -196,6 +212,26 @@ static void probe(int steps) {
   }
 }
 
+#if ENABLE_TIMERS
+#  define report(d, s) do { \
+    if (MYTHREAD == 0)      \
+      cout << s;            \
+    report_value(d);        \
+  } while (0)
+
+// Report min, average, max of given value.
+static void report_value(double d) {
+  double ave = Reduce::add(d, 0) / THREADS;
+  double max = Reduce::max(d, 0);
+  double min = Reduce::min(d, 0);
+  if (MYTHREAD == 0) {
+    cout << ": " << min << ", " << ave << ", " << max << endl;
+  }
+}
+#else
+#  define report(d, s)
+#endif
+
 int main(int argc, char **args) {
 #ifdef MEMORY_DISTRIBUTED
   init(&argc, &args);
@@ -276,19 +312,21 @@ int main(int argc, char **args) {
     }
   }
 
-  // Timer t = new Timer();
+#if ENABLE_TIMERS
+  Timer t;
+#endif
   for (int i = 0; i < NUM_TRIALS; i++) {
     initGrid(myGridA);
     initGrid(myGridB);
-    // t.reset();
+    TIMER_RESET(t);
     barrier(); // wait for all threads before starting
-    // t.start();
+    TIMER_START(t);
     probe(steps);
-    // t.stop();
+    TIMER_STOP(t);
 
     double val = myGridA[myDomain.min()];
-    // report(t.secs(), "Time for trial " + i + " with split " + xparts + 
-    //        "x" + yparts + "x" + zparts + " (s)");
+    report(t.secs(), "Time for trial " << i << " with split " << xparts << 
+           "x" << yparts << "x" << zparts << " (s)");
     if (MYTHREAD == 0) {
       cout << "Verification value: " << val << endl;
     }

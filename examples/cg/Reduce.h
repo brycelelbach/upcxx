@@ -45,12 +45,12 @@ class Reduce {
   template<class T> static T reduce(T val, upcxx_op_t op) {
     T redval = reduce(val, op, 0);
     T bcval;
-    upcxx_bcast(&redval, &bcval, sizeof(T), 0);
+    upcxx::upcxx_bcast(&redval, &bcval, sizeof(T), 0);
     return bcval;
   }
   template<class T> static T reduce(T val, upcxx_op_t op, int dst) {
     T redval;
-    upcxx_reduce(&val, &redval, 1, dst, op, datatype_wrapper<T>::value);
+    upcxx::upcxx_reduce(&val, &redval, 1, dst, op, datatype_wrapper<T>::value);
     return redval;
   }
 
