@@ -1,1 +1,1 @@
-SUBDIRS = basic gups samplesort stencil
+SUBDIRS = basic cg gups samplesort stencil
