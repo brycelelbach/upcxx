@@ -106,11 +106,9 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 #endif
 
 #ifdef TEAMS
-  rowTeam = Util::rowTeam;//new Team();
-  // 	rowTeam.splitTeamAll(procRowPos, procColPos);
-  // 	rowTeam.initializeAll();
+  rowTeam = Util::rowTeam;
 # ifdef CTEAMS
-  columnTeam = Util::colTeam;//new Team();
+  columnTeam = Util::colTeam;
   rpivot = procRowPos;
   cpivot = procColPos;
   reduceCopy = (procColPos == procRowPos);
@@ -124,8 +122,6 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
     } else if (cpivot != procRowPos)
       reduceCopy = false;
   }
-  // 	columnTeam.splitTeamAll(procColPos, procRowPos);
-  // 	columnTeam.initializeAll();
   // setup team for synchronizing before reduce copies
   copyTeam = new Team();
   copyTeam.splitTeamAll(reduceSource, MYTHREAD);

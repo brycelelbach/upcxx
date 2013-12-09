@@ -44,20 +44,16 @@ Vector::Vector() {
 void Vector::initialize(int paramN) {
   N = paramN;
 
+  // reduceTimer = new Timer();
+
   // Retrieve values from Util class.
   numProcRows = Util::numProcRows;
   numProcCols = Util::numProcCols;
   iStart = Util::colStart;
   iEnd = Util::colEnd;
-
-  // reduceTimer = new Timer();
-
 #ifdef TEAMS
-  rowTeam = new Team();
-  rowTeam.splitTeamAll(Util::procRowPos, Util::procColPos);
-  rowTeam.initializeAll();
+  rowTeam = Util::rowTeam;
 #else
-  // Retrieve value from Util class.
   log2numProcCols = Util::log2numProcCols;
 
   // set up the reduce phase schedule (for dot products)
