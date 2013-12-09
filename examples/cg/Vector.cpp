@@ -85,14 +85,14 @@ double Vector::dot(const Vector &a) {
   }
 
 #ifdef TEAMS
-  // reduceTimer.start();
+  TIMER_START(reduceTimer);
   teamsplit(rowTeam) {
     myResult = REDUCE.add(myResult);
   }
-  // reduceTimer.stop();
+  TIMER_STOP(reduceTimer);;
   return myResult;
 #else // TEAMS
-  // reduceTimer.start();
+  TIMER_START(reduceTimer);
   ndarray<double, 1> myResults = (ndarray<double, 1>) allResults[MYTHREAD];
   myResults[0] = myResult;
 
@@ -103,7 +103,7 @@ double Vector::dot(const Vector &a) {
     myResults[i+1] = myResults[i] + myResults[-(i+1)];
   }
 
-  // reduceTimer.stop();
+  TIMER_STOP(reduceTimer);
   return myResults[log2numProcCols];
 #endif // TEAMS
 }
@@ -118,14 +118,14 @@ double Vector::L2Norm() {
   }
 
 #ifdef TEAMS
-  // reduceTimer.start();
+  TIMER_START(reduceTimer);
   teamsplit(rowTeam) {
     myResult = REDUCE.add(myResult);
   }
-  // reduceTimer.stop();
+  TIMER_STOP(reduceTimer);
   return sqrt(myResult);
 #else // TEAMS
-  // reduceTimer.start();
+  TIMER_START(reduceTimer);
   ndarray<double, 1> myResults = (ndarray<double, 1>) allResults[MYTHREAD];
   myResults[0] = myResult;
 
@@ -136,7 +136,7 @@ double Vector::L2Norm() {
     myResults[i+1] = myResults[i] + myResults[-(i+1)];
   }
 
-  // reduceTimer.stop();
+  TIMER_STOP(reduceTimer);
   return sqrt(myResults[log2numProcCols]);
 #endif // TEAMS
 }
