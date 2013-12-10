@@ -4,6 +4,8 @@
 # define USE_UPCXX 1
 #endif
 
+#define RTCOPY
+
 /* PROFILING */
 
 #if USE_UPCXX

@@ -178,6 +178,10 @@ void CGDriver::main(int argc, char **argv) {
     rNorm[iterNum] = ((*Driver.x) -= (*Driver.r)).L2Norm();      // rNorm = || x - r ||
     (*Driver.z) /= Driver.z->L2Norm();                           // normalize z's length to 1
     Driver.x->copy(*Driver.z);                                   // copy z into x
+    // print values of rNorm and zeta at each outer iteration
+    if (MYTHREAD == 0) {
+      println(iterNum << "\t" << rNorm[iterNum] << "\t" << zeta[iterNum]);
+    }
   }
 
   TIMER_STOP(Driver.myTotalTimer);
@@ -185,11 +189,7 @@ void CGDriver::main(int argc, char **argv) {
 
   // end of profiling
 
-  // print values of rNorm and zeta at each outer iteration
   if (MYTHREAD == 0) {
-    for (int i=1; i <= Driver.niter; i++) {
-      println(i << "\t" << rNorm[i] << "\t" << zeta[i]);
-    }
     println("");
   }
 

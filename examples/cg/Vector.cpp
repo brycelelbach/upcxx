@@ -82,10 +82,13 @@ double Vector::dot(const Vector &a) {
 
 #ifdef TEAMS
   TIMER_START(reduceTimer);
+  // a bug? in clang causes failure without the following line, likely
+  // due to improper inlining of the reduction
+  double myResult0 = myResult;
   teamsplit(rowTeam) {
-    myResult = Reduce::add(myResult);
+    myResult = Reduce::add(myResult0); // myResult0 just to be safe
   }
-  TIMER_STOP(reduceTimer);;
+  TIMER_STOP(reduceTimer);
   return myResult;
 #else // TEAMS
   TIMER_START(reduceTimer);
@@ -115,8 +118,11 @@ double Vector::L2Norm() {
 
 #ifdef TEAMS
   TIMER_START(reduceTimer);
+  // a bug? in clang causes failure without the following line, likely
+  // due to improper inlining of the reduction
+  double myResult0 = myResult;
   teamsplit(rowTeam) {
-    myResult = Reduce::add(myResult);
+    myResult = Reduce::add(myResult0); // myResult0 just to be safe
   }
   TIMER_STOP(reduceTimer);
   return sqrt(myResult);
