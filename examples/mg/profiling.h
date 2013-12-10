@@ -1,6 +1,6 @@
 
 /* PROFILING INFORMATION */
-#define TIMERS_ENABLED
+/* #define TIMERS_ENABLED */
 // #define COUNTERS_ENABLED
 /* the following only applies if counters are enabled (to set what the counters will measure) */
 #define PAPI_MEASURE PAPICounter.PAPI_FP_INS

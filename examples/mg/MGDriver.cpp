@@ -137,11 +137,9 @@ void MGDriver::main(int argc, char **argv) {
   myMG.resetProfile();
 
   // start timed iterations
-#ifdef COUNTERS_ENABLED
-  Driver.myTotalCounter.start();
-#endif
+  COUNTER_START(Driver.myTotalCounter);
   barrier();
-  Driver.myTotalTimer.start();
+  TIMER_START(Driver.myTotalTimer);
 
   myMG.evaluateResidual(*Driver.rhsGrid,
                         *(Driver.correctionGrids[Driver.startLevel]),
@@ -164,10 +162,8 @@ void MGDriver::main(int argc, char **argv) {
   double L2ResFinal =
     myMG.getL2Norm(*(Driver.residualGrids[Driver.startLevel]), 2);
 
-  Driver.myTotalTimer.stop();
-#ifdef COUNTERS_ENABLED
-  Driver.myTotalCounter.stop();
-#endif
+  TIMER_STOP(Driver.myTotalTimer);
+  COUNTER_STOP(Driver.myTotalCounter);
   // end timed iterations
 
   if (MYTHREAD == 0) {
@@ -202,15 +198,19 @@ void MGDriver::main(int argc, char **argv) {
 
   // profiling
   myMG.printSummary();
+#ifdef TIMERS_ENABLED
   double myTotalTime = Driver.myTotalTimer.secs();
   double maxTotalTime = Reduce::max(myTotalTime);
+#endif
 #ifdef COUNTERS_ENABLED
   long myTotalCount = Driver.myTotalCounter.getCounterValue();
   long allTotalCount = Reduce::add(myTotalCount);
 #endif
   if (MYTHREAD == 0) {
     println("\nTOTAL:");
+#ifdef TIMERS_ENABLED
     println("Max Time Across Procs:\t\t" << maxTotalTime);
+#endif
 #ifdef COUNTERS_ENABLED
     println("Total Count Across Procs:\t" << allTotalCount);
 #endif

@@ -4,6 +4,11 @@
 # define USE_UPCXX 1
 #endif
 
+#if USE_UPCXX
+# define TIMERS_ENABLED
+#endif
+#include "profiling.h"
+
 /* SPECIFY PROBLEM CLASS */
 
 /* Turn on for problem classes A, S, or W ONLY */
@@ -50,19 +55,25 @@
 #define Point point
 #define RectDomain rectdomain
 
-#if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
-# include "../cg/Reduce.h"
-#endif
-
 using namespace upcxx;
+
+#ifdef TIMERS_ENABLED
+# include "../cg/Timer.h"
+#endif
 
 #if USE_UPCXX
 # include "broadcast.h"
+# include "../cg/Reduce.h"
 #else
 # define barrier()
 # define broadcast(val, src) val
+# define async_copy_fence()
 # define THREADS 1
 # define MYTHREAD 0
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
+
+struct Reduce {
+  template<class T> static T add(T val) { return val; } 
+};
 #endif

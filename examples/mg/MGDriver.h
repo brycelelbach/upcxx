@@ -1,9 +1,7 @@
 #pragma once
 
-#include "profiling.h"
 #include "globals.h"
 #include "Grid.h"
-#include "../cg/Timer.h"
 
 /**
  * This class contains the main() method.
@@ -28,7 +26,9 @@ class MGDriver {
   static int numIterations;     // number of iterations
 
   // profiling tools
+#ifdef TIMERS_ENABLED
   Timer myTotalTimer;
+#endif
 #ifdef COUNTERS_ENABLED
   PAPICounter myTotalCounter;
 #endif

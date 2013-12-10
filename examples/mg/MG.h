@@ -1,11 +1,9 @@
 #pragma once
 
-#include "profiling.h"
 #include "globals.h"
 #include "constants.h"
 #include "MGDriver.h"
 #include "Grid.h"
-#include "../cg/Timer.h"
 
 // first index in myTimes and myCounts (only first 5 used in myCounts)
 #define T_L2NORM 1
@@ -65,7 +63,9 @@ class MG {
  public:
   // profiling tools
   int numTimers, numCounters;
+#ifdef TIMERS_ENABLED
   Timer myTimer;
+#endif
   // "myTimes" is indexed by (MG Component #), level, and timing number
   ndarray<ndarray<ndarray<double, 1>, 1>, 1> myTimes;
 #ifdef COUNTERS_ENABLED
