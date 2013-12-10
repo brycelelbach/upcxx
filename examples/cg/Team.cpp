@@ -1,4 +1,6 @@
 #include "Team.h"
+#define USE_TEAMS
+#include <array.h>
 
 #ifndef GASNET_COLL_SCRATCH_SEG_SIZE
 # define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
@@ -7,6 +9,7 @@
 namespace upcxx {
 
   vector<Team *> Team::_team_stack;
+  int Team::_next_id = 1;
 
   Team *Team::splitTeamAll(int color, int rank) {
     if (_split) {

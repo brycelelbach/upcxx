@@ -28,8 +28,8 @@ class Util {
   static int log2numProcCols;
 
 #ifdef TEAMS
-  static Team rowTeam;
-  static Team colTeam;
+  static Team *rowTeam;
+  static Team *colTeam;
 #endif
 
   static int procIdToRowPos(int procId) {
@@ -54,10 +54,6 @@ class Util {
     }
     return res;
   }
-
-#ifdef TEAMS
-  static Team makeFlipTeam(bool forward);
-#endif
 
   static void initialize(int paramN, int procCount, int procId);
 

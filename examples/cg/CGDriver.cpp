@@ -3,9 +3,6 @@
 #include "MatGen.h"
 #include "Util.h"
 #include "CG.h"
-#if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
-# include "Reduce.h"
-#endif
 
 int CGDriver::niter;
 #ifdef COUNTERS_ENABLED
@@ -155,7 +152,7 @@ void CGDriver::main(int argc, char **argv) {
     (*Driver.z) /= Driver.z->L2Norm();                           // normalize z's length to 1
     Driver.x->copy(*Driver.z);                                   // copy z into x
   }
-	
+
   // make x a vector of all 1's again
   Driver.x->oneOut();
 
@@ -259,6 +256,9 @@ void CGDriver::main(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   init(&argc, &argv);
+#ifdef TEAMS
+  Team::initialize();
+#endif
   CGDriver::main(argc-1, argv+1);
   finalize();
   return 0;

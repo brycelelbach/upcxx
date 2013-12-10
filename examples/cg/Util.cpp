@@ -8,37 +8,8 @@ int Util::rowStart, Util::rowEnd;
 int Util::colStart, Util::colEnd;
 int Util::log2numProcCols;
 #ifdef TEAMS
-Team Util::rowTeam;
-Team Util::colTeam;
-#endif
-
-#ifdef TEAMS
-Team Util::makeFlipTeam(bool forward) {
-  // Determine processor grid.
-  int numProcRows = 1, numProcCols = 1;
-  int procCount = THREADS;
-  while (procCount > 1) {
-    numProcCols *= 2;
-    procCount /= 2;
-    if (procCount > 1) {
-      numProcRows *= 2;
-      procCount /= 2;
-    }
-  }
-  // now flip
-  int id = MYTHREAD;
-  if (forward) {
-    id = id / numProcRows + numProcCols * (id % numProcRows);
-  } else {
-    id = id / numProcCols + numProcRows * (id % numProcCols);
-  }
-  Team res = new Team();
-  res.splitTeamAll(0, id);
-  if (MYTHREAD == 0)
-    println("flip team: " << res);
-  res.initialize();
-  return res;
-}
+Team *Util::rowTeam;
+Team *Util::colTeam;
 #endif
 
 void Util::initialize(int paramN, int procCount,
@@ -110,19 +81,19 @@ void Util::initialize(int paramN, int procCount,
   }
 #ifdef TEAMS
   rowTeam = new Team();
-  rowTeam.splitTeamAll(procRowPos, procColPos);
-  rowTeam.initialize();
-  if (MYTHREAD == 0)
-    println("done initializing row team");
+  rowTeam->splitTeamAll(procRowPos, procColPos);
+  // rowTeam->initialize();
+  // if (MYTHREAD == 0)
+  //   println("done initializing row team");
   colTeam = new Team();
-  colTeam.splitTeamAll(procColPos, procRowPos);
-  colTeam.initialize();
-  if (MYTHREAD == 0) {
-    println("rowTeam:");
-    println(rowTeam);
-    println("colTeam:");
-    println(colTeam);
-  }
+  colTeam->splitTeamAll(procColPos, procRowPos);
+  // colTeam->initialize();
+  // if (MYTHREAD == 0) {
+  //   println("rowTeam:");
+  //   println(rowTeam);
+  //   println("colTeam:");
+  //   println(colTeam);
+  // }
 #endif
 }
 

@@ -34,14 +34,14 @@ class SparseMat {
   static int multiplyCallCount;           // used for profiling
 
 #ifdef TEAMS
-  Team rowTeam;
+  Team *rowTeam;
 # ifdef CTEAMS
-  Team columnTeam, copyTeam;
+  Team *columnTeam, *copyTeam;
   bool reduceCopy, copySync;
   int reduceSource;
   int rpivot, cpivot;
 # else
-  Team transposeTeam;
+  Team *transposeTeam;
 # endif
 #endif
 

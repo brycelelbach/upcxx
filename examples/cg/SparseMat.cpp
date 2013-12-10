@@ -2,7 +2,6 @@
 #include "Util.h"
 #ifdef TIMERS_ENABLED
 # include "CGDriver.h"
-# include "Reduce.h"
 #endif
 
 // timer index for "myTimes" array, and the first two are for the "myCounts" array:
@@ -124,14 +123,14 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
   }
   // setup team for synchronizing before reduce copies
   copyTeam = new Team();
-  copyTeam.splitTeamAll(reduceSource, MYTHREAD);
-  copyTeam.initializeAll();
-  copySync = copyTeam.myChildTeam().size() > 1;
+  copyTeam->splitTeamAll(reduceSource, reduceSource == MYTHREAD ? 0 : 1);//MYTHREAD);
+  // copyTeam->initializeAll();
+  copySync = copyTeam->myChildTeam()->size() > 1;
 # else
   transposeTeam = new Team();
-  transposeTeam.splitTeamAll(transposeProc < MYTHREAD ? transposeProc : MYTHREAD,
-                             transposeProc < MYTHREAD ? 1 : 0);
-  transposeTeam.initializeAll();
+  transposeTeam->splitTeamAll(transposeProc < MYTHREAD ? transposeProc : MYTHREAD,
+                              transposeProc < MYTHREAD ? 1 : 0);
+  // transposeTeam->initializeAll();
 # endif
 #endif
 }
@@ -165,7 +164,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(rowTeam) {
     myResults0 = (ndarray<double, 1>) myResults;
-    Reduce2.add(mtmp, myResults0, rpivot);
+    Reduce::add(mtmp, myResults0, rpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
@@ -186,7 +185,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(rowTeam) {
     myResults0 = myResults;
-    Reduce2.add(mtmp, myResults0);
+    Reduce::add(mtmp, myResults0);
   }
   barrier(); // ensure reductions above complete
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
@@ -212,14 +211,14 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     int start = rowStart;
     int end = rowEnd;
     for (int r = start; r <= end; r++) {
-      myResults0[r] = Reduce2.add(myResults0[r]);
+      myResults0[r] = Reduce::add(myResults0[r]);
     }
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
   teamsplit(transposeTeam) {
     // actual diagonal swap
-    if (Ti.currentTeam().size() == 1) {
+    if (Team::currentTeam()->size() == 1) {
       myOut.copy(myResults0);
     } else {
 # ifdef PUSH_DATA

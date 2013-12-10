@@ -15,11 +15,11 @@ int Vector::numProcRows;
 int Vector::numProcCols;
 
 #ifdef TEAMS
-Team Vector::rowTeam;
-#endif
-
+Team *Vector::rowTeam;
+#else
 ndarray<int, 1> Vector::reduceExchangeProc;        // used to do communication in dot products
 int Vector::log2numProcCols;
+#endif
 
 Vector::Vector() {
   assert(initialized); // ensure Vector class is initialized
@@ -83,7 +83,7 @@ double Vector::dot(const Vector &a) {
 #ifdef TEAMS
   TIMER_START(reduceTimer);
   teamsplit(rowTeam) {
-    myResult = REDUCE.add(myResult);
+    myResult = Reduce::add(myResult);
   }
   TIMER_STOP(reduceTimer);;
   return myResult;
@@ -116,7 +116,7 @@ double Vector::L2Norm() {
 #ifdef TEAMS
   TIMER_START(reduceTimer);
   teamsplit(rowTeam) {
-    myResult = REDUCE.add(myResult);
+    myResult = Reduce::add(myResult);
   }
   TIMER_STOP(reduceTimer);
   return sqrt(myResult);

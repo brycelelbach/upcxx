@@ -2,6 +2,16 @@
 
 #include <collective.h>
 
+#ifdef USE_TEAMS
+# include "Team.h"
+# define CURRENT_TEAM Team::currentTeam()->gasnet_team()
+#else
+# define CURRENT_TEAM GASNET_TEAM_ALL
+#endif
+
+#define UPCXX_GASNET_COLL_FLAG \
+  (GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL)
+
 #define WRAPPER_DECL(T, num_class, type_code)           \
   template<> struct datatype_wrapper<T> {               \
     typedef T number_type;                              \
@@ -22,17 +32,19 @@
     return reduce(val, op_code, root);                          \
   }
 
-#define REDUCE_ARRAY_ALL_DECL(val_type, op_name, op_code)                  \
-  template<class T, int N> static void op_name(ndarray<val_type, N> src,   \
-                                               ndarray<val_type, N> dst) { \
-    return reduce(src, dst, op_code);                                      \
+#define REDUCE_ARRAY_ALL_DECL(val_type, op_name, op_code)               \
+  template<class T, int N> static void op_name(ndarray<T, N> src,       \
+                                               ndarray<T, N> dst,       \
+                                               val_type * = 0) {        \
+    return reduce(src, dst, op_code);                                   \
   }
 
-#define REDUCE_ARRAY_TO_DECL(val_type, op_name, op_code)                 \
-  template<class T, int N> static void op_name(ndarray<val_type, N> src, \
-                                               ndarray<val_type, N> dst, \
-                                               int root) {               \
-    return reduce(src, dst, op_code, root);                              \
+#define REDUCE_ARRAY_TO_DECL(val_type, op_name, op_code)                \
+  template<class T, int N> static void op_name(ndarray<T, N> src,       \
+                                               ndarray<T, N> dst,       \
+                                               int root,                \
+                                               val_type * = 0) {        \
+    return reduce(src, dst, op_code, root);                             \
   }
 
 #define REDUCE_DECLS(val_type, op_name, op_code)        \
@@ -62,13 +74,20 @@ namespace upcxx {
     template<class T> static T reduce(T val, upcxx_op_t op) {
       T redval = reduce(val, op, 0);
       T bcval;
-      upcxx_bcast(&redval, &bcval, sizeof(T), 0);
+      /* upcxx_bcast(&redval, &bcval, sizeof(T), 0); */
+      gasnet_coll_broadcast(CURRENT_TEAM,
+                            &bcval, 0, &redval, sizeof(T),
+                            UPCXX_GASNET_COLL_FLAG);
       return bcval;
     }
 
     template<class T> static T reduce(T val, upcxx_op_t op, int root) {
       T redval;
-      upcxx_reduce(&val, &redval, 1, root, op, datatype_wrapper<T>::value);
+      /* upcxx_reduce(&val, &redval, 1, root, op, datatype_wrapper<T>::value); */
+      gasnet_coll_reduce(CURRENT_TEAM,
+                         root, &redval, &val, 0, 0, sizeof(T), 1,
+                         datatype_wrapper<T>::value, op,
+                         UPCXX_GASNET_COLL_FLAG);
       return redval;
     }
 
@@ -76,16 +95,25 @@ namespace upcxx {
                                                 ndarray<T, N> dst,
                                                 upcxx_op_t op) {
       reduce(src, dst, op, 0);
-      upcxx_bcast(dst.storage_ptr(), dst.storage_ptr(),
-                  dst.size() * sizeof(T), 0);
+      /* upcxx_bcast(dst.storage_ptr(), dst.storage_ptr(), */
+      /*             dst.size() * sizeof(T), 0); */
+      gasnet_coll_broadcast(CURRENT_TEAM,
+                            dst.storage_ptr(), 0, src.storage_ptr(),
+                            dst.size() * sizeof(T),
+                            UPCXX_GASNET_COLL_FLAG);
     }
 
     template<class T, int N> static void reduce(ndarray<T, N> src,
                                                 ndarray<T, N> dst,
                                                 upcxx_op_t op,
                                                 int root) {
-      upcxx_reduce(src.storage_ptr(), dst.storage_ptr(), src.size(),
-                   root, op, datatype_wrapper<T>::value);
+      /* upcxx_reduce(src.storage_ptr(), dst.storage_ptr(), src.size(), */
+      /*              root, op, datatype_wrapper<T>::value); */
+      gasnet_coll_reduce(CURRENT_TEAM,
+                         root, dst.storage_ptr(), src.storage_ptr(),
+                         0, 0, sizeof(T), src.size(),
+                         datatype_wrapper<T>::value, op,
+                         UPCXX_GASNET_COLL_FLAG);
     }
 
   public:
@@ -104,6 +132,7 @@ namespace upcxx {
 
 } /* namespace upcxx */
 
+#undef UPCXX_GASNET_COLL_FLAG
 #undef WRAPPER_DECL
 #undef NUMBER_TYPE
 #undef INTEGER_TYPE
