@@ -3,6 +3,8 @@
 #include "MG.h"
 #include "Test.h"
 
+double S0, S1, S2;
+
 int MGDriver::startLevel;
 int MGDriver::numIterations;
 
@@ -44,6 +46,16 @@ MGDriver::MGDriver(char paramClassType) : epsilon(1e-8) {
   startLevel = startLevelLocal;//broadcast startLevelLocal from 0;
   numIterations = numIterationsLocal;//broadcast numIterationsLocal from 0;
   classType = paramClassType;//broadcast paramClassType from 0;
+
+  if (classType == 'A' || classType == 'S' || classType == 'W') {
+    S0 = (-.375);
+    S1 = .03125;
+    S2 = (-.015625);
+  } else {
+    S0 = (-3.0/17.0);
+    S1 = (1.0/33.0);
+    S2 = (-1.0/61.0);
+  }
 
   Grid::init();
   RectDomain<1> level_rd(POINT(1), POINT(startLevel+1));

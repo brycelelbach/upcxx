@@ -43,13 +43,14 @@
 #define Q2 0.25
 #define Q3 0.125
 /* S = Smoother */
-#ifdef CLASS_A_S_OR_W
-#define S0 (-.375)
-#define S1 .03125
-#define S2 (-.015625)
-#else
-#define S0 (-3.0/17.0)
-#define S1 (1.0/33.0)
-#define S2 (-1.0/61.0)
-#endif
+extern double S0, S1, S2;
+/* #ifdef CLASS_A_S_OR_W */
+/* #define S0 (-.375) */
+/* #define S1 .03125 */
+/* #define S2 (-.015625) */
+/* #else */
+/* #define S0 (-3.0/17.0) */
+/* #define S1 (1.0/33.0) */
+/* #define S2 (-1.0/61.0) */
+/* #endif */
 #define S3 0.0
