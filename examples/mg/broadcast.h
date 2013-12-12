@@ -22,7 +22,6 @@ namespace upcxx {
   template<class T> struct assertion_trigger {
     enum { fail = 0 };
   };
-
 # define FAIL assertion_trigger<T>::fail
 #endif
 
@@ -37,6 +36,10 @@ namespace upcxx {
     static_assert(FAIL, "Type requires globalization before communication");
 #endif
   };
+
+#if __cplusplus >= 201103L
+# undef FAIL
+#endif
 
   template<class T> struct int_type {
     typedef int type;
@@ -74,7 +77,6 @@ namespace upcxx {
   }
 }
 
-#undef FAIL
 #undef GLOBALIZE_TYPE
 #undef SELECTOR_TYPE
 
