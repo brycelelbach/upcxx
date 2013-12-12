@@ -77,15 +77,19 @@ namespace upcxx {
                                    T *dst, size_t count, int root) {
     upcxx_bcast(src, dst, count*sizeof(T), root);
   }
-#undef NONGLOBALIZE_TYPE
 
 #define ARRAY_ELEM_TYPE(Array)                  \
   typename Array::local_elem_type
+#define ARRAY_NG_TYPE(Array)                            \
+  NONGLOBALIZE_TYPE(typename Array::local_elem_type)
+
 
   template<class Array> void broadcast(Array src, Array dst, int root,
-                                       ARRAY_ELEM_TYPE(Array) * = 0) {
+                                       ARRAY_NG_TYPE(Array) * = 0) {
     upcxx_bcast(src.storage_ptr(), dst.storage_ptr(),
                 src.size()*sizeof(ARRAY_ELEM_TYPE(Array)), root);
   }
+#undef NONGLOBALIZE_TYPE
 #undef ARRAY_ELEM_TYPE
+#undef ARRAY_NG_TYPE
 }

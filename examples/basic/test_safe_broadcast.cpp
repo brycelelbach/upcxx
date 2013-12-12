@@ -42,6 +42,11 @@ int main(int argc, char **argv) {
     ndarray<int, 1> dst(RECTDOMAIN((0), (3)));
     broadcast(src, dst, 0);
   }
+  {
+    ndarray<global_ndarray<int, 1>, 1> src(RECTDOMAIN((0), (3)));
+    ndarray<global_ndarray<int, 1>, 1> dst(RECTDOMAIN((0), (3)));
+    broadcast(src, dst, 0);
+  }
 #if 0 // these should fail
   {
     int **src = new int*[3];
@@ -56,6 +61,16 @@ int main(int argc, char **argv) {
   {
     global_ndarray<int, 1> src(RECTDOMAIN((0), (3)));
     global_ndarray<int, 1> dst(RECTDOMAIN((0), (3)));
+    broadcast(src, dst, 0);
+  }
+  {
+    ndarray<int *, 1> src(RECTDOMAIN((0), (3)));
+    ndarray<int *, 1> dst(RECTDOMAIN((0), (3)));
+    broadcast(src, dst, 0);
+  }
+  {
+    ndarray<ndarray<int, 1>, 1> src(RECTDOMAIN((0), (3)));
+    ndarray<ndarray<int, 1>, 1> dst(RECTDOMAIN((0), (3)));
     broadcast(src, dst, 0);
   }
 #endif
