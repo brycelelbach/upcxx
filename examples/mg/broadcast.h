@@ -63,6 +63,7 @@ namespace upcxx {
     template<class U> static char foo(SELECTOR_TYPE(T) x);
     enum { size = sizeof(foo<T>(0)) };
   };
+#undef SELECTOR_TYPE
 
   template<class T> GLOBALIZE_TYPE(T) broadcast(T val, int root) {
     GLOBALIZE_TYPE(T) sval = (GLOBALIZE_TYPE(T)) val;
@@ -78,5 +79,5 @@ namespace upcxx {
 }
 
 #undef GLOBALIZE_TYPE
-#undef SELECTOR_TYPE
+#undef NONGLOBALIZE_TYPE
 
