@@ -5,7 +5,7 @@
 #ifndef GASNET_API_H_
 #define GASNET_API_H_
 
-#ifdef _cpluscplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -37,7 +37,7 @@ extern "C"
     gasnet_barrier_wait(0, GASNET_BARRIERFLAG_ANONYMOUS);   \
   } while (0)
 
-#ifdef _cpluscplus
+#ifdef __cplusplus
 } // end of extern "C"
 #endif
 

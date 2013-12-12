@@ -9,48 +9,9 @@
 #include <global_ptr.h>
 #include <collective.h>
 #include <array.h>
+#include "../mg/broadcast.h"
 
 using namespace upcxx;
-
-template<class T, int N> struct broadcast_result {
-  typedef T type;
-  enum { index = 0 };
-};
-
-template<class T, int N> struct broadcast_result<T *, N> {
-  typedef global_ptr<T> type;
-  enum { index = 1 };
-};
-
-template<class T> struct broadcast_result<T, sizeof(char)> {
-  typedef typename T::global_type type;
-  enum { index = 2 };
-};
-
-template<class T> struct int_type {
-  typedef int type;
-};
-
-struct many_chars {
-  char chars[100];
-};
-
-template<class T> struct broadcast_index {
-  template<class U> static many_chars foo(...);
-  template<class U> static char foo(typename int_type<typename U::global_type>::type x);
-  enum { size = sizeof(foo<T>(0)) };
-};
-
-#define BROADCAST_TYPE(T) typename broadcast_result<T, broadcast_index<T>::size>::type
-#define BROADCAST_INDEX(T) broadcast_result<T, broadcast_index<T>::size>::index
-
-template<class T> BROADCAST_TYPE(T) broadcast(T val, int src) {
-  BROADCAST_TYPE(T) sval = (BROADCAST_TYPE(T)) val;
-  BROADCAST_TYPE(T) result;
-  std::cout << broadcast_index<T>::size << ", " << BROADCAST_INDEX(T) << endl;
-  upcxx_bcast(&sval, &result, sizeof(BROADCAST_TYPE(T)), src);
-  return result;
-}
 
 int main(int argc, char **argv) {
   init(&argc, &argv);
@@ -71,6 +32,24 @@ int main(int argc, char **argv) {
     int arr = 3;
     broadcast(arr, 0);
   }
+  {
+    int *src = new int[3];
+    int *dst = new int[3];
+    for (int i = 0; i < 3; i++) src[i] = MYTHREAD+1;
+    broadcast(src, dst, 3, 0);
+  }
+#if 0 // these should fail
+  {
+    int **src = new int*[3];
+    int **dst = new int*[3];
+    broadcast(src, dst, 3, 0);
+  }
+  {
+    ndarray<int, 1> *src = new ndarray<int, 1>[3];
+    ndarray<int, 1> *dst = new ndarray<int, 1>[3];
+    broadcast(src, dst, 3, 0);
+  }
+#endif
 
   finalize();
   return 0;
