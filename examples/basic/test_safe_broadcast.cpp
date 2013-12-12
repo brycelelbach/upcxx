@@ -35,8 +35,12 @@ int main(int argc, char **argv) {
   {
     int *src = new int[3];
     int *dst = new int[3];
-    for (int i = 0; i < 3; i++) src[i] = MYTHREAD+1;
     broadcast(src, dst, 3, 0);
+  }
+  {
+    ndarray<int, 1> src(RECTDOMAIN((0), (3)));
+    ndarray<int, 1> dst(RECTDOMAIN((0), (3)));
+    broadcast(src, dst, 0);
   }
 #if 0 // these should fail
   {
@@ -48,6 +52,11 @@ int main(int argc, char **argv) {
     ndarray<int, 1> *src = new ndarray<int, 1>[3];
     ndarray<int, 1> *dst = new ndarray<int, 1>[3];
     broadcast(src, dst, 3, 0);
+  }
+  {
+    global_ndarray<int, 1> src(RECTDOMAIN((0), (3)));
+    global_ndarray<int, 1> dst(RECTDOMAIN((0), (3)));
+    broadcast(src, dst, 0);
   }
 #endif
 

@@ -49,12 +49,6 @@ namespace upcxx {
     char chars[100];
   };
 
-#define GLOBALIZE_TYPE(T)                                       \
-  typename globalize_result<T, globalize_index<T>::size>::type
-
-#define NONGLOBALIZE_TYPE(T)                                            \
-  typename non_globalize_result<T, globalize_index<T>::size>::type
-
 #define SELECTOR_TYPE(T)                                \
   typename int_type<typename U::global_type>::type
 
@@ -65,19 +59,33 @@ namespace upcxx {
   };
 #undef SELECTOR_TYPE
 
+#define GLOBALIZE_TYPE(T)                                       \
+  typename globalize_result<T, globalize_index<T>::size>::type
+
   template<class T> GLOBALIZE_TYPE(T) broadcast(T val, int root) {
     GLOBALIZE_TYPE(T) sval = (GLOBALIZE_TYPE(T)) val;
     GLOBALIZE_TYPE(T) result;
     upcxx_bcast(&sval, &result, sizeof(GLOBALIZE_TYPE(T)), root);
     return result;
   }
+#undef GLOBALIZE_TYPE
+
+#define NONGLOBALIZE_TYPE(T)                                            \
+  typename non_globalize_result<T, globalize_index<T>::size>::type
 
   template<class T> void broadcast(NONGLOBALIZE_TYPE(T) * src,
                                    T *dst, size_t count, int root) {
     upcxx_bcast(src, dst, count*sizeof(T), root);
   }
-}
-
-#undef GLOBALIZE_TYPE
 #undef NONGLOBALIZE_TYPE
 
+#define ARRAY_ELEM_TYPE(Array)                  \
+  typename Array::local_elem_type
+
+  template<class Array> void broadcast(Array src, Array dst, int root,
+                                       ARRAY_ELEM_TYPE(Array) * = 0) {
+    upcxx_bcast(src.storage_ptr(), dst.storage_ptr(),
+                src.size()*sizeof(ARRAY_ELEM_TYPE(Array)), root);
+  }
+#undef ARRAY_ELEM_TYPE
+}
