@@ -32,26 +32,56 @@
     return reduce(val, op_code, root);                          \
   }
 
-#define REDUCE_ARRAY_ALL_DECL(val_type, op_name, op_code)               \
-  template<class T, int N> static void op_name(ndarray<T, N> src,       \
-                                               ndarray<T, N> dst,       \
-                                               val_type * = 0) {        \
+#define ARRAY_ELEM_TYPE(Array)                  \
+  typename Array::local_elem_type
+
+#define ARRAY_NUM_TYPE(Array)                   \
+  NUMBER_TYPE(typename Array::local_elem_type)
+
+#define ARRAY_INT_TYPE(Array)                   \
+  INTEGER_TYPE(typename Array::local_elem_type)
+
+#define REDUCE_ARRAY_NUM_ALL_DECL(op_name, op_code)                     \
+  template<class Array> static void op_name(Array src,                  \
+                                            Array dst,                  \
+                                            ARRAY_NUM_TYPE(Array) * = 0) { \
     return reduce(src, dst, op_code);                                   \
   }
 
-#define REDUCE_ARRAY_TO_DECL(val_type, op_name, op_code)                \
-  template<class T, int N> static void op_name(ndarray<T, N> src,       \
-                                               ndarray<T, N> dst,       \
-                                               int root,                \
-                                               val_type * = 0) {        \
+#define REDUCE_ARRAY_INT_ALL_DECL(op_name, op_code)                     \
+  template<class Array> static void op_name(Array src,                  \
+                                            Array dst,                  \
+                                            ARRAY_INT_TYPE(Array) * = 0) { \
+    return reduce(src, dst, op_code);                                   \
+  }
+
+#define REDUCE_ARRAY_NUM_TO_DECL(op_name, op_code)                      \
+  template<class Array> static void op_name(Array src,                  \
+                                            Array dst,                  \
+                                            int root,                   \
+                                            ARRAY_NUM_TYPE(Array) * = 0) { \
     return reduce(src, dst, op_code, root);                             \
   }
 
-#define REDUCE_DECLS(val_type, op_name, op_code)        \
-  REDUCE_ALL_DECL(val_type, op_name, op_code)           \
-  REDUCE_TO_DECL(val_type, op_name, op_code)            \
-  REDUCE_ARRAY_ALL_DECL(val_type, op_name, op_code)     \
-  REDUCE_ARRAY_TO_DECL(val_type, op_name, op_code)
+#define REDUCE_ARRAY_INT_TO_DECL(op_name, op_code)                      \
+  template<class Array> static void op_name(Array src,                  \
+                                            Array dst,                  \
+                                            int root,                   \
+                                            ARRAY_INT_TYPE(Array) * = 0) { \
+    return reduce(src, dst, op_code, root);                             \
+  }
+
+#define REDUCE_NUM_DECLS(op_name, op_code)              \
+  REDUCE_ALL_DECL(NUMBER_TYPE(T), op_name, op_code)     \
+  REDUCE_TO_DECL(NUMBER_TYPE(T), op_name, op_code)      \
+  REDUCE_ARRAY_NUM_ALL_DECL(op_name, op_code)           \
+  REDUCE_ARRAY_NUM_TO_DECL(op_name, op_code)
+
+#define REDUCE_INT_DECLS(op_name, op_code)              \
+  REDUCE_ALL_DECL(INTEGER_TYPE(T), op_name, op_code)    \
+  REDUCE_TO_DECL(INTEGER_TYPE(T), op_name, op_code)     \
+  REDUCE_ARRAY_INT_ALL_DECL(op_name, op_code)           \
+  REDUCE_ARRAY_INT_TO_DECL(op_name, op_code)
 
 namespace upcxx {
 
@@ -91,43 +121,43 @@ namespace upcxx {
       return redval;
     }
 
-    template<class T, int N> static void reduce(ndarray<T, N> src,
-                                                ndarray<T, N> dst,
-                                                upcxx_op_t op) {
+    template<class Array> static void reduce(Array src,
+                                             Array dst,
+                                             upcxx_op_t op) {
       reduce(src, dst, op, 0);
       /* upcxx_bcast(dst.storage_ptr(), dst.storage_ptr(), */
       /*             dst.size() * sizeof(T), 0); */
       gasnet_coll_broadcast(CURRENT_TEAM,
                             dst.storage_ptr(), 0, src.storage_ptr(),
-                            dst.size() * sizeof(T),
+                            dst.size() * sizeof(ARRAY_ELEM_TYPE(Array)),
                             UPCXX_GASNET_COLL_FLAG);
     }
 
-    template<class T, int N> static void reduce(ndarray<T, N> src,
-                                                ndarray<T, N> dst,
-                                                upcxx_op_t op,
-                                                int root) {
+    template<class Array> static void reduce(Array src,
+                                             Array dst,
+                                             upcxx_op_t op,
+                                             int root) {
       /* upcxx_reduce(src.storage_ptr(), dst.storage_ptr(), src.size(), */
       /*              root, op, datatype_wrapper<T>::value); */
       gasnet_coll_reduce(CURRENT_TEAM,
                          root, dst.storage_ptr(), src.storage_ptr(),
-                         0, 0, sizeof(T), src.size(),
-                         datatype_wrapper<T>::value, op,
-                         UPCXX_GASNET_COLL_FLAG);
+                         0, 0, sizeof(ARRAY_ELEM_TYPE(Array)), src.size(),
+                         datatype_wrapper<ARRAY_ELEM_TYPE(Array)>::value,
+                         op, UPCXX_GASNET_COLL_FLAG);
     }
 
   public:
-    REDUCE_DECLS(NUMBER_TYPE(T), add,  UPCXX_SUM)
-    REDUCE_DECLS(NUMBER_TYPE(T), mult, UPCXX_PROD)
-    REDUCE_DECLS(NUMBER_TYPE(T), max,  UPCXX_MAX)
-    REDUCE_DECLS(NUMBER_TYPE(T), min,  UPCXX_MIN)
+    REDUCE_NUM_DECLS(add,  UPCXX_SUM)
+    REDUCE_NUM_DECLS(mult, UPCXX_PROD)
+    REDUCE_NUM_DECLS(max,  UPCXX_MAX)
+    REDUCE_NUM_DECLS(min,  UPCXX_MIN)
 
-    REDUCE_DECLS(INTEGER_TYPE(T), lor,  UPCXX_LOR)
-    REDUCE_DECLS(INTEGER_TYPE(T), lxor, UPCXX_LXOR)
-    REDUCE_DECLS(INTEGER_TYPE(T), land, UPCXX_LAND)
-    REDUCE_DECLS(INTEGER_TYPE(T), bor,  UPCXX_BOR)
-    REDUCE_DECLS(INTEGER_TYPE(T), bxor, UPCXX_BXOR)
-    REDUCE_DECLS(INTEGER_TYPE(T), band, UPCXX_BAND)
+    REDUCE_INT_DECLS(lor,  UPCXX_LOR)
+    REDUCE_INT_DECLS(lxor, UPCXX_LXOR)
+    REDUCE_INT_DECLS(land, UPCXX_LAND)
+    REDUCE_INT_DECLS(bor,  UPCXX_BOR)
+    REDUCE_INT_DECLS(bxor, UPCXX_BXOR)
+    REDUCE_INT_DECLS(band, UPCXX_BAND)
   };
 
 } /* namespace upcxx */
@@ -138,6 +168,12 @@ namespace upcxx {
 #undef INTEGER_TYPE
 #undef REDUCE_ALL_DECL
 #undef REDUCE_TO_DECL
-#undef REDUCE_ARRAY_ALL_DECL
-#undef REDUCE_ARRAY_TO_DECL
-#undef REDUCE_DECLS
+#undef ARRAY_ELEM_TYPE
+#undef ARRAY_NUM_TYPE
+#undef ARRAY_INT_TYPE
+#undef REDUCE_ARRAY_NUM_ALL_DECL
+#undef REDUCE_ARRAY_INT_ALL_DECL
+#undef REDUCE_ARRAY_NUM_TO_DECL
+#undef REDUCE_ARRAY_INT_TO_DECL
+#undef REDUCE_NUM_DECLS
+#undef REDUCE_INT_DECLS
