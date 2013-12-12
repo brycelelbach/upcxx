@@ -32,6 +32,18 @@
     return reduce(val, op_code, root);                          \
   }
 
+#define REDUCE_BULK_ALL_DECL(ret_type, op_name, op_code)                \
+  template<class T> static void op_name(T *src, T *dst, int count,      \
+                                        ret_type * = 0) {               \
+    return reduce(src, dst, count, op_code);                            \
+  }
+
+#define REDUCE_BULK_TO_DECL(ret_type, op_name, op_code)                 \
+  template<class T> static void op_name(T *src, T *dst, int count,      \
+                                        int root, ret_type * = 0) {     \
+    return reduce(src, dst, count, op_code, root);                      \
+  }
+
 #define ARRAY_ELEM_TYPE(Array)                  \
   typename Array::local_elem_type
 
@@ -45,14 +57,14 @@
   template<class Array> static void op_name(Array src,                  \
                                             Array dst,                  \
                                             ARRAY_NUM_TYPE(Array) * = 0) { \
-    return reduce(src, dst, op_code);                                   \
+    op_name(src.storage_ptr(), dst.storage_ptr(), src.size());          \
   }
 
 #define REDUCE_ARRAY_INT_ALL_DECL(op_name, op_code)                     \
   template<class Array> static void op_name(Array src,                  \
                                             Array dst,                  \
                                             ARRAY_INT_TYPE(Array) * = 0) { \
-    return reduce(src, dst, op_code);                                   \
+    op_name(src.storage_ptr(), dst.storage_ptr(), src.size());          \
   }
 
 #define REDUCE_ARRAY_NUM_TO_DECL(op_name, op_code)                      \
@@ -60,7 +72,7 @@
                                             Array dst,                  \
                                             int root,                   \
                                             ARRAY_NUM_TYPE(Array) * = 0) { \
-    return reduce(src, dst, op_code, root);                             \
+    op_name(src.storage_ptr(), dst.storage_ptr(), src.size(), root);    \
   }
 
 #define REDUCE_ARRAY_INT_TO_DECL(op_name, op_code)                      \
@@ -68,19 +80,23 @@
                                             Array dst,                  \
                                             int root,                   \
                                             ARRAY_INT_TYPE(Array) * = 0) { \
-    return reduce(src, dst, op_code, root);                             \
+    op_name(src.storage_ptr(), dst.storage_ptr(), src.size(), root);    \
   }
 
-#define REDUCE_NUM_DECLS(op_name, op_code)              \
-  REDUCE_ALL_DECL(NUMBER_TYPE(T), op_name, op_code)     \
-  REDUCE_TO_DECL(NUMBER_TYPE(T), op_name, op_code)      \
-  REDUCE_ARRAY_NUM_ALL_DECL(op_name, op_code)           \
+#define REDUCE_NUM_DECLS(op_name, op_code)                   \
+  REDUCE_ALL_DECL(NUMBER_TYPE(T), op_name, op_code)          \
+  REDUCE_TO_DECL(NUMBER_TYPE(T), op_name, op_code)           \
+  REDUCE_BULK_ALL_DECL(NUMBER_TYPE(T), op_name, op_code)     \
+  REDUCE_BULK_TO_DECL(NUMBER_TYPE(T), op_name, op_code)      \
+  REDUCE_ARRAY_NUM_ALL_DECL(op_name, op_code)                \
   REDUCE_ARRAY_NUM_TO_DECL(op_name, op_code)
 
-#define REDUCE_INT_DECLS(op_name, op_code)              \
-  REDUCE_ALL_DECL(INTEGER_TYPE(T), op_name, op_code)    \
-  REDUCE_TO_DECL(INTEGER_TYPE(T), op_name, op_code)     \
-  REDUCE_ARRAY_INT_ALL_DECL(op_name, op_code)           \
+#define REDUCE_INT_DECLS(op_name, op_code)                   \
+  REDUCE_ALL_DECL(INTEGER_TYPE(T), op_name, op_code)         \
+  REDUCE_TO_DECL(INTEGER_TYPE(T), op_name, op_code)          \
+  REDUCE_BULK_ALL_DECL(INTEGER_TYPE(T), op_name, op_code)    \
+  REDUCE_BULK_TO_DECL(INTEGER_TYPE(T), op_name, op_code)     \
+  REDUCE_ARRAY_INT_ALL_DECL(op_name, op_code)                \
   REDUCE_ARRAY_INT_TO_DECL(op_name, op_code)
 
 namespace upcxx {
@@ -104,7 +120,6 @@ namespace upcxx {
     template<class T> static T reduce(T val, upcxx_op_t op) {
       T redval = reduce(val, op, 0);
       T bcval;
-      /* upcxx_bcast(&redval, &bcval, sizeof(T), 0); */
       gasnet_coll_broadcast(CURRENT_TEAM,
                             &bcval, 0, &redval, sizeof(T),
                             UPCXX_GASNET_COLL_FLAG);
@@ -113,7 +128,6 @@ namespace upcxx {
 
     template<class T> static T reduce(T val, upcxx_op_t op, int root) {
       T redval;
-      /* upcxx_reduce(&val, &redval, 1, root, op, datatype_wrapper<T>::value); */
       gasnet_coll_reduce(CURRENT_TEAM,
                          root, &redval, &val, 0, 0, sizeof(T), 1,
                          datatype_wrapper<T>::value, op,
@@ -121,29 +135,20 @@ namespace upcxx {
       return redval;
     }
 
-    template<class Array> static void reduce(Array src,
-                                             Array dst,
-                                             upcxx_op_t op) {
-      reduce(src, dst, op, 0);
-      /* upcxx_bcast(dst.storage_ptr(), dst.storage_ptr(), */
-      /*             dst.size() * sizeof(T), 0); */
+    template<class T> static T reduce(T *src, T *dst, int count,
+                                      upcxx_op_t op) {
+      reduce(src, dst, count, op, 0);
       gasnet_coll_broadcast(CURRENT_TEAM,
-                            dst.storage_ptr(), 0, src.storage_ptr(),
-                            dst.size() * sizeof(ARRAY_ELEM_TYPE(Array)),
+                            dst, 0, src, count * sizeof(T),
                             UPCXX_GASNET_COLL_FLAG);
     }
 
-    template<class Array> static void reduce(Array src,
-                                             Array dst,
-                                             upcxx_op_t op,
-                                             int root) {
-      /* upcxx_reduce(src.storage_ptr(), dst.storage_ptr(), src.size(), */
-      /*              root, op, datatype_wrapper<T>::value); */
+    template<class T> static void reduce(T *src, T *dst, int count,
+                                         upcxx_op_t op, int root) {
       gasnet_coll_reduce(CURRENT_TEAM,
-                         root, dst.storage_ptr(), src.storage_ptr(),
-                         0, 0, sizeof(ARRAY_ELEM_TYPE(Array)), src.size(),
-                         datatype_wrapper<ARRAY_ELEM_TYPE(Array)>::value,
-                         op, UPCXX_GASNET_COLL_FLAG);
+                         root, dst, src, 0, 0, sizeof(T), count,
+                         datatype_wrapper<T>::value, op,
+                         UPCXX_GASNET_COLL_FLAG);
     }
 
   public:
@@ -168,6 +173,8 @@ namespace upcxx {
 #undef INTEGER_TYPE
 #undef REDUCE_ALL_DECL
 #undef REDUCE_TO_DECL
+#undef REDUCE_BULK_ALL_DECL
+#undef REDUCE_BULK_TO_DECL
 #undef ARRAY_ELEM_TYPE
 #undef ARRAY_NUM_TYPE
 #undef ARRAY_INT_TYPE
