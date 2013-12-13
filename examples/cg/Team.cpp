@@ -17,7 +17,7 @@ namespace upcxx {
                 << "split a copy instead" << endl;
       abort();
     }
-    ndarray<color_and_rank, 1> arr(RECTDOMAIN((0), (THREADS)));
+    ndarray<color_and_rank, 1> arr(RECTDOMAIN((0), ((int)THREADS)));
     color_and_rank car = {color, rank};
     arr.exchange(car);
     int max_color = color;

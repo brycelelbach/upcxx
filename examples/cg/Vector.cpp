@@ -25,13 +25,13 @@ Vector::Vector() {
   assert(initialized); // ensure Vector class is initialized
 
   // form "localVectors" distributed array
-  allArrays = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), (THREADS)));
+  allArrays = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
   ndarray<double, 1> myArray(RECTDOMAIN((iStart), (iEnd+1)));
   allArrays.exchange(myArray);
 
 #if !defined(TEAMS)
   // form the allResults array
-  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), (THREADS)));
+  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
   // for myResult's first index, [0:log2numProcCols] are actual sums,
   // while [-log2numProcCols:-1] are data gathered from other procs
   ndarray<double, 1> myResults(RECTDOMAIN((-log2numProcCols), (log2numProcCols+1)));

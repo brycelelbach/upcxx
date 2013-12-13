@@ -42,14 +42,14 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
   // form the allResults array
 #ifdef TEAMS
   myResults = ndarray<double, 1>(RECTDOMAIN((rowStart), (rowEnd+1)));
-  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), (THREADS)));
+  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
   allResults.exchange(myResults);
   mtmp = ndarray<double, 1>(RECTDOMAIN((rowStart), (rowEnd+1)));
 #else
   // for myResult's first index, 0 to log2numProcCols are actual sums,
   // while -log2numProcCols to -1 are data gathered from other procs
   global_ndarray<double, 2> myResults(RECTDOMAIN((-log2numProcCols, rowStart), (log2numProcCols+1, rowEnd+1)));
-  allResults = ndarray<global_ndarray<double, 2>, 1>(RECTDOMAIN((0), (THREADS)));
+  allResults = ndarray<global_ndarray<double, 2>, 1>(RECTDOMAIN((0), ((int)THREADS)));
   allResults.exchange(myResults);
 
   // set up the reduce phase schedule for SpMV

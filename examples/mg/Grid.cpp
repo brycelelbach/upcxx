@@ -51,7 +51,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     myPoints = ndarray<double, 3>(rd);
   }
 
-  ndarray<global_ndarray<double, 3>, 1> tempPoints(RECTDOMAIN((0), (THREADS)));
+  ndarray<global_ndarray<double, 3>, 1> tempPoints(RECTDOMAIN((0), ((int)THREADS)));
   tempPoints.exchange(myPoints);
 
   RectDomain<3> blocks_rd(POINT(0, 0, 0), numBlocksInGridSide);
@@ -125,8 +125,8 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     }
 
     // create the distributed arrays "outBuffers" and "inBuffers"
-    ndarray<global_ndarray<global_ndarray<double, 3>, 1>, 1> tempOutBuffer(RECTDOMAIN((0), (THREADS)));
-    ndarray<global_ndarray<global_ndarray<double, 3>, 1>, 1> tempInBuffer(RECTDOMAIN((0), (THREADS)));
+    ndarray<global_ndarray<global_ndarray<double, 3>, 1>, 1> tempOutBuffer(RECTDOMAIN((0), ((int)THREADS)));
+    ndarray<global_ndarray<global_ndarray<double, 3>, 1>, 1> tempInBuffer(RECTDOMAIN((0), ((int)THREADS)));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);
@@ -183,8 +183,8 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     }
 
     // create the distributed array buffers "outBuffers" and "inBuffers"
-    ndarray<global_ndarray<global_ndarray<double, 3>, 3, 1> tempOutBuffer(RECTDOMAIN((0), (THREADS)));
-    ndarray<global_ndarray<global_ndarray<double, 3>, 3, 1> tempInBuffer(RECTDOMAIN((0), (THREADS)));
+    ndarray<global_ndarray<global_ndarray<double, 3>, 3, 1> tempOutBuffer(RECTDOMAIN((0), ((int)THREADS)));
+    ndarray<global_ndarray<global_ndarray<double, 3>, 3, 1> tempInBuffer(RECTDOMAIN((0), ((int)THREADS)));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);

@@ -280,8 +280,8 @@ int main(int argc, char **args) {
 
   myGridA = ndarray<double, 3>(myDomain.accrete(GHOST_WIDTH));
   myGridB = ndarray<double, 3>(myDomain.accrete(GHOST_WIDTH));
-  allGridsA = ARRAY(global_ndarray<double COMMA 3>, ((0), (THREADS)));
-  allGridsB = ARRAY(global_ndarray<double COMMA 3>, ((0), (THREADS)));
+  allGridsA = ARRAY(global_ndarray<double COMMA 3>, ((0), ((int)THREADS)));
+  allGridsB = ARRAY(global_ndarray<double COMMA 3>, ((0), ((int)THREADS)));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
