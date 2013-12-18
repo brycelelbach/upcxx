@@ -198,12 +198,6 @@ namespace upcxx
     {
       return (this->raw_ptr() != p);
     }
-
-    // pointer arithmetic
-    bool operator !=(long p) const
-    {
-      return (this->raw_ptr() != (void *) p);
-    }
   };
 
   // global_ptr<T, node>
