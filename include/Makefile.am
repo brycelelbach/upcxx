@@ -24,6 +24,7 @@ include_HEADERS =  \
   shared_array.h \
   shared_var.h \
   team.h \
+  timer.h \
   upcxx.h \
   upcxx_internal.h \
   upcxx_runtime.h \

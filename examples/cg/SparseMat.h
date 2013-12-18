@@ -4,7 +4,7 @@
 #include "LocalSparseMat.h"
 #include "Vector.h"
 #ifdef TIMERS_ENABLED
-# include "Timer.h"
+# include <timer.h>
 #endif
 
 /* This class represents a distributed sparse square matrix (in CSR format).  Each
@@ -49,7 +49,7 @@ class SparseMat {
 #ifdef TIMERS_ENABLED
   /* profiling */
   int numTimers, numCounters;
-  Timer myTimer;
+  timer myTimer;
   // "myTimes" is indexed by (CG Component #) and then timing number
   ndarray<ndarray<double, 1>, 1> myTimes;
   // total SPMV communication time

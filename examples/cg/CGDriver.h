@@ -4,7 +4,7 @@
 #include "SparseMat.h"
 #include "Vector.h"
 #ifdef TIMERS_ENABLED
-# include "Timer.h"
+# include <timer.h>
 #endif
 
 class CGDriver {
@@ -21,7 +21,7 @@ class CGDriver {
 
   // profiling information
 #ifdef TIMERS_ENABLED
-  Timer myTotalTimer;
+  timer myTotalTimer;
 #endif
 #ifdef COUNTERS_ENABLED
   static PAPICounter myTotalCounter;

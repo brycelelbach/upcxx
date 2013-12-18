@@ -2,13 +2,13 @@
 
 #include <gasnet_tools.h>
 
-class Timer {
+class timer {
  private:
   gasnett_tick_t cur_tick, elap_tick;
  public:
   /* static const double MAX_SECS = 1.8446744073709551616e13; */
 
- Timer() : cur_tick(0), elap_tick(0) {}
+ timer() : cur_tick(0), elap_tick(0) {}
   
   inline void start() {
     cur_tick = gasnett_ticks_now();

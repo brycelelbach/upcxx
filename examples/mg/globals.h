@@ -58,7 +58,7 @@
 using namespace upcxx;
 
 #ifdef TIMERS_ENABLED
-# include "../cg/Timer.h"
+# include <timer.h>
 #endif
 
 #if USE_UPCXX

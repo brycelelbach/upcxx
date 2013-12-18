@@ -4,7 +4,7 @@
 #include "Util.h"
 
 #ifdef TIMERS_ENABLED
-Timer Vector::reduceTimer;
+timer Vector::reduceTimer;
 #endif
 
 int Vector::N;                              // length of global vector

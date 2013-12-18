@@ -64,7 +64,7 @@ class MG {
   // profiling tools
   int numTimers, numCounters;
 #ifdef TIMERS_ENABLED
-  Timer myTimer;
+  timer myTimer;
 #endif
   // "myTimes" is indexed by (MG Component #), level, and timing number
   ndarray<ndarray<ndarray<double, 1>, 1>, 1> myTimes;

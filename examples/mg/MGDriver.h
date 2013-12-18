@@ -27,7 +27,7 @@ class MGDriver {
 
   // profiling tools
 #ifdef TIMERS_ENABLED
-  Timer myTotalTimer;
+  timer myTotalTimer;
 #endif
 #ifdef COUNTERS_ENABLED
   PAPICounter myTotalCounter;

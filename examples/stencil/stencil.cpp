@@ -8,7 +8,7 @@
 #endif
 
 #if ENABLE_TIMERS
-#  include "../cg/Timer.h"
+#  include <timer.h>
 #  include "../cg/Reduce.h"
 #  define TIMER_START(t) t.start()
 #  define TIMER_STOP(t) t.stop()
@@ -313,7 +313,7 @@ int main(int argc, char **args) {
   }
 
 #if ENABLE_TIMERS
-  Timer t;
+  timer t;
 #endif
   for (int i = 0; i < NUM_TRIALS; i++) {
     initGrid(myGridA);
