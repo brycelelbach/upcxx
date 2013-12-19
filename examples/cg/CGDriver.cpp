@@ -256,9 +256,6 @@ void CGDriver::main(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   init(&argc, &argv);
-#ifdef TEAMS
-  Team::initialize();
-#endif
   CGDriver::main(argc-1, argv+1);
   finalize();
   return 0;

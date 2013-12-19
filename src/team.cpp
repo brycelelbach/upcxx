@@ -14,6 +14,7 @@ namespace upcxx
 {
   uint32_t my_team_seq = 1;
   gasnet_hsl_t team::_tid_lock = GASNET_HSL_INITIALIZER;
+  vector<team *> team::_team_stack;
 
 #define TEAM_ID_BITS 8
 #define TEAM_ID_SEQ_MASK 0xFF
@@ -37,18 +38,28 @@ namespace upcxx
     assert(new_gasnet_team != NULL);
   
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);
-    range r_tmp = range(0,0,0);
-    new_team = new upcxx::team(new_team_id(),
-                               team_sz, // size
-                               key, // rank
-                               r_tmp,
-                               new_gasnet_team);
+    // range r_tmp = range(0,0,0);
+    new_team = new team(this, team_sz, key, color, new_gasnet_team);
     
     assert(new_team != NULL);
+
+    if (_mychild == NULL) _mychild = new_team;
     
     return UPCXX_SUCCESS;
   } // team::split
   
+  int team::split(uint32_t color,
+                  uint32_t key)
+  {
+    if (_mychild) {
+      std::cerr << "team has already been split; "
+                << "split a copy instead" << endl;
+      abort();
+    }
+    team *new_team;
+    return split(color, key, new_team);
+  }
+
   uint32_t team::new_team_id()
   {
     gasnet_hsl_lock(&team::_tid_lock);

@@ -6,5 +6,6 @@
 #define COMM_AM2
 #include "allocate.h"
 #include "array_bulk.h"
+#include "team.h"
 #include "upcxx-arrays/domain.h"
 #include "upcxx-arrays/array.h"

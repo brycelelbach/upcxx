@@ -4,7 +4,7 @@ bin_PROGRAMS = \
   cg
 
 cg_SOURCES = CGDriver.cpp Random.cpp Vector.cpp LocalSparseMat.cpp \
-  SparseMat.cpp MatGen.cpp Util.cpp Team.cpp
+  SparseMat.cpp MatGen.cpp Util.cpp
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/include \

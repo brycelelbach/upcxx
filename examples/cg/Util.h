@@ -28,8 +28,8 @@ class Util {
   static int log2numProcCols;
 
 #ifdef TEAMS
-  static Team *rowTeam;
-  static Team *colTeam;
+  static team *rowTeam;
+  static team *colTeam;
 #endif
 
   static int procIdToRowPos(int procId) {

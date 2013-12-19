@@ -3,10 +3,9 @@
 #include <collective.h>
 
 #ifdef USE_TEAMS
-# include "Team.h"
-# define CURRENT_TEAM Team::currentTeam()->gasnet_team()
-#else
-# define CURRENT_TEAM GASNET_TEAM_ALL
+# include <team.h>
+#elif !defined(CURRENT_GASNET_TEAM)
+# define CURRENT_GASNET_TEAM GASNET_TEAM_ALL
 #endif
 
 #define UPCXX_GASNET_COLL_FLAG \
@@ -120,7 +119,7 @@ namespace upcxx {
     template<class T> static T reduce(T val, upcxx_op_t op) {
       T redval = reduce(val, op, 0);
       T bcval;
-      gasnet_coll_broadcast(CURRENT_TEAM,
+      gasnet_coll_broadcast(CURRENT_GASNET_TEAM,
                             &bcval, 0, &redval, sizeof(T),
                             UPCXX_GASNET_COLL_FLAG);
       return bcval;
@@ -128,7 +127,7 @@ namespace upcxx {
 
     template<class T> static T reduce(T val, upcxx_op_t op, int root) {
       T redval;
-      gasnet_coll_reduce(CURRENT_TEAM,
+      gasnet_coll_reduce(CURRENT_GASNET_TEAM,
                          root, &redval, &val, 0, 0, sizeof(T), 1,
                          datatype_wrapper<T>::value, op,
                          UPCXX_GASNET_COLL_FLAG);
@@ -138,14 +137,14 @@ namespace upcxx {
     template<class T> static T reduce(T *src, T *dst, int count,
                                       upcxx_op_t op) {
       reduce(src, dst, count, op, 0);
-      gasnet_coll_broadcast(CURRENT_TEAM,
+      gasnet_coll_broadcast(CURRENT_GASNET_TEAM,
                             dst, 0, src, count * sizeof(T),
                             UPCXX_GASNET_COLL_FLAG);
     }
 
     template<class T> static void reduce(T *src, T *dst, int count,
                                          upcxx_op_t op, int root) {
-      gasnet_coll_reduce(CURRENT_TEAM,
+      gasnet_coll_reduce(CURRENT_GASNET_TEAM,
                          root, dst, src, 0, 0, sizeof(T), count,
                          datatype_wrapper<T>::value, op,
                          UPCXX_GASNET_COLL_FLAG);

@@ -138,8 +138,7 @@ namespace upcxx
 #endif
 
     // Initialize Team All
-    range r_all(0, gasnet_nodes());
-    team_all.init(0, gasnet_nodes(), gasnet_mynode(), r_all, GASNET_TEAM_ALL);
+    team_all.init_global_team();
 
     // Because we assume the data and text segments of processes are
     // aligned (offset is always 0).  We are not using the offsets arrays for

@@ -75,7 +75,7 @@
 # include <upcxx.h>
 # ifdef TEAMS
 #  define USE_TEAMS
-#  include "Team.h"
+#  include <team.h>
 # endif
 # include <array.h>
 #else

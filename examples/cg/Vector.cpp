@@ -15,7 +15,7 @@ int Vector::numProcRows;
 int Vector::numProcCols;
 
 #ifdef TEAMS
-Team *Vector::rowTeam;
+team *Vector::rowTeam;
 #else
 ndarray<int, 1> Vector::reduceExchangeProc;        // used to do communication in dot products
 int Vector::log2numProcCols;

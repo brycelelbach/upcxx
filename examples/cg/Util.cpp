@@ -8,8 +8,8 @@ int Util::rowStart, Util::rowEnd;
 int Util::colStart, Util::colEnd;
 int Util::log2numProcCols;
 #ifdef TEAMS
-Team *Util::rowTeam;
-Team *Util::colTeam;
+team *Util::rowTeam;
+team *Util::colTeam;
 #endif
 
 void Util::initialize(int paramN, int procCount,
@@ -80,12 +80,12 @@ void Util::initialize(int paramN, int procCount,
     i /= 2;
   }
 #ifdef TEAMS
-  rowTeam = new Team();
+  rowTeam = new team();
   rowTeam->split(procRowPos, procColPos);
   // rowTeam->initialize();
   // if (MYTHREAD == 0)
   //   println("done initializing row team");
-  colTeam = new Team();
+  colTeam = new team();
   colTeam->split(procColPos, procRowPos);
   // colTeam->initialize();
   // if (MYTHREAD == 0) {

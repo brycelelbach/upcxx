@@ -122,12 +122,12 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
       reduceCopy = false;
   }
   // setup team for synchronizing before reduce copies
-  copyTeam = new Team();
+  copyTeam = new team();
   copyTeam->split(reduceSource, reduceSource == MYTHREAD ? 0 : 1);//MYTHREAD);
   // copyTeam->initializeAll();
   copySync = copyTeam->mychild()->size() > 1;
 # else
-  transposeTeam = new Team();
+  transposeTeam = new team();
   transposeTeam->split(transposeProc < MYTHREAD ? transposeProc : MYTHREAD,
                        transposeProc < MYTHREAD ? 1 : 0);
   // transposeTeam->initializeAll();

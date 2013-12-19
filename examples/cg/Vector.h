@@ -27,7 +27,7 @@ class Vector {
   ndarray<double, 1> tmp;
 
 #ifdef TEAMS
-  static Team *rowTeam;
+  static team *rowTeam;
 #else
   static ndarray<int, 1> reduceExchangeProc;        // used to do communication in dot products
   static int log2numProcCols;
