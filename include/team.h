@@ -248,4 +248,7 @@ extern upcxx::team team_all;
 #define teamsplit_(name, t)                             \
   for (ts_scope name(t); name.done == 0; name.done = 1)
 
-#define CURRENT_GASNET_TEAM current_gasnet_team()
+#define CURRENT_GASNET_TEAM upcxx::current_gasnet_team()
+
+#define THREADS (upcxx::team::current_team()->size())
+#define MYTHREAD (upcxx::team::current_team()->myrank())

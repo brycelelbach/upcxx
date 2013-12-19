@@ -15,8 +15,8 @@ extern "C"
 #include <gasnet_coll.h>
 #include <gasnet_handler.h>
 
-#define THREADS gasnet_nodes()
-#define MYTHREAD gasnet_mynode()
+#define GLOBAL_THREADS gasnet_nodes()
+#define GLOBAL_MYTHREAD gasnet_mynode()
 
 #define GASNET_SAFE(fncall) do {                                      \
     int _retval;                                                      \

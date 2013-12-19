@@ -134,7 +134,7 @@ namespace upcxx
 
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "thread %u, total_shared_var_sz %lu, shared_var_addr %p\n",
-            MYTHREAD, total_shared_var_sz, shared_var_addr);
+            GLOBAL_MYTHREAD, total_shared_var_sz, shared_var_addr);
 #endif
 
     // Initialize Team All
