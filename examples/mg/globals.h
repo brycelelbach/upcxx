@@ -63,7 +63,7 @@ using namespace upcxx;
 
 #if USE_UPCXX
 # include "broadcast.h"
-# include "../cg/Reduce.h"
+# include <reduce.h>
 #else
 # define barrier()
 # define broadcast(val, src) val

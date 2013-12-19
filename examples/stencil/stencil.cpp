@@ -9,7 +9,7 @@
 
 #if ENABLE_TIMERS
 #  include <timer.h>
-#  include "../cg/Reduce.h"
+#  include <reduce.h>
 #  define TIMER_START(t) t.start()
 #  define TIMER_STOP(t) t.stop()
 #  define TIMER_RESET(t) t.reset()

@@ -88,7 +88,7 @@
 #define RectDomain rectdomain
 
 #if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
-# include "Reduce.h"
+# include <reduce.h>
 #endif
 
 using namespace upcxx;
