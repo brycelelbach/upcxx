@@ -219,7 +219,7 @@ double MG::getL2Norm(Grid &gridA, int callNumber) {
 
   TIMER_START(myTimer);
 
-  double L2Norm = sqrt(Reduce::add(myASquareSum)/pow(2, 3*startLevel));
+  double L2Norm = sqrt(reduce::add(myASquareSum)/pow(2, 3*startLevel));
 
   TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][startLevel][-callNumber]);
 
@@ -966,9 +966,9 @@ void MG::printSummary() {
       }
     }
 
-    double minTotalComponentTime = Reduce::min(totalComponentTime);
-    double sumTotalComponentTime = Reduce::add(totalComponentTime);
-    double maxTotalComponentTime = Reduce::max(totalComponentTime);
+    double minTotalComponentTime = reduce::min(totalComponentTime);
+    double sumTotalComponentTime = reduce::add(totalComponentTime);
+    double maxTotalComponentTime = reduce::max(totalComponentTime);
 
     if (MYTHREAD == 0) {
       println("Time: " << minTotalComponentTime << ", " <<
@@ -985,9 +985,9 @@ void MG::printSummary() {
         }
       }
 		
-      long minTotalComponentCount = Reduce::min(totalComponentCount);
-      long sumTotalComponentCount = Reduce::add(totalComponentCount);
-      long maxTotalComponentCount = Reduce::max(totalComponentCount);
+      long minTotalComponentCount = reduce::min(totalComponentCount);
+      long sumTotalComponentCount = reduce::add(totalComponentCount);
+      long maxTotalComponentCount = reduce::max(totalComponentCount);
 
       if (MYTHREAD == 0) {
         println("Count: " << minTotalComponentCount << ", " <<
@@ -1140,15 +1140,15 @@ void MG::printProfile() {
           }
         }
 		    
-        double gmin1 = Reduce::min(lmin1);
-        double gmax1 = Reduce::max(lmax1);
-        double gsum1 = Reduce::add(lsum1);
-        double gmin2 = Reduce::min(lmin2);
-        double gmax2 = Reduce::max(lmax2);
-        double gsum2 = Reduce::add(lsum2);
-        double gmin3 = Reduce::min(lmin3);
-        double gmax3 = Reduce::max(lmax3);
-        double gsum3 = Reduce::add(lsum3);
+        double gmin1 = reduce::min(lmin1);
+        double gmax1 = reduce::max(lmax1);
+        double gsum1 = reduce::add(lsum1);
+        double gmin2 = reduce::min(lmin2);
+        double gmax2 = reduce::max(lmax2);
+        double gsum2 = reduce::add(lsum2);
+        double gmin3 = reduce::min(lmin3);
+        double gmax3 = reduce::max(lmax3);
+        double gsum3 = reduce::add(lsum3);
 		    
         if (MYTHREAD == 0) {
           println("YZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
@@ -1207,12 +1207,12 @@ void MG::printProfile() {
           }
         }
 		    
-        double gmin1 = Reduce::min(lmin1);
-        double gmax1 = Reduce::max(lmax1);
-        double gsum1 = Reduce::add(lsum1);
-        double gmin2 = Reduce::min(lmin2);
-        double gmax2 = Reduce::max(lmax2);
-        double gsum2 = Reduce::add(lsum2);
+        double gmin1 = reduce::min(lmin1);
+        double gmax1 = reduce::max(lmax1);
+        double gsum1 = reduce::add(lsum1);
+        double gmin2 = reduce::min(lmin2);
+        double gmax2 = reduce::max(lmax2);
+        double gsum2 = reduce::add(lsum2);
 		    
         if (MYTHREAD == 0) {
           println("XZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
@@ -1240,9 +1240,9 @@ void MG::printProfile() {
           ndarray<double, 1> maxArray(domainRange);
 
           foreach (p, domainRange) {
-            minArray[p] = Reduce::min(myTimes[timerIdx][levelIdx][p]);
-            sumArray[p] = Reduce::add(myTimes[timerIdx][levelIdx][p]);
-            maxArray[p] = Reduce::max(myTimes[timerIdx][levelIdx][p]);
+            minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
+            sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
+            maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
           }
 			
           double sumMins1 = 0;
@@ -1301,9 +1301,9 @@ void MG::printProfile() {
         ndarray<double, 1> maxArray(domainRange);
 
         foreach (p, domainRange) {
-          minArray[p] = Reduce::min(myTimes[timerIdx][levelIdx][p]);
-          sumArray[p] = Reduce::add(myTimes[timerIdx][levelIdx][p]);
-          maxArray[p] = Reduce::max(myTimes[timerIdx][levelIdx][p]);
+          minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
+          sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
+          maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
         }
 
         double sumMins = 0;
@@ -1345,9 +1345,9 @@ void MG::printProfile() {
           numReadingsPerProc++;
         }
 		    
-        double gmin = Reduce::min(lmin);
-        double gmax = Reduce::max(lmax);
-        double gsum = Reduce::add(lsum);
+        double gmin = reduce::min(lmin);
+        double gmax = reduce::max(lmax);
+        double gsum = reduce::add(lsum);
 		    
         if (MYTHREAD == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);
@@ -1409,9 +1409,9 @@ void MG::printProfile() {
             numReadingsPerProc++;
           }
 			
-          long gmin = Reduce::min(lmin);
-          long gmax = Reduce::max(lmax);
-          long gsum = Reduce::add(lsum);
+          long gmin = reduce::min(lmin);
+          long gmax = reduce::max(lmax);
+          long gsum = reduce::add(lsum);
 		    
           if (MYTHREAD == 0) {
             println("Num Readings Per Proc:\t" << numReadingsPerProc);

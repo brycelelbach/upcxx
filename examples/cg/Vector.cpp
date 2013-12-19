@@ -86,7 +86,7 @@ double Vector::dot(const Vector &a) {
   // due to improper inlining of the reduction
   double myResult0 = myResult;
   teamsplit(rowTeam) {
-    myResult = Reduce::add(myResult0); // myResult0 just to be safe
+    myResult = reduce::add(myResult0); // myResult0 just to be safe
   }
   TIMER_STOP(reduceTimer);
   return myResult;
@@ -122,7 +122,7 @@ double Vector::L2Norm() {
   // due to improper inlining of the reduction
   double myResult0 = myResult;
   teamsplit(rowTeam) {
-    myResult = Reduce::add(myResult0); // myResult0 just to be safe
+    myResult = reduce::add(myResult0); // myResult0 just to be safe
   }
   TIMER_STOP(reduceTimer);
   return sqrt(myResult);

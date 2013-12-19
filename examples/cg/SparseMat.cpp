@@ -164,7 +164,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(rowTeam) {
     myResults0 = (ndarray<double, 1>) myResults;
-    Reduce::add(mtmp, myResults0, rpivot);
+    reduce::add(mtmp, myResults0, rpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
@@ -185,7 +185,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(rowTeam) {
     myResults0 = myResults;
-    Reduce::add(mtmp, myResults0);
+    reduce::add(mtmp, myResults0);
   }
   barrier(); // ensure reductions above complete
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
@@ -211,7 +211,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     int start = rowStart;
     int end = rowEnd;
     for (int r = start; r <= end; r++) {
-      myResults0[r] = Reduce::add(myResults0[r]);
+      myResults0[r] = reduce::add(myResults0[r]);
     }
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
@@ -363,9 +363,9 @@ void SparseMat::printSummary() {
     if (timerIdx != T_SPMV_LOCAL_COMP)
       totalCommTime += totalComponentTime;
 
-    double minTotalComponentTime = Reduce::min(totalComponentTime);
-    double sumTotalComponentTime = Reduce::add(totalComponentTime);
-    double maxTotalComponentTime = Reduce::max(totalComponentTime);
+    double minTotalComponentTime = reduce::min(totalComponentTime);
+    double sumTotalComponentTime = reduce::add(totalComponentTime);
+    double maxTotalComponentTime = reduce::max(totalComponentTime);
 	    
     if (MYTHREAD == 0) {
       println("Time: " << minTotalComponentTime << ", " << (sumTotalComponentTime/THREADS) << ", " << maxTotalComponentTime);
@@ -378,9 +378,9 @@ void SparseMat::printSummary() {
         totalComponentCount += myCounts[timerIdx][count];
       }
 		
-      long minTotalComponentCount = Reduce::min(totalComponentCount);
-      long sumTotalComponentCount = Reduce::add(totalComponentCount);
-      long maxTotalComponentCount = Reduce::max(totalComponentCount);
+      long minTotalComponentCount = reduce::min(totalComponentCount);
+      long sumTotalComponentCount = reduce::add(totalComponentCount);
+      long maxTotalComponentCount = reduce::max(totalComponentCount);
 		
       if (MYTHREAD == 0) {
         println("Count: " << minTotalComponentCount << ", " << (sumTotalComponentCount/THREADS) << ", " << maxTotalComponentCount);
@@ -391,12 +391,12 @@ void SparseMat::printSummary() {
 #endif // defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
 
 #ifdef TIMERS_ENABLED
-  double minTotalTime = Reduce::min(totalTime);
-  double sumTotalTime = Reduce::add(totalTime);
-  double maxTotalTime = Reduce::max(totalTime);
-  double minTotalCommTime = Reduce::min(totalCommTime);
-  double sumTotalCommTime = Reduce::add(totalCommTime);
-  double maxTotalCommTime = Reduce::max(totalCommTime);
+  double minTotalTime = reduce::min(totalTime);
+  double sumTotalTime = reduce::add(totalTime);
+  double maxTotalTime = reduce::max(totalTime);
+  double minTotalCommTime = reduce::min(totalCommTime);
+  double sumTotalCommTime = reduce::add(totalCommTime);
+  double maxTotalCommTime = reduce::max(totalCommTime);
   spmvCommTime = totalCommTime;
 
   if (MYTHREAD == 0) {
@@ -460,9 +460,9 @@ void SparseMat::printProfile() {
         numReadingsPerProc++;
       }
 		
-      double gminTime = Reduce::min(lminTime);
-      double gmax = Reduce::max(lmaxTime);
-      double gsumTime = Reduce::add(lsumTime);
+      double gminTime = reduce::min(lminTime);
+      double gmax = reduce::max(lmaxTime);
+      double gsumTime = reduce::add(lsumTime);
 		
       if (MYTHREAD == 0) {
         println("Num Readings Per Proc:\t" << numReadingsPerProc);
@@ -503,9 +503,9 @@ void SparseMat::printProfile() {
           numReadingsPerProc++;
         }
 		    
-        long gminCount = Reduce::min(lminCount);
-        long gmaxCount = Reduce::max(lmaxCount);
-        long gsumCount = Reduce::add(lsumCount);
+        long gminCount = reduce::min(lminCount);
+        long gmaxCount = reduce::max(lmaxCount);
+        long gsumCount = reduce::add(lsumCount);
 		    
         if (MYTHREAD == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);

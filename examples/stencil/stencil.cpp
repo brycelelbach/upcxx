@@ -221,9 +221,9 @@ static void probe(int steps) {
 
 // Report min, average, max of given value.
 static void report_value(double d) {
-  double ave = Reduce::add(d, 0) / THREADS;
-  double max = Reduce::max(d, 0);
-  double min = Reduce::min(d, 0);
+  double ave = reduce::add(d, 0) / THREADS;
+  double max = reduce::max(d, 0);
+  double min = reduce::min(d, 0);
   if (MYTHREAD == 0) {
     cout << ": " << min << ", " << ave << ", " << max << endl;
   }

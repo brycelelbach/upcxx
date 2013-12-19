@@ -212,11 +212,11 @@ void MGDriver::main(int argc, char **argv) {
   myMG.printSummary();
 #ifdef TIMERS_ENABLED
   double myTotalTime = Driver.myTotalTimer.secs();
-  double maxTotalTime = Reduce::max(myTotalTime);
+  double maxTotalTime = reduce::max(myTotalTime);
 #endif
 #ifdef COUNTERS_ENABLED
   long myTotalCount = Driver.myTotalCounter.getCounterValue();
-  long allTotalCount = Reduce::add(myTotalCount);
+  long allTotalCount = reduce::add(myTotalCount);
 #endif
   if (MYTHREAD == 0) {
     println("\nTOTAL:");

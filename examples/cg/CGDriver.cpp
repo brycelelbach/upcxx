@@ -214,20 +214,20 @@ void CGDriver::main(int argc, char **argv) {
 
 #ifdef TIMERS_ENABLED
   double myTotalTime = Driver.myTotalTimer.secs();
-  double maxTotalTime = Reduce::max(myTotalTime);
+  double maxTotalTime = reduce::max(myTotalTime);
 
   double redTime = Vector::reduceTimer.secs();
-  double minRedTime = Reduce::min(redTime);
-  double meanRedTime = Reduce::add(redTime) / THREADS;
-  double maxRedTime = Reduce::max(redTime);
+  double minRedTime = reduce::min(redTime);
+  double meanRedTime = reduce::add(redTime) / THREADS;
+  double maxRedTime = reduce::max(redTime);
   double commTime = redTime + Driver.A->spmvCommTime;
-  double minCommTime = Reduce::min(commTime);
-  double meanCommTime = Reduce::add(commTime) / THREADS;
-  double maxCommTime = Reduce::max(commTime);
+  double minCommTime = reduce::min(commTime);
+  double meanCommTime = reduce::add(commTime) / THREADS;
+  double maxCommTime = reduce::max(commTime);
 #endif
 #ifdef COUNTERS_ENABLED
   long myTotalCount = Driver.myTotalCounter.getCounterValue();
-  long allTotalCount = Reduce::add(myTotalCount);
+  long allTotalCount = reduce::add(myTotalCount);
 #endif
 	
   if (MYTHREAD == 0) {
