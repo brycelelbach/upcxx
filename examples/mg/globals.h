@@ -62,7 +62,7 @@ using namespace upcxx;
 #endif
 
 #if USE_UPCXX
-# include "broadcast.h"
+# include <broadcast.h>
 # include <reduce.h>
 #else
 # define barrier()

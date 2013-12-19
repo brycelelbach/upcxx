@@ -1,15 +1,11 @@
-/* This test implements a safe broadcast scheme that converts local
-   pointers and Titanium-style arrays to global pointers and arrays
-   when broadcasting. Any type can be added to this scheme by defining
-   a global_type typedef within the type and an explicit conversion to
-   that global_type. */
+/* Tests safe broadcast scheme defined in <broadcast.h>. */
 
 #include <iostream>
 #include <upcxx.h>
 #include <global_ptr.h>
 #include <collective.h>
 #include <array.h>
-#include "../mg/broadcast.h"
+#include <broadcast.h>
 
 using namespace upcxx;
 
