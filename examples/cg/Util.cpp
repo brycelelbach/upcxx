@@ -81,12 +81,12 @@ void Util::initialize(int paramN, int procCount,
   }
 #ifdef TEAMS
   rowTeam = new Team();
-  rowTeam->splitTeamAll(procRowPos, procColPos);
+  rowTeam->split(procRowPos, procColPos);
   // rowTeam->initialize();
   // if (MYTHREAD == 0)
   //   println("done initializing row team");
   colTeam = new Team();
-  colTeam->splitTeamAll(procColPos, procRowPos);
+  colTeam->split(procColPos, procRowPos);
   // colTeam->initialize();
   // if (MYTHREAD == 0) {
   //   println("rowTeam:");

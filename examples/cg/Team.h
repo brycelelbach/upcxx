@@ -6,43 +6,33 @@
 
 namespace upcxx {
 
-  struct color_and_rank {
-    int color, rank;
-  };
-
   class Team {
    public:
-    Team() : _my_child(NULL), _num_subteams(-1), _split(false) {
+    Team() : _mychild(NULL), _split(false) {
       Team *other = currentTeam();
-      _members = other->_members;
       _parent = other->_parent;
       _size = other->_size;
-      _rank = other->_rank;
-      _num_siblings = other->_num_siblings;
-      _team_rank = other->_team_rank;
+      _myrank = other->_myrank;
+      _color = other->_color;
       _id = other->_id;
       _gasnet_team = other->_gasnet_team;
     }
-    Team(Team *other) : _my_child(NULL), _num_subteams(-1), _split(false) {
-      _members = other->_members;
+    Team(Team *other) : _mychild(NULL), _split(false) {
       _parent = other->_parent;
       _size = other->_size;
-      _rank = other->_rank;
-      _num_siblings = other->_num_siblings;
-      _team_rank = other->_team_rank;
+      _myrank = other->_myrank;
+      _color = other->_color;
       _id = other->_id;
       _gasnet_team = other->_gasnet_team;
     }
 
-    Team *splitTeamAll(int color, int rank);
+    Team *split(int color, int rank);
     /* void splitTeam(int num_children); */
     Team *parent() { return _parent; }
-    int numSiblings() { return _num_siblings; }
-    Team *myChildTeam() { return _my_child; }
-    int numChildren() { return _num_subteams; }
-    int teamRank() { return _team_rank; }
+    Team *mychild() { return _mychild; }
+    int color() { return _color; }
     int size() { return _size; }
-    int rank() { return _rank; }
+    int myrank() { return _myrank; }
     gasnet_team_handle_t gasnet_team() { return _gasnet_team; }
 
     static void initialize() {
@@ -61,32 +51,29 @@ namespace upcxx {
       _team_stack.pop_back();
     }
    private:
-    Team(Team *parent, int size, int rank, int num_siblings, int team_rank)
-      : _members(new int[size]), _parent(parent), _my_child(NULL),
-        _size(size), _rank(rank), _num_subteams(-1), _num_siblings(num_siblings),
-        _team_rank(team_rank), _split(false), _id(_next_id++) {}
-    Team(bool ignored) : _members(new int[THREADS]), _parent(NULL),
-      _my_child(NULL), _size(THREADS), _rank(MYTHREAD), _num_subteams(-1),
-      _num_siblings(1), _team_rank(0), _split(false), _id(0),
-      _gasnet_team(GASNET_TEAM_ALL) {
-        for (int i = 0; i < THREADS; i++)
-          _members[i] = i;
-      }
+    Team(Team *parent, int size, int rank, int color,
+         gasnet_team_handle_t handle)
+      : _parent(parent), _mychild(NULL), _size(size), _myrank(rank),
+        _color(color), _split(false), _id(_next_id++),
+        _gasnet_team(handle) {}
+    Team(bool ignored) : _parent(NULL),
+      _mychild(NULL), _size(THREADS), _myrank(MYTHREAD), _color(0),
+      _split(false), _id(0), _gasnet_team(GASNET_TEAM_ALL) {}
 
-    int *_members;
-    Team *_parent, *_my_child;
-    int _size, _rank, _num_subteams, _num_siblings, _team_rank;
+    Team *_parent, *_mychild;
+    int _size, _myrank, _color;
     bool _split;
     int _id;
     gasnet_team_handle_t _gasnet_team;
     static vector<Team *> _team_stack;
+    static gasnet_team_handle_t _current_gasnet_team;
     static int _next_id;
   };
 
   struct ts_scope {
     int done;
     inline ts_scope(Team *t) : done(0) {
-      Team::descend_team(t->myChildTeam());
+      Team::descend_team(t->mychild());
     }
     inline ~ts_scope() {
       Team::ascend_team();
