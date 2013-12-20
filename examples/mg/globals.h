@@ -73,7 +73,7 @@ using namespace upcxx;
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
-struct Reduce {
+struct reduce {
   template<class T> static T add(T val) { return val; } 
 };
 #endif
