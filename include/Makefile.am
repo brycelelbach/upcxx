@@ -5,6 +5,8 @@ include_HEADERS =  \
   array_bulk.h \
   async.h \
   async_templates.h \
+  broadcast.h \
+  coll_flags.h \
   collective.h \
   dl_malloc.h \
   event.h \
@@ -12,15 +14,16 @@ include_HEADERS =  \
   forkjoin.h \
   future.h \
   gasnet_api.h \
+  global_ptr.h \
+  global_ref.h \
   group.h \
   lapack_api.h \
   lock.h \
   machine.h \
   matrix.h \
-  global_ptr.h \
   queue.h \
   range.h \
-  global_ref.h \
+  reduce.h \
   shared_array.h \
   shared_var.h \
   team.h \
@@ -29,4 +32,5 @@ include_HEADERS =  \
   upcxx_internal.h \
   upcxx_runtime.h \
   upcxx_types.h \
+  utils.h \
   upcxx.mak
