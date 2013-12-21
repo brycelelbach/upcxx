@@ -125,7 +125,7 @@ void FT::pencilToPencilStrideForwardY(ndarray<Complex, 2> inArray,
   fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
 
 #if USE_FFTW3
-  fftw_execute_dft(forwardPlan_y, in, out);
+  fftw_execute_dft(forwardPlan_y, in, in); // in place
 #else
   fftw(forwardPlan_y, s_nz, in, s_nz+PADDING, 1, out, s_nz+PADDING, 1);
 #endif
@@ -176,7 +176,7 @@ void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
   fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
 
 # if USE_FFTW3
-  fftw_execute_dft(forwardPlan_z, in, out);
+  fftw_execute_dft(forwardPlan_z, in, in); // in place
 # else
   fftw(forwardPlan_z, numPencilsInYDimSlab, in, 1, s_nz+PADDING,
        out, 1, s_nz+PADDING);
@@ -189,7 +189,7 @@ void FT::unitToUnitStrideBackwardZ(ndarray<Complex, 1> inArray,
   fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
 
 # if USE_FFTW3
-  fftw_execute_dft(backwardPlan_z, in, out);
+  fftw_execute_dft(backwardPlan_z, in, in); // in place
 # else
   fftw(backwardPlan_z, numPencilsInZDimSlab, in, 1, s_nx+PADDING,
        out, 1, s_nx+PADDING);
@@ -227,7 +227,7 @@ void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
   fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
 
 # if USE_FFTW3
-  fftw_execute_dft(forwardPlan_z, in, out);
+  fftw_execute_dft(forwardPlan_z, in, in); // in place
 # else
   fftw(forwardPlan_z, 1, in, 1, s_nz+PADDING, out, 1, s_nz+PADDING);
 # endif
@@ -239,7 +239,7 @@ void FT::unitToUnitStrideBackwardZ(ndarray<Complex, 1> inArray,
   fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
 
 # if USE_FFTW3
-  fftw_execute_dft(backwardPlan_z, in, out);
+  fftw_execute_dft(backwardPlan_z, in, in); // in place
 # else
   fftw(backwardPlan_z, 1, in, 1, s_nx+PADDING, out, 1, s_nx+PADDING);
 # endif
