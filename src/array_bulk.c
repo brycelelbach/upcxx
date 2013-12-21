@@ -97,10 +97,23 @@ static struct Buffer **bufferArray;
 void buffer_init(){
   int i, j;
   bufferArray = (struct Buffer **) ti_malloc_atomic_uncollectable(sizeof(struct Buffer *)*MYBOXPROCS);
+  if (!bufferArray) {
+    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+            (sizeof(struct Buffer *)*MYBOXPROCS),
+            "array bulk initialization");
+    abort();
+  }
+
   for (i = 0; i < MYBOXPROCS; i++){
     struct Buffer *tmp;
     bufferArray[i] = (struct Buffer *) ti_malloc_atomic_uncollectable(sizeof(struct Buffer)*BOXES);
     tmp = bufferArray[i];
+    if (!tmp) {
+      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+              (sizeof(struct Buffer *)*BOXES),
+              "array bulk initialization");
+      abort();
+    }
     for (j = 0; j < BOXES; j++){
 	tmp->size = -1;
 	tmp->ptr = NULL;
@@ -173,6 +186,11 @@ TIC_SHORT_HANDLER(misc_delete_request, 1, 2,
 GASNETT_INLINE(misc_alloc_request)
 void misc_alloc_request(gasnet_token_t token, int size, void *destptr) {
   void *buf = ti_malloc_handlersafe(size);
+  if (!buf) {
+    fprintf(stderr, "failed to allocate %d bytes in %s\n",
+            size, "array alloc AM handler");
+    abort();
+  }
   SHORT_REP(2,4,(token, gasneti_handleridx(misc_alloc_reply), 
                    PACK(buf), PACK(destptr)));
 }
@@ -312,6 +330,11 @@ void strided_unpackAll_request(gasnet_token_t token, void *packedArrayData, size
     * fix that problem if it occurs
     */
    temp = ti_malloc_handlersafe(nBytes+8);
+   if (!temp) {
+     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+             (nBytes+8), "array unpack AM handler");
+     abort();
+   }
    memcpy(temp, packedArrayData, nBytes);
    packedArrayData = temp;
  } 
@@ -374,6 +397,11 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
        data is small, copying the array data will be faster than
        sending two messages. */
     data = (void *) ti_malloc_atomic_huge(data_size);
+    if (!data) {
+      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+              data_size, "array put AM handler");
+      abort();
+    }
     assert(data && copy_desc_size_padded % 8 == 0);
     memcpy(data, copy_desc, copy_desc_size);
     /* All math is done in bytes. sizeof(void*) should be irrelevant. */
@@ -529,6 +557,11 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
   if (datasz <= gasnet_AMMaxMedium()) { 
     /* fast case - everything fits in a medium msg */
     char *data = ti_malloc_atomic_huge(datasz);
+    if (!data) {
+      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+              datasz, "array scatter AM handler");
+      abort();
+    }
     memcpy(data, remote_addr_list, offset);
     memcpy(data+offset, src_data_list, num_elem * elem_sz);
     #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
@@ -590,6 +623,11 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
   if (datasz <= gasnet_AMMaxMedium()) { 
     /* fast case - everything fits in a medium msg */
     char *data = ti_malloc_atomic_huge(datasz);
+    if (!data) {
+      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+              datasz, "array scatter AM handler");
+      abort();
+    }
     memcpy(data, remote_addr_list, offset);
     memcpy(data+offset, src_data_list, num_elem * elem_sz);
     #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
@@ -644,6 +682,11 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       a local buffer before sending
       */
       localBuffer = ti_malloc_atomic_huge(bufferSize);
+      if (!localBuffer) {
+        fprintf(stderr, "failed to allocate %d bytes in %s\n",
+                bufferSize, "array scatter AM handler");
+        abort();
+      }
       localCurBuf = localBuffer;
       for (i = 0; i < messageCount; i++){
 	memcpy(localCurBuf, remote_addr_list+i*loadSize, addrLoadSize);
@@ -659,6 +702,11 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       a buffer before sending
       */
       localBuffer = ti_malloc_atomic_huge(bufferSize);
+      if (!localBuffer) {
+        fprintf(stderr, "failed to allocate %d bytes in %s\n",
+                bufferSize, "array scatter AM handler");
+        abort();
+      }
       localCurBuf = localBuffer;
       for (i = 0; i < messageCount-1; i++){
 	memcpy(localCurBuf, remote_addr_list+i*loadSize, addrLoadSize);
@@ -694,6 +742,11 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     {
       int volatile * done_ctr_array = (int *)ti_malloc_atomic_uncollectable(sizeof(int) * messageCount);
       int *curCtr;
+      if (!done_ctr_array) {
+        fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+                (sizeof(int) * messageCount), "array scatter AM handler");
+        abort();
+      }
 
       for (i = 0; i < messageCount; i++){
 	done_ctr_array[i] = 0;
@@ -939,6 +992,11 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
       int i;
       int volatile * done_ctr_array = (int *)ti_malloc_atomic_uncollectable(sizeof(int) * messageCount);
       int *curCtr;
+      if (!done_ctr_array) {
+        fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+                (sizeof(int) * messageCount), "array gather AM handler");
+        abort();
+      }
 
       for (i = 0; i < messageCount; i++){
 	done_ctr_array[i] = 0;
@@ -1065,6 +1123,11 @@ void sparse_simpleGather_request(gasnet_token_t token, void *_addr_list, size_t 
   void **addr_list = (void**)_addr_list;
   int datasz = num_elem * elem_sz;
   char *data = ti_malloc_handlersafe(datasz);
+  if (!data) {
+    fprintf(stderr, "failed to allocate %d bytes in %s\n",
+            datasz, "array gather AM handler");
+    abort();
+  }
   assert(addr_list_size == sizeof(void *)*num_elem);
   FAST_PACK(elem_sz, data, addr_list);
   #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
