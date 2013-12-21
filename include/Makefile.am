@@ -34,3 +34,22 @@ include_HEADERS =  \
   upcxx_types.h \
   utils.h \
   upcxx.mak
+
+arrayincludedir = $(includedir)/upcxx-arrays
+arrayinclude_HEADERS =  \
+  upcxx-arrays/array.h \
+  upcxx-arrays/array_addr.h \
+  upcxx-arrays/array_impl.h \
+  upcxx-arrays/array_impl.tpp \
+  upcxx-arrays/array_undefs.h \
+  upcxx-arrays/coll.h \
+  upcxx-arrays/domain.h \
+  upcxx-arrays/domain.tpp \
+  upcxx-arrays/domain_undefs.h \
+  upcxx-arrays/domains.h \
+  upcxx-arrays/iter.h \
+  upcxx-arrays/point.h \
+  upcxx-arrays/point.tpp \
+  upcxx-arrays/rdomain.h \
+  upcxx-arrays/rdomain.tpp \
+  upcxx-arrays/utils.h
