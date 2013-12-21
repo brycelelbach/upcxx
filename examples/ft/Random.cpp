@@ -4,7 +4,7 @@
 const double Random::d2m46 = pow(0.5, 46);
 const long Random::i246m1 = (long) pow(2, 46) - 1;
 
-double randlc(ndarray<double, 1> x, double a) {
+double Random::randlc(ndarray<double, 1> x, double a) {
   double r23,r46,t23,t46,t1,t2,t3,t4,a1,a2,x1,x2,z;
   r23 = pow(0.5,23); 
   r46 = pow(r23, 2); 
@@ -33,7 +33,7 @@ double randlc(ndarray<double, 1> x, double a) {
   return (r46 * x[0]);
 }
 
-double ipow46(double a, int exp1, int exp2) {
+double Random::ipow46(double a, int exp1, int exp2) {
   int n2;
   double dummy;
   ndarray<double, 1> temp(RECTDOMAIN((0), (1)));

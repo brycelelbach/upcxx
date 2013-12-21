@@ -8,6 +8,8 @@
 # define TIMERS_ENABLED
 #endif
 
+#define USE_FFTW3
+
 /* POTENTIAL OPTIMIZATIONS */
 
 /* The following flag enables communication of slabs.  If it is turned off, pencils

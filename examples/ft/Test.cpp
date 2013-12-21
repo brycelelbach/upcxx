@@ -292,7 +292,7 @@ void Test::verifyCheckSum(char classType) {
   }
 }
 
-void printSummary() {
+void Test::printSummary() {
   for (int i=1; i <= 2; i++) {
     if (MYTHREAD == 0) {
       switch (i) {
