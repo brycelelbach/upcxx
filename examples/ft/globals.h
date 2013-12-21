@@ -8,7 +8,9 @@
 # define TIMERS_ENABLED
 #endif
 
-#define USE_FFTW3
+#ifndef USE_FFTW3
+# define USE_FFTW3 1
+#endif
 
 /* POTENTIAL OPTIMIZATIONS */
 
@@ -47,6 +49,7 @@ typedef std::complex<double> Complex;
 #define RectDomain rectdomain
 
 using namespace upcxx;
+using namespace std;
 
 #ifdef TIMERS_ENABLED
 # include <timer.h>

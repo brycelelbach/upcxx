@@ -135,10 +135,10 @@ void FT::FFT_3D(int direction, int iter) {
         array5[actualProc].COPY(myArray4.constrict(rd));
       }
 #else
-      RectDomain<3> rd(POINT(i[1], jPencil[1], 0),
-                       POINT(i[1]+1, jPencil[1]+1, new_nz+PADDING));
-      rd = rd.permute(POINT(2,1,3));
       foreach (jPencil, RECTDOMAIN((jSlab), (jSlab+yDimSlabSize))) {
+        RectDomain<3> rd(POINT(i[1], jPencil[1], 0),
+                         POINT(i[1]+1, jPencil[1]+1, new_nz+PADDING));
+        rd = rd.permute(POINT(2,1,3));
         if (direction == 1) {
           TIMER_START(myTimer);
 
