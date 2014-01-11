@@ -19,6 +19,23 @@
 #  define TIMER_RESET(t)
 #endif
 
+#ifdef OPT_LOOP
+# define USE_UNSTRIDED
+# define foreachD(var, dom, dim)                                        \
+  foreachD_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
+            CONCAT_(var, _done))
+# define foreachD_(var, dom, dim, u_, s_, d_)                           \
+  for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
+       !d_; d_ = 1)                                                     \
+    for (int var = dom.lwb()[dim]; var < u_; var += s_)
+#endif
+
+#ifdef USE_UNSTRIDED
+# define UNSTRIDED , unstrided
+#else
+# define UNSTRIDED
+#endif
+
 using namespace std;
 using namespace upcxx;
 
@@ -62,8 +79,8 @@ static int xdim, ydim, zdim;
 static int xparts, yparts, zparts;
 static ndarray<rectdomain<3>, 1> allDomains;
 static rectdomain<3> myDomain;
-static ndarray<double, 3> myGridA, myGridB;
-static ndarray<global_ndarray<double, 3>, 1> allGridsA, allGridsB;
+static ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
+static ndarray<global_ndarray<double, 3 UNSTRIDED>, 1> allGridsA, allGridsB;
 static ndarray<global_ndarray<double, 3>, 1> targetsA, targetsB;
 static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
 static int steps;
@@ -177,8 +194,42 @@ static void probe(int steps) {
     async_copy_fence();
     barrier(); // wait for puts from all nodes
 
+#ifdef OPT_LOOP
+    foreachD (i, myDomain, 1) {
+      ndarray<double, 2, unstrided> myGridBi = myGridB[i];
+      ndarray<double, 2, unstrided> myGridAi = myGridA[i];
+      ndarray<double, 2, unstrided> myGridAim = myGridA[i-1];
+      ndarray<double, 2, unstrided> myGridAip = myGridA[i+1];
+      foreachD (j, myDomain, 2) {
+        ndarray<double, 1, simple> myGridBij = (ndarray<double, 1, simple>) myGridBi[j];
+        ndarray<double, 1, simple> myGridAij = (ndarray<double, 1, simple>) myGridAi[j];
+        ndarray<double, 1, simple> myGridAijm = (ndarray<double, 1, simple>) myGridAi[j-1];
+        ndarray<double, 1, simple> myGridAijp = (ndarray<double, 1, simple>) myGridAi[j+1];
+        ndarray<double, 1, simple> myGridAimj = (ndarray<double, 1, simple>) myGridAim[j];
+        ndarray<double, 1, simple> myGridAipj = (ndarray<double, 1, simple>) myGridAip[j];
+        foreachD (k, myDomain, 3) {
+          myGridBij[k] =
+            myGridAij[k+1] +
+            myGridAij[k-1] +
+            myGridAijp[k] +
+            myGridAijm[k] +
+            myGridAipj[k] +
+            myGridAimj[k] -
+            WEIGHT * myGridAij[k] / (fac * fac);
+          // myGridB[i][j][k] =
+          //   myGridA[i][j][k+1] +
+          //   myGridA[i][j][k-1] +
+          //   myGridA[i][j+1][k] +
+          //   myGridA[i][j-1][k] +
+          //   myGridA[i+1][j][k] +
+          //   myGridA[i-1][j][k] -
+          //   WEIGHT * myGridA[i][j][k] / (fac * fac);
+        }
+      }
+    }
+#else
     foreach (p, myDomain) {
-#ifdef SECOND_ORDER
+# ifdef SECOND_ORDER
       myGridB[p] =
         myGridA[p + POINT( 0,  0,  2)] +
         myGridA[p + POINT( 0,  0,  1)] +
@@ -193,7 +244,7 @@ static void probe(int steps) {
         myGridA[p + POINT(-1,  0,  0)] +
         myGridA[p + POINT(-2,  0,  0)] -
         WEIGHT * myGridA[p] / (fac * fac);
-#else
+# else
       myGridB[p] =
         myGridA[p + POINT( 0,  0,  1)] +
         myGridA[p + POINT( 0,  0, -1)] +
@@ -202,11 +253,12 @@ static void probe(int steps) {
         myGridA[p + POINT( 1,  0,  0)] +
         myGridA[p + POINT(-1,  0,  0)] -
         WEIGHT * myGridA[p] / (fac * fac);
-#endif
+# endif
     }
+#endif
     barrier(); // wait for computation to finish
     // Swap pointers
-    SWAP(myGridA, myGridB, ndarray<double COMMA 3>);
+    SWAP(myGridA, myGridB, ndarray<double COMMA 3 UNSTRIDED>);
     SWAP(targetsA, targetsB, ndarray<global_ndarray<double COMMA 3> COMMA 1>);
     SWAP(sourcesA, sourcesB, ndarray<ndarray<double COMMA 3> COMMA 1>);
   }
@@ -278,10 +330,10 @@ int main(int argc, char **args) {
   cout << MYTHREAD << ": thread domain is " << myDomain << endl;
 #endif
 
-  myGridA = ndarray<double, 3>(myDomain.accrete(GHOST_WIDTH));
-  myGridB = ndarray<double, 3>(myDomain.accrete(GHOST_WIDTH));
-  allGridsA = ARRAY(global_ndarray<double COMMA 3>, ((0), ((int)THREADS)));
-  allGridsB = ARRAY(global_ndarray<double COMMA 3>, ((0), ((int)THREADS)));
+  myGridA = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
+  myGridB = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
+  allGridsA = ARRAY(global_ndarray<double COMMA 3 UNSTRIDED>, ((0), ((int)THREADS)));
+  allGridsB = ARRAY(global_ndarray<double COMMA 3 UNSTRIDED>, ((0), ((int)THREADS)));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
