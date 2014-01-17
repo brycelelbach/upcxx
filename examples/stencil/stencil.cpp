@@ -19,7 +19,7 @@
 #  define TIMER_RESET(t)
 #endif
 
-#ifdef OPT_LOOP
+#if defined(OPT_LOOP) || defined(SPLIT_LOOP)
 # define USE_UNSTRIDED
 # define foreachD(var, dom, dim)                                        \
   foreachD_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
@@ -216,14 +216,21 @@ static void probe(int steps) {
             myGridAipj[k] +
             myGridAimj[k] -
             WEIGHT * myGridAij[k] / (fac * fac);
-          // myGridB[i][j][k] =
-          //   myGridA[i][j][k+1] +
-          //   myGridA[i][j][k-1] +
-          //   myGridA[i][j+1][k] +
-          //   myGridA[i][j-1][k] +
-          //   myGridA[i+1][j][k] +
-          //   myGridA[i-1][j][k] -
-          //   WEIGHT * myGridA[i][j][k] / (fac * fac);
+        }
+      }
+    }
+#elif defined(SPLIT_LOOP)
+    foreachD (i, myDomain, 1) {
+      foreachD (j, myDomain, 2) {
+        foreachD (k, myDomain, 3) {
+          myGridB[i][j][k] =
+            myGridA[i][j][k+1] +
+            myGridA[i][j][k-1] +
+            myGridA[i][j+1][k] +
+            myGridA[i][j-1][k] +
+            myGridA[i+1][j][k] +
+            myGridA[i-1][j][k] -
+            WEIGHT * myGridA[i][j][k] / (fac * fac);
         }
       }
     }
