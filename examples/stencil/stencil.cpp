@@ -28,6 +28,12 @@
   for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
        !d_; d_ = 1)                                                     \
     for (int var = dom.lwb()[dim]; var < u_; var += s_)
+# define foreach1(v1, dom)                      \
+  foreachD(v1, dom, 1)
+# define foreach2(v1, v2, dom)                  \
+  foreach1(v1, dom) foreachD(v2, dom, 2)
+# define foreach3(v1, v2, v3, dom)              \
+  foreach2(v1, v2, dom) foreachD(v3, dom, 3)
 #endif
 
 #ifdef USE_UNSTRIDED
@@ -220,19 +226,15 @@ static void probe(int steps) {
       }
     }
 #elif defined(SPLIT_LOOP)
-    foreachD (i, myDomain, 1) {
-      foreachD (j, myDomain, 2) {
-        foreachD (k, myDomain, 3) {
-          myGridB[i][j][k] =
-            myGridA[i][j][k+1] +
-            myGridA[i][j][k-1] +
-            myGridA[i][j+1][k] +
-            myGridA[i][j-1][k] +
-            myGridA[i+1][j][k] +
-            myGridA[i-1][j][k] -
-            WEIGHT * myGridA[i][j][k] / (fac * fac);
-        }
-      }
+    foreach3 (i, j, k, myDomain) {
+      myGridB[i][j][k] =
+        myGridA[i][j][k+1] +
+        myGridA[i][j][k-1] +
+        myGridA[i][j+1][k] +
+        myGridA[i][j-1][k] +
+        myGridA[i+1][j][k] +
+        myGridA[i-1][j][k] -
+        WEIGHT * myGridA[i][j][k] / (fac * fac);
     }
 #else
     foreach (p, myDomain) {
