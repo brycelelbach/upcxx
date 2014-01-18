@@ -23,12 +23,12 @@ struct reduce {
 };
 #endif
 
+#define TIMERS_ENABLED
+
 #if USE_UPCXX
-# define TIMERS_ENABLED
 # include <timer.h>
 # include <reduce.h>
 #elif __cplusplus >= 201103L
-# define TIMERS_ENABLED
 # include <chrono>
 struct timer {
   std::chrono::time_point<std::chrono::system_clock> cur;
@@ -45,6 +45,24 @@ struct timer {
   }
   inline double secs() {
     return elap.count();
+  }
+};
+#else
+# include <ctime>
+struct timer {
+  clock_t cur, elap;
+  inline timer() : cur(0), elap(0) {}
+  inline void start() {
+    cur = clock();
+  }
+  inline void stop() {
+    elap = clock() - cur;
+  }
+  inline void reset() {
+    elap = 0;
+  }
+  inline double secs() {
+    return ((double)elap) / CLOCKS_PER_SEC;
   }
 };
 #endif
