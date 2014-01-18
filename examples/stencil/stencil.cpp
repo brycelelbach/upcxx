@@ -1,85 +1,5 @@
 // Stencil
-#include <cstring>
-#include <upcxx.h>
-#include <array.h>
-
-#ifndef ENABLE_TIMERS
-#  define ENABLE_TIMERS 1
-#endif
-
-#if ENABLE_TIMERS
-#  include <timer.h>
-#  include <reduce.h>
-#  define TIMER_START(t) t.start()
-#  define TIMER_STOP(t) t.stop()
-#  define TIMER_RESET(t) t.reset()
-#else
-#  define TIMER_START(t)
-#  define TIMER_STOP(t)
-#  define TIMER_RESET(t)
-#endif
-
-#if defined(OPT_LOOP) || defined(SPLIT_LOOP)
-# define USE_UNSTRIDED
-# define foreachD(var, dom, dim)                                        \
-  foreachD_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
-            CONCAT_(var, _done))
-# define foreachD_(var, dom, dim, u_, s_, d_)                           \
-  for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
-       !d_; d_ = 1)                                                     \
-    for (int var = dom.lwb()[dim]; var < u_; var += s_)
-# define foreach1(v1, dom)                      \
-  foreachD(v1, dom, 1)
-# define foreach2(v1, v2, dom)                  \
-  foreach1(v1, dom) foreachD(v2, dom, 2)
-# define foreach3(v1, v2, v3, dom)              \
-  foreach2(v1, v2, dom) foreachD(v3, dom, 3)
-#endif
-
-#ifdef USE_UNSTRIDED
-# define UNSTRIDED , unstrided
-#else
-# define UNSTRIDED
-#endif
-
-using namespace std;
-using namespace upcxx;
-
-#ifndef DEBUG
-#  define DEBUG 0
-#endif
-
-#ifdef SECOND_ORDER
-#  define GHOST_WIDTH 2
-#else
-#  define GHOST_WIDTH 1
-#endif
-
-#ifndef CONSTANT_VALUE
-#  define CONSTANT_VALUE 1.0
-#endif
-
-#ifndef WEIGHT
-#  define WEIGHT 6.0
-#endif
-
-#ifndef NUM_TRIALS
-#  define NUM_TRIALS 1
-#endif
-
-#define SWAP(A, B, TYPE) do {                   \
-    TYPE swap_tmp##A = A;                       \
-    A = B;                                      \
-    B = swap_tmp##A;                            \
-  } while (false)
-
-#define COMMA ,
-
-#ifndef MEMORY_DISTRIBUTED
-#  define THREADS 1
-#  define MYTHREAD 0  
-#  define barrier()
-#endif
+#include "globals.h"
 
 static int xdim, ydim, zdim;
 static int xparts, yparts, zparts;
@@ -202,17 +122,17 @@ static void probe(int steps) {
 
 #ifdef OPT_LOOP
     foreachD (i, myDomain, 1) {
-      ndarray<double, 2, unstrided> myGridBi = myGridB[i];
-      ndarray<double, 2, unstrided> myGridAi = myGridA[i];
-      ndarray<double, 2, unstrided> myGridAim = myGridA[i-1];
-      ndarray<double, 2, unstrided> myGridAip = myGridA[i+1];
+      ndarray<double, 2, unstrided> myGridBi = (ndarray<double, 2, unstrided>) myGridB.slice(1, i);
+      ndarray<double, 2, unstrided> myGridAi = (ndarray<double, 2, unstrided>) myGridA.slice(1, i);
+      ndarray<double, 2, unstrided> myGridAim = (ndarray<double, 2, unstrided>) myGridA.slice(1, i-1);
+      ndarray<double, 2, unstrided> myGridAip = (ndarray<double, 2, unstrided>) myGridA.slice(1, i+1);
       foreachD (j, myDomain, 2) {
-        ndarray<double, 1, simple> myGridBij = (ndarray<double, 1, simple>) myGridBi[j];
-        ndarray<double, 1, simple> myGridAij = (ndarray<double, 1, simple>) myGridAi[j];
-        ndarray<double, 1, simple> myGridAijm = (ndarray<double, 1, simple>) myGridAi[j-1];
-        ndarray<double, 1, simple> myGridAijp = (ndarray<double, 1, simple>) myGridAi[j+1];
-        ndarray<double, 1, simple> myGridAimj = (ndarray<double, 1, simple>) myGridAim[j];
-        ndarray<double, 1, simple> myGridAipj = (ndarray<double, 1, simple>) myGridAip[j];
+        ndarray<double, 1, simple> myGridBij = (ndarray<double, 1, simple>) myGridBi.slice(1, j);
+        ndarray<double, 1, simple> myGridAij = (ndarray<double, 1, simple>) myGridAi.slice(1, j);
+        ndarray<double, 1, simple> myGridAijm = (ndarray<double, 1, simple>) myGridAi.slice(1, j-1);
+        ndarray<double, 1, simple> myGridAijp = (ndarray<double, 1, simple>) myGridAi.slice(1, j+1);
+        ndarray<double, 1, simple> myGridAimj = (ndarray<double, 1, simple>) myGridAim.slice(1, j);
+        ndarray<double, 1, simple> myGridAipj = (ndarray<double, 1, simple>) myGridAip.slice(1, j);
         foreachD (k, myDomain, 3) {
           myGridBij[k] =
             myGridAij[k+1] +
@@ -273,8 +193,8 @@ static void probe(int steps) {
   }
 }
 
-#if ENABLE_TIMERS
-#  define report(d, s) do { \
+#ifdef TIMERS_ENABLED
+# define report(d, s) do { \
     if (MYTHREAD == 0)      \
       cout << s;            \
     report_value(d);        \
@@ -290,7 +210,7 @@ static void report_value(double d) {
   }
 }
 #else
-#  define report(d, s)
+# define report(d, s)
 #endif
 
 int main(int argc, char **args) {
@@ -373,7 +293,7 @@ int main(int argc, char **args) {
     }
   }
 
-#if ENABLE_TIMERS
+#ifdef TIMERS_ENABLED
   timer t;
 #endif
   for (int i = 0; i < NUM_TRIALS; i++) {
