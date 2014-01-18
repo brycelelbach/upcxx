@@ -4,7 +4,7 @@ Point<3> Grid::numCellsPerBlockSide;
 Point<3> Grid::numBlocksInGridSide;
 Point<3> Grid::myBlockPos;
 
-static int ipow(int base, int exponent) {
+int ipow(int base, int exponent) {
   if (exponent == 0)
     return 1;
   int subexp = ipow(base, exponent / 2);

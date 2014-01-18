@@ -202,6 +202,8 @@ MG::MG() {
 #endif
 }
 
+extern int ipow(int base, int exp);
+
 double MG::getL2Norm(Grid &gridA, int callNumber) {
   double myASquareSum = 0;
   Point<3> myBlockPos = Grid::myBlockPos;
@@ -219,7 +221,7 @@ double MG::getL2Norm(Grid &gridA, int callNumber) {
 
   TIMER_START(myTimer);
 
-  double L2Norm = sqrt(reduce::add(myASquareSum)/pow(2, 3*startLevel));
+  double L2Norm = sqrt(reduce::add(myASquareSum)/ipow(2, 3*startLevel));
 
   TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][startLevel][-callNumber]);
 
@@ -235,7 +237,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
   Point<3> myBlockPos = Grid::myBlockPos;
   Point<3> numBlocksInGridSide = Grid::numBlocksInGridSide;
   ndarray<double, 3> myPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
-  int numCellsInGridSide = (int)pow(2, level);
+  int numCellsInGridSide = (int)ipow(2, level);
 
   if (level >= THRESHOLD_LEVEL) {
 #if UPDATE_BORDER_DIRECTIONS == 26
