@@ -121,19 +121,19 @@ static void probe(int steps) {
     barrier(); // wait for puts from all nodes
 
 #ifdef OPT_LOOP
-    foreachD (i, myDomain, 1) {
-      ndarray<double, 2, unstrided> myGridBi = (ndarray<double, 2, unstrided>) myGridB.slice(1, i);
-      ndarray<double, 2, unstrided> myGridAi = (ndarray<double, 2, unstrided>) myGridA.slice(1, i);
-      ndarray<double, 2, unstrided> myGridAim = (ndarray<double, 2, unstrided>) myGridA.slice(1, i-1);
-      ndarray<double, 2, unstrided> myGridAip = (ndarray<double, 2, unstrided>) myGridA.slice(1, i+1);
-      foreachD (j, myDomain, 2) {
-        ndarray<double, 1, simple> myGridBij = (ndarray<double, 1, simple>) myGridBi.slice(1, j);
-        ndarray<double, 1, simple> myGridAij = (ndarray<double, 1, simple>) myGridAi.slice(1, j);
-        ndarray<double, 1, simple> myGridAijm = (ndarray<double, 1, simple>) myGridAi.slice(1, j-1);
-        ndarray<double, 1, simple> myGridAijp = (ndarray<double, 1, simple>) myGridAi.slice(1, j+1);
-        ndarray<double, 1, simple> myGridAimj = (ndarray<double, 1, simple>) myGridAim.slice(1, j);
-        ndarray<double, 1, simple> myGridAipj = (ndarray<double, 1, simple>) myGridAip.slice(1, j);
-        foreachD (k, myDomain, 3) {
+    foreachd (i, myDomain, 1) {
+      ndarray<double, 2, unstrided> myGridBi = myGridB.slice(i);
+      ndarray<double, 2, unstrided> myGridAi = myGridA.slice(i);
+      ndarray<double, 2, unstrided> myGridAim = myGridA.slice(i-1);
+      ndarray<double, 2, unstrided> myGridAip = myGridA.slice(i+1);
+      foreachd (j, myDomain, 2) {
+        ndarray<double, 1, simple> myGridBij = myGridBi.slice(j);
+        ndarray<double, 1, simple> myGridAij = myGridAi.slice(j);
+        ndarray<double, 1, simple> myGridAijm = myGridAi.slice(j-1);
+        ndarray<double, 1, simple> myGridAijp = myGridAi.slice(j+1);
+        ndarray<double, 1, simple> myGridAimj = myGridAim.slice(j);
+        ndarray<double, 1, simple> myGridAipj = myGridAip.slice(j);
+        foreachd (k, myDomain, 3) {
           myGridBij[k] =
             myGridAij[k+1] +
             myGridAij[k-1] +

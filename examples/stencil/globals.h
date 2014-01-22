@@ -79,19 +79,19 @@ struct timer {
 
 #if defined(OPT_LOOP) || defined(SPLIT_LOOP)
 # define USE_UNSTRIDED
-# define foreachD(var, dom, dim)                                        \
-  foreachD_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
+# define foreachd(var, dom, dim)                                        \
+  foreachd_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
             CONCAT_(var, _done))
-# define foreachD_(var, dom, dim, u_, s_, d_)                           \
+# define foreachd_(var, dom, dim, u_, s_, d_)                           \
   for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
        !d_; d_ = 1)                                                     \
     for (int var = dom.lwb()[dim]; var < u_; var += s_)
 # define foreach1(v1, dom)                      \
-  foreachD(v1, dom, 1)
+  foreachd(v1, dom, 1)
 # define foreach2(v1, v2, dom)                  \
-  foreach1(v1, dom) foreachD(v2, dom, 2)
+  foreach1(v1, dom) foreachd(v2, dom, 2)
 # define foreach3(v1, v2, v3, dom)              \
-  foreach2(v1, v2, dom) foreachD(v3, dom, 3)
+  foreach2(v1, v2, dom) foreachd(v3, dom, 3)
 #endif
 
 #ifdef USE_UNSTRIDED
