@@ -11,6 +11,39 @@ static ndarray<global_ndarray<double, 3>, 1> targetsA, targetsB;
 static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
 static int steps;
 
+enum timer_type {
+  COMMUNICATION,
+  COMPUTATION
+};
+enum timer_index {
+  LAUNCH_COPIES = 0,
+  SYNC_COPIES,
+  COPY_BARRIER,
+  LAUNCH_X_COPIES,
+  SYNC_X_COPIES,
+  LAUNCH_Y_COPIES,
+  SYNC_Y_COPIES,
+  LAUNCH_Z_COPIES,
+  SYNC_Z_COPIES,
+  PRE_COMPUTE_BARRIER,
+  PROBE_COMPUTE,
+  POST_COMPUTE_BARRIER,
+  NUM_TIMERS
+};
+static timer timers[NUM_TIMERS];
+static string timerStrings[] = {"launch copies", "sync copies",
+                                "copy barrier", "launch x copies",
+                                "sync x copies", "launch y copies",
+                                "sync y copies", "launch z copies",
+                                "sync z copies", "pre compute barrier",
+                                "probe compute", "post compute barrier"};
+static timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
+                                  COMMUNICATION, COMMUNICATION,
+                                  COMMUNICATION, COMMUNICATION,
+                                  COMMUNICATION, COMMUNICATION,
+                                  COMMUNICATION, COMMUNICATION,
+                                  COMPUTATION, COMPUTATION};
+
 static point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
   int ypos = (i % (parts[2] * parts[3])) / parts[3];
@@ -86,40 +119,53 @@ static void probe(int steps) {
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
     // first x dimension
+    TIMER_START(timers[LAUNCH_X_COPIES]);
     if (targetsA[0] != NULL) {
       targetsA[0].copy_nbi(sourcesA[0]);
     }
     if (targetsA[1] != NULL) {
       targetsA[1].copy_nbi(sourcesA[1]);
     }
+    TIMER_STOP(timers[LAUNCH_X_COPIES]);
 #ifdef SYNC_BETWEEN_DIM
+    TIMER_START(timers[SYNC_X_COPIES]);
     // Handle.syncNBI();
     async_copy_fence();
     barrier();
+    TIMER_STOP(timers[SYNC_X_COPIES]);
 #endif
     // now y dimension
+    TIMER_START(timers[LAUNCH_Y_COPIES]);
     if (targetsA[2] != NULL) {
       targetsA[2].copy_nbi(sourcesA[2]);
     }
     if (targetsA[3] != NULL) {
       targetsA[3].copy_nbi(sourcesA[3]);
     }
+    TIMER_STOP(timers[LAUNCH_Y_COPIES]);
 #ifdef SYNC_BETWEEN_DIM
+    TIMER_START(timers[SYNC_Y_COPIES]);
     // Handle.syncNBI();
     async_copy_fence();
     barrier();
+    TIMER_STOP(timers[SYNC_Y_COPIES]);
 #endif
     // finally z dimension
+    TIMER_START(timers[LAUNCH_Z_COPIES]);
     if (targetsA[4] != NULL) {
       targetsA[4].copy_nbi(sourcesA[4]);
     }
     if (targetsA[5] != NULL) {
       targetsA[5].copy_nbi(sourcesA[5]);
     }
+    TIMER_STOP(timers[LAUNCH_Z_COPIES]);
+    TIMER_START(timers[SYNC_Z_COPIES]);
     // Handle.syncNBI();
     async_copy_fence();
     barrier(); // wait for puts from all nodes
+    TIMER_STOP(timers[SYNC_Z_COPIES]);
 
+    TIMER_START(timers[PROBE_COMPUTE]);
 #ifdef OPT_LOOP
     foreachd (i, myDomain, 1) {
       ndarray<double, 2, unstrided> myGridBi = myGridB.slice(i);
@@ -185,7 +231,10 @@ static void probe(int steps) {
 # endif
     }
 #endif
+    TIMER_STOP(timers[PROBE_COMPUTE]);
+    TIMER_START(timers[POST_COMPUTE_BARRIER]);
     barrier(); // wait for computation to finish
+    TIMER_STOP(timers[POST_COMPUTE_BARRIER]);
     // Swap pointers
     SWAP(myGridA, myGridB, ndarray<double COMMA 3 UNSTRIDED>);
     SWAP(targetsA, targetsB, ndarray<global_ndarray<double COMMA 3> COMMA 1>);
@@ -212,6 +261,12 @@ static void report_value(double d) {
 #else
 # define report(d, s)
 #endif
+
+static void printTimingStats() {
+  for (int i = 0; i < NUM_TIMERS; i++) {
+    report(timers[i].secs(), "Time for " << timerStrings[i] << " (s)");
+  }
+}
 
 int main(int argc, char **args) {
 #ifdef MEMORY_DISTRIBUTED
@@ -311,6 +366,20 @@ int main(int argc, char **args) {
     if (MYTHREAD == 0) {
       cout << "Verification value: " << val << endl;
     }
+#ifdef TIMERS_ENABLED
+    printTimingStats();
+    double comm = 0, comp = 0;
+    for (int j = 0; j < NUM_TIMERS; j++) {
+      if (timerTypes[j] == COMMUNICATION) {
+        comm += timers[j].secs();
+      } else {
+        comp += timers[j].secs();
+      }
+      timers[j].reset();
+    }
+    report(comm, "Time for total communication");
+    report(comp, "Time for total computation");
+#endif
   }
 
   finalize(); // wait for completion before exiting
