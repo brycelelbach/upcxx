@@ -10,7 +10,7 @@
 
 class Vector {
  public:
-  ndarray<global_ndarray<double, 1>, 1> allArrays;   // distributedly stores actual vector data (in global coordinates)
+  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allArrays;   // distributedly stores actual vector data (in global coordinates)
 
 #ifdef TIMERS_ENABLED
   static timer reduceTimer;
@@ -29,11 +29,11 @@ class Vector {
 #ifdef TEAMS
   static team *rowTeam;
 #else
-  static ndarray<int, 1> reduceExchangeProc;        // used to do communication in dot products
+  static ndarray<int, 1 UNSTRIDED> reduceExchangeProc;        // used to do communication in dot products
   static int log2numProcCols;
 
  public:
-  ndarray<global_ndarray<double, 1>, 1> allResults;  // used for storing dot product and L2-Norm results
+  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allResults;  // used for storing dot product and L2-Norm results
 #endif
  public:
 
@@ -44,8 +44,8 @@ class Vector {
   static void initialize(int paramN);
 
   // return current "vector" field
-  inline ndarray<double, 1> getMyArray() const {
-    return (ndarray<double, 1>) allArrays[MYTHREAD];
+  inline ndarray<double, 1 UNSTRIDED> getMyArray() const {
+    return (ndarray<double, 1 UNSTRIDED>) allArrays[MYTHREAD];
   }
 
   // deep-copy the elements of "a"'s vector field to "this"'s vector field
@@ -65,10 +65,10 @@ class Vector {
 
   // operator overload, vector-vector subtraction
   Vector &operator-=(const Vector &a) {
-    ndarray<double, 1> myArray = getMyArray();
-    ndarray<double, 1> myAArray = a.getMyArray();
+    ndarray<double, 1 UNSTRIDED> myArray = getMyArray();
+    ndarray<double, 1 UNSTRIDED> myAArray = a.getMyArray();
 
-    foreach (p, myArray.domain()) {
+    FOREACH (p, myArray.domain()) {
       myArray[p] -= myAArray[p];
     }
     return *this;
@@ -76,9 +76,9 @@ class Vector {
 
   // operator overload, scalar vector divide
   Vector &operator/=(double x) {
-    ndarray<double, 1> myArray = getMyArray();
+    ndarray<double, 1 UNSTRIDED> myArray = getMyArray();
 
-    foreach (q, myArray.domain()) {
+    FOREACH (q, myArray.domain()) {
       myArray[q] /= x;
     }
     return *this;
@@ -92,11 +92,11 @@ class Vector {
     
   // "this" vector = alpha * x + y
   void axpy(double alpha, const Vector &x, const Vector &y) {
-    ndarray<double, 1> myXArray = x.getMyArray();
-    ndarray<double, 1> myYArray = y.getMyArray();
-    ndarray<double, 1> myDestArray = getMyArray();
+    ndarray<double, 1 UNSTRIDED> myXArray = x.getMyArray();
+    ndarray<double, 1 UNSTRIDED> myYArray = y.getMyArray();
+    ndarray<double, 1 UNSTRIDED> myDestArray = getMyArray();
 
-    foreach (p, myDestArray.domain()) {
+    FOREACH (p, myDestArray.domain()) {
       myDestArray[p] = alpha * myXArray[p] + myYArray[p];
     }
   }

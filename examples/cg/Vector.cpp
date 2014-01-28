@@ -17,7 +17,7 @@ int Vector::numProcCols;
 #ifdef TEAMS
 team *Vector::rowTeam;
 #else
-ndarray<int, 1> Vector::reduceExchangeProc;        // used to do communication in dot products
+ndarray<int, 1 UNSTRIDED> Vector::reduceExchangeProc;        // used to do communication in dot products
 int Vector::log2numProcCols;
 #endif
 
@@ -25,20 +25,20 @@ Vector::Vector() {
   assert(initialized); // ensure Vector class is initialized
 
   // form "localVectors" distributed array
-  allArrays = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
-  ndarray<double, 1> myArray(RECTDOMAIN((iStart), (iEnd+1)));
+  allArrays = ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
+  ndarray<double, 1 UNSTRIDED> myArray(RECTDOMAIN((iStart), (iEnd+1)));
   allArrays.exchange(myArray);
 
 #if !defined(TEAMS)
   // form the allResults array
-  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
+  allResults = ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
   // for myResult's first index, [0:log2numProcCols] are actual sums,
   // while [-log2numProcCols:-1] are data gathered from other procs
-  ndarray<double, 1> myResults(RECTDOMAIN((-log2numProcCols), (log2numProcCols+1)));
+  ndarray<double, 1 UNSTRIDED> myResults(RECTDOMAIN((-log2numProcCols), (log2numProcCols+1)));
   allResults.exchange(myResults);
 #endif
 
-  tmp = ndarray<double, 1>(RECTDOMAIN((iStart), (iEnd+1)));
+  tmp = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((iStart), (iEnd+1)));
 }
 
 void Vector::initialize(int paramN) {
@@ -58,7 +58,7 @@ void Vector::initialize(int paramN) {
 
   // set up the reduce phase schedule (for dot products)
   int divFactor = numProcCols;
-  reduceExchangeProc = ndarray<int, 1>(RECTDOMAIN((0), (log2numProcCols)));
+  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (log2numProcCols)));
   for (int i = 0; i < log2numProcCols; i++) {
     int procColPos = MYTHREAD % numProcCols;
     int procRowPos = MYTHREAD / numProcCols;
@@ -72,11 +72,11 @@ void Vector::initialize(int paramN) {
 }
 
 double Vector::dot(const Vector &a) {
-  ndarray<double, 1> myArray = getMyArray();
-  ndarray<double, 1> myAArray = a.getMyArray();
+  ndarray<double, 1 UNSTRIDED> myArray = getMyArray();
+  ndarray<double, 1 UNSTRIDED> myAArray = a.getMyArray();
   double myResult = 0;
 
-  foreach (p, myArray.domain()) {
+  FOREACH (p, myArray.domain()) {
     myResult += myArray[p] * myAArray[p];
   }
 
@@ -92,7 +92,7 @@ double Vector::dot(const Vector &a) {
   return myResult;
 #else // TEAMS
   TIMER_START(reduceTimer);
-  ndarray<double, 1> myResults = (ndarray<double, 1>) allResults[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {
@@ -109,10 +109,10 @@ double Vector::dot(const Vector &a) {
 
 // compute the L2 Norm of vector
 double Vector::L2Norm() {
-  ndarray<double, 1> myArray = getMyArray();
+  ndarray<double, 1 UNSTRIDED> myArray = getMyArray();
   double myResult = 0;
 
-  foreach (p, myArray.domain()) {
+  FOREACH (p, myArray.domain()) {
     myResult += myArray[p]*myArray[p];
   }
 
@@ -128,7 +128,7 @@ double Vector::L2Norm() {
   return sqrt(myResult);
 #else // TEAMS
   TIMER_START(reduceTimer);
-  ndarray<double, 1> myResults = (ndarray<double, 1>) allResults[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {

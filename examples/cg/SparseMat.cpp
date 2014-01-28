@@ -41,20 +41,22 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 
   // form the allResults array
 #ifdef TEAMS
-  myResults = ndarray<double, 1>(RECTDOMAIN((rowStart), (rowEnd+1)));
-  allResults = ndarray<global_ndarray<double, 1>, 1>(RECTDOMAIN((0), ((int)THREADS)));
+  myResults = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((rowStart), (rowEnd+1)));
+  allResults =
+    ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
   allResults.exchange(myResults);
-  mtmp = ndarray<double, 1>(RECTDOMAIN((rowStart), (rowEnd+1)));
+  mtmp = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((rowStart), (rowEnd+1)));
 #else
   // for myResult's first index, 0 to log2numProcCols are actual sums,
   // while -log2numProcCols to -1 are data gathered from other procs
   global_ndarray<double, 2> myResults(RECTDOMAIN((-log2numProcCols, rowStart), (log2numProcCols+1, rowEnd+1)));
-  allResults = ndarray<global_ndarray<double, 2>, 1>(RECTDOMAIN((0), ((int)THREADS)));
+  allResults =
+    ndarray<global_ndarray<double, 2>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
   allResults.exchange(myResults);
 
   // set up the reduce phase schedule for SpMV
   int divFactor = numProcCols;
-  reduceExchangeProc = ndarray<int, 1>(RECTDOMAIN((0), (log2numProcCols)));
+  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (log2numProcCols)));
   for (int i = 0; i < log2numProcCols; i++) {
     int j = ((procColPos + divFactor/2) % divFactor) + procColPos / divFactor * divFactor;
     reduceExchangeProc[i] = Util::posToProcId(procRowPos, j);//procRowPos * numProcCols + j;
@@ -70,38 +72,38 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 
   // myTimer = new Timer();
   numTimers = 6;
-  myTimes = ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((1), (numTimers+1)));
+  myTimes = ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
 
   // set up arrays for storing times
   myTimes[T_SPMV_LOCAL_COMP] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myTimes[T_SPMV_REDUCTION_COMP] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #ifdef TEAMS
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
 #else
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #endif
   myTimes[T_SPMV_REDUCTION_BARRIER_POLLS] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
   myTimes[T_SPMV_DIAGONAL_SWAP_COMM] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myTimes[T_SPMV_DIAGONAL_SWAP_BARRIER_POLLS] =
-    ndarray<double, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
 #endif
 
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
   numCounters = 2;
-  myCounts =  ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((1), (numTimers+1)));
+  myCounts =  ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
 
   // set up arrays for storing counts
   myCounts[T_SPMV_LOCAL_COMP] =
-    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
   myCounts[T_SPMV_REDUCTION_COMP] =
-    ndarray<long, 1>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
 #endif
 
 #ifdef TEAMS
@@ -136,18 +138,18 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 }
 
 void SparseMat::multiply(Vector &output, Vector &input) {
-  ndarray<double, 1> myOut = output.getMyArray();
-  ndarray<double, 1> myIn = input.getMyArray();
+  ndarray<double, 1 UNSTRIDED> myOut = output.getMyArray();
+  ndarray<double, 1 UNSTRIDED> myIn = input.getMyArray();
 
   // LocalSparseMat local mySparseMat = (LocalSparseMat local) mySparseMat;//sparseMatGrid[MYTHREAD/numProcCols, MYTHREAD%numProcCols];
   LocalSparseMat &mySparseMat = this->mySparseMat;
 #ifdef VREDUCE
-  ndarray<double, 1> myResults0 = mtmp;
+  ndarray<double, 1 UNSTRIDED> myResults0 = mtmp;
 #elif defined(TEAMS)
-  ndarray<double, 1> myResults0 = myResults;
+  ndarray<double, 1 UNSTRIDED> myResults0 = myResults;
 #else
   ndarray<double, 2> myResults = (ndarray<double, 2>) allResults[MYTHREAD];
-  ndarray<double, 1> myResults0 = myResults.slice(1, 0);
+  ndarray<double, 1 UNSTRIDED> myResults0 = myResults.slice(1, 0);
 #endif
   multiplyCallCount++;
 
@@ -163,7 +165,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
 #ifdef CTEAMS
   TIMER_START(myTimer);
   teamsplit(rowTeam) {
-    myResults0 = (ndarray<double, 1>) myResults;
+    myResults0 = (ndarray<double, 1 UNSTRIDED>) myResults;
     reduce::add(mtmp, myResults0, rpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
@@ -251,7 +253,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     ndarray<double, 1> myNewResults = myResults.slice(1, i+1);
     ndarray<double, 1> myOldResults = myResults.slice(1, i);
     ndarray<double, 1> myNewData = myResults.slice(1, -(i+1));
-    foreach (p, myNewResults.domain()) {
+    FOREACH (p, myNewResults.domain()) {
       myNewResults[p] = myNewData[p] + myOldResults[p];
     }
 
@@ -305,15 +307,15 @@ void SparseMat::resetProfile() {
   multiplyCallCount = 0;
 
 #ifdef TIMERS_ENABLED
-  foreach (component, myTimes.domain()) {
-    foreach (timing, myTimes[component].domain()) {
+  FOREACH (component, myTimes.domain()) {
+    FOREACH (timing, myTimes[component].domain()) {
       myTimes[component][timing] = 0;
     }
   }
 #endif
 #ifdef COUNTERS_ENABLED
-  foreach (component, myCounts.domain()) {
-    foreach (count, myCounts[component].domain()) {
+  FOREACH (component, myCounts.domain()) {
+    FOREACH (count, myCounts[component].domain()) {
       myCounts[component][count] = 0;
     }
   }
@@ -356,7 +358,7 @@ void SparseMat::printSummary() {
 
 # ifdef TIMERS_ENABLED
     double totalComponentTime = 0.0;
-    foreach (timing, myTimes[timerIdx].domain()) {
+    FOREACH (timing, myTimes[timerIdx].domain()) {
       totalComponentTime += myTimes[timerIdx][timing];
     }
     totalTime += totalComponentTime;
@@ -374,7 +376,7 @@ void SparseMat::printSummary() {
 # ifdef COUNTERS_ENABLED
     if (timerIdx <= numCounters) {
       long totalComponentCount = 0;
-      foreach (count, myCounts[timerIdx].domain()) {
+      FOREACH (count, myCounts[timerIdx].domain()) {
         totalComponentCount += myCounts[timerIdx][count];
       }
 		
@@ -448,7 +450,7 @@ void SparseMat::printProfile() {
       double lsumTime = 0;
       int numReadingsPerProc = 0;
 		
-      foreach (timing, myTimes[timerIdx].domain()) {
+      FOREACH (timing, myTimes[timerIdx].domain()) {
         double value = myTimes[timerIdx][timing];
         if (value < lminTime) {
           lminTime = value;
@@ -491,7 +493,7 @@ void SparseMat::printProfile() {
         long lsumCount = 0;
         int numReadingsPerProc = 0;
 		    
-        foreach (count, myCounts[timerIdx].domain()) {
+        FOREACH (count, myCounts[timerIdx].domain()) {
           long value = myCounts[timerIdx][count];
           if (value < lminCount) {
             lminCount = value;

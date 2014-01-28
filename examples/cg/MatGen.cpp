@@ -2,8 +2,8 @@
 #include "MatGen.h"
 
 SparseMat *MatGen::Initialize(int na, int nonzer, double shift, double rcond) {
-  ndarray<int, 1> colidx, rowstr;
-  ndarray<double, 1> a;
+  ndarray<int, 1 UNSTRIDED> colidx, rowstr;
+  ndarray<double, 1 UNSTRIDED> a;
 
   int *iv, *arow, *acol;
   double *v, *aelt;
@@ -28,14 +28,14 @@ SparseMat *MatGen::Initialize(int na, int nonzer, double shift, double rcond) {
 
   // initialization of problem
   int nz = na*(nonzer+1)*(nonzer+1)/THREADS + na*(nonzer+2+THREADS/256)/numProcCols;
-  colidx = ndarray<int, 1>(RECTDOMAIN((0), (nz+1)));
-  rowstr = ndarray<int, 1>(RECTDOMAIN((0), (na+2)));
+  colidx = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (nz+1)));
+  rowstr = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (na+2)));
   iv = new int[2*na+2];
   arow = new int[nz+1]; 
   acol = new int[nz+1];
   v = new double[na+2]; 
   aelt = new double[nz+1]; 
-  a = ndarray<double, 1>(RECTDOMAIN((0), (nz+1)));
+  a = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (nz+1)));
   // rng=new Random();
 
   int naa = na;
@@ -72,9 +72,10 @@ SparseMat *MatGen::Initialize(int na, int nonzer, double shift, double rcond) {
 //--------------------------------------------------------------------------------
 
 void MatGen::makea(int n, int nz, int firstrow, int lastrow, int firstcol,
-                   int lastcol, ndarray<double, 1> a, ndarray<int, 1> colidx,
-                   ndarray<int, 1> rowstr, 
-                   int nonzer, double rcond, int arow[], int acol[], 
+                   int lastcol, ndarray<double, 1 UNSTRIDED> a,
+                   ndarray<int, 1 UNSTRIDED> colidx,
+                   ndarray<int, 1 UNSTRIDED> rowstr,
+                   int nonzer, double rcond, int arow[], int acol[],
                    double aelt[], double v[], int iv[], double shift,
                    double amult, Random &rng) {
 
@@ -156,10 +157,11 @@ void MatGen::makea(int n, int nz, int firstrow, int lastrow, int firstcol,
   return;
 }
 
-void MatGen::sprnvc(int n, int nz, double v[], int iv[], ndarray<int, 1> nzloc, 
-                    int nzloc_offst, ndarray<int, 1> mark, int mark_offst,
-                    double amult, Random &rng) {
-  int nzrow=0,nzv=0,idx;	
+void MatGen::sprnvc(int n, int nz, double v[], int iv[],
+                    ndarray<int, 1 UNSTRIDED> nzloc,
+                    int nzloc_offst, ndarray<int, 1 UNSTRIDED> mark,
+                    int mark_offst, double amult, Random &rng) {
+  int nzrow=0,nzv=0,idx;
   int nn1 = 1;
 	
   while (true) {
@@ -191,7 +193,7 @@ void MatGen::sprnvc(int n, int nz, double v[], int iv[], ndarray<int, 1> nzloc,
   }
 }
 
-int MatGen::vecset(int n, double v[], int iv[], 
+int MatGen::vecset(int n, double v[], int iv[],
                    int nzv, int ival, double val) {
   bool set = false; 
   for(int k=1; k<=nzv;k++){
@@ -208,12 +210,13 @@ int MatGen::vecset(int n, double v[], int iv[],
   return nzv;    
 }
 
-void MatGen::sparse(ndarray<double, 1> a, ndarray<int, 1> colidx,
-                    ndarray<int, 1> rowstr, 
-                    int n, int firstrow, int lastrow, int arow[], int acol[], 
-                    double aelt[],  
-                    double x[], int mark[], 
-                    int mark_offst, int nzloc[], int nzloc_offst, 
+void MatGen::sparse(ndarray<double, 1 UNSTRIDED> a,
+                    ndarray<int, 1 UNSTRIDED> colidx,
+                    ndarray<int, 1 UNSTRIDED> rowstr,
+                    int n, int firstrow, int lastrow, int arow[], int acol[],
+                    double aelt[],
+                    double x[], int mark[],
+                    int mark_offst, int nzloc[], int nzloc_offst,
                     int nnza) {
 
   //---------------------------------------------------------------------

@@ -21,13 +21,13 @@ class SparseMat {
   int numProcRows, numProcCols;            // # of processor rows and columns (multiplied = # procs)
   int rowStart, rowEnd;                    // start and end row for this processor
 #ifdef TEAMS
-  ndarray<global_ndarray<double, 1>, 1> allResults;      // used for storing SpMV results
-  ndarray<double, 1> myResults;
-  ndarray<double, 1> mtmp;
+  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
+  ndarray<double, 1 UNSTRIDED> myResults;
+  ndarray<double, 1 UNSTRIDED> mtmp;
 #else
-  ndarray<global_ndarray<double, 2>, 1> allResults;      // used for storing SpMV results
+  ndarray<global_ndarray<double, 2>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
  private:
-  ndarray<int, 1> reduceExchangeProc;            // used to do communication in dot products
+  ndarray<int, 1 UNSTRIDED> reduceExchangeProc;            // used to do communication in dot products
 #endif
   int transposeProc;                      // used to do communication in dot products
   int log2numProcCols;
@@ -51,7 +51,7 @@ class SparseMat {
   int numTimers, numCounters;
   timer myTimer;
   // "myTimes" is indexed by (CG Component #) and then timing number
-  ndarray<ndarray<double, 1>, 1> myTimes;
+  ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> myTimes;
   // total SPMV communication time
   double spmvCommTime;
 #endif
@@ -59,14 +59,16 @@ class SparseMat {
 #ifdef COUNTERS_ENABLED
   PAPICounter myCounter;
   // "myCounts" is indexed by (CG Component #) and then counting number
-  ndarray<ndarray<long, 1>, 1> myCounts;
+  ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED> myCounts;
 #endif
 
   // This constructor makes the array of local sparse matrices "localSparseMats" from the
   // global arrays for matrix A.
   // the "l" at the start of each parameter name means "local"
-  static SparseMat *makeSparseMat(ndarray<double, 1> la, ndarray<int, 1> lcidx,
-                                  ndarray<int, 1> lrow, int paramNumProcRows,
+  static SparseMat *makeSparseMat(ndarray<double, 1 UNSTRIDED> la,
+                                  ndarray<int, 1 UNSTRIDED> lcidx,
+                                  ndarray<int, 1 UNSTRIDED> lrow,
+                                  int paramNumProcRows,
                                   int paramNumProcCols, int paramN) {
     LocalSparseMat *lsmat = new LocalSparseMat(la, lcidx, lrow, paramN,
                                                paramNumProcRows, paramNumProcCols);

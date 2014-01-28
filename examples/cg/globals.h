@@ -22,6 +22,28 @@
    relaxed consistency model. */
 /* #define POINT_TO_POINT_COMM */
 
+#ifdef USE_SIMPLE
+# define UNSTRIDED , simple
+#elif defined(USE_UNSTRIDED)
+# define UNSTRIDED , unstrided
+#elif !defined(UNSTRIDED)
+# define UNSTRIDED
+#endif
+
+#ifdef USE_FOREACH1
+# define foreachd(var, dom, dim)                                        \
+  foreachd_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
+            CONCAT_(var, _done))
+# define foreachd_(var, dom, dim, u_, s_, d_)                           \
+  for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
+       !d_; d_ = 1)                                                     \
+    for (int var = dom.lwb()[dim]; var < u_; var += s_)
+#  define foreach1(v1, dom)                     \
+  foreachd(v1, dom, 1)
+# define FOREACH foreach1
+#elif !defined(FOREACH)
+# define FOREACH foreach
+#endif
 
 #if defined(RTCOPY) && !defined(CTEAMS)
 # define CTEAMS
@@ -34,7 +56,6 @@
 #if defined(VREDUCE) && !defined(TEAMS)
 # define TEAMS
 #endif
-
 
 /* Enabling the following flag indicates pushing data for the diagonal swap
    in SparMat.ti.  If turned off, the data is pulled instead. */
