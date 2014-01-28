@@ -77,22 +77,62 @@ struct timer {
 # define TIMER_RESET(t)
 #endif
 
-#if defined(OPT_LOOP) || defined(SPLIT_LOOP)
+#if defined(OPT_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP)
 # define USE_UNSTRIDED
 # define foreachd(var, dom, dim)                                        \
   foreachd_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
             CONCAT_(var, _done))
+/* # define foreachd_(var, dom, dim, u_, s_, d_)                           \ */
+/*   for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \ */
+/*        !d_; d_ = 1)                                                     \ */
+/*     for (int var = dom.lwb()[dim]; var < u_; var += s_) */
 # define foreachd_(var, dom, dim, u_, s_, d_)                           \
+  for (int u_ = (dom).upb()[dim], s_ = (dom).stride()[dim],		\
+	 var = (dom).lwb()[dim]; var < u_; var += s_)
+#  define foreachh(N, dom, l_, u_, s_, d_)                              \
+  for (point<N> l_ = dom.lwb(), u_ = dom.upb(), s_ = dom.stride(),      \
+         d_ = point<N>::all(0); !d_.x[0]; d_.x[0] = 1)
+#  define foreachhd(var, dim, lp_, up_, sp_)                            \
+  for (int var = lp_.x[dim]; var < up_.x[dim]; var += sp_.x[dim])
+# define foreachd_pragma(str, var, dom, dim)				\
+  foreachd_pragma_(str, var, dom, dim, CONCAT_(var, _upb),		\
+		  CONCAT_(var, _stride), CONCAT_(var, _done))
+# define foreachd_pragma_(str, var, dom, dim, u_, s_, d_)		\
   for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
        !d_; d_ = 1)                                                     \
+    _Pragma(#str)							\
     for (int var = dom.lwb()[dim]; var < u_; var += s_)
-# define foreach1(v1, dom)                      \
+# ifdef ALT_FOREACH
+#  define foreach1(v1, dom)                                             \
+  foreach1_(v1, dom, CONCAT_(v1, _plwb),  CONCAT_(v1, _pupb),           \
+            CONCAT_(v1, _pstr), CONCAT_(v1, _done))
+#  define foreach1_(v1, dom, lp_, up_, sp_, d_) \
+  foreachh(1, dom, lp_, up_, sp_, d_)           \
+    foreachhd(v1, 0, lp_, up_, sp_)
+#  define foreach2(v1, v2, dom)                                         \
+  foreach2_(v1, v2, dom, CONCAT_(v1, _plwb),  CONCAT_(v1, _pupb),       \
+            CONCAT_(v1, _pstr), CONCAT_(v1, _done))
+#  define foreach2_(v1, v2, dom, lp_, up_, sp_, d_)     \
+  foreachh(2, dom, lp_, up_, sp_, d_)                   \
+    foreachhd(v1, 0, lp_, up_, sp_)                     \
+      foreachhd(v2, 1, lp_, up_, sp_)
+#  define foreach3(v1, v2, v3, dom)                                     \
+  foreach3_(v1, v2, v3, dom, CONCAT_(v1, _plwb),  CONCAT_(v1, _pupb),   \
+            CONCAT_(v1, _pstr), CONCAT_(v1, _done))
+#  define foreach3_(v1, v2, v3, dom, lp_, up_, sp_, d_) \
+  foreachh(3, dom, lp_, up_, sp_, d_)                   \
+    foreachhd(v1, 0, lp_, up_, sp_)                     \
+      foreachhd(v2, 1, lp_, up_, sp_)                   \
+        foreachhd(v3, 2, lp_, up_, sp_)
+# else /* ALT_FOREACH */
+#  define foreach1(v1, dom)                     \
   foreachd(v1, dom, 1)
-# define foreach2(v1, v2, dom)                  \
+#  define foreach2(v1, v2, dom)                 \
   foreach1(v1, dom) foreachd(v2, dom, 2)
-# define foreach3(v1, v2, v3, dom)              \
+#  define foreach3(v1, v2, v3, dom)             \
   foreach2(v1, v2, dom) foreachd(v3, dom, 3)
-#endif
+# endif /* ALT_FOREACH */
+#endif /* OPT_LOOP || SPLIT_LOOP */
 
 #ifdef USE_UNSTRIDED
 # define UNSTRIDED , unstrided
@@ -119,10 +159,6 @@ using namespace upcxx;
 
 #ifndef WEIGHT
 # define WEIGHT 6.0
-#endif
-
-#ifndef NUM_TRIALS
-# define NUM_TRIALS 1
 #endif
 
 #define SWAP(A, B, TYPE) do {                   \

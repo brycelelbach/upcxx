@@ -10,36 +10,29 @@ static ndarray<global_ndarray<double, 3 UNSTRIDED>, 1> allGridsA, allGridsB;
 static ndarray<global_ndarray<double, 3>, 1> targetsA, targetsB;
 static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
 static int steps;
+static int numTrials = 1;
 
 enum timer_type {
   COMMUNICATION,
   COMPUTATION
 };
 enum timer_index {
-  LAUNCH_COPIES = 0,
-  SYNC_COPIES,
-  COPY_BARRIER,
-  LAUNCH_X_COPIES,
+  LAUNCH_X_COPIES = 0,
   SYNC_X_COPIES,
   LAUNCH_Y_COPIES,
   SYNC_Y_COPIES,
   LAUNCH_Z_COPIES,
   SYNC_Z_COPIES,
-  PRE_COMPUTE_BARRIER,
   PROBE_COMPUTE,
   POST_COMPUTE_BARRIER,
   NUM_TIMERS
 };
 static timer timers[NUM_TIMERS];
-static string timerStrings[] = {"launch copies", "sync copies",
-                                "copy barrier", "launch x copies",
-                                "sync x copies", "launch y copies",
-                                "sync y copies", "launch z copies",
-                                "sync z copies", "pre compute barrier",
+static string timerStrings[] = {"launch x copies", "sync x copies",
+                                "launch y copies", "sync y copies",
+                                "launch z copies", "sync z copies",
                                 "probe compute", "post compute barrier"};
 static timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
-                                  COMMUNICATION, COMMUNICATION,
-                                  COMMUNICATION, COMMUNICATION,
                                   COMMUNICATION, COMMUNICATION,
                                   COMMUNICATION, COMMUNICATION,
                                   COMPUTATION, COMPUTATION};
@@ -90,12 +83,12 @@ static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
                                         int mythread) {
   point<3> mypos = threadToPos(parts, threads, mythread);
   ndarray<int, 1> neighbors = ARRAY(int, ((0), (6)));
-  neighbors[0] = posToThread(parts, threads, mypos -POINT(1,0,0));
-  neighbors[1] = posToThread(parts, threads, mypos +POINT(1,0,0));
-  neighbors[2] = posToThread(parts, threads, mypos -POINT(0,1,0));
-  neighbors[3] = posToThread(parts, threads, mypos +POINT(0,1,0));
-  neighbors[4] = posToThread(parts, threads, mypos -POINT(0,0,1));
-  neighbors[5] = posToThread(parts, threads, mypos +POINT(0,0,1));
+  neighbors[0] = posToThread(parts, threads, mypos - POINT(1,0,0));
+  neighbors[1] = posToThread(parts, threads, mypos + POINT(1,0,0));
+  neighbors[2] = posToThread(parts, threads, mypos - POINT(0,1,0));
+  neighbors[3] = posToThread(parts, threads, mypos + POINT(0,1,0));
+  neighbors[4] = posToThread(parts, threads, mypos - POINT(0,0,1));
+  neighbors[5] = posToThread(parts, threads, mypos + POINT(0,0,1));
   return neighbors;
 }
 
@@ -115,7 +108,7 @@ static void initGrid(ndarray<double, 3> grid) {
 
 // Perform stencil.
 static void probe(int steps) {
-  double fac = allGridsA[0][POINT(0, 0, 0)]; // prevent constant folding
+  double fac = myGridA[myGridA.domain().min()]; // prevent constant folding
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
     // first x dimension
@@ -202,6 +195,40 @@ static void probe(int steps) {
         myGridA[i-1][j][k] -
         WEIGHT * myGridA[i][j][k] / (fac * fac);
     }
+#elif defined(OMP_SPLIT_LOOP) && defined(USE_FOREACHH)
+    foreachh (3, myDomain, lwb, upb, stride, done) {
+      foreachhd (i, 0, lwb, upb, stride) {
+# pragma omp parallel for
+        foreachhd (j, 1, lwb, upb, stride) {
+# pragma ivdep
+          foreachhd (k, 2, lwb, upb, stride) {
+            myGridB[i][j][k] =
+              myGridA[i][j][k+1] +
+              myGridA[i][j][k-1] +
+              myGridA[i][j+1][k] +
+              myGridA[i][j-1][k] +
+              myGridA[i+1][j][k] +
+              myGridA[i-1][j][k] -
+              WEIGHT * myGridA[i][j][k] / (fac * fac);
+          }
+        }
+      }
+    }
+#elif defined(OMP_SPLIT_LOOP)
+    foreachd (i, myDomain, 1) {
+      foreachd_pragma (omp parallel for, j, myDomain, 2) {
+	foreachd_pragma (ivdep, k, myDomain, 3) {
+	  myGridB[i][j][k] =
+	    myGridA[i][j][k+1] +
+	    myGridA[i][j][k-1] +
+	    myGridA[i][j+1][k] +
+	    myGridA[i][j-1][k] +
+	    myGridA[i+1][j][k] +
+	    myGridA[i-1][j][k] -
+	    WEIGHT * myGridA[i][j][k] / (fac * fac);
+	}
+      }
+    }
 #else
     foreach (p, myDomain) {
 # ifdef SECOND_ORDER
@@ -272,8 +299,8 @@ int main(int argc, char **args) {
 #ifdef MEMORY_DISTRIBUTED
   init(&argc, &args);
 #endif
-  if (argc > 1 && (argc != 8 || !strncmp(args[1], "-h", 2))) {
-    cout << "Usage: stencil <xdim> <ydim> <zdim> <xparts> <yparts> <zparts> <timesteps>" << endl;
+  if (argc > 1 && (argc < 8 || !strncmp(args[1], "-h", 2))) {
+    cout << "Usage: stencil <xdim> <ydim> <zdim> <xparts> <yparts> <zparts> <timesteps> [num_trials]" << endl;
     exit(1);
   } else if (argc > 1) {
     xdim = atoi(args[1]);
@@ -284,6 +311,8 @@ int main(int argc, char **args) {
     zparts = atoi(args[6]);
     steps = atoi(args[7]);
     assert(THREADS == xparts * yparts * zparts);
+    if (argc > 8)
+      numTrials = atoi(args[8]);
   } else {
     xdim = ydim = zdim = 64;
     xparts = THREADS;
@@ -351,7 +380,7 @@ int main(int argc, char **args) {
 #ifdef TIMERS_ENABLED
   timer t;
 #endif
-  for (int i = 0; i < NUM_TRIALS; i++) {
+  for (int i = 0; i < numTrials; i++) {
     initGrid(myGridA);
     initGrid(myGridB);
     TIMER_RESET(t);
