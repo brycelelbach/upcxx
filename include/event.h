@@ -54,10 +54,21 @@ namespace upcxx
 
     void enqueue_cb();
 
-    inline bool isdone() const { return (_count == 0); }
+    inline bool isdone() const
+    {
+      assert(_count >= 0);
+      return (_count == 0);
+    }
       
     // Increment the reference counter for the event
-    inline  int incref(uint32_t c=1) { return (_count += c); }
+    inline int incref(uint32_t c=1)
+    {
+      gasnet_hsl_lock(&_lock);
+      _count += c;
+      gasnet_hsl_unlock(&_lock);
+
+      return _count;
+    }
 
     // Decrement the reference counter for the event
     inline void decref() 
@@ -82,6 +93,7 @@ namespace upcxx
     {
       _h = h;
       _h_flag = 1;
+      incref();
     }
 
     inline int num_done_cb() const { return _num_done_cb; }
