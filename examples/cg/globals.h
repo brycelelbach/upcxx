@@ -4,7 +4,9 @@
 # define USE_UPCXX 1
 #endif
 
-#define RTCOPY
+#ifndef DISABLE_TEAMS
+# define CTEAMS
+#endif
 
 /* PROFILING */
 
@@ -43,10 +45,6 @@
 # define FOREACH foreach1
 #elif !defined(FOREACH)
 # define FOREACH foreach
-#endif
-
-#if defined(RTCOPY) && !defined(CTEAMS)
-# define CTEAMS
 #endif
 
 #if defined(CTEAMS) && !defined(VREDUCE)
@@ -108,7 +106,7 @@
 #define Point point
 #define RectDomain rectdomain
 
-#if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
+#if USE_UPCXX
 # include <reduce.h>
 #endif
 

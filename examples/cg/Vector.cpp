@@ -38,7 +38,10 @@ Vector::Vector() {
   allResults.exchange(myResults);
 #endif
 
-  tmp = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((iStart), (iEnd+1)));
+#ifdef FORCE_VREDUCE
+  src = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (1)));
+  dst = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (1)));
+#endif
 }
 
 void Vector::initialize(int paramN) {
@@ -85,8 +88,17 @@ double Vector::dot(const Vector &a) {
   // a bug? in clang causes failure without the following line, likely
   // due to improper inlining of the reduction
   double myResult0 = myResult;
+# ifdef FORCE_VREDUCE
+  src[0] = myResult;
+# endif
   teamsplit(rowTeam) {
+    barrier(); // added
+# if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
+# else
+    reduce::add(src, dst);
+    myResult = dst[0];
+# endif
   }
   TIMER_STOP(reduceTimer);
   return myResult;
@@ -121,8 +133,17 @@ double Vector::L2Norm() {
   // a bug? in clang causes failure without the following line, likely
   // due to improper inlining of the reduction
   double myResult0 = myResult;
+# ifdef FORCE_VREDUCE
+  src[0] = myResult;
+# endif
   teamsplit(rowTeam) {
+    barrier(); // added
+# if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
+# else
+    reduce::add(src, dst);
+    myResult = dst[0];
+# endif
   }
   TIMER_STOP(reduceTimer);
   return sqrt(myResult);

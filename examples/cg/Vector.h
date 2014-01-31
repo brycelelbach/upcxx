@@ -24,7 +24,9 @@ class Vector {
   static int numProcRows;
   static int numProcCols;
 
-  ndarray<double, 1> tmp;
+#ifdef FORCE_VREDUCE
+  ndarray<double, 1> src, dst;
+#endif
 
 #ifdef TEAMS
   static team *rowTeam;

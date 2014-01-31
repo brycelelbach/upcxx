@@ -174,10 +174,8 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     if (copySync)
       barrier(); // ensure reductions above complete before copy
   }
-  //barrier(); // added
   if (reduceCopy)
     myOut.copy(allResults[reduceSource]);
-  //barrier(); // added
   teamsplit(columnTeam) {
     myOut.vbroadcast(cpivot);
   }
@@ -194,7 +192,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(transposeTeam) {
     // actual diagonal swap
-    if (Ti.currentTeam().size() == 1) {
+    if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);
     } else {
 # ifdef PUSH_DATA
@@ -220,7 +218,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
   teamsplit(transposeTeam) {
     // actual diagonal swap
-    if (Team::currentTeam()->size() == 1) {
+    if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);
     } else {
 # ifdef PUSH_DATA
