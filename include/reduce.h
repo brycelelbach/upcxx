@@ -32,13 +32,13 @@
 #define REDUCE_BULK_ALL_DECL(ret_type, op_name, op_code)                \
   template<class T> static void op_name(T *src, T *dst, int count,      \
                                         ret_type * = 0) {               \
-    return reduce_internal(src, dst, count, op_code);                   \
+    reduce_internal(src, dst, count, op_code);                          \
   }
 
 #define REDUCE_BULK_TO_DECL(ret_type, op_name, op_code)                 \
   template<class T> static void op_name(T *src, T *dst, int count,      \
                                         int root, ret_type * = 0) {     \
-    return reduce_internal(src, dst, count, op_code, root);             \
+    reduce_internal(src, dst, count, op_code, root);                    \
   }
 
 #define ARRAY_ELEM_TYPE(Array)                  \
@@ -115,41 +115,40 @@ namespace upcxx {
   class reduce {
   private:
     template<class T> static T reduce_internal(T val, upcxx_op_t op) {
-      T redval = reduce_internal(val, op, 0);
-      T bcval;
-      gasnet_coll_broadcast(CURRENT_GASNET_TEAM,
-                            &bcval, 0, &redval, sizeof(T),
-                            UPCXX_GASNET_COLL_FLAG);
-      return bcval;
+      static T *src, *dst;
+      if (!src) {
+        src = (T *) gasnet_seg_alloc(2 * sizeof(T));
+        dst = src + 1;
+      }
+      src[0] = reduce_internal(val, op, 0);
+      upcxx_bcast(src, dst, sizeof(T), 0);
+      return dst[0];
     }
 
     template<class T> static T reduce_internal(T val, upcxx_op_t op,
                                                int root) {
-      T redval;
-      gasnet_coll_reduce(CURRENT_GASNET_TEAM,
-                         root, &redval, &val, 0, 0, sizeof(T), 1,
-                         datatype_wrapper<T>::value, op,
-                         UPCXX_GASNET_COLL_FLAG);
-      return redval;
+      static T *src, *dst;
+      if (!src) {
+        src = (T *) gasnet_seg_alloc(2 * sizeof(T));
+        dst = src + 1;
+      }
+      src[0] = val;
+      upcxx_reduce(src, dst, 1, root, op, datatype_wrapper<T>::value);
+      return dst[0];
     }
 
-    template<class T> static T reduce_internal(T *src, T *dst,
-                                               int count,
-                                               upcxx_op_t op) {
+    template<class T> static void reduce_internal(T *src, T *dst,
+                                                  int count,
+                                                  upcxx_op_t op) {
       reduce_internal(src, dst, count, op, 0);
-      gasnet_coll_broadcast(CURRENT_GASNET_TEAM,
-                            dst, 0, src, count * sizeof(T),
-                            UPCXX_GASNET_COLL_FLAG);
+      upcxx_bcast(dst, dst, count * sizeof(T), 0);
     }
 
     template<class T> static void reduce_internal(T *src, T *dst,
                                                   int count,
                                                   upcxx_op_t op,
                                                   int root) {
-      gasnet_coll_reduce(CURRENT_GASNET_TEAM,
-                         root, dst, src, 0, 0, sizeof(T), count,
-                         datatype_wrapper<T>::value, op,
-                         UPCXX_GASNET_COLL_FLAG);
+      upcxx_reduce(src, dst, count, root, op, datatype_wrapper<T>::value);
     }
 
   public:
