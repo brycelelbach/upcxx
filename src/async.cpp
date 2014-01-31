@@ -19,7 +19,7 @@ void gasnet_launcher<node>::launch(generic_fp fp,
     _ack->incref();
   }
 
-  submit_task(task, _after);
+  submit_task(&task, _after);
 }
 
 template<>

@@ -33,7 +33,7 @@ int main(int argc, char **argv)
                              my_node.id(),
                              NULL,
                              callback);
-  submit_task(cb, &e);
+  submit_task(&cb, &e);
 
   cerr << e << "\n";
 

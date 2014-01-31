@@ -1,5 +1,5 @@
 /**
- * aysnc_gasnet.h - asynchronous task execution
+ * aysnc.h - asynchronous task execution
  */
 
 #pragma once
@@ -197,18 +197,14 @@ namespace upcxx
     event *ack_event;
   };
 
-//  template <typename T>
-//    struct async_future_am_t {
-//      future<T> f;
-//    };
-    
   // Add a task the async queue
-  inline void submit_task(async_task &task, event *after = NULL)
+  // \Todo: add "move" semantics to submit_task!
+  inline void submit_task(async_task *task, event *after = NULL)
   {
     async_task *tmp = new async_task;
     assert(tmp != NULL);
-
-    memcpy(tmp, &task, task.nbytes());
+    assert(task != NULL);
+    memcpy(tmp, task, task->nbytes());
 
     if (after != NULL) {
       after->add_done_cb(tmp);
@@ -216,11 +212,20 @@ namespace upcxx
     }
 
     // enqueue the async task
-    assert(async_task_queue != NULL);
-    gasnet_hsl_lock(&async_lock);
-    queue_enqueue(async_task_queue, tmp);
-    gasnet_hsl_unlock(&async_lock);
-  }
+    if (task->_callee == my_node.id()) {
+      // local task
+      assert(in_task_queue != NULL);
+      gasnet_hsl_lock(&in_task_queue_lock);
+      queue_enqueue(in_task_queue, tmp);
+      gasnet_hsl_unlock(&in_task_queue_lock);
+    } else {
+      // remote task
+      assert(out_task_queue != NULL);
+      gasnet_hsl_lock(&out_task_queue_lock);
+      queue_enqueue(out_task_queue, tmp);
+      gasnet_hsl_unlock(&out_task_queue_lock);
+    }
+  } // end of submit_task
 
   struct am_bcast_arg {
     range target; // set of remote nodes

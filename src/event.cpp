@@ -16,18 +16,13 @@ namespace upcxx
 {
   int event::test()
   {
-    const int poll_times = 1;
-
     // Don't poll the network if the event is already done
     if (isdone()) {
-      run_cb();
+      enqueue_cb(); // YZ: need to check deref() to avoid enqueue callback twice
       return 1;
     }
 
-    for (int i=0; i<poll_times; i++) {
-      gasnet_AMPoll();
-      progress();
-    }
+    advance();
 
     if (_h_flag) {
       if (gasnet_try_syncnb(_h) == GASNET_OK)
@@ -44,6 +39,22 @@ namespace upcxx
     }
   }
 
+  void event::enqueue_cb()
+  {
+    assert (_count == 0);
+
+    gasnet_hsl_lock(&_lock);
+    // add done_cb to the task queue
+    if (_num_done_cb > 0) {
+      for (int i=0; i<_num_done_cb; i++) {
+        if (_done_cb[i] != NULL) {
+          submit_task(_done_cb[i]);
+        }
+      }
+    }
+    gasnet_hsl_unlock(&_lock);
+  }
+
   struct event_stack {
     vector<event *> stack;
     event_stack() {
@@ -51,11 +62,7 @@ namespace upcxx
     }
   };
 
-#if __cplusplus < 201103L || !defined(USE_THREAD_LOCAL_TMPS)
   static event_stack events;
-#else
-  static thread_local event_stack events;
-#endif
 
   void push_event(event *e)
   {

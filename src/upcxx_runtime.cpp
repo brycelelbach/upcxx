@@ -1,5 +1,5 @@
 /**
- * UPCXX Lib
+ * UPC++ runtime
  */
 
 #include <stdio.h>
@@ -55,7 +55,11 @@ namespace upcxx
 
   int *gpu_id_map;
   gasnet_hsl_t async_lock;
-  queue_t *async_task_queue = NULL;
+  // queue_t *async_task_queue = NULL;
+  gasnet_hsl_t in_task_queue_lock;
+  gasnet_hsl_t out_task_queue_lock;
+  queue_t *in_task_queue = NULL;
+  queue_t *out_task_queue = NULL;
   event default_event;
   int init_flag = 0;  //  equals 1 if the backend is initialized
 
@@ -130,10 +134,13 @@ namespace upcxx
       assert(gasnet_textseg_offsets != NULL);
     */
 
-    // Initialize the async task queue and the async lock
-    gasnet_hsl_init(&async_lock);
-    async_task_queue = queue_new();
-    assert(async_task_queue != NULL);;
+    // Initialize the async task queues and the async locks
+    gasnet_hsl_init(&in_task_queue_lock);
+    gasnet_hsl_init(&out_task_queue_lock);
+    in_task_queue = queue_new();
+    out_task_queue = queue_new();
+    assert(in_task_queue != NULL);
+    assert(out_task_queue != NULL);
 
     barrier();
 
@@ -164,15 +171,17 @@ namespace upcxx
     assert(task != NULL);
     memcpy(task, buf, nbytes);
       
-    assert(async_task_queue != NULL);
+    // assert(async_task_queue != NULL);
+    assert(in_task_queue != NULL);
+
 #ifdef UPCXX_DEBUG
     cerr << my_node << " is about to enqueue an async task.\n";
     cerr << *task << endl;
 #endif
     // enqueue the async task
-    gasnet_hsl_lock(&async_lock);
-    queue_enqueue(async_task_queue, task);
-    gasnet_hsl_unlock(&async_lock);
+    gasnet_hsl_lock(&in_task_queue_lock);
+    queue_enqueue(in_task_queue, task);
+    gasnet_hsl_unlock(&in_task_queue_lock);
   }
 
   void alloc_cpu_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
@@ -243,127 +252,115 @@ namespace upcxx
     }
   }
 
-  int progress()
+  int advance_in_task_queue(queue_t *inq, int max_dispatched)
   {
     async_task *task;
+    int num_dispatched = 0;
 
     gasnet_AMPoll(); // make progress in GASNet
 
     // Execute tasks in the async queue
-    if (!queue_is_empty(async_task_queue)) {
+    while (!queue_is_empty(inq)) {
       // dequeue an async task
-      gasnet_hsl_lock(&async_lock);
-      task = (async_task *)queue_dequeue(async_task_queue);
-      gasnet_hsl_unlock(&async_lock);
-      if (task != NULL) {
+      gasnet_hsl_lock(&in_task_queue_lock);
+      task = (async_task *)queue_dequeue(inq);
+      gasnet_hsl_unlock(&in_task_queue_lock);
+
+      assert (task != NULL);
+      assert (task->_callee == my_node.id());
+
 #ifdef UPCXX_DEBUG
         cerr << my_node << " is about to execute async task.\n";
         cerr << *task << endl;
 #endif
-        if (task->_callee != my_node.id()) {
-          // remote async task
-          // Send AM "there" to request async task execution 
-          GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
-                                              task, task->nbytes()));
-        } else {
-          // execute the async task
-          if (task->_fp)
-            (*task->_fp)(task->_args);
 
-          if (task->_ack != NULL) {
-            if (task->_caller == my_node.id()) {
-              // local event acknowledgment
-              task->_ack->decref(); // need to enqueue callback tasks
-            } else {
-              // send an ack message back to the caller of the async task
-              async_done_am_t am;
-              am.ack_event = task->_ack;
-              GASNET_SAFE(gasnet_AMRequestMedium0(task->_caller,
-                                                  ASYNC_DONE_AM,
-                                                  &am,
-                                                  sizeof(am)));
-            }
+        // execute the async task
+        if (task->_fp) {
+          (*task->_fp)(task->_args);
+        }
+        
+        if (task->_ack != NULL) {
+          if (task->_caller == my_node.id()) {
+            // local event acknowledgment
+            task->_ack->decref(); // need to enqueue callback tasks
+          } else {
+            // send an ack message back to the caller of the async task
+            async_done_am_t am;
+            am.ack_event = task->_ack;
+            GASNET_SAFE(gasnet_AMRequestMedium0(task->_caller,
+                                                ASYNC_DONE_AM,
+                                                &am,
+                                                sizeof(am)));
           }
         }
         delete task;
-      }
-    } // if (!queue_is_empty(async_task_queue)) {
+        num_dispatched++;
+        if (num_dispatched >= max_dispatched) break;
+    }; // end of while (!queue_is_empty(inq)) 
 
-    return UPCXX_SUCCESS;
-  } // progress()
+    return num_dispatched;
+  } // end of poll_in_task_queue;
 
-  int drain(int max_dispatched)
+  int advance_out_task_queue(queue_t *outq, int max_dispatched)
   {
-    int num_dispatched;
-    bool still_working;
     async_task *task;
+    int num_dispatched = 0;
 
-    num_dispatched = 0;
+    // Execute tasks in the async queue
+    while (!queue_is_empty(outq)) {
+      // dequeue an async task
+      gasnet_hsl_lock(&out_task_queue_lock);
+      task = (async_task *)queue_dequeue(outq);
+      gasnet_hsl_unlock(&out_task_queue_lock);
+      assert (task != NULL);
+      assert (task->_callee != my_node.id());
 
-    // Calling gasnet_AMPoll() once, meaning that only the tasks which have
-    // either already been enqueued or are handled and enqueued _here_ will be
-    // processed below.
-    // TODO: Is this really what we want, or should we poll at each iteration?
-    //       This approach ensures that even if max_dispatched is not supplied,
-    //       the call to drain() still stops (the queue will not grow while in
-    //       the loop below).
-    gasnet_AMPoll();
-
-    do { // while (still_working, num_dispatched OK)
-
-      still_working = false; // still dequeuing?
-
-      // Execute tasks in the async queue
-      if (!queue_is_empty(async_task_queue)) {
-        // dequeue an async task
-        gasnet_hsl_lock(&async_lock);
-        task = (async_task *)queue_dequeue(async_task_queue);
-        gasnet_hsl_unlock(&async_lock);
-        if (task != NULL) {
-          // still clearing the queue
-          still_working = true;
-          num_dispatched++;
 #ifdef UPCXX_DEBUG
-          cerr << my_node << " is about to execute async task.\n";
-          cerr << *task << endl;
+      cerr << my_node << " is about to send outgoing async task.\n";
+      cerr << *task << endl;
 #endif
-          if (task->_callee != my_node.id()) {
-            // remote async task
-            // Send AM "there" to request async task execution 
-            GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
-                                                task, task->nbytes()));
-          } else {
-            // execute the async task
-            if (task->_fp)
-              (*task->_fp)(task->_args);
 
-            if (task->_ack != NULL) {
-              if (task->_caller == my_node.id()) {
-                // local event acknowledgment
-                task->_ack->decref(); // need to enqueue callback tasks
-              } else {
-                // send an ack message back to the caller of the async task
-                async_done_am_t am;
-                am.ack_event = task->_ack;
-                GASNET_SAFE(gasnet_AMRequestMedium0(task->_caller,
-                                                    ASYNC_DONE_AM,
-                                                    &am,
-                                                    sizeof(am)));
-              }
-            }
-          }
-          delete task;
-        }
-      } // if (!queue_is_empty(async_task_queue)) {
-    } while (still_working && (max_dispatched == 0 ||
-                               num_dispatched < max_dispatched));
-    return UPCXX_SUCCESS;
+      // remote async task
+      // Send AM "there" to request async task execution 
+      GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
+                                          task, task->nbytes()));
+      delete task;
+      num_dispatched++;
+      if (num_dispatched >= max_dispatched) break;
+    } // end of while (!queue_is_empty(outq)) 
+
+    return num_dispatched;
+  } // end of poll_out_task_queue()
+
+  int advance(int max_in, int max_out)
+  {
+    int num_in, num_out;
+
+    max_in = (max_in > 0) ? max_in : MAX_DISPATCHED_IN;
+    max_out = (max_out > 0) ? max_out : MAX_DISPATCHED_OUT;
+
+    num_out = advance_out_task_queue(out_task_queue, max_out);
+    assert(num_out >= 0);
+    num_in = advance_in_task_queue(in_task_queue, max_in);
+    assert(num_in >= 0);
+    return num_out + num_in;
+  } // advance()
+
+  /**
+   * An alias of the advance function for backward compatibility.
+   * The advance function is recommended.
+   */
+  inline int progress() { return advance(); }
+
+  inline int drain(int max_dispatched)
+  {
+    return advance(max_dispatched, max_dispatched);
   } // drain()
 
   int peek()
   {
     gasnet_AMPoll();
-    return ! queue_is_empty(async_task_queue);
+    return ! (queue_is_empty(in_task_queue) && queue_is_empty(out_task_queue));
   } // peek()
 
   volatile int exit_signal = 0;
@@ -396,16 +393,5 @@ namespace upcxx
     while (!exit_signal) {
       progress();
     }
-  }
-   
-  void print_async_queue(FILE *fp)
-  {
-    fprintf(fp, "Printing the async task queue:\n");
-    if (async_task_queue == NULL) {
-      fprintf(fp, "async_task_queue is empty.\n");
-      return;
-    }
-    // async_task *task = get_next_task(async_task_queue);
-    // print_task(task);
   }
 } // namespace upcxx

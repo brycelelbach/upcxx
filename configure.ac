@@ -3,7 +3,8 @@ AC_PREREQ([2.59])
 
 AM_INIT_AUTOMAKE([1.10 no-define foreign])
 
-LT_INIT()
+LT_INIT([disable-shared])
+dnl LT_INIT()
 LT_LANG([C++])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -35,10 +36,12 @@ AC_ARG_WITH([gasnet],
 dnl AC_LANG(C++)
 dnl AX_CHECK_COMPILE_FLAG([-std=c++0x], [
 dnl                         CXXFLAGS="$CXXFLAGS -std=c++0x"])
+dnl AX_CXX_COMPILE_STDCXX_11(noext, optional)
 
 ## Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
 CFLAGS+=${UPCXX_FLAGS}
-CXXFLAGS+=${UPCXX_FLAGS}
+CXXFLAGS+=${UPCXX_FLAGS} 
+## CXXFLAGS+=" -Wno-reserved-user-defined-literal"  ## for clang
 
 AC_OUTPUT

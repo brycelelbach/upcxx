@@ -15,6 +15,7 @@
 #include <ios>
 
 #include "upcxx_types.h"
+#include "queue.h"
 
 namespace upcxx
 {
@@ -44,15 +45,67 @@ namespace upcxx
   int finalize();
 
   /**
-   * \ingroup asyncgroup
-   * Poll the task queue and process any asynchronous
-   * tasks received. progress() cannot be called in any GASNet AM
-   * handlers because it may call gasnet_AMPoll().
+   * Default maximum number of task to dispatch for every time
+   * the incoming task queue is polled/advanced.
    */
-  int progress();
+  #define MAX_DISPATCHED_IN   1
+
+  /**
+   * Default maximum number of task to dispatch for every time
+   * the outgoing task queue is polled/advanced.  We choose a
+   * relatively large number 99 to try to send out remote tasks
+   * requests as soon as possible.
+   */
+  #define MAX_DISPATCHED_OUT  99
 
   /**
    * \ingroup asyncgroup
+   * Advance the incoming task queue by processing local tasks
+   *
+   * Note that some local tasks may take
+   *
+   * \param max_dispatched the maximum number of tasks to be processed
+   *
+   * \return the number of tasks that have been processed
+   */
+  int advance_out_task_queue(queue_t *outq,
+                             int max_dispatched = MAX_DISPATCHED_OUT);
+
+  /**
+   * \ingroup asyncgroup
+   * Advance the outgoing task queue by sending out remote task requests
+   *
+   * Note that advance_out_task_queue() shouldn't be be called in
+   * any GASNet AM handlers because it calls gasnet_AMPoll() and
+   * may result in a deadlock.
+   *
+   * \param max_dispatched the maximum number of tasks to send
+   *
+   * \return the number of tasks that have been sent
+   */
+  int advance_in_task_queue(queue_t *inq,
+                            int max_dispatched = MAX_DISPATCHED_IN);
+  /**
+   * \ingroup asyncgroup
+   * Advance both the incoming and outgoing task queues
+   * Note that advance() shouldn't be be called in any GASNet AM
+   * handlers because it calls gasnet_AMPoll() and may result in
+   * a deadlock.
+   *
+   * \param max_dispatched
+   *
+   * \return the total number of tasks that have been processed in the incoming
+   * and outgoing task queues
+   */
+   int advance(int max_in = 0, int max_out = 0);
+
+   int progress();
+
+  /**
+   * \ingroup asyncgroup
+   *
+   * Advance the incoming and outgoing tasks queues
+   *
    * Poll the task queue (once) and process any asynchronous
    * tasks received until either the queue is empty or the optional
    * user-specified maximum number of tasks have been processed.

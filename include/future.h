@@ -72,17 +72,6 @@ namespace upcxx
       }
     }
 
-    inline int num_done_cb() const { return _num_done_cb; }
-
-    inline void add_done_cb(async_task_t *task)
-    {
-      gasnet_hsl_lock(&_lock);
-      assert(_num_done_cb < MAX_NUM_DONE_CB);
-      _done_cb[_num_done_cb] = task;
-      _num_done_cb++;
-      gasnet_hsl_unlock(&_lock);
-    }
-
     /**
      * Wait for the asynchronous event to complete
      */

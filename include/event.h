@@ -19,8 +19,13 @@ using namespace std;
 namespace upcxx
 {
   struct async_task; // defined in async_gasnet.h
-  extern gasnet_hsl_t async_lock;
-  extern queue_t *async_task_queue;
+
+  // extern gasnet_hsl_t async_lock;
+  // extern queue_t *async_task_queue;
+  extern gasnet_hsl_t in_task_queue_lock;
+  extern queue_t *in_task_queue;
+  extern gasnet_hsl_t out_task_queue_lock;
+  extern queue_t *out_task_queue;
 
 #define MAX_NUM_DONE_CB 16
 
@@ -47,22 +52,7 @@ namespace upcxx
 
     inline int count() const { return _count; }
 
-    inline void run_cb()
-    {
-      assert (_count == 0);
-
-      gasnet_hsl_lock(&_lock);
-      // add done_cb to the task queue
-      if (_num_done_cb > 0) {
-        gasnet_hsl_lock(&async_lock);
-        for (int i=0; i<_num_done_cb; i++) {
-          if (_done_cb[i] != NULL)
-            queue_enqueue(async_task_queue, _done_cb[i]);
-        }
-        gasnet_hsl_unlock(&async_lock);
-      }
-      gasnet_hsl_unlock(&_lock);
-    }
+    void enqueue_cb();
 
     inline bool isdone() const { return (_count == 0); }
       
@@ -84,7 +74,7 @@ namespace upcxx
       gasnet_hsl_unlock(&_lock);
 
       if (isdone()) {
-        run_cb();
+        enqueue_cb();
       }
     }
 
@@ -126,8 +116,6 @@ namespace upcxx
                << ", # of callback tasks " << e.num_done_cb()
                << "\n";
   }
-
-  typedef event * async_event; // use the same type name as phalanx v2
 
   extern event default_event; // defined in upcxx.cpp
 

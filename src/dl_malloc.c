@@ -2701,6 +2701,7 @@ static msegmentptr segment_holding(mstate m, char* addr) {
     if ((sp = sp->next) == 0)
       return 0;
   }
+  return 0;
 }
 
 /* Return true if segment contains a segment link */
@@ -2712,6 +2713,7 @@ static int has_segment_link(mstate m, msegmentptr ss) {
     if ((sp = sp->next) == 0)
       return 0;
   }
+  return 0;
 }
 
 #ifndef MORECORE_CANNOT_TRIM
