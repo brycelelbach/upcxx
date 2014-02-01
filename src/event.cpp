@@ -16,14 +16,6 @@ namespace upcxx
 {
   int event::test()
   {
-    // Don't poll the network if the event is already done
-    if (isdone()) {
-      enqueue_cb(); // YZ: need to check deref() to avoid enqueue callback twice
-      return 1;
-    }
-
-    advance();
-
     if (_h_flag) {
       if (gasnet_try_syncnb(_h) == GASNET_OK)
         decref();
@@ -35,6 +27,7 @@ namespace upcxx
   void event::wait()
   {
     while (!test()) {
+      advance();
       gasnett_sched_yield();
     }
   }

@@ -6,10 +6,10 @@
 
 #include <iostream>
 #include <cassert>
+#include <vector>
 
 #include <stdio.h>
 #include <stdlib.h>
-
 
 #include "gasnet_api.h"
 #include "queue.h"
@@ -43,6 +43,7 @@ namespace upcxx
     gasnet_handle_t _h;
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
+    // vector<async_task &> _cont_tasks;
 
     inline event() : _count(0), _h_flag(0), _h(GASNET_INVALID_HANDLE),
                        _num_done_cb(0)
@@ -84,7 +85,7 @@ namespace upcxx
       _count--;
       gasnet_hsl_unlock(&_lock);
 
-      if (isdone()) {
+      if (_count == 0) {
         enqueue_cb();
       }
     }
