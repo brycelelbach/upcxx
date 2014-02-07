@@ -166,12 +166,12 @@ static void probe(int steps) {
       ndarray<double, 2, unstrided> myGridAim = myGridA.slice(i-1);
       ndarray<double, 2, unstrided> myGridAip = myGridA.slice(i+1);
       foreachd (j, myDomain, 2) {
-        ndarray<double, 1, simple> myGridBij = myGridBi.slice(j);
-        ndarray<double, 1, simple> myGridAij = myGridAi.slice(j);
-        ndarray<double, 1, simple> myGridAijm = myGridAi.slice(j-1);
-        ndarray<double, 1, simple> myGridAijp = myGridAi.slice(j+1);
-        ndarray<double, 1, simple> myGridAimj = myGridAim.slice(j);
-        ndarray<double, 1, simple> myGridAipj = myGridAip.slice(j);
+        ndarray<double, 1, unstrided> myGridBij = myGridBi.slice(j);
+        ndarray<double, 1, unstrided> myGridAij = myGridAi.slice(j);
+        ndarray<double, 1, unstrided> myGridAijm = myGridAi.slice(j-1);
+        ndarray<double, 1, unstrided> myGridAijp = myGridAi.slice(j+1);
+        ndarray<double, 1, unstrided> myGridAimj = myGridAim.slice(j);
+        ndarray<double, 1, unstrided> myGridAipj = myGridAip.slice(j);
         foreachd (k, myDomain, 3) {
           myGridBij[k] =
             myGridAij[k+1] +

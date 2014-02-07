@@ -134,10 +134,12 @@ struct timer {
 # endif /* ALT_FOREACH */
 #endif /* OPT_LOOP || SPLIT_LOOP */
 
-#ifdef USE_UNSTRIDED
-# define UNSTRIDED , unstrided
-#else
-# define UNSTRIDED
+#ifndef UNSTRIDED
+# ifdef USE_UNSTRIDED
+#  define UNSTRIDED , unstrided
+# else
+#  define UNSTRIDED
+# endif
 #endif
 
 using namespace std;
