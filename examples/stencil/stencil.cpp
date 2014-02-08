@@ -6,8 +6,8 @@ static int xparts, yparts, zparts;
 static ndarray<rectdomain<3>, 1> allDomains;
 static rectdomain<3> myDomain;
 static ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
-static ndarray<global_ndarray<double, 3 UNSTRIDED>, 1> allGridsA, allGridsB;
-static ndarray<global_ndarray<double, 3>, 1> targetsA, targetsB;
+static ndarray<ndarray<double, 3, global GUNSTRIDED>, 1> allGridsA, allGridsB;
+static ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
 static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
 static int steps;
 static int numTrials = 1;
@@ -161,17 +161,17 @@ static void probe(int steps) {
     TIMER_START(timers[PROBE_COMPUTE]);
 #ifdef OPT_LOOP
     foreachd (i, myDomain, 1) {
-      ndarray<double, 2, unstrided> myGridBi = myGridB.slice(i);
-      ndarray<double, 2, unstrided> myGridAi = myGridA.slice(i);
-      ndarray<double, 2, unstrided> myGridAim = myGridA.slice(i-1);
-      ndarray<double, 2, unstrided> myGridAip = myGridA.slice(i+1);
+      ndarray<double, 2 UNSTRIDED> myGridBi = myGridB.slice(i);
+      ndarray<double, 2 UNSTRIDED> myGridAi = myGridA.slice(i);
+      ndarray<double, 2 UNSTRIDED> myGridAim = myGridA.slice(i-1);
+      ndarray<double, 2 UNSTRIDED> myGridAip = myGridA.slice(i+1);
       foreachd (j, myDomain, 2) {
-        ndarray<double, 1, unstrided> myGridBij = myGridBi.slice(j);
-        ndarray<double, 1, unstrided> myGridAij = myGridAi.slice(j);
-        ndarray<double, 1, unstrided> myGridAijm = myGridAi.slice(j-1);
-        ndarray<double, 1, unstrided> myGridAijp = myGridAi.slice(j+1);
-        ndarray<double, 1, unstrided> myGridAimj = myGridAim.slice(j);
-        ndarray<double, 1, unstrided> myGridAipj = myGridAip.slice(j);
+        ndarray<double, 1 UNSTRIDED> myGridBij = myGridBi.slice(j);
+        ndarray<double, 1 UNSTRIDED> myGridAij = myGridAi.slice(j);
+        ndarray<double, 1 UNSTRIDED> myGridAijm = myGridAi.slice(j-1);
+        ndarray<double, 1 UNSTRIDED> myGridAijp = myGridAi.slice(j+1);
+        ndarray<double, 1 UNSTRIDED> myGridAimj = myGridAim.slice(j);
+        ndarray<double, 1 UNSTRIDED> myGridAipj = myGridAip.slice(j);
         foreachd (k, myDomain, 3) {
           myGridBij[k] =
             myGridAij[k+1] +
@@ -264,7 +264,7 @@ static void probe(int steps) {
     TIMER_STOP(timers[POST_COMPUTE_BARRIER]);
     // Swap pointers
     SWAP(myGridA, myGridB, ndarray<double COMMA 3 UNSTRIDED>);
-    SWAP(targetsA, targetsB, ndarray<global_ndarray<double COMMA 3> COMMA 1>);
+    SWAP(targetsA, targetsB, ndarray<ndarray<double COMMA 3 COMMA global> COMMA 1>);
     SWAP(sourcesA, sourcesB, ndarray<ndarray<double COMMA 3> COMMA 1>);
   }
 }
@@ -345,8 +345,8 @@ int main(int argc, char **args) {
 
   myGridA = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
   myGridB = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
-  allGridsA = ARRAY(global_ndarray<double COMMA 3 UNSTRIDED>, ((0), ((int)THREADS)));
-  allGridsB = ARRAY(global_ndarray<double COMMA 3 UNSTRIDED>, ((0), ((int)THREADS)));
+  allGridsA = ARRAY(ndarray<double COMMA 3 COMMA global GUNSTRIDED>, ((0), ((int)THREADS)));
+  allGridsB = ARRAY(ndarray<double COMMA 3 COMMA global GUNSTRIDED>, ((0), ((int)THREADS)));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
@@ -354,8 +354,8 @@ int main(int argc, char **args) {
   ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts),
                                         THREADS, MYTHREAD);
   rectdomain<3> targetDomain = myDomain;
-  targetsA = ARRAY(global_ndarray<double COMMA 3>, ((0), (6)));
-  targetsB = ARRAY(global_ndarray<double COMMA 3>, ((0), (6)));
+  targetsA = ARRAY(ndarray<double COMMA 3 COMMA global>, ((0), (6)));
+  targetsB = ARRAY(ndarray<double COMMA 3 COMMA global>, ((0), (6)));
   sourcesA = ARRAY(ndarray<double COMMA 3>, ((0), (6)));
   sourcesB = ARRAY(ndarray<double COMMA 3>, ((0), (6)));
   for (int i = 0; i < 6; i++) {
