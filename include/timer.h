@@ -1,5 +1,6 @@
 #pragma once
 
+#include <gasnet.h>
 #include <gasnet_tools.h>
 
 class timer {

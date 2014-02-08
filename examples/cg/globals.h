@@ -20,12 +20,16 @@
    relaxed consistency model. */
 /* #define POINT_TO_POINT_COMM */
 
-#ifndef UNSTRIDED
-# ifdef USE_UNSTRIDED
-#  define UNSTRIDED , unstrided
-# else
-#  define UNSTRIDED
-# endif
+#if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
+# define STRIDEDNESS unstrided
+#endif
+
+#ifdef STRIDEDNESS
+# define UNSTRIDED , STRIDEDNESS
+# define GUNSTRIDED | STRIDEDNESS
+#else
+# define UNSTRIDED
+# define GUNSTRIDED
 #endif
 
 #ifdef USE_FOREACH1

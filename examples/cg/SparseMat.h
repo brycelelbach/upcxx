@@ -18,11 +18,11 @@ class SparseMat {
   int numProcRows, numProcCols;            // # of processor rows and columns (multiplied = # procs)
   int rowStart, rowEnd;                    // start and end row for this processor
 #ifdef TEAMS
-  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
+  ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
   ndarray<double, 1 UNSTRIDED> myResults;
   ndarray<double, 1 UNSTRIDED> mtmp;
 #else
-  ndarray<global_ndarray<double, 2>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
+  ndarray<ndarray<double, 2, global>, 1 UNSTRIDED> allResults;      // used for storing SpMV results
  private:
   ndarray<int, 1 UNSTRIDED> reduceExchangeProc;            // used to do communication in dot products
 #endif

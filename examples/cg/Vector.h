@@ -7,7 +7,7 @@
 
 class Vector {
  public:
-  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allArrays;   // distributedly stores actual vector data (in global coordinates)
+  ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED> allArrays;   // distributedly stores actual vector data (in global coordinates)
 
 #ifdef TIMERS_ENABLED
   static timer reduceTimer;
@@ -32,7 +32,7 @@ class Vector {
   static int log2numProcCols;
 
  public:
-  ndarray<global_ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> allResults;  // used for storing dot product and L2-Norm results
+  ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED> allResults;  // used for storing dot product and L2-Norm results
 #endif
  public:
 

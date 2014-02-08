@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <allocate.h>
 #include <coll_flags.h>
 #include <collective.h>
 #include <team.h>
