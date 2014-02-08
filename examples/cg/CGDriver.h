@@ -3,9 +3,6 @@
 #include "globals.h"
 #include "SparseMat.h"
 #include "Vector.h"
-#ifdef TIMERS_ENABLED
-# include <timer.h>
-#endif
 
 class CGDriver {
  private:

@@ -148,8 +148,10 @@ void SparseMat::multiply(Vector &output, Vector &input) {
 #elif defined(TEAMS)
   ndarray<double, 1 UNSTRIDED> myResults0 = myResults;
 #else
-  ndarray<double, 2> myResults = (ndarray<double, 2>) allResults[MYTHREAD];
-  ndarray<double, 1 UNSTRIDED> myResults0 = myResults.slice(1, 0);
+  ndarray<double, 2 UNSTRIDED> myResults =
+    (ndarray<double, 2 UNSTRIDED>) allResults[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> myResults0 =
+    (ndarray<double, 1 UNSTRIDED>) myResults.slice(1, 0);
 #endif
   multiplyCallCount++;
 

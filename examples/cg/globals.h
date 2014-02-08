@@ -10,10 +10,6 @@
 
 /* PROFILING */
 
-#if USE_UPCXX
-# define TIMERS_ENABLED
-#endif
-
 /*#define COUNTERS_ENABLED*/
 /* the following is valid only if counters are enabled */
 #define PAPI_MEASURE PAPICounter.PAPI_FP_INS
@@ -24,12 +20,12 @@
    relaxed consistency model. */
 /* #define POINT_TO_POINT_COMM */
 
-#ifdef USE_SIMPLE
-# define UNSTRIDED , simple
-#elif defined(USE_UNSTRIDED)
-# define UNSTRIDED , unstrided
-#elif !defined(UNSTRIDED)
-# define UNSTRIDED
+#ifndef UNSTRIDED
+# ifdef USE_UNSTRIDED
+#  define UNSTRIDED , unstrided
+# else
+#  define UNSTRIDED
+# endif
 #endif
 
 #ifdef USE_FOREACH1
@@ -60,6 +56,52 @@
 #define PUSH_DATA
 
 /* DO NOT CHANGE THE FOLLOWING */
+
+#ifndef DISABLE_TIMERS
+# define TIMERS_ENABLED
+#endif
+
+#if USE_UPCXX
+# include <timer.h>
+# include <reduce.h>
+#elif __cplusplus >= 201103L
+# include <chrono>
+struct timer {
+  std::chrono::time_point<std::chrono::system_clock> cur;
+  std::chrono::duration<double> elap;
+  inline timer() : cur(), elap(std::chrono::duration<double>::zero()) {}
+  inline void start() {
+    cur = std::chrono::system_clock::now();
+  }
+  inline void stop() {
+    elap = std::chrono::system_clock::now() - cur;
+  }
+  inline void reset() {
+    elap = std::chrono::duration<double>::zero();
+  }
+  inline double secs() {
+    return elap.count();
+  }
+};
+#else
+# include <ctime>
+struct timer {
+  clock_t cur, elap;
+  inline timer() : cur(0), elap(0) {}
+  inline void start() {
+    cur = clock();
+  }
+  inline void stop() {
+    elap = clock() - cur;
+  }
+  inline void reset() {
+    elap = 0;
+  }
+  inline double secs() {
+    return ((double)elap) / CLOCKS_PER_SEC;
+  }
+};
+#endif
 
 #ifdef TIMERS_ENABLED
 # define TIMER_START(timername)  timername.start()
@@ -106,10 +148,6 @@
 #define Point point
 #define RectDomain rectdomain
 
-#if USE_UPCXX
-# include <reduce.h>
-#endif
-
 using namespace upcxx;
 
 #if !USE_UPCXX
@@ -118,4 +156,10 @@ using namespace upcxx;
 # define MYTHREAD 0
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
+
+struct reduce {
+  template<class T> static T add(T val, int = 0) { return val; } 
+  template<class T> static T max(T val, int = 0) { return val; } 
+  template<class T> static T min(T val, int = 0) { return val; } 
+};
 #endif

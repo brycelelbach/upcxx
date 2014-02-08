@@ -23,7 +23,9 @@ struct reduce {
 };
 #endif
 
-#define TIMERS_ENABLED
+#ifndef DISABLE_TIMERS
+# define TIMERS_ENABLED
+#endif
 
 #if USE_UPCXX
 # include <timer.h>

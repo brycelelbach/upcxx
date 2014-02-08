@@ -1,9 +1,6 @@
 #pragma once
 
 #include "globals.h"
-#ifdef TIMERS_ENABLED
-# include <timer.h>
-#endif
 
 /*  This class represents a distributed vector.  The vector is
     processor column-partitioned across all the processors. */
