@@ -17,6 +17,8 @@ include_HEADERS =  \
   global_ptr.h \
   global_ref.h \
   group.h \
+  interfaces.h \
+  interfaces_internal.h \
   lapack_api.h \
   lock.h \
   machine.h \
@@ -42,6 +44,7 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/array_impl.h \
   upcxx-arrays/array_impl.tpp \
   upcxx-arrays/array_undefs.h \
+  upcxx-arrays/array_wrapper.h \
   upcxx-arrays/coll.h \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
@@ -52,4 +55,5 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/point.tpp \
   upcxx-arrays/rdomain.h \
   upcxx-arrays/rdomain.tpp \
-  upcxx-arrays/utils.h
+  upcxx-arrays/utils.h \
+  upcxx-arrays/wrapper_tools.h

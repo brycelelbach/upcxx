@@ -13,9 +13,9 @@ void test_copy() {
   rectdomain<1> rd1 = RECTDOMAIN((0), (10));
   rectdomain<1> rd2 = RECTDOMAIN((0), (10), (2));
   domain<1> d = rd2 + RECTDOMAIN((0), (5));
-  global_ndarray<int, 1> arrA1(rd1);
-  global_ndarray<int, 1> arrB1;
-  ndarray<global_ndarray<int, 1>, 1> allArrA1s(THREADS);
+  ndarray<int, 1, global> arrA1(rd1);
+  ndarray<int, 1, global> arrB1;
+  ndarray<ndarray<int, 1, global>, 1> allArrA1s(THREADS);
 
   foreach (p, rd1) {
     arrA1[p] = 100 * MYTHREAD + p[1];
@@ -28,7 +28,7 @@ void test_copy() {
   if (MYTHREAD == 0) println("testing copy operations...");
   barrier();
   {
-    global_ndarray<int, 1> arrA2(rd1);
+    ndarray<int, 1, global> arrA2(rd1);
     arrA2.copy(arrB1);
     foreach (p, rd1) {
       if (arrA2[p] != arrB1[p]) {
@@ -39,7 +39,7 @@ void test_copy() {
   }
   barrier();
   {
-    global_ndarray<int, 1> arrA2(rd2);
+    ndarray<int, 1, global> arrA2(rd2);
     arrA2.copy(arrB1);
     foreach (p, rd2) {
       if (arrA2[p] != arrB1[p]) {
@@ -50,7 +50,7 @@ void test_copy() {
   }
   barrier();
   {
-    global_ndarray<int, 1> arrA2(rd1);
+    ndarray<int, 1, global> arrA2(rd1);
     arrA2.copy(arrB1, rd2);
     foreach (p, rd1) {
       if (rd2.contains(p) && arrA2[p] != arrB1[p]) {
@@ -65,7 +65,7 @@ void test_copy() {
   }
   barrier();
   {
-    global_ndarray<int, 1> arrA2(rd1);
+    ndarray<int, 1, global> arrA2(rd1);
     arrA2.copy(arrB1, d);
     foreach (p, rd1) {
       if (d.contains(p) && arrA2[p] != arrB1[p]) {
@@ -80,7 +80,7 @@ void test_copy() {
   }
   barrier();
   {
-    global_ndarray<int, 1> arrA2(rd1);
+    ndarray<int, 1, global> arrA2(rd1);
     ndarray<point<1>, 1> parr(RECTDOMAIN((0), ((int) d.size())));
     int idx = 0;
     foreach (p, d) {

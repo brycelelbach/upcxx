@@ -8,6 +8,7 @@
 #include <allocate.h>
 #include <coll_flags.h>
 #include <collective.h>
+#include <interfaces_internal.h>
 #include <team.h>
 
 #define WRAPPER_DECL(T, num_class, type_code)           \
@@ -42,14 +43,11 @@
     reduce_internal(src, dst, count, op_code, root);                    \
   }
 
-#define ARRAY_ELEM_TYPE(Array)                  \
-  typename Array::local_elem_type
-
 #define ARRAY_NUM_TYPE(Array)                   \
-  NUMBER_TYPE(typename Array::local_elem_type)
+  NUMBER_TYPE(ARRAY_ELEM_TYPE(Array))
 
 #define ARRAY_INT_TYPE(Array)                   \
-  INTEGER_TYPE(typename Array::local_elem_type)
+  INTEGER_TYPE(ARRAY_ELEM_TYPE(Array))
 
 #define REDUCE_ARRAY_NUM_ALL_DECL(op_name, op_code)                     \
   template<class Array> static void op_name(Array src,                  \
@@ -175,7 +173,6 @@ namespace upcxx {
 #undef REDUCE_TO_DECL
 #undef REDUCE_BULK_ALL_DECL
 #undef REDUCE_BULK_TO_DECL
-#undef ARRAY_ELEM_TYPE
 #undef ARRAY_NUM_TYPE
 #undef ARRAY_INT_TYPE
 #undef REDUCE_ARRAY_NUM_ALL_DECL
