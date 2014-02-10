@@ -5,7 +5,7 @@
 
 #define PI 3.14159265358979323846
 
-Test::Test(ndarray<global_ndarray<Complex, 3>, 1> array) {
+Test::Test(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array) {
   // copy from FTDriver
   nx = FTDriver::nx;
   ny = FTDriver::ny;
@@ -14,17 +14,21 @@ Test::Test(ndarray<global_ndarray<Complex, 3>, 1> array) {
   numIterations = FTDriver::numIterations;
 
   // expArray in the same shape as array3
-  global_ndarray<double, 3> myExpArray(array[MYTHREAD].domain());
-  expArray = ndarray<global_ndarray<double, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  ndarray<double, 3 UNSTRIDED> myExpArray(array[MYTHREAD].domain());
+  expArray =
+    ndarray<ndarray<double, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                 (THREADS)));
   expArray.exchange(myExpArray);
 
   if (MYTHREAD == 0) {
-    checkSumArray = ndarray<Complex, 1>(RECTDOMAIN((1), (numIterations+1)));
+    checkSumArray =
+      ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 
   // create "localComplexesOnProc0" and "myRemoteComplexesOnProc0"
   if (MYTHREAD == 0)  {
-    localComplexesOnProc0 = ndarray<Complex, 1>(RECTDOMAIN((0), (THREADS)));
+    localComplexesOnProc0 =
+      ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((0), (THREADS)));
   }
 
   myRemoteComplexesOnProc0 = broadcast(localComplexesOnProc0, 0);
@@ -33,23 +37,32 @@ Test::Test(ndarray<global_ndarray<Complex, 3>, 1> array) {
 
 #ifdef TIMERS_ENABLED
   // myTimer = new Timer();
-  myTimes = ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((1), (3)));
+  myTimes =
+    ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1),
+                                                                  (3)));
 
-  myTimes[T_EVOLVE] = ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
-  myTimes[T_CHECKSUM] = ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
+  myTimes[T_EVOLVE] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+  myTimes[T_CHECKSUM] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
 #endif
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
-  myTimes = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((1), (3)));
+  myTimes =
+    ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1),
+                                                                (3)));
 
-  myCounts[T_EVOLVE] = ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
-  myCounts[T_CHECKSUM] = ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
+  myCounts[T_EVOLVE] =
+    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+  myCounts[T_CHECKSUM] =
+    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
 #endif
 }
 
-void Test::initialConditions(ndarray<global_ndarray<Complex, 3>, 1> array) {
-  ndarray<Complex, 3> myArray = (ndarray<Complex, 3>) array[MYTHREAD];
-  ndarray<double, 1> temp(RECTDOMAIN((0), (1)));
+void Test::initialConditions(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array) {
+  ndarray<Complex, 3 UNSTRIDED> myArray =
+    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> temp(RECTDOMAIN((0), (1)));
 	
   int iMin = myArray.domain().min()[1];
   int iMax = myArray.domain().max()[1];
@@ -85,7 +98,8 @@ void Test::initialConditions(ndarray<global_ndarray<Complex, 3>, 1> array) {
 
 void Test::initializeExponentialArray() {
   const double c1 = (-4.0e-6) * PI * PI;
-  ndarray<double, 3> myExpArray = (ndarray<double, 3>) expArray[MYTHREAD];
+  ndarray<double, 3 UNSTRIDED> myExpArray =
+    (ndarray<double, 3 UNSTRIDED>) expArray[MYTHREAD];
 
   int i, j, k;
   int halfnx = nx/2;
@@ -99,28 +113,37 @@ void Test::initializeExponentialArray() {
   }
 }
 
-void Test::evolve(ndarray<global_ndarray<Complex, 3>, 1> array,
+void Test::evolve(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
                   int iterationNum) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-  ndarray<Complex, 3> myArray = (ndarray<Complex, 3>) array[MYTHREAD];
-  ndarray<double, 3> myExpArray = (ndarray<double, 3>) expArray[MYTHREAD];
+  ndarray<Complex, 3 UNSTRIDED> myArray =
+    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
+  ndarray<double, 3 UNSTRIDED> myExpArray =
+    (ndarray<double, 3 UNSTRIDED>) expArray[MYTHREAD];
 
+#ifdef SPLIT_LOOP
+  foreach3 (i, j, k, myArray.domain().shrink(PADDING, 3)) {
+    myArray[i][j][k] = myArray[i][j][k] * myExpArray[i][j][k];
+  }
+#else
   foreach (p, myArray.domain().shrink(PADDING, 3)) {
     myArray[p] = myArray[p] * myExpArray[p];
   }
+#endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_EVOLVE][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_EVOLVE][iterationNum]);
 }
 
-void Test::checkSum(ndarray<global_ndarray<Complex, 3>, 1> array,
+void Test::checkSum(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
                     int iterationNum) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-  ndarray<Complex, 3> myArray = (ndarray<Complex, 3>) array[MYTHREAD];
+  ndarray<Complex, 3 UNSTRIDED> myArray =
+    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
   RectDomain<3> myArrayDomain = myArray.domain();
   long ntotal = nx * ny * nz;
   Complex procCheckSum(0, 0);
@@ -140,9 +163,15 @@ void Test::checkSum(ndarray<global_ndarray<Complex, 3>, 1> array,
 	
   if (MYTHREAD == 0) {
     Complex totalCheckSum;
+#ifdef SPLIT_LOOP
+    foreach1 (p, localComplexesOnProc0.domain()) {
+      totalCheckSum = totalCheckSum + localComplexesOnProc0[p];
+    }
+#else
     foreach (p, localComplexesOnProc0.domain()) {
       totalCheckSum = totalCheckSum + localComplexesOnProc0[p];
     }
+#endif
     checkSumArray[iterationNum] = (totalCheckSum/(double)ntotal);
   }
 

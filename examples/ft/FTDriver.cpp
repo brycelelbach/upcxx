@@ -74,44 +74,64 @@ FTDriver::FTDriver(char paramClassType) {
   int zDimSlabEndRow = zDimSlabStartRow + zDimSlabSize;
 
   // padded working arrays (to avoid cache-thrashing)
-  global_ndarray<Complex, 3> myArray1(RECTDOMAIN((xDimSlabStartRow, 0, 0),
-                                                 (xDimSlabEndRow, ny, nz+PADDING)));
-  array1 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  ndarray<Complex, 3 UNSTRIDED> myArray1(RECTDOMAIN((xDimSlabStartRow, 0, 0),
+                                                    (xDimSlabEndRow, ny,
+                                                     nz+PADDING)));
+  array1 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array1.exchange(myArray1);
 
 #ifdef SLABS
-  global_ndarray<Complex, 3> myArray2(RECTDOMAIN((0, yDimSlabStartRow, 0),
-                                                 (nx, yDimSlabEndRow, nz+PADDING)));
+  ndarray<Complex, 3 UNSTRIDED> myArray2(RECTDOMAIN((0, yDimSlabStartRow, 0),
+                                                    (nx, yDimSlabEndRow,
+                                                     nz+PADDING)));
 #else
-  global_ndarray<Complex, 3> myArray2(RECTDOMAIN((yDimSlabStartRow, 0, 0),
-                                                 (yDimSlabEndRow, nx, nz+PADDING)));
+  ndarray<Complex, 3 UNSTRIDED> myArray2(RECTDOMAIN((yDimSlabStartRow, 0, 0),
+                                                    (yDimSlabEndRow, nx,
+                                                     nz+PADDING)));
 #endif
-  array2 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  array2 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array2.exchange(myArray2);
 
-  global_ndarray<Complex, 3> myArray3(RECTDOMAIN((yDimSlabStartRow, 0, 0),
-                                                 (yDimSlabEndRow, nz, nx+PADDING)));
-  array3 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  ndarray<Complex, 3 UNSTRIDED> myArray3(RECTDOMAIN((yDimSlabStartRow, 0, 0),
+                                                    (yDimSlabEndRow, nz,
+                                                     nx+PADDING)));
+  array3 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array3.exchange(myArray3);
 
-  global_ndarray<Complex, 3> myArray4(RECTDOMAIN((yDimSlabStartRow, 0, 0),
-                                                 (yDimSlabEndRow, nz, nx+PADDING)));
-  array4 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  ndarray<Complex, 3 UNSTRIDED> myArray4(RECTDOMAIN((yDimSlabStartRow, 0, 0),
+                                                    (yDimSlabEndRow, nz,
+                                                     nx+PADDING)));
+  array4 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array4.exchange(myArray4);
 
 #ifdef SLABS
-  global_ndarray<Complex, 3> myArray5(RECTDOMAIN((0, zDimSlabStartRow, 0),
-                                                 (ny, zDimSlabEndRow, nx+PADDING)));
+  ndarray<Complex, 3 UNSTRIDED> myArray5(RECTDOMAIN((0, zDimSlabStartRow, 0),
+                                                    (ny, zDimSlabEndRow,
+                                                     nx+PADDING)));
 #else
-  global_ndarray<Complex, 3> myArray5(RECTDOMAIN((zDimSlabStartRow, 0, 0),
-                                                 (zDimSlabEndRow, ny, nx+PADDING)));
+  ndarray<Complex, 3 UNSTRIDED> myArray5(RECTDOMAIN((zDimSlabStartRow, 0, 0),
+                                                    (zDimSlabEndRow, ny,
+                                                     nx+PADDING)));
 #endif
-  array5 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  array5 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array5.exchange(myArray5);
 
-  global_ndarray<Complex, 3> myArray6(RECTDOMAIN((zDimSlabStartRow, 0, 0),
-                                                 (zDimSlabEndRow, nx, ny+PADDING)));
-  array6 = ndarray<global_ndarray<Complex, 3>, 1>(RECTDOMAIN((0), (THREADS)));
+  ndarray<Complex, 3 UNSTRIDED> myArray6(RECTDOMAIN((zDimSlabStartRow, 0, 0),
+                                                    (zDimSlabEndRow, nx,
+                                                     ny+PADDING)));
+  array6 =
+    ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
+                                                                  (THREADS)));
   array6.exchange(myArray6);
 
 

@@ -36,12 +36,13 @@
 class FT {
  public:
   // same as in FTDriver
-  ndarray<global_ndarray<Complex, 3>, 1> array1, array2, array3;
-  ndarray<global_ndarray<Complex, 3>, 1> array4, array5, array6;
-  ndarray<Complex, 3> myArray1, myArray2, myArray3;
-  ndarray<Complex, 3> myArray4, myArray5, myArray6;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array1, array2;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array3, array4;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array5, array6;
+  ndarray<Complex, 3 UNSTRIDED> myArray1, myArray2, myArray3;
+  ndarray<Complex, 3 UNSTRIDED> myArray4, myArray5, myArray6;
 
-  ndarray<Complex, 1> temp;    // used for in-place transforms
+  ndarray<Complex, 1 UNSTRIDED> temp;    // used for in-place transforms
 
   // profiling
 #ifdef TIMERS_ENABLED
@@ -49,7 +50,7 @@ class FT {
 #endif
 
   // "myTimes" is indexed by (FT Component #) and then timing number
-  ndarray<ndarray<double, 1>, 1> myTimes;
+  ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> myTimes;
 
  private:
   // the following are copied from FTDriver
@@ -92,12 +93,12 @@ class FT {
    * Constructor- constructs local arrays and initializes timers and
    * counters
    */
-  FT(ndarray<global_ndarray<Complex, 3>, 1> p_array1,
-     ndarray<global_ndarray<Complex, 3>, 1> p_array2,
-     ndarray<global_ndarray<Complex, 3>, 1> p_array3,
-     ndarray<global_ndarray<Complex, 3>, 1> p_array4,
-     ndarray<global_ndarray<Complex, 3>, 1> p_array5,
-     ndarray<global_ndarray<Complex, 3>, 1> p_array6);
+  FT(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array1,
+     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array2,
+     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array3,
+     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array4,
+     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array5,
+     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array6);
 
   /**
    * Create FFT plans (for FFTW)

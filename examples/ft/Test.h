@@ -12,12 +12,12 @@
  */
 class Test {
  private:
-  ndarray<global_ndarray<double, 3>, 1> expArray;    // used in the evolve() method
+  ndarray<ndarray<double, 3, global GUNSTRIDED>, 1> expArray;    // used in the evolve() method
 
   // check sum array (only on proc 0)
-  ndarray<Complex, 1> checkSumArray;
-  ndarray<Complex, 1> localComplexesOnProc0;
-  global_ndarray<Complex, 1> myRemoteComplexesOnProc0;
+  ndarray<Complex, 1 UNSTRIDED> checkSumArray;
+  ndarray<Complex, 1 UNSTRIDED> localComplexesOnProc0;
+  ndarray<Complex, 1, global GUNSTRIDED> myRemoteComplexesOnProc0;
 
   // the following are copied from FTDriver
   int nx, ny, nz;
@@ -29,12 +29,12 @@ class Test {
 #ifdef TIMERS_ENABLED
   timer myTimer;
   // "myTimes" is indexed by (Test Component #) and then timing number
-  ndarray<ndarray<double, 1>, 1> myTimes;
+  ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED> myTimes;
 #endif
 #ifdef COUNTERS_ENABLED
   PAPICounter myCounter;
   // "myCounts" is indexed by (Test Component #) and then counting number
-  ndarray<ndarray<long, 1>, 1> myCounts;
+  ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED> myCounts;
 #endif
 
   /**
@@ -43,12 +43,12 @@ class Test {
    * @param array The array that expArray will do an element-wise multiply
    * with (so they need to be the same size)
    */
-  Test(ndarray<global_ndarray<Complex, 3>, 1> array);
+  Test(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array);
 
   /**
    * Initializes "array" with random values
    */
-  void initialConditions(ndarray<global_ndarray<Complex, 3>, 1> array);
+  void initialConditions(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array);
 
   /**
    * Initializes expArray, which is used in the evolve() method
@@ -62,7 +62,7 @@ class Test {
    * @param array The array that will be advanced in time
    * @param iterationNum The iteration number (used for profiling)
    */
-  void evolve(ndarray<global_ndarray<Complex, 3>, 1> array,
+  void evolve(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
               int iterationNum);
 
   /**
@@ -71,7 +71,7 @@ class Test {
    * @param array The array for which the checksum is being calculated
    * @param iterationNum The iteration number
    */
-  void checkSum(ndarray<global_ndarray<Complex, 3>, 1> array,
+  void checkSum(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
                 int iterationNum);
 
   /**

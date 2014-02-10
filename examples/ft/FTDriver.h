@@ -8,8 +8,9 @@
 class FTDriver {
  public:
   // distributed arrays
-  ndarray<global_ndarray<Complex, 3>, 1> array1, array2, array3;
-  ndarray<global_ndarray<Complex, 3>, 1> array4, array5, array6;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array1, array2;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array3, array4;
+  ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array5, array6;
 
   // global variables
   char classType;

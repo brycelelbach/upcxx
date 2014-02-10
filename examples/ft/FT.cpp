@@ -1,12 +1,12 @@
 #include "FT.h"
 #include "FTDriver.h"
 
-FT::FT(ndarray<global_ndarray<Complex, 3>, 1> p_array1,
-       ndarray<global_ndarray<Complex, 3>, 1> p_array2,
-       ndarray<global_ndarray<Complex, 3>, 1> p_array3,
-       ndarray<global_ndarray<Complex, 3>, 1> p_array4,
-       ndarray<global_ndarray<Complex, 3>, 1> p_array5,
-       ndarray<global_ndarray<Complex, 3>, 1> p_array6) {
+FT::FT(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array1,
+       ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array2,
+       ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array3,
+       ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array4,
+       ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array5,
+       ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array6) {
   // copied from FTDriver
   nx = FTDriver::nx;
   ny = FTDriver::ny;
@@ -23,15 +23,15 @@ FT::FT(ndarray<global_ndarray<Complex, 3>, 1> p_array1,
   array6 = p_array6;
 
   // myArray[num] is the portion of FTDriver.array[num] on this processor
-  myArray1 = (ndarray<Complex, 3>) array1[MYTHREAD];
-  myArray2 = (ndarray<Complex, 3>) array2[MYTHREAD];
-  myArray3 = (ndarray<Complex, 3>) array3[MYTHREAD];
-  myArray4 = (ndarray<Complex, 3>) array4[MYTHREAD];
-  myArray5 = (ndarray<Complex, 3>) array5[MYTHREAD];
-  myArray6 = (ndarray<Complex, 3>) array6[MYTHREAD];
+  myArray1 = (ndarray<Complex, 3 UNSTRIDED>) array1[MYTHREAD];
+  myArray2 = (ndarray<Complex, 3 UNSTRIDED>) array2[MYTHREAD];
+  myArray3 = (ndarray<Complex, 3 UNSTRIDED>) array3[MYTHREAD];
+  myArray4 = (ndarray<Complex, 3 UNSTRIDED>) array4[MYTHREAD];
+  myArray5 = (ndarray<Complex, 3 UNSTRIDED>) array5[MYTHREAD];
+  myArray6 = (ndarray<Complex, 3 UNSTRIDED>) array6[MYTHREAD];
 
   // temp is used to store one row in the last dimension of array[1,2,3] for in-place FFTW
-  temp = ndarray<Complex, 1>(RECTDOMAIN((0), (maxdim)));
+  temp = ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((0), (maxdim)));
 
   // initialize timers
 #ifdef TIMERS_ENABLED
@@ -45,17 +45,25 @@ FT::FT(ndarray<global_ndarray<Complex, 3>, 1> p_array1,
   // myTimer2 = new Timer();
 
   // set up arrays for storing times
-  myTimes = ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((1), (numTimers+1)));
+  myTimes =
+    ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1),
+                                                                  (numTimers+1)));
 	
-  myTimes[T_X_FFT] = ndarray<double, 1>(RECTDOMAIN((0), (numIterations+1)));
-  myTimes[T_Y_FOR_FFT] = ndarray<double, 1>(RECTDOMAIN((0), (1)));
-  myTimes[T_Y_REV_FFT] = ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
-  myTimes[T_Z_FFT] = ndarray<double, 1>(RECTDOMAIN((0), (numIterations+1)));
+  myTimes[T_X_FFT] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (numIterations+1)));
+  myTimes[T_Y_FOR_FFT] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (1)));
+  myTimes[T_Y_REV_FFT] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+  myTimes[T_Z_FFT] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (numIterations+1)));
   myTimes[T_GLOBAL_ARRAYCOPY] =
-    ndarray<double, 1>(RECTDOMAIN((0), (numIterations+1)));
-  myTimes[T_BARRIER] = ndarray<double, 1>(RECTDOMAIN((0), (numIterations+1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (numIterations+1)));
+  myTimes[T_BARRIER] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (numIterations+1)));
 #ifdef NONBLOCKING_ARRAYCOPY
-  myTimes[T_SYNC] = ndarray<double, 1>(RECTDOMAIN((0), (numIterations+1)));
+  myTimes[T_SYNC] =
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (numIterations+1)));
 #endif
 #endif
 }
