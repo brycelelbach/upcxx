@@ -56,4 +56,29 @@ namespace upcxx {
 
   template<class T> struct enable_if<false, T> {
   };
+
+  /* Check if two types are the same. Can be used with enable_if to
+   * implement an interface, as in the following:
+   *   typedef enable_if<is_same<L, local>::value, T> local_elem_type;
+   */
+  template<class T, class U> struct is_same {
+    static const bool value = false;
+  };
+
+  template<class T> struct is_same<T, T> {
+    static const bool value = true;
+  };
+
+  /* Combination of enable_if and is_same */
+#if __cplusplus >= 201103L
+  template<class T, class U, class V>
+  using enable_if_same = enable_if<is_same<T, U>::value, V>;
+#else
+  template<class T, class U, class V> struct enable_if_same {
+  };
+
+  template<class T, class V> struct enable_if_same<T, T, V> {
+    typedef V type;
+  };
+#endif
 }
