@@ -20,12 +20,12 @@ void FT::createPlans(ndarray<Complex, 3> subArray1,
                      int p_nx, int p_ny, int p_nz,
                      int p_numPencilsInYDimSlab,
                      int p_numPencilsInZDimSlab) {
-  fftw_complex *array1 = (fftw_complex*) subArray1.storage_ptr();
-  fftw_complex *array2 = (fftw_complex*) subArray2.storage_ptr();
-  fftw_complex *array3 = (fftw_complex*) subArray3.storage_ptr();
-  fftw_complex *array4 = (fftw_complex*) subArray4.storage_ptr();
-  fftw_complex *array5 = (fftw_complex*) subArray5.storage_ptr();
-  fftw_complex *array6 = (fftw_complex*) subArray6.storage_ptr();
+  fftw_complex *array1 = (fftw_complex*) subArray1.base_ptr();
+  fftw_complex *array2 = (fftw_complex*) subArray2.base_ptr();
+  fftw_complex *array3 = (fftw_complex*) subArray3.base_ptr();
+  fftw_complex *array4 = (fftw_complex*) subArray4.base_ptr();
+  fftw_complex *array5 = (fftw_complex*) subArray5.base_ptr();
+  fftw_complex *array6 = (fftw_complex*) subArray6.base_ptr();
 
   s_nx = p_nx;
   s_ny = p_ny;
@@ -121,8 +121,8 @@ void FT::createPlans(ndarray<Complex, 3> subArray1,
 
 void FT::pencilToPencilStrideForwardY(ndarray<Complex, 2> inArray,
                                       ndarray<Complex, 1> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 #if USE_FFTW3
   fftw_execute_dft(forwardPlan_y, in, in); // in place
@@ -133,8 +133,8 @@ void FT::pencilToPencilStrideForwardY(ndarray<Complex, 2> inArray,
 
 void FT::pencilToPencilStrideBackwardY(ndarray<Complex, 2> inArray,
                                        ndarray<Complex, 2> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 #if USE_FFTW3
   fftw_execute_dft(backwardPlan_y, in, out);
@@ -146,8 +146,8 @@ void FT::pencilToPencilStrideBackwardY(ndarray<Complex, 2> inArray,
 #ifdef SLABS
 void FT::slabToUnitStrideForwardX(ndarray<Complex, 2> inArray,
                                   ndarray<Complex, 2> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(forwardPlan_x, in, out);
@@ -159,8 +159,8 @@ void FT::slabToUnitStrideForwardX(ndarray<Complex, 2> inArray,
 
 void FT::slabToUnitStrideBackwardX(ndarray<Complex, 2> inArray,
                                    ndarray<Complex, 2> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(backwardPlan_x, in, out);
@@ -172,8 +172,8 @@ void FT::slabToUnitStrideBackwardX(ndarray<Complex, 2> inArray,
 
 void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
                                   ndarray<Complex, 1> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(forwardPlan_z, in, in); // in place
@@ -185,8 +185,8 @@ void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
 
 void FT::unitToUnitStrideBackwardZ(ndarray<Complex, 1> inArray,
                                    ndarray<Complex, 1> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(backwardPlan_z, in, in); // in place
@@ -199,8 +199,8 @@ void FT::unitToUnitStrideBackwardZ(ndarray<Complex, 1> inArray,
 #else // SLABS
 void FT::pencilToUnitStrideForwardX(ndarray<Complex, 2> inArray,
                                     ndarray<Complex, 2> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(forwardPlan_x, in, out);
@@ -211,8 +211,8 @@ void FT::pencilToUnitStrideForwardX(ndarray<Complex, 2> inArray,
 
 void FT::pencilToUnitStrideBackwardX(ndarray<Complex, 2> inArray,
                                      ndarray<Complex, 2> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(backwardPlan_x, in, out);
@@ -223,8 +223,8 @@ void FT::pencilToUnitStrideBackwardX(ndarray<Complex, 2> inArray,
 
 void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
                                   ndarray<Complex, 1> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(forwardPlan_z, in, in); // in place
@@ -235,8 +235,8 @@ void FT::unitToUnitStrideForwardZ(ndarray<Complex, 1> inArray,
 
 void FT::unitToUnitStrideBackwardZ(ndarray<Complex, 1> inArray,
                                    ndarray<Complex, 1> outArray) {
-  fftw_complex *in = (fftw_complex*) inArray.storage_ptr();
-  fftw_complex *out = (fftw_complex*) outArray.storage_ptr();
+  fftw_complex *in = (fftw_complex*) inArray.base_ptr();
+  fftw_complex *out = (fftw_complex*) outArray.base_ptr();
 
 # if USE_FFTW3
   fftw_execute_dft(backwardPlan_z, in, in); // in place
