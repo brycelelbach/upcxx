@@ -137,12 +137,12 @@ struct timer {
 #endif /* OPT_LOOP || SPLIT_LOOP */
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS unstrided
+# define STRIDEDNESS simple
 #endif
 
 #ifdef STRIDEDNESS
 # define UNSTRIDED , STRIDEDNESS
-# define GUNSTRIDED | STRIDEDNESS
+# define GUNSTRIDED , STRIDEDNESS
 #else
 # define UNSTRIDED
 # define GUNSTRIDED
