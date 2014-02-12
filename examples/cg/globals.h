@@ -32,19 +32,10 @@
 # define GUNSTRIDED
 #endif
 
-#ifdef USE_FOREACH1
-# define foreachd(var, dom, dim)                                        \
-  foreachd_(var, dom, dim, CONCAT_(var, _upb), CONCAT_(var, _stride),   \
-            CONCAT_(var, _done))
-# define foreachd_(var, dom, dim, u_, s_, d_)                           \
-  for (int u_ = dom.upb()[dim], s_ = dom.stride()[dim], d_ = 0;         \
-       !d_; d_ = 1)                                                     \
-    for (int var = dom.lwb()[dim]; var < u_; var += s_)
-#  define foreach1(v1, dom)                     \
-  foreachd(v1, dom, 1)
-# define FOREACH foreach1
-#elif !defined(FOREACH)
+#ifdef USE_FOREACH
 # define FOREACH foreach
+#elif !defined(FOREACH)
+# define FOREACH foreach1
 #endif
 
 #if defined(CTEAMS) && !defined(VREDUCE)
