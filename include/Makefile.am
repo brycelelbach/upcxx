@@ -46,10 +46,12 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/array_undefs.h \
   upcxx-arrays/array_wrapper.h \
   upcxx-arrays/coll.h \
+  upcxx-arrays/decls.h \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
   upcxx-arrays/domain_undefs.h \
   upcxx-arrays/domains.h \
+  upcxx-arrays/foreach.h \
   upcxx-arrays/iter.h \
   upcxx-arrays/point.h \
   upcxx-arrays/point.tpp \
