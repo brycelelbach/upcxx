@@ -162,7 +162,17 @@ namespace upcxx
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
+    const global_ref<T> operator [] (int i) const
+    {
+      return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
+    }
+
     global_ref<T> operator *()
+    {
+      return global_ref<T>(this->where(), (T *)this->raw_ptr());
+    }
+
+    const global_ref<T> operator *() const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr());
     }

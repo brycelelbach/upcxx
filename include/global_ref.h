@@ -108,6 +108,11 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
+    const global_ptr<T> operator &() const
+    {
+      return global_ptr<T>(_ptr, _pla);
+    }
+
     // YZ: todo: specialize for T = global_ptr<T2>
     //     template <>
     //     template <typename T2>
