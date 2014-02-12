@@ -9,12 +9,12 @@ class Grid {
  public:
   // "points" array first indexed by position in 3D proc grid, then
   // individual point (in global coords)
-  ndarray<global_ndarray<double, 3>, 3> points;
+  ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED> points;
 
   // used for grids at level THRESHOLD_LEVEL only
-  ndarray<global_ndarray<double, 3>, 3> localBuffersOnProc0; // used only by proc 0
-  global_ndarray<double, 3> myRemoteBufferOnProc0; // pointers from other procs to "localBufferOnProc0"
-  ndarray<double, 3> myBufferForProc0;
+  ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED> localBuffersOnProc0; // used only by proc 0
+  ndarray<double, 3, global GUNSTRIDED> myRemoteBufferOnProc0; // pointers from other procs to "localBufferOnProc0"
+  ndarray<double, 3 UNSTRIDED> myBufferForProc0;
 
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
   // these buffers are indexed by:
@@ -23,9 +23,11 @@ class Grid {
   //    for 26 directions)
   // 3.  actual point (in global coords)
 #if UPDATE_BORDER_DIRECTIONS == 6
-  ndarray<global_ndarray<global_ndarray<double, 3>, 1>, 3> outBuffers, inBuffers;
+  ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
+          3 UNSTRIDED> outBuffers, inBuffers;
 #elif UPDATE_BORDER_DIRECTIONS == 26
-  ndarray<global_ndarray<global_ndarray<double, 3>, 3>, 3> outBuffers, inBuffers;
+  ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
+          3 UNSTRIDED> outBuffers, inBuffers;
 #endif
 #endif
 
@@ -74,9 +76,11 @@ class Grid {
    * Zero out the grid
    */
   void zeroOut() {
-    ndarray<double, 3> myPoints = (ndarray<double, 3>) points[myBlockPos];
-    foreach (p, myPoints.domain()) {
-      myPoints[p] = 0.0;
-    }
+    ndarray<double, 3 UNSTRIDED> myPoints =
+      (ndarray<double, 3 UNSTRIDED>) points[myBlockPos];
+    // foreach (p, myPoints.domain()) {
+    //   myPoints[p] = 0.0;
+    // }
+    myPoints.set(0.0);
   }
 };

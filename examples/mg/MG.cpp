@@ -19,107 +19,121 @@ MG::MG() {
   // myTimer = new Timer();
 
   myTimes =
-    ndarray<ndarray<ndarray<double, 1>, 1>, 1>(RECTDOMAIN((1), (numTimers+1)));
+    ndarray<ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
 
   // set up arrays for storing times
   myTimes[T_L2NORM] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((startLevel), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
   myTimes[T_APPLY_SMOOTHER] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((1), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
   myTimes[T_EVALUATE_RESIDUAL] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
   myTimes[T_COARSEN] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
   myTimes[T_PROLONGATE] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
   myTimes[T_GLOBAL_COMM] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
   myTimes[T_THRESHOLD_COMM] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL),
-                                              (THRESHOLD_LEVEL+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL),
+                                    (THRESHOLD_LEVEL+1)));
   myTimes[T_BARRIER] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
   myTimes[T_PACKING] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
   myTimes[T_UNPACKING] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
 #endif
 #ifdef NONBLOCKING_ARRAYCOPY
   myTimes[T_SYNC] =
-    ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+    ndarray<ndarray<double, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
 #endif
 
   myTimes[T_L2NORM][startLevel] =
-    ndarray<double, 1>(RECTDOMAIN((1), (3)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
 
   foreach (level, RECTDOMAIN((1), (startLevel+1))) {
     myTimes[T_APPLY_SMOOTHER][level] =
-      ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 
   foreach (level, RECTDOMAIN((2), (startLevel+1))) {
     if (level[1] != startLevel) {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     }
     else {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
     }
     myTimes[T_COARSEN][level] =
-      ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     myTimes[T_PROLONGATE][level] =
-      ndarray<double, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 
   myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL] =
-    ndarray<double, 1>(RECTDOMAIN((1), (2*numIterations+1)));
+    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+1)));
 
   foreach (level, RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1))) {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((-2*numIterations+1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
+                                                (9*numIterations+1)));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((-2*numIterations+1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
+                                                (3*numIterations+1)));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((-2), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (3*numIterations+1)));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
     }
 #endif
 
@@ -127,76 +141,88 @@ MG::MG() {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
     }
 #endif
 #endif
 
 #ifdef NONBLOCKING_ARRAYCOPY
     myTimes[T_SYNC][level] =
-      ndarray<double, 1>(myTimes[T_GLOBAL_COMM][level].domain());
+      ndarray<double, 1 UNSTRIDED>(myTimes[T_GLOBAL_COMM][level].domain());
 #ifndef CONTIGUOUS_ARRAY_BUFFERS
     // make empty domains for this case
     myTimes[T_PACKING] =
-      ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
     myTimes[T_UNPACKING] =
-      ndarray<ndarray<double, 1>, 1>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
 #endif
   }
 
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
   myCounts =
-    ndarray<ndarray<ndarray<long, 1>, 1>, 1>(RECTDOMAIN((1), (numCounters+1)));
+    ndarray<ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((1), (numCounters+1)));
 	
   // set up arrays for storing counts
-  myCounts[T_L2NORM] = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((startLevel), (startLevel+1)));
-  myCounts[T_APPLY_SMOOTHER] = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((1), (startLevel+1)));
-  myCounts[T_EVALUATE_RESIDUAL] = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
-  myCounts[T_COARSEN] = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
-  myCounts[T_PROLONGATE] = ndarray<ndarray<long, 1>, 1>(RECTDOMAIN((2), (startLevel+1)));
+  myCounts[T_L2NORM] =
+    ndarray<ndarray<long, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
+  myCounts[T_APPLY_SMOOTHER] =
+    ndarray<ndarray<long, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
+  myCounts[T_EVALUATE_RESIDUAL] =
+    ndarray<ndarray<long, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+  myCounts[T_COARSEN] =
+    ndarray<ndarray<long, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+  myCounts[T_PROLONGATE] =
+    ndarray<ndarray<long, 1 UNSTRIDED>,
+            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
 
-  myCounts[T_L2NORM][startLevel] = ndarray<long, 1>(RECTDOMAIN((1), (3)));
+  myCounts[T_L2NORM][startLevel] =
+    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
 
   foreach (level, RECTDOMAIN((1), (startLevel+1))) {
     myCounts[T_APPLY_SMOOTHER][level] =
-      ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 
   foreach (level, RECTDOMAIN((2), (startLevel+1))) {
     if (level[1] != startLevel) {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     }
     else {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
     }
     myCounts[T_COARSEN][level] =
-      ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     myCounts[T_PROLONGATE][level] =
-      ndarray<long, 1>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 #endif
 #endif
@@ -204,17 +230,28 @@ MG::MG() {
 
 extern int ipow(int base, int exp);
 
+static inline double sqr(double d) {
+  return d * d;
+}
+
 double MG::getL2Norm(Grid &gridA, int callNumber) {
   double myASquareSum = 0;
   Point<3> myBlockPos = Grid::myBlockPos;
-  ndarray<double, 3> myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myAPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
 
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-  foreach (p, myAPoints.domain().shrink(1)) {
-    myASquareSum += (myAPoints[p] * myAPoints[p]);
+#ifdef SPLIT_LOOP
+  foreach3 (i, j, k, myAPoints.domain().shrink(1)) {
+    myASquareSum += sqr(myAPoints[i][j][k]);
   }
+#else
+  foreach (p, myAPoints.domain().shrink(1)) {
+    myASquareSum += sqr(myAPoints[p]);
+  }
+#endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_L2NORM][startLevel][callNumber]);
   COUNTER_STOP_READ(myCounter, myCounts[T_L2NORM][startLevel][callNumber]);
@@ -236,7 +273,8 @@ int MG::mod(int a, int b) {
 void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) {
   Point<3> myBlockPos = Grid::myBlockPos;
   Point<3> numBlocksInGridSide = Grid::numBlocksInGridSide;
-  ndarray<double, 3> myPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
   int numCellsInGridSide = (int)ipow(2, level);
 
   if (level >= THRESHOLD_LEVEL) {
@@ -244,42 +282,46 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // communicate with all 26 nearest neighbors
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
     // use buffers so that arraycopys are contiguous in memory
-    ndarray<global_ndarray<double, 3>, 3> myOutBuffer =
-      (ndarray<global_ndarray<double, 3>, 3>) gridA.outBuffers[myBlockPos];
-    ndarray<global_ndarray<double, 3>, 3> myInBuffer =
-      (ndarray<global_ndarray<double, 3>, 3>) gridA.inBuffers[myBlockPos];
+    ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myOutBuffer =
+      (ndarray<ndarray<double, 3, global>,
+       3 UNSTRIDED>) gridA.outBuffers[myBlockPos];
+    ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myInBuffer =
+      (ndarray<ndarray<double, 3, global>,
+       3 UNSTRIDED>) gridA.inBuffers[myBlockPos];
 	    
     TIMER_START(myTimer);
 
     // packing
-    foreach (dir, (myOutBuffer.domain() - RectDomain<3>(Pzzz,Pzzz+Pppp))) {
+    foreach (dir, (myOutBuffer.domain() - RectDomain<3>((0, 0, 0), (1, 1, 1)))) {
       if (dir[1] == 0 || dir[2] == 0) {
         myOutBuffer[dir].copy(myPoints);
       }
     }
 
-    TIMER_STOP_READ(myTimer, myTimes[T_PACKING][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_PACKING][level][3*(iterationNum-1) +
+                                                       callNumber]);
 	    
 #ifndef PUSH_DATA
     TIMER_START(myTimer);
 
     barrier();
 
-    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) +
+                                                       callNumber]);
 #endif
 
     TIMER_START(myTimer);
 
 #ifdef PUSH_DATA
-    ndarray<global_ndarray<double, 3>, 3> myBuffer = myOutBuffer;
+    ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myBuffer = myOutBuffer;
 #else
-    ndarray<global_ndarray<double, 3>, 3> myBuffer = myInBuffer;
+    ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myBuffer = myInBuffer;
 #endif
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     foreach (neighborBlockPos,
              (myBuffer.translate(myBlockPos).domain() -
-              RectDomain<3>(myBlockPos, myBlockPos+Pppp))) {
+              RectDomain<3>(myBlockPos, myBlockPos+POINT(1, 1, 1)))) {
       // "actualBlockPos" is the actual block from which we retrieve data, since
       // we need to factor in periodic boundary conditions
       Point<3> actualBlockPos =
@@ -293,18 +335,19 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       Point<3> pointTranslationVector =
         ((actualBlockPos - neighborBlockPos) / numBlocksInGridSide) *
         numCellsInGridSide;
-      global_ndarray<double, 3> myTranslatedBlockBuffers =
+      ndarray<double, 3, global> myTranslatedBlockBuffers =
         myBuffer[myDirection].translate(pointTranslationVector);
 		
       // now copy new info
 #ifdef PUSH_DATA
-      gridA.inBuffers[actualBlockPos][Pzzz-myDirection].COPY(myTranslatedBlockBuffers);
+      gridA.inBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection].COPY(myTranslatedBlockBuffers);
 #else
-      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][Pzzz-myDirection]);
+      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection]);
 #endif
     }
 
-    TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) +
+                                                           callNumber]);
 	    
 #ifdef NONBLOCKING_ARRAYCOPY
     TIMER_START(myTimer);
@@ -312,7 +355,8 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // Handle.syncNBI();
     async_copy_fence();
 
-    TIMER_STOP_READ(myTimer, myTimes[T_SYNC][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_SYNC][level][3*(iterationNum-1) +
+                                                    callNumber]);
 #endif
 
 #ifdef PUSH_DATA
@@ -320,19 +364,21 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
     barrier();
 
-    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) +
+                                                       callNumber]);
 #endif
 
     TIMER_START(myTimer);
 
     // unpacking
-    foreach (dir, (myBuffer.domain() - [Pzzz:Pzzz])) {
+    foreach (dir, (myBuffer.domain() - RECTDOMAIN((0, 0, 0), (1, 1, 1)))) {
       if (dir[1] == 0 || dir[2] == 0) {
         myPoints.copy(myInBuffer[dir]);
       }
     }
 
-    TIMER_STOP_READ(myTimer, myTimes[T_UNPACKING][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_UNPACKING][level][3*(iterationNum-1) +
+                                                         callNumber]);
 
     // end of contiguous array buffers case (26 directions)
 #else
@@ -343,12 +389,14 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
     barrier();
 
-    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) + callNumber]);
+    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][3*(iterationNum-1) +
+                                                       callNumber]);
 #endif
     TIMER_START(myTimer);
 	    
     // "surroundingBlocks" is the 3x3x3 cube of blocks around the current block
-    RectDomain<3> surroundingBlocks(myBlockPos+Pmmm, myBlockPos+2*Pppp);
+    RectDomain<3> surroundingBlocks(myBlockPos+POINT(-1, -1, -1),
+                                    myBlockPos+POINT(2, 2, 2));
 	    
     foreach (neighborBlockPos, surroundingBlocks) {
       if (neighborBlockPos != myBlockPos) {
@@ -365,7 +413,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
           ((actualBlockPos - neighborBlockPos) / numBlocksInGridSide) *
           numCellsInGridSide;
         ndarray<double, 3> myTranslatedBlockPoints =
-          myBlockPoints.translate(pointTranslationVector);
+          myBlockPoints.translate(pointTranslationVector); // myBlockPoints???
 		    
         // now copy new info
 #ifdef PUSH_DATA
@@ -401,18 +449,23 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // communicate with only 6 nearest face neighbors, but with synchronization
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
     // use buffers so that arraycopys are contiguous in memory
-    ndarray<global_ndarray<double, 3>, 1> myOutBuffer =
-      (ndarray<global_ndarray<double, 3>, 1>) gridA.outBuffers[myBlockPos];
-    ndarray<global_ndarray<double, 3>, 1> myInBuffer =
-      (ndarray<global_ndarray<double, 3>, 1>) gridA.inBuffers[myBlockPos];
+    ndarray<ndarray<double, 3, global>, 1 UNSTRIDED> myOutBuffer =
+      (ndarray<ndarray<double, 3, global>,
+       1 UNSTRIDED>) gridA.outBuffers[myBlockPos];
+    ndarray<ndarray<double, 3, global>, 1 UNSTRIDED> myInBuffer =
+      (ndarray<ndarray<double, 3, global>,
+       1 UNSTRIDED>) gridA.inBuffers[myBlockPos];
 
-    ndarray<RectDomain<3>, 1> surroundingBlocks(RECTDOMAIN((1), (4)));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(RECTDOMAIN((1), (4)));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+Pmzz, myBlockPos+Ppzz+Pppp, POINT(2,0,0));
+      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
+                    POINT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+Pzmz, myBlockPos+Pzpz+Pppp, POINT(0,2,0));
+      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
+                    POINT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+Pzzm, myBlockPos+Pzzp+Pppp, POINT(0,0,2));
+      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
+                    POINT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
@@ -427,7 +480,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         myOutBuffer[-dim].copy(myPoints);
         myOutBuffer[dim].copy(myPoints);
 
-        TIMER_STOP_READ(myTimer, myTimes[T_PACKING][level][6*(iterationNum-1) + 2*(callNumber-1) + (dim-1)]);
+        TIMER_STOP_READ(myTimer,
+                        myTimes[T_PACKING][level][6*(iterationNum-1) +
+                                                  2*(callNumber-1) + (dim-1)]);
       }
 		
 #ifndef PUSH_DATA
@@ -435,7 +490,8 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
       barrier();
 
-      TIMER_STOP_READ(myTimes[T_BARRIER][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimes[T_BARRIER][level][9*(iterationNum-1) +
+                                                3*(callNumber-1) + dim]);
 #endif
 		
       TIMER_START(myTimer);
@@ -450,7 +506,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
           (neighborBlockPos - actualBlockPos) * numCellsPerBlock;
         int dimDir = dim * (neighborBlockPos - myBlockPos)[dim];
 
-        global_ndarray<double, 3> buf;
+        ndarray<double, 3, global> buf;
 #ifdef PUSH_DATA
         buf = gridA.inBuffers[actualBlockPos][-dimDir];
         buf.translate(actualToNeighborVector).COPY(myOutBuffer[dimDir]);
@@ -460,7 +516,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 #endif
       }
 
-      TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
+                                                    3*(callNumber-1) + dim]);
 		
 #ifdef NONBLOCKING_ARRAYCOPY
       TIMER_START(myTimer);
@@ -468,7 +526,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       // Handle.syncNBI();
       async_copy_fence();
 
-      TIMER_STOP_READ(myTimer, myTimes[T_SYNC][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_SYNC][level][9*(iterationNum-1) +
+                                             3*(callNumber-1) + dim]);
 #endif
 
 #ifdef PUSH_DATA
@@ -476,7 +536,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
       barrier();
 
-      TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_BARRIER][level][9*(iterationNum-1) +
+                                                3*(callNumber-1) + dim]);
 #endif
 		
       // UNPACK from local buffers
@@ -486,7 +548,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         myPoints.copy(myInBuffer[-dim]);
         myPoints.copy(myInBuffer[dim]);
 
-        TIMER_STOP_READ(myTimer, myTimes[T_UNPACKING][level][6*(iterationNum-1) + 2*(callNumber-1) + (dim-1)]);
+        TIMER_STOP_READ(myTimer,
+                        myTimes[T_UNPACKING][level][6*(iterationNum-1) +
+                                                    2*(callNumber-1) + (dim-1)]);
       }
     }
     // end of contiguous array buffers case (6 directions)
@@ -497,13 +561,16 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
     // "actualBlockPos" is the actual block position of a block w/o periodic boundary conditions
 
-    ndarray<RectDomain<3>, 1> surroundingBlocks(POINT(1), POINT(4));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(POINT(1), POINT(4));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+Pmzz, myBlockPos+Ppzz+Pppp, POINT(2,0,0));
+      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
+                    POINT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+Pzmz, myBlockPos+Pzpz+Pppp, POINT(0,2,0));
+      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
+                    POINT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+Pzzm, myBlockPos+Pzzp+Pppp, POINT(0,0,2));
+      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
+                    POINT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "localFromRectDomain" indicates (for a push) which portion of the local block needs to be copied
@@ -516,7 +583,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
       barrier();
 
-      TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_BARRIER][level][9*(iterationNum-1) +
+                                                3*(callNumber-1) + dim]);
 #endif
 
       TIMER_START(myTimer);
@@ -534,14 +603,19 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         gridA.points[actualBlockPos].translate(actualToNeighborVector).COPY(myPoints.constrict(localFromRectDomain));
 #else
         // "remoteFromRectDomain" indicates (for a pull) which portion of the remote block needs to be copied
-        RectDomain<3> remoteFromRectDomain = localFromRectDomain + ((neighborBlockPos - myBlockPos) * numCellsPerBlock);
+        RectDomain<3> remoteFromRectDomain =
+          localFromRectDomain +
+          ((neighborBlockPos - myBlockPos) * numCellsPerBlock);
         myPoints.COPY(gridA.points[actualBlockPos].translate(actualToNeighborVector).constrict(remoteFromRectDomain));
 #endif		    
       }
 
-      TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
+                                                    3*(callNumber-1) + dim]);
 
-      localFromRectDomain = localFromRectDomain.accrete(1, -dim, 1).accrete(1, dim, 1);
+      localFromRectDomain =
+        localFromRectDomain.accrete(1, -dim, 1).accrete(1, dim, 1);
 
 #ifdef NONBLOCKING_ARRAYCOPY
       TIMER_START(myTimer);
@@ -549,7 +623,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       // Handle.syncNBI();
       async_copy_fence();
 
-      TIMER_STOP_READ(myTimer, myTimes[T_SYNC][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_SYNC][level][9*(iterationNum-1) +
+                                             3*(callNumber-1) + dim]);
 #endif
 
 #ifdef PUSH_DATA
@@ -557,10 +633,12 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
       barrier();
 
-      TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][level][9*(iterationNum-1) + 3*(callNumber-1) + dim]);
+      TIMER_STOP_READ(myTimer,
+                      myTimes[T_BARRIER][level][9*(iterationNum-1) +
+                                                3*(callNumber-1) + dim]);
 #endif
     }
-	    
+
 #endif
     // end of the no contiguous array buffers case (6 directions)
 #endif
@@ -587,31 +665,55 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
 void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   Point<3> myBlockPos = Grid::myBlockPos;
-  ndarray<double, 3> myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
-  ndarray<double, 3> myBPoints = (ndarray<double, 3>) gridB.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myAPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myBPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridB.points[myBlockPos];
 	
   RectDomain<1> zLine = myAPoints.domain().slice(2).slice(1);
-  ndarray<double, 1> sumEdgesOfXYPlane(zLine);
-  ndarray<double, 1> sumCornersOfXYPlane(zLine);
-  ndarray<double, 1> gridBZLine(zLine);
+  ndarray<double, 1 UNSTRIDED> sumEdgesOfXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> sumCornersOfXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> gridBZLine(zLine);
 
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
   // set lowest level points equal to 0
   if (level == 1) {
-    foreach (p, myAPoints.domain().shrink(1)) {
-      myAPoints[p] = 0;
-    }
+    // foreach (p, myAPoints.domain().shrink(1)) {
+    //   myAPoints[p] = 0;
+    // }
+    myAPoints.constrict(myAPoints.domain().shrink(1)).set(0);
   }
 
+#ifdef SPLIT_LOOP
+  foreach2 (i, j, myAPoints.domain().slice(3).shrink(1)) {
+    foreach1 (k, zLine) {
+      sumEdgesOfXYPlane[k] =
+        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
+        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+      sumCornersOfXYPlane[k] =
+        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
+        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
+      gridBZLine[k] = myBPoints[i][j][k];
+    }
+    foreach1 (k, zLine.shrink(1)) {
+      myAPoints[i][j][k] += S0 * myBPoints[i][j][k]
+        + S1 * (sumEdgesOfXYPlane[k] + gridBZLine[k-1] + gridBZLine[k+1])
+        + S2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
+                sumEdgesOfXYPlane[k+1]);
+      // Enable the following if S3 != 0
+      // + S3 * (sumCornersOfXYPlane[k-1] + sumCornersOfXYPlane[k+1]);
+    }
+  }
+#else
   foreach (p, myAPoints.domain().slice(3).shrink(1)) {
     foreach (q, zLine) {
       Point<3> r = {{p[1], p[2], q[1]}};
-      sumEdgesOfXYPlane[q] = myBPoints[r+Pmzz] + myBPoints[r+Ppzz] +
-        myBPoints[r+Pzmz] + myBPoints[r+Pzpz];
-      sumCornersOfXYPlane[q] = myBPoints[r+Pmmz] + myBPoints[r+Pmpz] +
-        myBPoints[r+Ppmz] + myBPoints[r+Pppz];
+      sumEdgesOfXYPlane[q] = myBPoints[Pmzz(r)] + myBPoints[Ppzz(r)] +
+        myBPoints[Pzmz(r)] + myBPoints[Pzpz(r)];
+      sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
+        myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
       gridBZLine[q] = myBPoints[r];
     }
     foreach (q, zLine.shrink(1)) {
@@ -624,6 +726,7 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
       // + S3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]);
     }
   }
+#endif // SPLIT_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_APPLY_SMOOTHER][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_APPLY_SMOOTHER][level][iterationNum]);
@@ -632,97 +735,160 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
 void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
                           int iterationNum, int callNumber) {
   Point<3> myBlockPos = Grid::myBlockPos;
-  ndarray<double, 3> myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
-  ndarray<double, 3> myBPoints = (ndarray<double, 3>) gridB.points[myBlockPos];
-  ndarray<double, 3> myCPoints = (ndarray<double, 3>) gridC.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myAPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myBPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridB.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myCPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridC.points[myBlockPos];
 
   RectDomain<1> zLine = myCPoints.domain().slice(2).slice(1);
-  ndarray<double, 1> sumEdgesOfXYPlane(zLine);
-  ndarray<double, 1> sumCornersOfXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> sumEdgesOfXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> sumCornersOfXYPlane(zLine);
 	
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
+#ifdef SPLIT_LOOP
+  foreach2 (i, j, myCPoints.domain().slice(3).shrink(1)) {
+    foreach1 (k, zLine) {
+      sumEdgesOfXYPlane[k] =
+        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
+        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+      sumCornersOfXYPlane[k] =
+        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
+        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
+    }
+    foreach1 (k, zLine.shrink(1)) {
+      myCPoints[i][j][k] = myAPoints[i][j][k]
+        - (A0 * myBPoints[i][j][k]
+           // Enable the following if A1 != 0
+           // + A1 * (sumEdgesOfXYPlane[k] + myBPoints[Pzzms(i, j, k)] +
+           //         myBPoints[Pzzps(i, j, k)])
+           + A2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
+                   sumEdgesOfXYPlane[k+1])
+           + A3 * (sumCornersOfXYPlane[k-1] + sumCornersOfXYPlane[k+1]));
+    }
+  }
+#else
   foreach (p, myCPoints.domain().slice(3).shrink(1)) {
     foreach (q, zLine) {
       Point<3> r = {{p[1], p[2], q[1]}};
-      sumEdgesOfXYPlane[q] = myBPoints[r+Pmzz] + myBPoints[r+Ppzz] +
-        myBPoints[r+Pzmz] + myBPoints[r+Pzpz];
-      sumCornersOfXYPlane[q] = myBPoints[r+Pmmz] + myBPoints[r+Pmpz] +
-        myBPoints[r+Ppmz] + myBPoints[r+Pppz];
+      sumEdgesOfXYPlane[q] = myBPoints[Pmzz(r)] + myBPoints[Ppzz(r)] +
+        myBPoints[Pzmz(r)] + myBPoints[Pzpz(r)];
+      sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
+        myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
     }
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       myCPoints[r] = myAPoints[r]
         - (A0 * myBPoints[r]
            // Enable the following if A1 != 0
-           // + A1 * (sumEdgesOfXYPlane[q] + myBPoints[r+Pzzm] + myBPoints[r+Pzzp])
+           // + A1 * (sumEdgesOfXYPlane[q] + myBPoints[Pzzm(r)] +
+           //         myBPoints[Pzzp(r)])
            + A2 * (sumCornersOfXYPlane[q] + sumEdgesOfXYPlane[q[1]-1] +
                    sumEdgesOfXYPlane[q[1]+1])
            + A3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]));
     }
   }
+#endif // SPLIT_LOOP
 
   if (level != startLevel) {
-    TIMER_STOP_READ(myTimer, myTimes[T_EVALUATE_RESIDUAL][level][iterationNum]);
-    COUNTER_STOP_READ(myCounter, myCounts[T_EVALUATE_RESIDUAL][level][iterationNum]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_EVALUATE_RESIDUAL][level][iterationNum]);
+    COUNTER_STOP_READ(myCounter,
+                      myCounts[T_EVALUATE_RESIDUAL][level][iterationNum]);
   }
   else {
-    TIMER_STOP_READ(myTimer, myTimes[T_EVALUATE_RESIDUAL][level][2*iterationNum + callNumber - 1]);
-    COUNTER_STOP_READ(myCounter, myCounts[T_EVALUATE_RESIDUAL][level][2*iterationNum + callNumber - 1]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_EVALUATE_RESIDUAL][level][2*iterationNum
+                                                        + callNumber - 1]);
+    COUNTER_STOP_READ(myCounter,
+                      myCounts[T_EVALUATE_RESIDUAL][level][2*iterationNum
+                                                           + callNumber - 1]);
   }
 }
 
 void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   Point<3> myBlockPos = Grid::myBlockPos;
-  ndarray<double, 3> myBPoints;
-  ndarray<double, 3> myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myBPoints;
+  ndarray<double, 3 UNSTRIDED> myAPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
 
   // In this case, if the array is distributed, it stays distributed.  Similarly, if it's only on proc 0, it stays on proc 0
   if (level != THRESHOLD_LEVEL) {
-    myBPoints = (ndarray<double, 3>) gridB.points[myBlockPos];
+    myBPoints = (ndarray<double, 3 UNSTRIDED>) gridB.points[myBlockPos];
   }
   // This case is when we go from a distributed array to the entire array on proc 0
   else {
     RectDomain<3> rd(POINT((myAPoints.domain().min()[1]+1)/2 - 1,
                            (myAPoints.domain().min()[2]+1)/2 - 1,
                            (myAPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myAPoints.domain().max()[1]-1)/2 + 1,
-                           (myAPoints.domain().max()[2]-1)/2 + 1,
-                           (myAPoints.domain().max()[3]-1)/2 + 1) + Pppp);
-    myBPoints = ndarray<double, 3>(rd);
+                     POINT((myAPoints.domain().max()[1]-1)/2 + 2,
+                           (myAPoints.domain().max()[2]-1)/2 + 2,
+                           (myAPoints.domain().max()[3]-1)/2 + 2));
+    myBPoints = ndarray<double, 3 UNSTRIDED>(rd);
   }
 
   RectDomain<1> zLine = myBPoints.domain().slice(2).slice(1);
   double sumEdgesOfCenterYZPlane, sumCornersOfCenterYZPlane;
-  ndarray<double, 1> sumEdgesOfLowerYZPlane(zLine.shrink(1, -1));
-  ndarray<double, 1> sumCornersOfLowerYZPlane(zLine.shrink(1, -1));
+  ndarray<double, 1 UNSTRIDED> sumEdgesOfLowerYZPlane(zLine.shrink(1, -1));
+  ndarray<double, 1 UNSTRIDED> sumCornersOfLowerYZPlane(zLine.shrink(1, -1));
 
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
+#ifdef SPLIT_LOOP
+  foreach2 (i, j, myBPoints.domain().slice(3).shrink(1)) {
+    foreach1 (k, zLine.shrink(1, -1)) {
+      int a = 2*i+1, b = 2*j+1, c = 2*k+1;
+      sumEdgesOfLowerYZPlane[k] =
+        myAPoints[Pmzms(a, b, c)] + myAPoints[Pzmms(a, b, c)] +
+        myAPoints[Ppzms(a, b, c)] + myAPoints[Pzpms(a, b, c)];
+      sumCornersOfLowerYZPlane[k] =
+        myAPoints[Pmmms(a, b, c)] + myAPoints[Ppmms(a, b, c)] +
+        myAPoints[Pmpms(a, b, c)] + myAPoints[Pppms(a, b, c)];
+    }
+    foreach1 (k, zLine.shrink(1)) {
+      int a = 2*i+1, b = 2*j+1, c = 2*k+1;
+      sumEdgesOfCenterYZPlane =
+        myAPoints[Pmzzs(a, b, c)] + myAPoints[Pzmzs(a, b, c)] +
+        myAPoints[Ppzzs(a, b, c)] + myAPoints[Pzpzs(a, b, c)];
+      sumCornersOfCenterYZPlane =
+        myAPoints[Pmmzs(a, b, c)] + myAPoints[Ppmzs(a, b, c)] +
+        myAPoints[Pmpzs(a, b, c)] + myAPoints[Pppzs(a, b, c)];
+      myBPoints[i][j][k] = P0 * myAPoints[a][b][c]
+        + P1 * (myAPoints[Pzzms(a, b, c)] + myAPoints[Pzzps(a, b, c)] +
+                sumEdgesOfCenterYZPlane)
+        + P2 * (sumEdgesOfLowerYZPlane[k] + sumEdgesOfLowerYZPlane[k+1] +
+                sumCornersOfCenterYZPlane)
+        + P3 * (sumCornersOfLowerYZPlane[k] + sumCornersOfLowerYZPlane[k+1]);
+    }
+  }
+#else
   foreach (p, myBPoints.domain().slice(3).shrink(1)) {
     foreach (q, zLine.shrink(1, -1)) {
       Point<3> s = {{2*p[1]+1, 2*p[2]+1, 2*q[1]+1}};
-      sumEdgesOfLowerYZPlane[q] = myAPoints[s+Pmzm] + myAPoints[s+Pzmm] +
-        myAPoints[s+Ppzm] + myAPoints[s+Pzpm];
-      sumCornersOfLowerYZPlane[q] = myAPoints[s+Pmmm] + myAPoints[s+Ppmm] +
-        myAPoints[s+Pmpm] + myAPoints[s+Pppm];
+      sumEdgesOfLowerYZPlane[q] = myAPoints[Pmzm(s)] + myAPoints[Pzmm(s)] +
+        myAPoints[Ppzm(s)] + myAPoints[Pzpm(s)];
+      sumCornersOfLowerYZPlane[q] = myAPoints[Pmmm(s)] + myAPoints[Ppmm(s)] +
+        myAPoints[Pmpm(s)] + myAPoints[Pppm(s)];
     }
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       Point<3> s = {{2*r[1]+1, 2*r[2]+1, 2*r[3]+1}};
-      sumEdgesOfCenterYZPlane = myAPoints[s+Pmzz] + myAPoints[s+Pzmz] +
-        myAPoints[s+Ppzz] + myAPoints[s+Pzpz];
-      sumCornersOfCenterYZPlane = myAPoints[s+Pmmz] + myAPoints[s+Ppmz] +
-        myAPoints[s+Pmpz] + myAPoints[s+Pppz];
+      sumEdgesOfCenterYZPlane = myAPoints[Pmzz(s)] + myAPoints[Pzmz(s)] +
+        myAPoints[Ppzz(s)] + myAPoints[Pzpz(s)];
+      sumCornersOfCenterYZPlane = myAPoints[Pmmz(s)] + myAPoints[Ppmz(s)] +
+        myAPoints[Pmpz(s)] + myAPoints[Pppz(s)];
       myBPoints[r] = P0 * myAPoints[s]
-        + P1 * (myAPoints[s+Pzzm] + myAPoints[s+Pzzp] + sumEdgesOfCenterYZPlane)
+        + P1 * (myAPoints[Pzzm(s)] + myAPoints[Pzzp(s)] + sumEdgesOfCenterYZPlane)
         + P2 * (sumEdgesOfLowerYZPlane[q] + sumEdgesOfLowerYZPlane[q+1] +
                 sumCornersOfCenterYZPlane)
         + P3 * (sumCornersOfLowerYZPlane[q] + sumCornersOfLowerYZPlane[q+1]);
     }
   }
+#endif // SPLIT_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_COARSEN][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_COARSEN][level][iterationNum]);
@@ -733,124 +899,182 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
     gridB.myBufferForProc0.copy(myBPoints.constrict(myBPoints.domain().shrink(1)));
     gridB.myRemoteBufferOnProc0.copy(gridB.myBufferForProc0);
 
-    TIMER_STOP_READ(myTimer, myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL][2*(iterationNum-1)+2]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL][2*(iterationNum-1)+2]);
     TIMER_START(myTimer);
 
     barrier();
 
     if (MYTHREAD == 0) {
       foreach (p, gridB.localBuffersOnProc0.domain()) {
-        gridB.points[Pzzz].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
+        gridB.points[POINT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
       }
     }
 
-    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][THRESHOLD_LEVEL][-2*iterationNum+2]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_BARRIER][THRESHOLD_LEVEL][-2*iterationNum+2]);
   }
 }
 
 void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   Point<3> myBlockPos = Grid::myBlockPos;
-  ndarray<double, 3> myAPoints;
-  ndarray<double, 3> myBPoints = (ndarray<double, 3>) gridB.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myAPoints;
+  ndarray<double, 3 UNSTRIDED> myBPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridB.points[myBlockPos];
 
   // In this case, if the array is distributed, it stays distributed.  Similarly, if it's only on proc 0, it stays on proc 0
   if (level != THRESHOLD_LEVEL) {
-    myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
+    myAPoints = (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
   }
   // This case is when we go from the entire array on proc 0 to a distributed array
   else {
     RectDomain<3> rd(POINT((myBPoints.domain().min()[1]+1)/2 - 1,
                            (myBPoints.domain().min()[2]+1)/2 - 1,
                            (myBPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myBPoints.domain().max()[1]-1)/2 + 1,
-                           (myBPoints.domain().max()[2]-1)/2 + 1,
-                           (myBPoints.domain().max()[3]-1)/2 + 1) + Pppp);
-    myAPoints = ndarray<double, 3>(rd);
+                     POINT((myBPoints.domain().max()[1]-1)/2 + 2,
+                           (myBPoints.domain().max()[2]-1)/2 + 2,
+                           (myBPoints.domain().max()[3]-1)/2 + 2));
+    myAPoints = ndarray<double, 3 UNSTRIDED>(rd);
 
     TIMER_START(myTimer);
 
     if (MYTHREAD == 0) {
       foreach (p, gridA.localBuffersOnProc0.domain()) {
-        gridA.localBuffersOnProc0[p].copy(gridA.points[Pzzz]);
+        gridA.localBuffersOnProc0[p].copy(gridA.points[POINT(0, 0, 0)]);
       }
     }
 
     barrier();
 
-    TIMER_STOP_READ(myTimer, myTimes[T_BARRIER][THRESHOLD_LEVEL][-2*iterationNum+1]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_BARRIER][THRESHOLD_LEVEL][-2*iterationNum+1]);
     TIMER_START(myTimer);
 
     gridA.myBufferForProc0.copy(gridA.myRemoteBufferOnProc0);
     myAPoints.copy(gridA.myBufferForProc0);
 
-    TIMER_STOP_READ(myTimer, myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL][2*(iterationNum-1)+1]);
+    TIMER_STOP_READ(myTimer,
+                    myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL][2*(iterationNum-1)+1]);
   }
 
   RectDomain<1> zLine = myAPoints.domain().slice(2).slice(1);
-  ndarray<double, 1> xSumOfLowerXYPlane(zLine);
-  ndarray<double, 1> ySumOfLowerXYPlane(zLine);
-  ndarray<double, 1> sumOfLowerXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> xSumOfLowerXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> ySumOfLowerXYPlane(zLine);
+  ndarray<double, 1 UNSTRIDED> sumOfLowerXYPlane(zLine);
 
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
   if (level != startLevel) {
+#ifdef SPLIT_LOOP
+    foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
+      foreach1 (k, zLine) {
+        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
+        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
+          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+      }
+      foreach1 (k, zLine.shrink(1,1)) {
+        int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
+        myBPoints[Pmmms(a, b, c)] = Q0 * myAPoints[i][j][k];
+        myBPoints[Pzmms(a, b, c)] = Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints[Pmzms(a, b, c)] = Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints[Pzzms(a, b, c)] = Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints[Pmmzs(a, b, c)] = Q1 * (myAPoints[i][j][k] +
+                                         myAPoints[Pzzps(i, j, k)]);
+        myBPoints[Pzmzs(a, b, c)] = Q2 * (xSumOfLowerXYPlane[k] +
+                                          xSumOfLowerXYPlane[k+1]);
+        myBPoints[Pmzzs(a, b, c)] = Q2 * (ySumOfLowerXYPlane[k] +
+                                          ySumOfLowerXYPlane[k+1]);
+        myBPoints[a][b][c] = Q3 * (sumOfLowerXYPlane[k] +
+                                   sumOfLowerXYPlane[k+1]);
+      }
+    }
+#else
     foreach (p, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach (q, zLine) {
         Point<3> r = {{p[1], p[2], q[1]}};
-        xSumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[r+Ppzz];
-        ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[r+Pzpz];
-        sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[r+Pzpz] +
-          myAPoints[r+Pppz];
+        xSumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Ppzz(r)];
+        ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
+        sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
+          myAPoints[Pppz(r)];
       }
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
-        myBPoints[s+Pmmm] = Q0 * myAPoints[r];
-        myBPoints[s+Pzmm] = Q1 * (xSumOfLowerXYPlane[q]);
-        myBPoints[s+Pmzm] = Q1 * (ySumOfLowerXYPlane[q]);
-        myBPoints[s+Pzzm] = Q2 * (sumOfLowerXYPlane[q]);
-        myBPoints[s+Pmmz] = Q1 * (myAPoints[r] + myAPoints[r+Pzzp]);
-        myBPoints[s+Pzmz] = Q2 * (xSumOfLowerXYPlane[q] +
+        myBPoints[Pmmm(s)] = Q0 * myAPoints[r];
+        myBPoints[Pzmm(s)] = Q1 * (xSumOfLowerXYPlane[q]);
+        myBPoints[Pmzm(s)] = Q1 * (ySumOfLowerXYPlane[q]);
+        myBPoints[Pzzm(s)] = Q2 * (sumOfLowerXYPlane[q]);
+        myBPoints[Pmmz(s)] = Q1 * (myAPoints[r] + myAPoints[Pzzp(r)]);
+        myBPoints[Pzmz(s)] = Q2 * (xSumOfLowerXYPlane[q] +
                                   xSumOfLowerXYPlane[q[1]+1]);
-        myBPoints[s+Pmzz] = Q2 * (ySumOfLowerXYPlane[q] +
+        myBPoints[Pmzz(s)] = Q2 * (ySumOfLowerXYPlane[q] +
                                   ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] = Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
       }
     }
+#endif // SPLIT_LOOP
   }
   else {
+#ifdef SPLIT_LOOP
+    foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
+      foreach1 (k, zLine) {
+        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
+        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
+          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+      }
+      foreach1 (k, zLine.shrink(1,1)) {
+        int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
+        myBPoints[Pmmms(a, b, c)] += Q0 * myAPoints[i][j][k];
+        myBPoints[Pzmms(a, b, c)] += Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints[Pmzms(a, b, c)] += Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints[Pzzms(a, b, c)] += Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints[Pmmzs(a, b, c)] += Q1 * (myAPoints[i][j][k] +
+                                           myAPoints[Pzzps(i, j, k)]);
+        myBPoints[Pzmzs(a, b, c)] += Q2 * (xSumOfLowerXYPlane[k] +
+                                           xSumOfLowerXYPlane[k+1]);
+        myBPoints[Pmzzs(a, b, c)] += Q2 * (ySumOfLowerXYPlane[k] +
+                                           ySumOfLowerXYPlane[k+1]);
+        myBPoints[a][b][c] += Q3 * (sumOfLowerXYPlane[k] +
+                                    sumOfLowerXYPlane[k+1]);
+      }
+    }
+  }
+#else
     foreach (p, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach (q, zLine) {
         Point<3> r = {{p[1], p[2], q[1]}};
-        xSumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[r+Ppzz];
-        ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[r+Pzpz];
-        sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[r+Pzpz] +
-          myAPoints[r+Pppz];
+        xSumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Ppzz(r)];
+        ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
+        sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
+          myAPoints[Pppz(r)];
       }
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
-        myBPoints[s+Pmmm] += Q0 * myAPoints[r];
-        myBPoints[s+Pzmm] += Q1 * (xSumOfLowerXYPlane[q]);
-        myBPoints[s+Pmzm] += Q1 * (ySumOfLowerXYPlane[q]);
-        myBPoints[s+Pzzm] += Q2 * (sumOfLowerXYPlane[q]);
-        myBPoints[s+Pmmz] += Q1 * (myAPoints[r] + myAPoints[r+Pzzp]);
-        myBPoints[s+Pzmz] += Q2 * (xSumOfLowerXYPlane[q] +
+        myBPoints[Pmmm(s)] += Q0 * myAPoints[r];
+        myBPoints[Pzmm(s)] += Q1 * (xSumOfLowerXYPlane[q]);
+        myBPoints[Pmzm(s)] += Q1 * (ySumOfLowerXYPlane[q]);
+        myBPoints[Pzzm(s)] += Q2 * (sumOfLowerXYPlane[q]);
+        myBPoints[Pmmz(s)] += Q1 * (myAPoints[r] + myAPoints[Pzzp(r)]);
+        myBPoints[Pzmz(s)] += Q2 * (xSumOfLowerXYPlane[q] +
                                    xSumOfLowerXYPlane[q[1]+1]);
-        myBPoints[s+Pmzz] += Q2 * (ySumOfLowerXYPlane[q] +
+        myBPoints[Pmzz(s)] += Q2 * (ySumOfLowerXYPlane[q] +
                                    ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] += Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
       }
     }
   }
+#endif // SPLIT_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_PROLONGATE][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_PROLONGATE][level][iterationNum]);
 }
 
-void MG::vCycle(ndarray<Grid *, 1> residualGrids,
-                ndarray<Grid *, 1> correctionGrids,
+void MG::vCycle(ndarray<Grid *, 1 UNSTRIDED> residualGrids,
+                ndarray<Grid *, 1 UNSTRIDED> correctionGrids,
                 Grid &rhsGrid, int iterationNum) {
   int level;
 

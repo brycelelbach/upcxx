@@ -1,31 +1,59 @@
 /* point constants (z = zero, m = minus 1, p = plus 1) */
-#define Pmmm POINT(-1,-1,-1)
-#define Pmmz POINT(-1,-1,0)
-#define Pmmp POINT(-1,-1,1)
-#define Pmzm POINT(-1,0,-1)
-#define Pmzz POINT(-1,0,0)
-#define Pmzp POINT(-1,0,1)
-#define Pmpm POINT(-1,1,-1)
-#define Pmpz POINT(-1,1,0)
-#define Pmpp POINT(-1,1,1)
-#define Pzmm POINT(0,-1,-1)
-#define Pzmz POINT(0,-1,0)
-#define Pzmp POINT(0,-1,1)
-#define Pzzm POINT(0,0,-1)
-#define Pzzz POINT(0,0,0)
-#define Pzzp POINT(0,0,1)
-#define Pzpm POINT(0,1,-1)
-#define Pzpz POINT(0,1,0)
-#define Pzpp POINT(0,1,1)
-#define Ppmm POINT(1,-1,-1)
-#define Ppmz POINT(1,-1,0)
-#define Ppmp POINT(1,-1,1)
-#define Ppzm POINT(1,0,-1)
-#define Ppzz POINT(1,0,0)
-#define Ppzp POINT(1,0,1)
-#define Pppm POINT(1,1,-1)
-#define Pppz POINT(1,1,0)
-#define Pppp POINT(1,1,1)
+#define Pmmm(p) (p + POINT(-1,-1,-1))
+#define Pmmz(p) (p + POINT(-1,-1,0))
+#define Pmmp(p) (p + POINT(-1,-1,1))
+#define Pmzm(p) (p + POINT(-1,0,-1))
+#define Pmzz(p) (p + POINT(-1,0,0))
+#define Pmzp(p) (p + POINT(-1,0,1))
+#define Pmpm(p) (p + POINT(-1,1,-1))
+#define Pmpz(p) (p + POINT(-1,1,0))
+#define Pmpp(p) (p + POINT(-1,1,1))
+#define Pzmm(p) (p + POINT(0,-1,-1))
+#define Pzmz(p) (p + POINT(0,-1,0))
+#define Pzmp(p) (p + POINT(0,-1,1))
+#define Pzzm(p) (p + POINT(0,0,-1))
+#define Pzzz(p) (p + POINT(0,0,0))
+#define Pzzp(p) (p + POINT(0,0,1))
+#define Pzpm(p) (p + POINT(0,1,-1))
+#define Pzpz(p) (p + POINT(0,1,0))
+#define Pzpp(p) (p + POINT(0,1,1))
+#define Ppmm(p) (p + POINT(1,-1,-1))
+#define Ppmz(p) (p + POINT(1,-1,0))
+#define Ppmp(p) (p + POINT(1,-1,1))
+#define Ppzm(p) (p + POINT(1,0,-1))
+#define Ppzz(p) (p + POINT(1,0,0))
+#define Ppzp(p) (p + POINT(1,0,1))
+#define Pppm(p) (p + POINT(1,1,-1))
+#define Pppz(p) (p + POINT(1,1,0))
+#define Pppp(p) (p + POINT(1,1,1))
+/* split indexing constants */
+#define Pmmms(i, j, k) i-1][j-1][k-1
+#define Pmmzs(i, j, k) i-1][j-1][k
+#define Pmmps(i, j, k) i-1][j-1][k+1
+#define Pmzms(i, j, k) i-1][j][k-1
+#define Pmzzs(i, j, k) i-1][j][k
+#define Pmzps(i, j, k) i-1][j][k+1
+#define Pmpms(i, j, k) i-1][j+1][k-1
+#define Pmpzs(i, j, k) i-1][j+1][k
+#define Pmpps(i, j, k) i-1][j+1][k+1
+#define Pzmms(i, j, k) i][j-1][k-1
+#define Pzmzs(i, j, k) i][j-1][k
+#define Pzmps(i, j, k) i][j-1][k+1
+#define Pzzms(i, j, k) i][j][k-1
+#define Pzzzs(i, j, k) i][j][k
+#define Pzzps(i, j, k) i][j][k+1
+#define Pzpms(i, j, k) i][j+1][k-1
+#define Pzpzs(i, j, k) i][j+1][k
+#define Pzpps(i, j, k) i][j+1][k+1
+#define Ppmms(i, j, k) i+1][j-1][k-1
+#define Ppmzs(i, j, k) i+1][j-1][k
+#define Ppmps(i, j, k) i+1][j-1][k+1
+#define Ppzms(i, j, k) i+1][j][k-1
+#define Ppzzs(i, j, k) i+1][j][k
+#define Ppzps(i, j, k) i+1][j][k+1
+#define Pppms(i, j, k) i+1][j+1][k-1
+#define Pppzs(i, j, k) i+1][j+1][k
+#define Pppps(i, j, k) i+1][j+1][k+1
     
 /* A = laplacian operator */
 #define A0 (-8.0/3.0)

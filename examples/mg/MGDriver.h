@@ -10,7 +10,7 @@ class MGDriver {
  private:
   /* These grids store the residual grids the correction grids.  
      They are arrays to represent the various levels of multigrid.  */
-  ndarray<Grid *, 1> residualGrids, correctionGrids;
+  ndarray<Grid *, 1 UNSTRIDED> residualGrids, correctionGrids;
 
   /* right-hand-side Grid object */
   Grid *rhsGrid;

@@ -126,7 +126,8 @@ void Test::populateRHSGrid(Grid &gridA, int startLevel) {
   }
 
   Point<3> myBlockPos = gridA.myBlockPos;
-  ndarray<double, 3> myAPoints = (ndarray<double, 3>) gridA.points[myBlockPos];
+  ndarray<double, 3 UNSTRIDED> myAPoints =
+    (ndarray<double, 3 UNSTRIDED>) gridA.points[myBlockPos];
   for (int i = 0; i < minusArrayLength; i++) {
     if (myAPoints.domain().contains(minusOnePoints[i])) {
       myAPoints[minusOnePoints[i]] = -1.0;

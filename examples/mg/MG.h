@@ -67,11 +67,13 @@ class MG {
   timer myTimer;
 #endif
   // "myTimes" is indexed by (MG Component #), level, and timing number
-  ndarray<ndarray<ndarray<double, 1>, 1>, 1> myTimes;
+  ndarray<ndarray<ndarray<double, 1 UNSTRIDED>,
+                  1 UNSTRIDED>, 1 UNSTRIDED> myTimes;
 #ifdef COUNTERS_ENABLED
   PAPICounter myCounter;
   // "myCounts" is indexed by (MG Component #), level, and counting number
-  ndarray<ndarray<ndarray<long, 1>, 1>, 1> myCounts;
+  ndarray<ndarray<ndarray<long, 1 UNSTRIDED>,
+                  1 UNSTRIDED>, 1 UNSTRIDED> myCounts;
 #endif
 
   /**
@@ -163,8 +165,8 @@ class MG {
    * @param rhsGrid The original right-hand side grid
    * @param iterationNum Used for profiling
    */
-  void vCycle(ndarray<Grid *, 1> residualGrids,
-              ndarray<Grid *, 1> correctionGrids,
+  void vCycle(ndarray<Grid *, 1 UNSTRIDED> residualGrids,
+              ndarray<Grid *, 1 UNSTRIDED> correctionGrids,
               Grid &rhsGrid, int iterationNum);
 
   /**
