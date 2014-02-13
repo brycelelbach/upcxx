@@ -6,7 +6,11 @@ static int xparts, yparts, zparts;
 static ndarray<rectdomain<3>, 1> allDomains;
 static rectdomain<3> myDomain;
 static ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
+#ifdef SHARED_DIR
+static shared_array<ndarray<double, 3, global GUNSTRIDED> > allGridsA, allGridsB;
+#else
 static ndarray<ndarray<double, 3, global GUNSTRIDED>, 1> allGridsA, allGridsB;
+#endif
 static ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
 static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
 static int steps;
@@ -345,10 +349,17 @@ int main(int argc, char **args) {
 
   myGridA = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
   myGridB = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
+#ifdef SHARED_DIR
+  allGridsA.init(THREADS);
+  allGridsB.init(THREADS);
+  allGridsA[MYTHREAD] = myGridA;
+  allGridsB[MYTHREAD] = myGridB;
+#else
   allGridsA = ARRAY(ndarray<double COMMA 3 COMMA global GUNSTRIDED>, ((0), ((int)THREADS)));
   allGridsB = ARRAY(ndarray<double COMMA 3 COMMA global GUNSTRIDED>, ((0), ((int)THREADS)));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
+#endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts),
@@ -362,10 +373,16 @@ int main(int argc, char **args) {
     if (nb[i] != -1) {
 #if DEBUG
       cout << MYTHREAD << ": overlap " << i << " = "
-           << (allGridsA[nb[i]].domain() * targetDomain) << endl;
+           << (((ndarray<double, 3, global GUNSTRIDED>)
+                allGridsA[nb[i]]).domain() * targetDomain) << endl;
 #endif
+#ifdef SHARED_DIR
+      targetsA[i] = allGridsA[nb[i]].get().constrict(targetDomain);
+      targetsB[i] = allGridsB[nb[i]].get().constrict(targetDomain);
+#else
       targetsA[i] = allGridsA[nb[i]].constrict(targetDomain);
       targetsB[i] = allGridsB[nb[i]].constrict(targetDomain);
+#endif
       sourcesA[i] = myGridA;
       sourcesB[i] = myGridB;
 #ifdef SYNC_BETWEEN_DIM
