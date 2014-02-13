@@ -17,6 +17,7 @@ AC_CONFIG_FILES([
   examples/basic/Makefile
   examples/cg/Makefile
   examples/gups/Makefile
+  examples/knapsack/Makefile
   examples/mg/Makefile
   examples/samplesort/Makefile
   examples/stencil/Makefile
