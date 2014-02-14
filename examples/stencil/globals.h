@@ -115,7 +115,19 @@ struct timer {
 #endif /* OPT_LOOP || SPLIT_LOOP || OMP_SPLIT_LOOP */
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS simple
+# ifdef USE_CMAJOR
+#  define STRIDEDNESS simple_column
+# else
+#  define STRIDEDNESS simple
+# endif
+#endif
+
+#ifdef USE_CMAJOR
+# define CMAJOR , true
+# define cforeach3(i, j, k, dom) foreach3(k, j, i, dom)
+#else
+# define CMAJOR
+# define cforeach3(i, j, k, dom) foreach3(i, j, k, dom)
 #endif
 
 #ifdef STRIDEDNESS

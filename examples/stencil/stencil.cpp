@@ -189,7 +189,7 @@ static void probe(int steps) {
       }
     }
 #elif defined(SPLIT_LOOP)
-    foreach3 (i, j, k, myDomain) {
+    cforeach3 (i, j, k, myDomain) {
       myGridB[i][j][k] =
         myGridA[i][j][k+1] +
         myGridA[i][j][k-1] +
@@ -347,8 +347,8 @@ int main(int argc, char **args) {
   cout << MYTHREAD << ": thread domain is " << myDomain << endl;
 #endif
 
-  myGridA = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
-  myGridB = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH));
+  myGridA = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH) CMAJOR);
+  myGridB = ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH) CMAJOR);
 #ifdef SHARED_DIR
   allGridsA.init(THREADS);
   allGridsB.init(THREADS);
