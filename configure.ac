@@ -33,15 +33,15 @@ AC_ARG_WITH([gasnet],
 )
 
 ## Check for C++11
-dnl AC_LANG(C++)
-dnl AX_CHECK_COMPILE_FLAG([-std=c++0x], [
-dnl                         CXXFLAGS="$CXXFLAGS -std=c++0x"])
-dnl AX_CXX_COMPILE_STDCXX_11(noext, optional)
+AC_LANG(C++)
+##AX_CXX_COMPILE_STDCXX_11(noext,mandatory)
+##AX_CHECK_COMPILE_FLAG([-std=c++0x], [ CXXFLAGS="$CXXFLAGS -std=c++0x"])
+dnl AX_CXX_COMPILE_STDCXX_11(ext,optional)
 
 ## Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
 CFLAGS+=${UPCXX_FLAGS}
-CXXFLAGS+=${UPCXX_FLAGS} 
-## CXXFLAGS+=" -Wno-reserved-user-defined-literal"  ## for clang
+CXXFLAGS+="${UPCXX_FLAGS} -std=c++0x"
+CXXFLAGS+=" -Wno-reserved-user-defined-literal"  ## for clang
 
 AC_OUTPUT

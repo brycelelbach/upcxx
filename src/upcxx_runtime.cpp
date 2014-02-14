@@ -334,15 +334,20 @@ namespace upcxx
 
   int advance(int max_in, int max_out)
   {
-    int num_in, num_out;
+    int num_in = 0;
+    int num_out = 0;
 
-    max_in = (max_in > 0) ? max_in : MAX_DISPATCHED_IN;
-    max_out = (max_out > 0) ? max_out : MAX_DISPATCHED_OUT;
+    max_in = (max_in >= 0) ? max_in : MAX_DISPATCHED_IN;
+    max_out = (max_out >= 0) ? max_out : MAX_DISPATCHED_OUT;
 
-    num_out = advance_out_task_queue(out_task_queue, max_out);
-    assert(num_out >= 0);
-    num_in = advance_in_task_queue(in_task_queue, max_in);
-    assert(num_in >= 0);
+    if (max_in > 0) {
+      num_out = advance_out_task_queue(out_task_queue, max_out);
+      assert(num_out >= 0);
+    }
+    if (max_out > 0) {
+      num_in = advance_in_task_queue(in_task_queue, max_in);
+      assert(num_in >= 0);
+    }
     return num_out + num_in;
   } // advance()
 

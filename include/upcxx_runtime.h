@@ -44,6 +44,10 @@ namespace upcxx
    */
   int finalize();
 
+  extern queue_t *in_task_queue;
+
+  extern queue_t *out_task_queue;
+
   /**
    * Default maximum number of task to dispatch for every time
    * the incoming task queue is polled/advanced.
@@ -60,44 +64,18 @@ namespace upcxx
 
   /**
    * \ingroup asyncgroup
-   * Advance the incoming task queue by processing local tasks
-   *
-   * Note that some local tasks may take
-   *
-   * \param max_dispatched the maximum number of tasks to be processed
-   *
-   * \return the number of tasks that have been processed
-   */
-  int advance_out_task_queue(queue_t *outq,
-                             int max_dispatched = MAX_DISPATCHED_OUT);
-
-  /**
-   * \ingroup asyncgroup
-   * Advance the outgoing task queue by sending out remote task requests
-   *
-   * Note that advance_out_task_queue() shouldn't be be called in
-   * any GASNet AM handlers because it calls gasnet_AMPoll() and
-   * may result in a deadlock.
-   *
-   * \param max_dispatched the maximum number of tasks to send
-   *
-   * \return the number of tasks that have been sent
-   */
-  int advance_in_task_queue(queue_t *inq,
-                            int max_dispatched = MAX_DISPATCHED_IN);
-  /**
-   * \ingroup asyncgroup
    * Advance both the incoming and outgoing task queues
    * Note that advance() shouldn't be be called in any GASNet AM
    * handlers because it calls gasnet_AMPoll() and may result in
    * a deadlock.
    *
-   * \param max_dispatched
+   * \param max_in maximum number of incoming tasks to be processed before returning
+   * \param max_out maximum number of outgoing tasks to be processed before returning
    *
    * \return the total number of tasks that have been processed in the incoming
    * and outgoing task queues
    */
-   int advance(int max_in = 0, int max_out = 0);
+   int advance(int max_in = MAX_DISPATCHED_IN, int max_out = MAX_DISPATCHED_OUT);
 
    int progress();
 

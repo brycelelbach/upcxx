@@ -206,6 +206,11 @@ namespace upcxx
     assert(task != NULL);
     memcpy(tmp, task, task->nbytes());
 
+    // Increase the reference of the ack event of the task
+    if (tmp->_ack != NULL) {
+       tmp->_ack->incref();
+    }
+
     if (after != NULL) {
       after->add_done_cb(tmp);
       return;

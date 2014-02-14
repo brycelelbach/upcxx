@@ -27,7 +27,7 @@ namespace upcxx
   void event::wait()
   {
     while (!test()) {
-      advance();
+      advance(1, 10);
       gasnett_sched_yield();
     }
   }
