@@ -7,12 +7,14 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+#include <list>
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "gasnet_api.h"
 #include "queue.h"
+#include "upcxx_runtime.h"
 
 using namespace std;
 
@@ -131,6 +133,7 @@ namespace upcxx
   }
 
   extern event default_event; // defined in upcxx.cpp
+  extern std::list<event *> outstanding_events;
 
   /* event stack interface used by finish */
   void push_event(event *);
@@ -146,6 +149,9 @@ namespace upcxx
 
   inline void wait()
   {
+    while (!outstanding_events.empty()) {
+      upcxx::advance(1,10);
+    }
     wait(&default_event);
   }
 

@@ -2,6 +2,8 @@
  * UPC++ runtime
  */
 
+#include <list> // for outstanding event list
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -62,6 +64,7 @@ namespace upcxx
   queue_t *out_task_queue = NULL;
   event default_event;
   int init_flag = 0;  //  equals 1 if the backend is initialized
+  std::list<event*> outstanding_events;
 
   // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
   void *shared_var_addr = NULL;
@@ -150,6 +153,8 @@ namespace upcxx
     
   int finalize()
   {
+    upcxx::wait();
+    while (advance() > 0);
     barrier();
     gasnet_exit(0);
     return UPCXX_SUCCESS;
@@ -348,6 +353,22 @@ namespace upcxx
       num_in = advance_in_task_queue(in_task_queue, max_in);
       assert(num_in >= 0);
     }
+
+    // check outstanding events
+    if (!outstanding_events.empty()) {
+      for (std::list<event*>::iterator it = outstanding_events.begin();
+           it != outstanding_events.end(); ++it) {
+        // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
+        event *e = (*it);
+        assert(e != NULL);
+        // cerr << "Advancing event: " << *e << endl;
+        if (e->test()) {
+          outstanding_events.erase(it);
+          break;
+        }
+      }
+    }
+
     return num_out + num_in;
   } // advance()
 

@@ -14,6 +14,11 @@
 using namespace upcxx;
 using namespace std;
 
+void done_compute()
+{
+  printf("MYTHREAD %d finishes computing...\n", MYTHREAD);
+}
+
 void compute_task(int i, event *e, global_ptr<double> src, global_ptr<double> dst, size_t sz)
 {
   printf("MYTHREAD %d: finished async_copy, src[%lu] = %f, dst[%lu] = %f\n",
@@ -39,21 +44,26 @@ int main(int argc, char **argv)
 
   event copy_e;
   event compute_e;
-  async_task cb = async_task(MYTHREAD, // callee id
-                             MYTHREAD, // caller id
-                             &compute_e, // ack event
-                             compute_task, MYTHREAD*100, &copy_e, src, dst, sz);
-  submit_task(&cb, &copy_e);
+  event done_e;
+  async_task copy_cb = async_task(MYTHREAD, // callee id
+                                  MYTHREAD, // caller id
+                                  &compute_e, // ack event
+                                  compute_task, MYTHREAD*100, &copy_e, src, dst, sz);
+  submit_task(&copy_cb, &copy_e);
+  async_task compute_cb = async_task(MYTHREAD, // callee id
+                                     MYTHREAD, // caller id
+                                     &done_e, // ack event
+                                     done_compute);
+  submit_task(&compute_cb, &compute_e);
+
 
   printf("MYTHREAD %d starts async_copy...\n", MYTHREAD);
 
   async_copy(src, dst, sz, &copy_e);
 
-  copy_e.wait();
+  upcxx::wait(); // wait for all tasks to be done!
 
-  compute_e.wait();
-
-  printf("MYTHREAD %d finishes computing...\n", MYTHREAD);
+  printf("MYTHREAD %d finishes waiting...\n", MYTHREAD);
 
   finalize();
 
