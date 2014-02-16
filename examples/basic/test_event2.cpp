@@ -42,20 +42,10 @@ int main(int argc, char **argv)
     
   barrier();
 
-  event copy_e;
-  event compute_e;
-  event done_e;
-  async_task copy_cb = async_task(MYTHREAD, // callee id
-                                  MYTHREAD, // caller id
-                                  &compute_e, // ack event
-                                  compute_task, MYTHREAD*100, &copy_e, src, dst, sz);
-  submit_task(&copy_cb, &copy_e);
-  async_task compute_cb = async_task(MYTHREAD, // callee id
-                                     MYTHREAD, // caller id
-                                     &done_e, // ack event
-                                     done_compute);
-  submit_task(&compute_cb, &compute_e);
+  event copy_e, compute_e ,done_e;
 
+  async_after(MYTHREAD, &copy_e, &compute_e)(compute_task, MYTHREAD*100, &copy_e, src, dst, sz);
+  async_after(MYTHREAD, &compute_e, &done_e)(done_compute);
 
   printf("MYTHREAD %d starts async_copy...\n", MYTHREAD);
 

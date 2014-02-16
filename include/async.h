@@ -323,15 +323,6 @@ namespace upcxx
       launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));
     }
 
-//    typedef void (*K1p)(parallel_group);
-//    inline void operator()(K1p kernel)
-//    {
-//      // printf("Running kernel with a parallel_group\n");
-//      parallel_group g(_g.size(), _g.index());
-//      generic_arg1<K1p, parallel_group> args(kernel, g);
-//      launch(async_wrapper1<K1p, parallel_group>, &args, (size_t)sizeof(args));
-//    }
-
     template<typename Function, typename T1>
     inline void operator()(Function kernel, T1 a1)
     {
@@ -467,6 +458,18 @@ namespace upcxx
     return launcher;
   }
 
+  inline gasnet_launcher<node> async_after(int node_id, event *after,
+                                           event *ack = peek_event())
+  {
+    return gasnet_launcher<node>(node(node_id), ack, after);
+  }
+
+  inline gasnet_launcher<node> async(node there, event *after,
+                                     event *ack = peek_event())
+  {
+    return gasnet_launcher<node>(there, ack, after);
+  }
+
   template<>
   void gasnet_launcher<node>::launch(generic_fp fp,
                                      void *async_args,
@@ -476,26 +479,5 @@ namespace upcxx
   void gasnet_launcher<range>::launch(generic_fp fp,
                                       void *async_args,
                                       size_t arg_sz);
-
-//  template<typename who>
-//  inline gasnet_launcher<node_range> async(who who,
-//                                           node_range there,
-//                                           parallel_group pg,
-//                                           event *e = peek_event())
-//  {
-//    int start = global_machine.node_count() - pg.size();
-//    int end = global_machine.node_count();
-//
-//    node_range ns(start, end);
-//    gasnet_launcher<node_range> launcher(ns, e);
-//    launcher.set_group(group(pg.size(), pg.index()));
-//    return launcher;
-//  }
-//
-//  template<typename who, typename place>
-//  inline gasnet_launcher<place> async(who who,
-//                                      place there,
-//                                      parallel_group group,
-//                                      event *e = peek_event());
 
 } // namespace upcxx
