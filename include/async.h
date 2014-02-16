@@ -463,7 +463,7 @@ namespace upcxx
    *
    * Conditional asynchronous function execution
    * The task will be automatically enqueued for execution after
-   * the event "after" is signaled.
+   * the event "after" is signalled.
    * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
