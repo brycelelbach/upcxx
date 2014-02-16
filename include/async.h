@@ -410,15 +410,15 @@ namespace upcxx
   /**
    * \ingroup asyncgroup
    *
-   * asynchronous function execution
+   * Asynchronous function execution
+   * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async(int node_id)(function, arg1, arg2, ...);
+   * async(int node_id, event *ack)(function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_async.cpp
    *
    */
-
   inline gasnet_launcher<node> async(int node_id,
                                      event *e = peek_event())
   {
@@ -434,7 +434,7 @@ namespace upcxx
   /**
    * \ingroup asyncgroup
    *
-   * asynchronous function execution
+   * Asynchronous function execution
    *
    * ~~~~~~~~~~~~~~~{.cpp}
    * async(node_range there)(function, arg1, arg2, ...);
@@ -449,7 +449,6 @@ namespace upcxx
     return gasnet_launcher<dest>(there, e);
   }
 
-//  template<typename who>
   inline gasnet_launcher<range> async(range r,
                                       event *e = peek_event())
   {
@@ -458,6 +457,21 @@ namespace upcxx
     return launcher;
   }
 
+
+  /**
+   * \ingroup asyncgroup
+   *
+   * Conditional asynchronous function execution
+   * The task will be automatically enqueued for execution after
+   * the event "after" is signaled.
+   * Optionally signal the event "ack" for task completion
+   *
+   * ~~~~~~~~~~~~~~~{.cpp}
+   * async_after(int node_id, event *after, event *ack)(function, arg1, arg2, ...);
+   * ~~~~~~~~~~~~~~~
+   * \see test_async.cpp
+   *
+   */
   inline gasnet_launcher<node> async_after(int node_id, event *after,
                                            event *ack = peek_event())
   {
