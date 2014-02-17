@@ -15,6 +15,7 @@
 #include <ios>
 
 #include "upcxx_types.h"
+#include "queue.h"
 
 namespace upcxx
 {
@@ -43,16 +44,46 @@ namespace upcxx
    */
   int finalize();
 
+  extern queue_t *in_task_queue;
+
+  extern queue_t *out_task_queue;
+
   /**
-   * \ingroup asyncgroup
-   * Poll the task queue and process any asynchronous
-   * tasks received. progress() cannot be called in any GASNet AM
-   * handlers because it may call gasnet_AMPoll().
+   * Default maximum number of task to dispatch for every time
+   * the incoming task queue is polled/advanced.
    */
-  int progress();
+  #define MAX_DISPATCHED_IN   1
+
+  /**
+   * Default maximum number of task to dispatch for every time
+   * the outgoing task queue is polled/advanced.  We choose a
+   * relatively large number 99 to try to send out remote tasks
+   * requests as soon as possible.
+   */
+  #define MAX_DISPATCHED_OUT  99
 
   /**
    * \ingroup asyncgroup
+   * Advance both the incoming and outgoing task queues
+   * Note that advance() shouldn't be be called in any GASNet AM
+   * handlers because it calls gasnet_AMPoll() and may result in
+   * a deadlock.
+   *
+   * \param max_in maximum number of incoming tasks to be processed before returning
+   * \param max_out maximum number of outgoing tasks to be processed before returning
+   *
+   * \return the total number of tasks that have been processed in the incoming
+   * and outgoing task queues
+   */
+   int advance(int max_in = MAX_DISPATCHED_IN, int max_out = MAX_DISPATCHED_OUT);
+
+   int progress();
+
+  /**
+   * \ingroup asyncgroup
+   *
+   * Advance the incoming and outgoing tasks queues
+   *
    * Poll the task queue (once) and process any asynchronous
    * tasks received until either the queue is empty or the optional
    * user-specified maximum number of tasks have been processed.

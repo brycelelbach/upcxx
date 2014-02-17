@@ -62,7 +62,7 @@ namespace upcxx
                                  am_bcast_launch,  // bcast kernel
                                  bcast_arg->nbytes(),
                                  bcast_arg);
-      submit_task(bcast_task);
+      submit_task(&bcast_task);
       bcast_arg->root_index = root_index;  // restore the root_index;
       new_target._end = bcast_arg->target.begin();
     }
@@ -72,7 +72,7 @@ namespace upcxx
 
     task._callee = my_node.id();
 
-    submit_task(task);
+    submit_task(&task);
   }  // am_bcast_launch
 
   void am_bcast(range target,

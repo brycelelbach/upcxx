@@ -21,9 +21,9 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-// #define DEBUG
+#define DEBUG
 
-// #define VERIFY
+#define VERIFY
 
 #define SFMT_MEXP 19937
 
@@ -33,9 +33,10 @@ extern "C" {
 
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
-#define SAMPLES_PER_THREAD 128
-#define KEYS_PER_THREAD 8 * 1024 * 1024
-//#define KEYS_PER_THREAD 128
+//#define SAMPLES_PER_THREAD 128
+//#define KEYS_PER_THREAD 8 * 1024 * 1024
+#define SAMPLES_PER_THREAD 8
+#define KEYS_PER_THREAD 128
 
 typedef struct {
   // global_ptr<ELEMENT_T> ptr;
@@ -408,7 +409,8 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      current = sorted[t].get()[index];
+      //current = sorted[t].get()[index];
+      current = sorted[t][index];
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
