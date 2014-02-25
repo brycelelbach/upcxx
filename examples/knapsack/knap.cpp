@@ -63,9 +63,9 @@ int main(int argc, char **argv) {
   int total_profit, total_weight, book_i, n_sold;
   timer solve_timer, backtrack_timer;
   ndarray<ndarray<int, 2, global GUNSTRIDED>,
-          1 UNSTRIDED> all_totals(RECTDOMAIN((0), (THREADS)));
+          1 UNSTRIDED> all_totals(RECTDOMAIN((0), ((int)THREADS)));
   ndarray<ndarray<bool, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> all_use_book(RECTDOMAIN((0), (THREADS)));
+          1 UNSTRIDED> all_use_book(RECTDOMAIN((0), ((int)THREADS)));
   ndarray<int, 1, global GUNSTRIDED> weight0, profit0;
   int my_books, my_start_book, my_end_book;
   n_blocks = THREADS;
@@ -270,7 +270,7 @@ static void backtrack(int n_books, int bag_cap,
   int book_i;
   ndarray<int, 1 UNSTRIDED> off(RECTDOMAIN((0), (1)));
   ndarray<ndarray<int, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> offs(RECTDOMAIN((0), (THREADS)));
+          1 UNSTRIDED> offs(RECTDOMAIN((0), ((int)THREADS)));
   int my_start_book2 = my_start_book;
   if (MYTHREAD == 0)
     my_start_book2++;
