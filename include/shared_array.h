@@ -90,7 +90,7 @@ namespace upcxx
     {
       if (_data) {
 #ifdef USE_GASNET_FAST_SEGMENT
-        gasnet_seg_free(_data);
+        gasnet_seg_free((void *)_data);
 #else
         delete _data;
 #endif

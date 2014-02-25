@@ -13,9 +13,10 @@ libupcxx_la_SOURCES = \
   active_coll.cpp    \
   async.cpp          \
   barrier.cpp        \
+  collective.cpp     \
   event.cpp          \
   lock.cpp           \
   machine.cpp        \
-  global_ptr.cpp  \
+  global_ptr.cpp     \
   team.cpp           \
   upcxx_runtime.cpp

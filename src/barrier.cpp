@@ -10,7 +10,7 @@ namespace upcxx {
     while ((rv=gasnet_coll_barrier_try(CURRENT_GASNET_TEAM, 0,
                                        GASNET_BARRIERFLAG_ANONYMOUS))
            == GASNET_ERR_NOT_READY) {
-      if (progress() != UPCXX_SUCCESS) { // process the async task queue
+      if (advance() < 0) { // process the async task queue
         return UPCXX_ERROR;
       }
     }

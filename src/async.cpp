@@ -15,11 +15,12 @@ void gasnet_launcher<node>::launch(generic_fp fp,
                        fp,
                        arg_sz,
                        async_args);
+  /*
   if (_ack != NULL) {
     _ack->incref();
   }
-
-  submit_task(task, _after);
+  */
+  submit_task(&task, _after);
 }
 
 template<>

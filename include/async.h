@@ -1,5 +1,5 @@
 /**
- * aysnc_gasnet.h - asynchronous task execution
+ * aysnc.h - asynchronous task execution
  */
 
 #pragma once
@@ -197,18 +197,20 @@ namespace upcxx
     event *ack_event;
   };
 
-//  template <typename T>
-//    struct async_future_am_t {
-//      future<T> f;
-//    };
-    
   // Add a task the async queue
-  inline void submit_task(async_task &task, event *after = NULL)
+  // \Todo: add "move" semantics to submit_task!
+  inline void submit_task(async_task *task, event *after = NULL)
   {
     async_task *tmp = new async_task;
     assert(tmp != NULL);
+    assert(task != NULL);
+    memcpy(tmp, task, task->nbytes());
 
-    memcpy(tmp, &task, task.nbytes());
+    // Increase the reference of the ack event of the task
+    if (tmp->_ack != NULL) {
+       tmp->_ack->incref();
+       outstanding_events.push_back(tmp->_ack);
+    }
 
     if (after != NULL) {
       after->add_done_cb(tmp);
@@ -216,11 +218,20 @@ namespace upcxx
     }
 
     // enqueue the async task
-    assert(async_task_queue != NULL);
-    gasnet_hsl_lock(&async_lock);
-    queue_enqueue(async_task_queue, tmp);
-    gasnet_hsl_unlock(&async_lock);
-  }
+    if (task->_callee == my_node.id()) {
+      // local task
+      assert(in_task_queue != NULL);
+      gasnet_hsl_lock(&in_task_queue_lock);
+      queue_enqueue(in_task_queue, tmp);
+      gasnet_hsl_unlock(&in_task_queue_lock);
+    } else {
+      // remote task
+      assert(out_task_queue != NULL);
+      gasnet_hsl_lock(&out_task_queue_lock);
+      queue_enqueue(out_task_queue, tmp);
+      gasnet_hsl_unlock(&out_task_queue_lock);
+    }
+  } // end of submit_task
 
   struct am_bcast_arg {
     range target; // set of remote nodes
@@ -312,15 +323,6 @@ namespace upcxx
       launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));
     }
 
-//    typedef void (*K1p)(parallel_group);
-//    inline void operator()(K1p kernel)
-//    {
-//      // printf("Running kernel with a parallel_group\n");
-//      parallel_group g(_g.size(), _g.index());
-//      generic_arg1<K1p, parallel_group> args(kernel, g);
-//      launch(async_wrapper1<K1p, parallel_group>, &args, (size_t)sizeof(args));
-//    }
-
     template<typename Function, typename T1>
     inline void operator()(Function kernel, T1 a1)
     {
@@ -408,15 +410,15 @@ namespace upcxx
   /**
    * \ingroup asyncgroup
    *
-   * asynchronous function execution
+   * Asynchronous function execution
+   * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async(int node_id)(function, arg1, arg2, ...);
+   * async(int node_id, event *ack)(function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_async.cpp
    *
    */
-
   inline gasnet_launcher<node> async(int node_id,
                                      event *e = peek_event())
   {
@@ -432,7 +434,7 @@ namespace upcxx
   /**
    * \ingroup asyncgroup
    *
-   * asynchronous function execution
+   * Asynchronous function execution
    *
    * ~~~~~~~~~~~~~~~{.cpp}
    * async(node_range there)(function, arg1, arg2, ...);
@@ -447,13 +449,39 @@ namespace upcxx
     return gasnet_launcher<dest>(there, e);
   }
 
-//  template<typename who>
   inline gasnet_launcher<range> async(range r,
                                       event *e = peek_event())
   {
     gasnet_launcher<range> launcher(r, e);
     launcher.set_group(group(r.count(), -1));
     return launcher;
+  }
+
+
+  /**
+   * \ingroup asyncgroup
+   *
+   * Conditional asynchronous function execution
+   * The task will be automatically enqueued for execution after
+   * the event "after" is signalled.
+   * Optionally signal the event "ack" for task completion
+   *
+   * ~~~~~~~~~~~~~~~{.cpp}
+   * async_after(int node_id, event *after, event *ack)(function, arg1, arg2, ...);
+   * ~~~~~~~~~~~~~~~
+   * \see test_async.cpp
+   *
+   */
+  inline gasnet_launcher<node> async_after(int node_id, event *after,
+                                           event *ack = peek_event())
+  {
+    return gasnet_launcher<node>(node(node_id), ack, after);
+  }
+
+  inline gasnet_launcher<node> async(node there, event *after,
+                                     event *ack = peek_event())
+  {
+    return gasnet_launcher<node>(there, ack, after);
   }
 
   template<>
@@ -465,26 +493,5 @@ namespace upcxx
   void gasnet_launcher<range>::launch(generic_fp fp,
                                       void *async_args,
                                       size_t arg_sz);
-
-//  template<typename who>
-//  inline gasnet_launcher<node_range> async(who who,
-//                                           node_range there,
-//                                           parallel_group pg,
-//                                           event *e = peek_event())
-//  {
-//    int start = global_machine.node_count() - pg.size();
-//    int end = global_machine.node_count();
-//
-//    node_range ns(start, end);
-//    gasnet_launcher<node_range> launcher(ns, e);
-//    launcher.set_group(group(pg.size(), pg.index()));
-//    return launcher;
-//  }
-//
-//  template<typename who, typename place>
-//  inline gasnet_launcher<place> async(who who,
-//                                      place there,
-//                                      parallel_group group,
-//                                      event *e = peek_event());
 
 } // namespace upcxx
