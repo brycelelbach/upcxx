@@ -62,11 +62,11 @@ namespace upcxx {
    *   typedef enable_if<is_same<L, local>::value, T> local_elem_type;
    */
   template<class T, class U> struct is_same {
-    static const bool value = false;
+    enum { value = 0 };
   };
 
   template<class T> struct is_same<T, T> {
-    static const bool value = true;
+    enum { value = 1 };
   };
 
   /* Combination of enable_if and is_same */
