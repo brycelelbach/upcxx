@@ -3,8 +3,8 @@
 
 static const int DEFAULT_N_BOOKS = 5000;
 static const int DEFAULT_BAG_CAP = 1000;
-static const int DEFAULT_max_random_weight = 2000;
-static const int DEFAULT_max_random_profit = 50;
+static const int DEFAULT_MAX_RANDOM_WEIGHT = 2000;
+static const int DEFAULT_MAX_RANDOM_PROFIT = 50;
 
 static int n_books = DEFAULT_N_BOOKS;
 static int bag_cap = DEFAULT_BAG_CAP;
@@ -23,8 +23,8 @@ static const int READFILE = 1;
 static const int RANDOM = 2;
 static int init_from = STATIC;
 static char *fname;
-static int max_random_weight = DEFAULT_max_random_weight;
-static int max_random_profit = DEFAULT_max_random_profit;
+static int max_random_weight = DEFAULT_MAX_RANDOM_WEIGHT;
+static int max_random_profit = DEFAULT_MAX_RANDOM_PROFIT;
 static int seedval = -1;
 
 static void copyTotal(ndarray<ndarray<int, 2,
@@ -46,7 +46,7 @@ static void backtrack(int n_books, int bag_cap,
                       int my_start_book, int my_end_book);
 static void init_books();
 static void get_opts(int argc, char **args);
-static void dump_usage(ostream &out, int errcode);
+static void dump_usage(char *name, ostream &out, int errcode);
 static void read_books(istream &is, int n,
                        ndarray<int, 1 UNSTRIDED> weight,
                        ndarray<int, 1 UNSTRIDED> profit);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   int my_books, my_start_book, my_end_book;
   n_blocks = THREADS;
 
-  get_opts(argc-1, argv+1);
+  get_opts(argc, argv);
   books_per_proc = (n_books + THREADS - 1) / THREADS;
   my_books = ((THREADS - 1 == MYTHREAD) &&
               (n_books % books_per_proc != 0)) ?
@@ -314,75 +314,81 @@ static void init_books() {
 }
 
 static void get_opts(int argc, char **args) {
-  int i = 0;
+  int i = 1;
   char *opt, *optarg;
-  // extern int optind;
+  char *name = args[0];
 
   while (i < argc) {
     opt = args[i];
     if (!strcmp(opt, "-h") || !strcmp(opt, "-?")) {
-      dump_usage(cout, 0);
+      dump_usage(name, cout, 0);
     } else if (!strcmp(opt, "-B")) {
       optarg = args[++i];
       n_blocks = atoi(optarg);
       if (n_blocks <= 0 || n_blocks > bag_cap + 1) {
         debug("hello", 1);
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
       }
     } else if (!strcmp(opt, "-b")) {
       optarg = args[++i];
       n_books = atoi(optarg);
       if (n_books <= 0)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
     } else if (!strcmp(opt, "-c")) {
       optarg = args[++i];
       bag_cap = atoi(optarg);
       if (bag_cap <= 0)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
     } else if (!strcmp(opt, "-g")) {
       if (init_from != STATIC)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
       init_from = STATIC;
     } else if (!strcmp(opt, "-f")) {
       fname = args[++i];
       if (init_from != STATIC)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
       init_from = READFILE;
     } else if (!strcmp(opt, "-r")) {
       if (init_from != STATIC)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
       init_from = RANDOM;
     } else if (!strcmp(opt, "-W")) {
       optarg = args[++i];
       max_random_weight = atoi(optarg);
       if (max_random_weight <= 0)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
     } else if (!strcmp(opt, "-P")) {
       optarg = args[++i];
       max_random_profit = atoi(optarg);
       if (max_random_profit <= 0)
-        dump_usage(cerr, 1);
+        dump_usage(name, cerr, 1);
     } else if (!strcmp(opt, "-s")){
       seedval = atoi(args[++i]);
-    } else
-      dump_usage(cerr, 1);
+    } else {
+      if (MYTHREAD == 0)
+        cerr << "Unknown option: " << opt << endl;
+      dump_usage(name, cerr, 1);
+    }
     i++;
   }
   return;
 }
 
-static void dump_usage(ostream &out, int errcode) {
+static void dump_usage(char *name, ostream &out, int errcode) {
   /*h?b:c:f:rW:P:s:*/
-  out << "Usage:" <<
-    "\t\t-h or -?      this message\n" <<
-    "\t\t-b <int>      number of books " << n_books << "\n" <<
-    "\t\t-c <int>      bag capacity " << bag_cap << "\n" <<
+  if (MYTHREAD != 0) exit(errcode);
+  out << "Usage:   " << name << " [options]\n" <<
+    "Options: " <<
+    "  \t-h or -?      this message\n" <<
+    "\t\t-B            number of pipeline stages (default: THREADS)\n" <<
+    "\t\t-b <int>      number of books (default: " << DEFAULT_N_BOOKS << ")\n" <<
+    "\t\t-c <int>      bag capacity (default: " << DEFAULT_BAG_CAP << ")\n" <<
     "\t\t-g            generate weights and profits statically (default)\n" <<
     "\t\t-f <filename> file to read weights and profits\n" <<
     "\t\t-r            generate weights and profits randomly\n" <<
-    "\t\t-W <int>      max random weight\n" <<
-    "\t\t-P <int>      max random profit\n" <<
-    "\t\t-s <int>     random seed\n";
+    "\t\t-W <int>      max random weight (default: " << DEFAULT_MAX_RANDOM_WEIGHT << ")\n" <<
+    "\t\t-P <int>      max random profit (default: " << DEFAULT_MAX_RANDOM_PROFIT << ")\n" <<
+    "\t\t-s <int>      random seed\n";
   exit(errcode);
 }
 
