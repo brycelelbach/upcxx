@@ -79,7 +79,7 @@ struct timer {
 # define TIMER_RESET(t)
 #endif
 
-#if defined(OPT_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP)
+#if defined(OPT_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP)
 # define USE_UNSTRIDED
 #  define foreachh(N, dom, l_, u_, s_, d_)                              \
   for (point<N> l_ = dom.lwb(), u_ = dom.upb(), s_ = dom.stride(),      \

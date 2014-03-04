@@ -199,7 +199,7 @@ static void probe(int steps) {
         myGridA[i-1][j][k] -
         WEIGHT * myGridA[i][j][k] / (fac * fac);
     }
-#elif defined(VAR_LOOP) && __cplusplus >= 201103L
+#elif defined(VAR_LOOP)
     cforeach3 (i, j, k, myDomain) {
       myGridB(i, j, k) =
         myGridA(i, j, k+1) +
@@ -209,6 +209,19 @@ static void probe(int steps) {
         myGridA(i+1, j, k) +
         myGridA(i-1, j, k) -
         WEIGHT * myGridA(i, j, k) / (fac * fac);
+    }
+#elif defined (UNPACKED_LOOP)
+    array_info3(myGridA);
+    array_info3(myGridB);
+    cforeach3(i, j, k, myDomain) {
+      AINDEX3(myGridB, i, j, k) =
+	AINDEX3(myGridA, i, j, k+1) +
+	AINDEX3(myGridA, i, j, k-1) +
+	AINDEX3(myGridA, i, j+1, k) +
+	AINDEX3(myGridA, i, j-1, k) +
+	AINDEX3(myGridA, i+1, j, k) +
+	AINDEX3(myGridA, i-1, j, k) -
+	WEIGHT * AINDEX3(myGridA, i, j, k) / (fac * fac);
     }
 #elif defined(OMP_SPLIT_LOOP) && defined(USE_FOREACHH)
     foreachh (3, myDomain, lwb, upb, stride, done) {
