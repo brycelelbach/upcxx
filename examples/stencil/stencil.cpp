@@ -211,8 +211,16 @@ static void probe(int steps) {
         WEIGHT * myGridA(i, j, k) / (fac * fac);
     }
 #elif defined (UNPACKED_LOOP)
-    array_info3(myGridA);
-    array_info3(myGridB);
+# if defined(USE_RESTRICT) && defined(__GNUC__)
+    UNPACK_ARRAY3_QUAL(myGridA, __restrict__);
+    UNPACK_ARRAY3_QUAL(myGridB, __restrict__);
+# elif defined(USE_RESTRICT)
+    UNPACK_ARRAY3_QUAL(myGridA, __restrict);
+    UNPACK_ARRAY3_QUAL(myGridB, __restrict);
+# else
+    UNPACK_ARRAY3(myGridA);
+    UNPACK_ARRAY3(myGridB);
+# endif
     cforeach3(i, j, k, myDomain) {
       AINDEX3(myGridB, i, j, k) =
 	AINDEX3(myGridA, i, j, k+1) +
