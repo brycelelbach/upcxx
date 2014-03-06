@@ -45,6 +45,7 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/array_impl.tpp \
   upcxx-arrays/array_undefs.h \
   upcxx-arrays/array_wrapper.h \
+  upcxx-arrays/array_wrapper_specializations.h \
   upcxx-arrays/arrayflag_tools.h \
   upcxx-arrays/coll.h \
   upcxx-arrays/domain.h \
@@ -58,4 +59,5 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/rdomain.h \
   upcxx-arrays/rdomain.tpp \
   upcxx-arrays/utils.h \
-  upcxx-arrays/wrapper_tools.h
+  upcxx-arrays/wrapper_tools.h \
+  upcxx-arrays/wrapper_tools_specializations.h
