@@ -10,7 +10,7 @@
 
 using namespace upcxx;
 
-const size_t ARRAY_SIZE = 8;
+const size_t ARRAY_SIZE = 16;
 
 // cyclic distribution of global array A
 shared_array<unsigned long> A(ARRAY_SIZE);
@@ -33,9 +33,7 @@ void update()
 
 int main(int argc, char **argv)
 {
-  int node_count = global_machine.node_count();
-
-  for (int i = node_count-1; i>=0; i--) {
+  for (int i = THREADS-1; i>=0; i--) {
     async(i)(update);
   }
 
