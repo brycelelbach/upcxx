@@ -4,12 +4,12 @@
 
 using namespace upcxx;
 
-struct Box {
+typedef struct Box_ {
   int i;
   int j;
   int k;
   global_ptr<double> data;
-};
+} Box;
 
 struct Domain {
   int num_boxes;

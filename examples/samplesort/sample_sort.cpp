@@ -409,8 +409,8 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      //current = sorted[t].get()[index];
-      current = sorted[t][index];
+      current = sorted[t].get()[index];
+      // current = sorted[t][index];
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
