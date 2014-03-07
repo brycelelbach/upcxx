@@ -14,7 +14,8 @@ bin_PROGRAMS = \
   test_shared_array \
 	test_shared_array2 \
   test_shared_var \
-  testperf2
+  testperf2 \
+	test_memberof
 
 hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
@@ -30,6 +31,7 @@ test_shared_array_SOURCES = test_shared_array.cpp
 test_shared_array2_SOURCES = test_shared_array2.cpp
 test_shared_var_SOURCES = test_shared_var.cpp
 testperf2_SOURCES = testperf2.cpp
+test_memberof_SOURCES = test_memberof.cpp
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/include \

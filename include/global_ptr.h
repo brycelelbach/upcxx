@@ -168,6 +168,11 @@ namespace upcxx
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
+    global_ref<T> operator *()
+    {
+      return global_ref<T>(this->where(), (T *)this->raw_ptr());
+    }
+
     // type casting operator for placed pointers
     template<typename T2>
     operator global_ptr<T2>()

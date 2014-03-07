@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <stddef.h> // for offsetof
+
 #include "machine.h"
 #include "gasnet_api.h"
 #include "async.h"
@@ -15,6 +17,13 @@
 namespace upcxx
 {
   template<typename T> struct global_ptr;
+
+  // requires decltype in C++11
+  // obj is a global_ref or a global_ptr of the object.
+  // m is a field/member of the global object.
+  #define memberof(obj, m) \
+    ( * (global_ptr<decltype((obj.raw_ptr())->m)>((decltype((obj.raw_ptr())->m) *)((char *)obj.raw_ptr() + offsetof(decltype(obj)::value_type, m)), obj.where())))
+
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = node>
@@ -113,11 +122,15 @@ namespace upcxx
       return _ptr[i];
     }
 
+    T* raw_ptr() const
+    {
+      return _ptr;
+    }
+
   private:
     T *_ptr;
     place_t _pla;
   }; // struct global_ref
-
 
 
   template<typename T>
