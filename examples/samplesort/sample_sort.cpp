@@ -28,7 +28,7 @@ using namespace upcxx;
 #define SFMT_MEXP 19937
 
 extern "C" {
-#include "../SFMT/SFMT.h" // for the Mersenne Twister random number generator
+#include "SFMT/SFMT.h" // for the Mersenne Twister random number generator
 }
 
 #define ELEMENT_T uint64_t
