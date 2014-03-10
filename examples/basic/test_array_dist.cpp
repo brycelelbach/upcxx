@@ -15,7 +15,7 @@ void test_copy() {
   domain<1> d = rd2 + RECTDOMAIN((0), (5));
   ndarray<int, 1, global> arrA1(rd1);
   ndarray<int, 1, global> arrB1;
-  ndarray<ndarray<int, 1, global>, 1> allArrA1s(THREADS);
+  ndarray<ndarray<int, 1, global>, 1> allArrA1s(rectdomain<1>((int) THREADS));
 
   foreach (p, rd1) {
     arrA1[p] = 100 * MYTHREAD + p[1];

@@ -44,7 +44,7 @@ void execution_log::xend(int kind) {
   if (h == NULL) {
     if (MYTHREAD == 0)
       println("Creating histogram of message times.");
-    h = ndarray<histogram<long> *, 1>((0), (xkinds));
+    h = ndarray<histogram<long> *, 1>(RECTDOMAIN((0), (xkinds)));
     foreach (p, h.domain())
       h[p] = new histogram<long>();
   }
