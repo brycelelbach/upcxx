@@ -187,7 +187,7 @@ GASNETT_INLINE(misc_alloc_request)
 void misc_alloc_request(gasnet_token_t token, size_t size, void *destptr) {
   void *buf = ti_malloc_handlersafe(size);
   if (!buf) {
-    fprintf(stderr, "failed to allocate %d bytes in %s\n",
+    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             size, "array alloc AM handler");
     abort();
   }
@@ -398,7 +398,7 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
        sending two messages. */
     data = (void *) ti_malloc_atomic_huge(data_size);
     if (!data) {
-      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               data_size, "array put AM handler");
       abort();
     }
@@ -558,7 +558,7 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
     /* fast case - everything fits in a medium msg */
     char *data = ti_malloc_atomic_huge(datasz);
     if (!data) {
-      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
       abort();
     }
@@ -624,7 +624,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     /* fast case - everything fits in a medium msg */
     char *data = ti_malloc_atomic_huge(datasz);
     if (!data) {
-      fprintf(stderr, "failed to allocate %d bytes in %s\n",
+      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
       abort();
     }
@@ -683,7 +683,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       */
       localBuffer = ti_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
-        fprintf(stderr, "failed to allocate %d bytes in %s\n",
+        fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
         abort();
       }
@@ -703,7 +703,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       */
       localBuffer = ti_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
-        fprintf(stderr, "failed to allocate %d bytes in %s\n",
+        fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
         abort();
       }
@@ -1121,10 +1121,10 @@ void sparse_simpleGather_request(gasnet_token_t token, void *_addr_list, size_t 
                               int atomic_elements) {
   int i;
   void **addr_list = (void**)_addr_list;
-  int datasz = num_elem * elem_sz;
+  size_t datasz = num_elem * elem_sz;
   char *data = ti_malloc_handlersafe(datasz);
   if (!data) {
-    fprintf(stderr, "failed to allocate %d bytes in %s\n",
+    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             datasz, "array gather AM handler");
     abort();
   }

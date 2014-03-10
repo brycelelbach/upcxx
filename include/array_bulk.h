@@ -16,7 +16,7 @@ void gather_init();
 /* AM-based scatter-gather primitives (for internal use in ti_array.c only) */
 
 /* rectangular scatter/gather */
-void get_array(void *pack_method, void *copy_desc, size_t copy_desc_size, 
+void get_array(void *pack_method, void *copy_desc, int copy_desc_size, 
                int tgt_box, void *buffer, int atomicelements);
 void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
                void *array_data, size_t array_data_size, int tgt_box);
