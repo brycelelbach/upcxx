@@ -48,14 +48,17 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/array_wrapper_specializations.h \
   upcxx-arrays/arrayflag_tools.h \
   upcxx-arrays/coll.h \
+  upcxx-arrays/defs.h \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
   upcxx-arrays/domain_undefs.h \
   upcxx-arrays/domains.h \
   upcxx-arrays/foreach.h \
+  upcxx-arrays/foreach_aux.h \
   upcxx-arrays/iter.h \
   upcxx-arrays/point.h \
   upcxx-arrays/point.tpp \
+  upcxx-arrays/point_aux.h \
   upcxx-arrays/rdomain.h \
   upcxx-arrays/rdomain.tpp \
   upcxx-arrays/utils.h \
