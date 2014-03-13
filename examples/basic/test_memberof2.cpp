@@ -8,7 +8,7 @@ typedef struct Box_ {
   int i;
   int j;
   int k;
-  global_ptr<double> data;
+  global_ptr< global_ptr<double> > data;
 } Box;
 
 struct Domain {
@@ -43,7 +43,13 @@ int main(int argc, char **argv)
           memberof(box, i) = i;
           memberof(box, j) = j;
           memberof(box, k) = k;
-          memberof(box, data) = upcxx::allocate<double>(idx%THREADS, 4);
+          global_ptr<global_ptr<double> > arrays = memberof(box, data) = upcxx::allocate< global_ptr<double> >(idx%THREADS, 4);
+          for (int l=0; l<4; l++) {
+            arrays[l] = upcxx::allocate<double>(idx%THREADS, 16);
+            for (int m=0; m<16; m++) {
+              arrays[l][m] = idx*100 + m;
+            }
+          }
         }
       }
     }
@@ -58,9 +64,15 @@ int main(int argc, char **argv)
         for (int k=0; k<8; k += 1) {
           int idx = i*8*8 + j*8 + k;
           global_ptr<Box> box = dom.boxes[idx];
-          //printf("box(%d, %d, %d) \n", memberof(box, i).get(),  memberof(box, j).get(), memberof(box, k).get());
           std::cout << "box(" << memberof(box, i) << ", " << memberof(box, j) << ", " << memberof(box, k) 
-                    << ")->data = " << memberof(box, data).get() << "\n";
+                        << ")->data = " << memberof(box, data).get() << "\n";
+          global_ptr<global_ptr<double> > arrays = memberof(box, data);
+          for (int l=0; l<2; l++) {
+            for (int m=0; m<8; m++) {
+              std::cout << arrays[l][m] << " ";
+            }
+          }
+          cout << "\n";
         }
       }
     }

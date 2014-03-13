@@ -6,16 +6,17 @@ bin_PROGRAMS = \
   test_async \
   test_dynamic_finish \
   test_event \
-	test_event2 \
+  test_event2 \
   test_finish \
   test_global_ptr \
   test_reduce \
   test_remote_inc \
   test_shared_array \
-	test_shared_array2 \
+  test_shared_array2 \
   test_shared_var \
   testperf2 \
-	test_memberof
+  test_memberof \
+  test_memberof2
 
 hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
@@ -32,6 +33,7 @@ test_shared_array2_SOURCES = test_shared_array2.cpp
 test_shared_var_SOURCES = test_shared_var.cpp
 testperf2_SOURCES = testperf2.cpp
 test_memberof_SOURCES = test_memberof.cpp
+test_memberof2_SOURCES = test_memberof2.cpp
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/include \

@@ -19,7 +19,7 @@ namespace upcxx
   // obj is a global_ref or a global_ptr of the object.
   // m is a field/member of the global object.
   #define memberof(obj, m) \
-    make_memberof(obj.where(), obj.raw_ptr()->m)
+    make_memberof((obj).where(), (obj).raw_ptr()->m)
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = node>
@@ -113,9 +113,12 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
-    T& operator [](int i)
+    // YZ: Needs C++11 auto, decltype
+    template <typename T2>
+    auto operator [](T2 i) -> decltype(this->get()[i])
     {
-      return _ptr[i];
+      T tmp = get();
+      return tmp[i];
     }
 
     T* raw_ptr() const
@@ -128,7 +131,7 @@ namespace upcxx
       return _pla;
     }
 
-  private:
+  //private:
     T *_ptr;
     place_t _pla;
   }; // struct global_ref
