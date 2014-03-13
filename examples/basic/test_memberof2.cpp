@@ -45,7 +45,8 @@ int main(int argc, char **argv)
           memberof(box, k) = k;
           global_ptr<global_ptr<double> > arrays = memberof(box, data) = upcxx::allocate< global_ptr<double> >(idx%THREADS, 4);
           for (int l=0; l<4; l++) {
-            arrays[l] = upcxx::allocate<double>(idx%THREADS, 16);
+            // allocate the actual data on a different thread (note "idx+1")
+            arrays[l] = upcxx::allocate<double>((idx+1)%THREADS, 16);
             for (int m=0; m<16; m++) {
               arrays[l][m] = idx*100 + m;
             }
