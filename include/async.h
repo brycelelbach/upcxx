@@ -299,7 +299,7 @@ namespace upcxx
     template<typename Function>
     inline void operator()(Function kernel)
     {
-#ifdef USE_CXX11
+#if 0 // USE_CXX11
       typedef decltype(kernel()) return_t;
       if (aux_type_size<return_t>() == 0) {
         launch((generic_fp)kernel, (void *)NULL, (size_t)0);

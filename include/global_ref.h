@@ -54,6 +54,13 @@ namespace upcxx
       return *this;
     }
 
+    template<typename T2>
+    T operator + (const T2 &rhs)
+    {
+      // YZ: should use move semantics here
+      return (get() + rhs);
+    }
+
     global_ref<T>& operator ^= (const T &rhs)
     {
       int pla_id = _pla.id();
@@ -84,6 +91,12 @@ namespace upcxx
       return *this;
     }
 
+    template <typename T2>
+    bool operator != (const T2 &rhs)
+    {
+      return (get() != rhs);
+    }
+
     T get() const
     {
       if (_pla.id() == my_node.id()) {
@@ -107,19 +120,29 @@ namespace upcxx
         return tmp;
       }
     }
-    
+
+#if 0 // USE_CXX11 YZ: this is not yet supported by icpc 13.1
+    template<typename T2>
+    explicit operator T2*() const
+    {
+      return (T2*)get();
+    }
+#endif
+
     global_ptr<T> operator &()
     {
       return global_ptr<T>(_ptr, _pla);
     }
 
     // YZ: Needs C++11 auto, decltype
+#ifdef USE_CXX11
     template <typename T2>
     auto operator [](T2 i) -> decltype(this->get()[i])
     {
       T tmp = get();
       return tmp[i];
     }
+#endif
 
     T* raw_ptr() const
     {
