@@ -61,7 +61,8 @@ AC_MSG_RESULT([$CLANG])
 
 ## for clang
 if test "x$CLANG" = "xyes"; then
-  CXXFLAGS+=" -Wno-reserved-user-defined-literal"
+  ## suppress warnings due to legacy usage of C in GASNet
+  CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
 
