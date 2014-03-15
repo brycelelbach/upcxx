@@ -104,7 +104,7 @@ void amr_level::fill_ghost() {
   foreach (i, phi.domain()) {
     if (phi[i].creator() == MYTHREAD) {
       /* Loop over each of x, y (later z). */
-      for (d = 1; d <= phi[i].arity(); d++) {
+      for (d = 1; d <= phi[i].arity; d++) {
         /* Loop over low and then high end. */
         for (sign = -1, mm = phi[i].domain().min()[d]; 
              sign <= 1; sign += 2, mm = phi[i].domain().max()[d]) {
