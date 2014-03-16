@@ -15,6 +15,7 @@
 #include "machine.h"
 #include "range.h"
 #include "coll_flags.h"
+#include "utils.h"
 
 /// \cond SHOW_INTERNAL
 
