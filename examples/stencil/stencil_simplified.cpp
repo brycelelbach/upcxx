@@ -32,7 +32,7 @@ static int posToThread(point<3> parts, int threads, point<3> pos) {
 static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
                                                 point<3> parts,
                                                 int threads) {
-  ndarray<rectdomain<3>, 1> domains(RD(PT(0), PT(threads)));
+  ndarray<rectdomain<3>, 1> domains(RD(threads));
   for (int i = 0; i < threads; i++) {
     point<3> pos = threadToPos(parts, threads, i);
     int xstart, xend, ystart, yend, zstart, zend;
@@ -57,7 +57,7 @@ static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
 static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
                                         int mythread) {
   point<3> mypos = threadToPos(parts, threads, mythread);
-  ndarray<int, 1> neighbors = ARRAY(int, ((0), (6)));
+  ndarray<int, 1> neighbors(RD(6));
   neighbors[0] = posToThread(parts, threads, mypos - PT(1,0,0));
   neighbors[1] = posToThread(parts, threads, mypos + PT(1,0,0));
   neighbors[2] = posToThread(parts, threads, mypos - PT(0,1,0));
@@ -70,7 +70,7 @@ static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
 static void initGrid(ndarray<double, 3> grid) {
 #ifdef RANDOM_VALUES
   foreach (p, grid.domain()) {
-    grid[p] = Math.random();
+    grid[p] = ((double) rand()) / RAND_MAX;
   }
 #else
   grid.set(CONSTANT_VALUE);
@@ -136,20 +136,18 @@ int main(int argc, char **args) {
 
   myGridA = ndarray<double, 3, simple>(myDomain.accrete(1));
   myGridB = ndarray<double, 3, simple>(myDomain.accrete(1));
-  allGridsA =
-    ndarray<ndarray<double, 3, global>, 1>(RD(PT(0), PT(THREADS)));
-  allGridsB =
-    ndarray<ndarray<double, 3, global>, 1>(RD(PT(0), PT(THREADS)));
+  allGridsA = ndarray<ndarray<double, 3, global>, 1>(RD(THREADS));
+  allGridsB = ndarray<ndarray<double, 3, global>, 1>(RD(THREADS));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
                                         THREADS, MYTHREAD);
-  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(PT(0), PT(6)));
-  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(PT(0), PT(6)));
-  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(PT(0), PT(6)));
-  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(PT(0), PT(6)));
+  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(6));
+  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(6));
+  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(6));
+  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(6));
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
       targetsA[i] = allGridsA[nb[i]].constrict(myDomain);

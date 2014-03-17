@@ -1,4 +1,5 @@
 #include <cstring>
+#include <cstdlib>
 
 #ifndef USE_UPCXX
 # define USE_UPCXX 1
@@ -156,13 +157,13 @@ using namespace upcxx;
 #endif
 
 #ifndef WEIGHT
-# define WEIGHT 6.0
+# define WEIGHT (-6.0)
 #endif
 
-#define SWAP(A, B, TYPE) do {                   \
-    TYPE swap_tmp##A = A;                       \
-    A = B;                                      \
-    B = swap_tmp##A;                            \
-  } while (false)
+template<class T> void SWAP(T &x, T &y) {
+  T tmp = x;
+  x = y;
+  y = tmp;
+}
 
 #define COMMA ,
