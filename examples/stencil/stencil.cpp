@@ -188,6 +188,17 @@ static void probe(int steps) {
         }
       }
     }
+#elif defined(SPEC_LOOP)
+    cforeach3 (i, j, k, myDomain) {
+      myGridB[PT(i, j, k)] =
+        myGridA[PT(i, j, k+1)] +
+        myGridA[PT(i, j, k-1)] +
+        myGridA[PT(i, j+1, k)] +
+        myGridA[PT(i, j-1, k)] +
+        myGridA[PT(i+1, j, k)] +
+        myGridA[PT(i-1, j, k)] -
+        WEIGHT * myGridA[PT(i, j, k)] / (fac * fac);
+    }
 #elif defined(SPLIT_LOOP)
     cforeach3 (i, j, k, myDomain) {
       myGridB[i][j][k] =
