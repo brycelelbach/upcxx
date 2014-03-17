@@ -245,8 +245,8 @@ static void probe(int steps) {
 #elif defined(RAW_LOOP)
 # define Index3D(i,j,k) ((k+1)+(nz+2)*((j+1)+(ny+2)*(i+1)))
     int nx = myDomain.upb()[1] - myDomain.lwb()[1];
-    int ny = myDomain.upb()[1] - myDomain.lwb()[1];
-    int nz = myDomain.upb()[1] - myDomain.lwb()[1];
+    int ny = myDomain.upb()[2] - myDomain.lwb()[2];
+    int nz = myDomain.upb()[3] - myDomain.lwb()[3];
     double *ptrA = myGridA.base_ptr();
     double *ptrB = myGridB.base_ptr();
     cforeach3 (i, j, k, myDomain) {
