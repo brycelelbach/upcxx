@@ -242,6 +242,23 @@ static void probe(int steps) {
 	AINDEX3(myGridA, i-1, j, k) -
 	WEIGHT * AINDEX3(myGridA, i, j, k) / (fac * fac);
     }
+#elif defined(RAW_LOOP)
+# define Index3D(i,j,k) ((k+1)+(nz+2)*((j+1)+(ny+2)*(i+1)))
+    int nx = myDomain.upb()[1] - myDomain.lwb()[1];
+    int ny = myDomain.upb()[1] - myDomain.lwb()[1];
+    int nz = myDomain.upb()[1] - myDomain.lwb()[1];
+    double *ptrA = myGridA.base_ptr();
+    double *ptrB = myGridB.base_ptr();
+    cforeach3 (i, j, k, myDomain) {
+      ptrB[Index3D(i, j, k)] =
+        ptrA[Index3D(i, j, k+1)] +
+        ptrA[Index3D(i, j, k-1)] +
+        ptrA[Index3D(i, j+1, k)] +
+        ptrA[Index3D(i, j-1, k)] +
+        ptrA[Index3D(i+1, j, k)] +
+        ptrA[Index3D(i-1, j, k)] -
+	WEIGHT * ptrA[Index3D(i, j, k)] / (fac * fac);
+    }
 #elif defined(OMP_SPLIT_LOOP) && defined(USE_FOREACHH)
     foreachh (3, myDomain, lwb, upb, stride, done) {
       foreachhd (i, 0, lwb, upb, stride) {
