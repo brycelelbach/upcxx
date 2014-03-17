@@ -115,6 +115,16 @@ struct timer {
 # endif /* ALT_FOREACH */
 #endif /* OPT_LOOP || SPLIT_LOOP || OMP_SPLIT_LOOP */
 
+#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
+# ifdef USE_CMAJOR
+#  define FIRST_DIM(i, j, k) k
+#  define LAST_DIM(i, j, k) i
+# else
+#  define FIRST_DIM(i, j, k) i
+#  define LAST_DIM(i, j, k) k
+# endif
+#endif
+
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
 # ifdef USE_CMAJOR
 #  define STRIDEDNESS simple_column

@@ -245,7 +245,9 @@ void probe(int steps) {
     }
 #elif defined(RAW_LOOP)
 # define Index3D(i,j,k)                                                 \
-    ((k+GHOST_WIDTH)+(nz)*((j+GHOST_WIDTH)+(ny)*(i+GHOST_WIDTH)))
+    ((LAST_DIM(i, j, k)+GHOST_WIDTH)+                                   \
+     (LAST_DIM(nx, ny, nz))*((j+GHOST_WIDTH)+                           \
+                             (ny)*(FIRST_DIM(i, j, k)+GHOST_WIDTH)))
     int nx = myDomain.upb()[1] - myDomain.lwb()[1] + 2*GHOST_WIDTH;
     int ny = myDomain.upb()[2] - myDomain.lwb()[2] + 2*GHOST_WIDTH;
     int nz = myDomain.upb()[3] - myDomain.lwb()[3] + 2*GHOST_WIDTH;
@@ -262,15 +264,22 @@ void probe(int steps) {
 	WEIGHT * ptrA[Index3D(i, j, k)];
     }
 #elif defined(RAW_FOR_LOOP)
-# define Index3D(i,j,k) ((k)+(nz)*((j)+(ny)*(i)))
+# define Index3D(i,j,k)                                         \
+    ((LAST_DIM(i, j, k))+                                       \
+     (LAST_DIM(nx, ny, nz))*((j)+                               \
+                             (ny)*(FIRST_DIM(i, j, k))))
     int nx = myDomain.upb()[1] - myDomain.lwb()[1] + 2*GHOST_WIDTH;
     int ny = myDomain.upb()[2] - myDomain.lwb()[2] + 2*GHOST_WIDTH;
     int nz = myDomain.upb()[3] - myDomain.lwb()[3] + 2*GHOST_WIDTH;
     double *ptrA = myGridA.base_ptr();
     double *ptrB = myGridB.base_ptr();
-    for (int i = 1; i < nx-1; i++) {
-      for (int j = 1; j < ny-1; j++) {
-        for (int k = 1; k < nz-1; k++) {
+    for (int FIRST_DIM(i, j, k) = GHOST_WIDTH;
+         FIRST_DIM(i, j, k) < FIRST_DIM(nx, ny, nz)-GHOST_WIDTH;
+         FIRST_DIM(i, j, k)++) {
+      for (int j = GHOST_WIDTH; j < ny-GHOST_WIDTH; j++) {
+        for (int LAST_DIM(i, j, k) = GHOST_WIDTH;
+             LAST_DIM(i, j, k) < LAST_DIM(nx, ny, nz)-GHOST_WIDTH;
+             LAST_DIM(i, j, k)++) {
           ptrB[Index3D(i, j, k)] =
             ptrA[Index3D(i, j, k+1)] +
             ptrA[Index3D(i, j, k-1)] +
