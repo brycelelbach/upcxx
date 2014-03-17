@@ -16,6 +16,11 @@ namespace upcxx
 {
   template<typename T> struct global_ptr;
 
+  // obj is a global_ref or a global_ptr of the object.
+  // m is a field/member of the global object.
+  #define memberof(obj, m) \
+    make_memberof((obj).where(), (obj).raw_ptr()->m)
+
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = node>
   struct global_ref
@@ -49,6 +54,13 @@ namespace upcxx
       return *this;
     }
 
+    template<typename T2>
+    T operator + (const T2 &rhs)
+    {
+      // YZ: should use move semantics here
+      return (get() + rhs);
+    }
+
     global_ref<T>& operator ^= (const T &rhs)
     {
       int pla_id = _pla.id();
@@ -79,6 +91,12 @@ namespace upcxx
       return *this;
     }
 
+    template <typename T2>
+    bool operator != (const T2 &rhs)
+    {
+      return (get() != rhs);
+    }
+
     T get() const
     {
       if (_pla.id() == my_node.id()) {
@@ -102,24 +120,49 @@ namespace upcxx
         return tmp;
       }
     }
-    
+
+#if 0 // USE_CXX11 YZ: this is not yet supported by icpc 13.1
+    template<typename T2>
+    explicit operator T2*() const
+    {
+      return (T2*)get();
+    }
+#endif
+
     global_ptr<T> operator &()
     {
       return global_ptr<T>(_ptr, _pla);
     }
 
-    // YZ: todo: specialize for T = global_ptr<T2>
-    //     template <>
-    //     template <typename T2>
-    //     global_ref<typename T2::value_type> operator [] (size_t i)
-    //     {
-    //       return (*_ptr)[i];
-    //     }
+    // YZ: Needs C++11 auto, decltype
+#ifdef USE_CXX11
+    template <typename T2>
+    auto operator [](T2 i) -> decltype(this->get()[i])
+    {
+      T tmp = get();
+      return tmp[i];
+    }
+#endif
 
-  private:
+    T* raw_ptr() const
+    {
+      return _ptr;
+    }
+
+    place_t where() const
+    {
+      return _pla;
+    }
+
+  //private:
     T *_ptr;
     place_t _pla;
   }; // struct global_ref
   /// \endcond
+
+  template<typename T, typename place_t>
+  global_ref<T, place_t> make_memberof(place_t where, T &member) {
+    return global_ref<T, place_t>(where, &member);
+  }
 
 } // namespace upcxx

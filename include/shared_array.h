@@ -15,14 +15,20 @@ namespace upcxx
   /**
    * \ingroup gasgroup
    * \brief shared 1-D array with 1-D block-cyclic distribution
-   * static blocking factor BF, same restriction as UPC
+   *
+   * In the current implementation, the application needs to call
+   * the init() member function for each shared array object after
+   * calling upcxxx::init().  For example, sa.init(total_sz, blk_sz);
+   *
+   * In UPC++, the block size (blk_sz) can be changed at runtime
+   * by set_blk_sz().
    */
-  template<typename T, size_t BF = 1>
+  template<typename T, size_t BLK_SZ = 1>
   struct shared_array
   {
     T *_data;
     T **_alldata;
-    size_t _bf; // blocking factor
+    size_t _blk_sz; // blocking factor
     size_t _local_size;
     size_t _size;
 
@@ -31,31 +37,53 @@ namespace upcxx
                       node &node)
     {
       int nplaces = (int)gasnet_nodes(); // global_machine.node_count();
-      size_t block_id = global_index / BF;
-      size_t phase = global_index % BF;
-      local_index = (block_id / nplaces) * BF + phase ;
+      size_t block_id = global_index / _blk_sz;
+      size_t phase = global_index % _blk_sz;
+      local_index = (block_id / nplaces) * _blk_sz + phase ;
       node = block_id % nplaces;
     }
 
-    shared_array(size_t size=0)
+    shared_array(size_t size=0, size_t blk_sz=BLK_SZ)
     {
 #ifdef UPCXX_DEBUG
       printf("In shared_array constructor, size %lu\n", size);
 #endif
       _data = NULL;
-      _bf = BF;
+      _blk_sz = blk_sz;
       _local_size = size;
       _size = size;
     }
 
+    /**
+     * Return the total size of the shared array.
+     * This value is not runtime changeable.
+     */
     inline size_t size() { return _size; }
 
-    void init(size_t sz=0)
+    /**
+     * Get the current block size (a.k.a. blocking factor in UPC)
+     */
+    inline size_t get_blk_sz() { return _blk_sz; }
+
+
+    /**
+     * Set the current block size (a.k.a. blocking factor in UPC)
+     */
+    inline void set_blk_sz(size_t blk_sz) { _blk_sz = blk_sz; }
+
+    /**
+     * Initialize the shared array
+     *
+     * \param sz total size of the shared array
+     * \param blk_sz the blocking factor (block size) of
+     */
+    void init(size_t sz=0, size_t blk_sz=BLK_SZ)
     {
       if (_data != NULL) return;
 
-      int nplaces = global_machine.node_count();
+      int nplaces = THREADS;
       if (sz != 0) _size = sz;
+      if (blk_sz != 0) _blk_sz = blk_sz;
       _local_size = (_size + nplaces - 1) / nplaces;
       
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -90,7 +118,7 @@ namespace upcxx
     {
       if (_data) {
 #ifdef USE_GASNET_FAST_SEGMENT
-        gasnet_seg_free(_data);
+        gasnet_seg_free((void *)_data);
 #else
         delete _data;
 #endif

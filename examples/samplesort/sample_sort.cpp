@@ -23,19 +23,24 @@ using namespace upcxx;
 
 // #define DEBUG
 
-// #define VERIFY
+#define VERIFY
 
 #define SFMT_MEXP 19937
 
 extern "C" {
-#include "../SFMT/SFMT.h" // for the Mersenne Twister random number generator
+#include "SFMT/SFMT.h" // for the Mersenne Twister random number generator
 }
 
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
+
+#ifndef DEBUG
 #define SAMPLES_PER_THREAD 128
-#define KEYS_PER_THREAD 8 * 1024 * 1024
-//#define KEYS_PER_THREAD 128
+#define KEYS_PER_THREAD 4 * 1024 * 1024
+#else
+#define SAMPLES_PER_THREAD 8
+#define KEYS_PER_THREAD 128
+#endif //DEBUG
 
 typedef struct {
   // global_ptr<ELEMENT_T> ptr;
@@ -231,7 +236,7 @@ void redistribute(uint64_t key_count)
   // printf("sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
 
   sorted[MYTHREAD] = upcxx::allocate<ELEMENT_T>(MYTHREAD, offset);
-  assert(sorted[MYTHREAD].get() != NULL);
+  assert(sorted[MYTHREAD] != NULL);
 
   upcxx::barrier();
 
@@ -245,11 +250,11 @@ void redistribute(uint64_t key_count)
              MYTHREAD, all_buffers_dst[i].nbytes,
              (int)(all_buffers_dst[i].ptr.tid()),
              all_buffers_dst[i].ptr.raw_ptr(),
-             (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).tid(),
-             (sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)).raw_ptr());
+             (sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)).tid(),
+             (sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)).raw_ptr());
 #endif               
       upcxx::async_copy((global_ptr<void>)all_buffers_dst[i].ptr,
-                        (global_ptr<void>)(sorted[MYTHREAD].get() + offset / sizeof(ELEMENT_T)),
+                        (global_ptr<void>)(sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)),
                         all_buffers_dst[i].nbytes);    
       offset += all_buffers_dst[i].nbytes;
     }
@@ -264,7 +269,7 @@ void redistribute(uint64_t key_count)
     if (MYTHREAD == k) {
       printf("Thread %d:\n", k);
       for (i = 0; i < MIN(64, sorted_key_counts[k]); i++) {
-        printf("my_sorted[%d]=%llu ", i, sorted[k].get()[i].get());
+        printf("my_sorted[%d]=%llu ", i, sorted[k][i].get());
       }
       printf("\n");
     }
@@ -291,8 +296,8 @@ void sample_sort(uint64_t key_count)
 
   // local sort
   // printf("qsort, sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
-  qsort((ELEMENT_T *)sorted[MYTHREAD].get(), 
-        sorted_key_counts[MYTHREAD].get(), sizeof(ELEMENT_T), 
+  qsort((ELEMENT_T *)sorted[MYTHREAD].get(),
+        sorted_key_counts[MYTHREAD], sizeof(ELEMENT_T),
         compare_element);
   upcxx::barrier();
   double sort_time = mysecond();
@@ -408,7 +413,9 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      current = sorted[t].get()[index];
+      // current = sorted[t].get()[index];
+      current = sorted[t][index];
+      // current = sorted[t][index];
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
@@ -439,7 +446,7 @@ int main(int argc, char **argv)
     for (t = 0; t < THREADS; t++) {
       printf("sorted_key_counts[%d] = %llu\n", t, sorted_key_counts[t].get());
       for (i = 0; i < MIN(64, sorted_key_counts[t]); i++) {
-        printf("sorted[%d]=%llu, ", i, sorted[t].get()[i].get());
+        printf("sorted[%d]=%llu, ", i, sorted[t][i].get());
       }
       printf("\n");
     }

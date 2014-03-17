@@ -3,7 +3,8 @@ AC_PREREQ([2.59])
 
 AM_INIT_AUTOMAKE([1.10 no-define foreign])
 
-LT_INIT()
+LT_INIT([disable-shared])
+dnl LT_INIT()
 LT_LANG([C++])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -32,13 +33,37 @@ AC_ARG_WITH([gasnet],
 )
 
 ## Check for C++11
-dnl AC_LANG(C++)
-dnl AX_CHECK_COMPILE_FLAG([-std=c++0x], [
-dnl                         CXXFLAGS="$CXXFLAGS -std=c++0x"])
+AC_LANG(C++)
+AX_CXX_COMPILE_STDCXX_11(noext,optional)
+
+if test "$HAVE_CXX11" = 1; then
+  CXXFLAGS+=" -DUSE_CXX11 "
+fi
 
 ## Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
 CFLAGS+=${UPCXX_FLAGS}
 CXXFLAGS+=${UPCXX_FLAGS}
+
+## Check for Clang
+AC_MSG_CHECKING([if compiling with clang])
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([], [[
+#ifndef __clang__
+       not clang
+#endif
+]])],
+[CLANG=yes], [CLANG=no])
+
+AC_MSG_RESULT([$CLANG])
+
+## -std=c++0x -DUSE_CXX11"
+
+## for clang
+if test "x$CLANG" = "xyes"; then
+  ## suppress warnings due to legacy usage of C in GASNet
+  CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
+fi
+
 
 AC_OUTPUT

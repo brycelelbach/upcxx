@@ -90,17 +90,17 @@ template<typename T>
 void alltoall(global_ptr<T> src[],
               global_ptr<T> dst[],
               size_t count[],
-              int nprocs)
+              int np)
 {
   int i;
-  int myrank = my_node.id();
+  int myrank = MYTHREAD;
 
-  for (i=0; i<nprocs; i++) {
-    int j = (myrank+i) % nprocs;
+  for (i=0; i<np; i++) {
+    int j = (myrank+i) % np;
 #ifdef DEBUG
     fprintf(stderr, "myrank %d: i %d, j %d ", myrank, i, j);
     cerr << "src[j] " << src[j] << " dst[j] " << dst[j] 
-                                                     << " count[j] " << count[j] << "\n";
+         << " count[j] " << count[j] << "\n";
 #endif
     async_copy(src[j], dst[j], count[j]);
   }
@@ -215,7 +215,7 @@ void transpose(T *in,
   int i;
   size_t msgsz_per_p  = (nx/nprocs) * (ny/nprocs);
   size_t nx_per_p = nx / nprocs;
-  int myrank = my_node.id();
+  int myrank = MYTHREAD;
   global_ptr<T> tmp_in;
   global_ptr<T> *W = new global_ptr<T> [nprocs];
   assert(W != NULL);
@@ -368,10 +368,10 @@ void fft2d(complex_t *my_A,
            size_t ny, // # of columns
            global_ptr<global_ptr<complex_t> > all_Ws)
 {
-  int nprocs = global_machine.node_count();
+  int nprocs = THREADS;
   complex_t *tmp;
   fft_plan_t planX, planY;
-  int myrank = my_node.id();
+  int myrank = MYTHREAD;
   size_t nx_per_p = nx / nprocs;
   size_t ny_per_p = ny / nprocs;
   size_t size_per_p = nx_per_p * ny;
@@ -382,7 +382,7 @@ void fft2d(complex_t *my_A,
   fft_init();
 
   // generate random data for the 2-D input array
-  // std::generate(my_A, &my_A[nx_per_p * ny], random_complex);
+  std::generate(my_A, &my_A[nx_per_p * ny], random_complex);
   init_array(my_A, size_per_p, myrank * size_per_p);
 
   // Autotune the FFT performance
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
 {
   double starttime;
   int i;
-  int nprocs = global_machine.node_count();
+  int nprocs = THREADS;
   // event_t *e[nprocs];
   Input = new global_ptr<complex_t> [nprocs];
   Output = new global_ptr<complex_t> [nprocs];

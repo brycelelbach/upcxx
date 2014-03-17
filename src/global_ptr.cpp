@@ -44,6 +44,7 @@ int upcxx::async_copy(global_ptr<void> src,
   } else {
     // explicit non-blocking copy, need event->wait()/test() to
     // synchronize later
+    outstanding_events.push_back(e);
     if (dst.where().islocal()) {
       gasnet_handle_t h;
       h = gasnet_get_nb_bulk(dst.raw_ptr(),
