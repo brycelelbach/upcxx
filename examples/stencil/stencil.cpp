@@ -1,20 +1,20 @@
 // Stencil
 #include "globals.h"
 
-static int xdim, ydim, zdim;
-static int xparts, yparts, zparts;
-static ndarray<rectdomain<3>, 1> allDomains;
-static rectdomain<3> myDomain;
-static ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
+int xdim, ydim, zdim;
+int xparts, yparts, zparts;
+ndarray<rectdomain<3>, 1> allDomains;
+rectdomain<3> myDomain;
+ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
 #ifdef SHARED_DIR
-static shared_array<ndarray<double, 3, global GUNSTRIDED> > allGridsA, allGridsB;
+shared_array<ndarray<double, 3, global> > allGridsA, allGridsB;
 #else
-static ndarray<ndarray<double, 3, global GUNSTRIDED>, 1> allGridsA, allGridsB;
+ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
 #endif
-static ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
-static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
-static int steps;
-static int numTrials = 1;
+ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
+ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
+int steps;
+int numTrials = 1;
 
 enum timer_type {
   COMMUNICATION,
@@ -31,24 +31,24 @@ enum timer_index {
   POST_COMPUTE_BARRIER,
   NUM_TIMERS
 };
-static timer timers[NUM_TIMERS];
-static string timerStrings[] = {"launch x copies", "sync x copies",
+timer timers[NUM_TIMERS];
+string timerStrings[] = {"launch x copies", "sync x copies",
                                 "launch y copies", "sync y copies",
                                 "launch z copies", "sync z copies",
                                 "probe compute", "post compute barrier"};
-static timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
+timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
                                   COMMUNICATION, COMMUNICATION,
                                   COMMUNICATION, COMMUNICATION,
                                   COMPUTATION, COMPUTATION};
 
-static point<3> threadToPos(point<3> parts, int threads, int i) {
+point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
   int ypos = (i % (parts[2] * parts[3])) / parts[3];
   int zpos = i % parts[3];
   return POINT(xpos, ypos, zpos);
 }
 
-static int posToThread(point<3> parts, int threads, point<3> pos) {
+int posToThread(point<3> parts, int threads, point<3> pos) {
   if (pos[1] < 0 || pos[1] >= parts[1] ||
       pos[2] < 0 || pos[2] >= parts[2] ||
       pos[3] < 0 || pos[3] >= parts[3]) {
@@ -59,9 +59,9 @@ static int posToThread(point<3> parts, int threads, point<3> pos) {
 }
 
 // Compute grid domains for each thread.
-static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
-                                                point<3> parts,
-                                                int threads) {
+ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
+                                         point<3> parts,
+                                         int threads) {
   ndarray<rectdomain<3>, 1> domains(RD(threads));
   for (int i = 0; i < threads; i++) {
     point<3> pos = threadToPos(parts, threads, i);
@@ -84,8 +84,8 @@ static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
   return domains;
 }
 
-static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
-                                        int mythread) {
+ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
+                                 int mythread) {
   point<3> mypos = threadToPos(parts, threads, mythread);
   ndarray<int, 1> neighbors(RD(6));
   neighbors[0] = posToThread(parts, threads, mypos - PT(1,0,0));
@@ -97,7 +97,7 @@ static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
   return neighbors;
 }
 
-static void initGrid(ndarray<double, 3> grid) {
+void initGrid(ndarray<double, 3> grid) {
 #if DEBUG
   cout << MYTHREAD << ": initializing grid with domain "
        << grid.domain() << endl;
@@ -112,7 +112,7 @@ static void initGrid(ndarray<double, 3> grid) {
 }
 
 // Perform stencil.
-static void probe(int steps) {
+void probe(int steps) {
   double fac = myGridA[myGridA.domain().min()]; // prevent constant folding
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
@@ -342,7 +342,7 @@ static void probe(int steps) {
   } while (0)
 
 // Report min, average, max of given value.
-static void report_value(double d) {
+void report_value(double d) {
   double ave = reduce::add(d, 0) / THREADS;
   double max = reduce::max(d, 0);
   double min = reduce::min(d, 0);
@@ -354,7 +354,7 @@ static void report_value(double d) {
 # define report(d, s)
 #endif
 
-static void printTimingStats() {
+void printTimingStats() {
   for (int i = 0; i < NUM_TIMERS; i++) {
     report(timers[i].secs(), "Time for " << timerStrings[i] << " (s)");
   }
@@ -424,9 +424,9 @@ int main(int argc, char **args) {
   allGridsB[MYTHREAD] = myGridB;
 #else
   allGridsA =
-    ndarray<ndarray<double, 3, global GUNSTRIDED>, 1>(RD((int)THREADS));
+    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
   allGridsB =
-    ndarray<ndarray<double, 3, global GUNSTRIDED>, 1>(RD((int)THREADS));
+    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 #endif
@@ -443,7 +443,7 @@ int main(int argc, char **args) {
     if (nb[i] != -1) {
 #if DEBUG
       cout << MYTHREAD << ": overlap " << i << " = "
-           << (((ndarray<double, 3, global GUNSTRIDED>)
+           << (((ndarray<double, 3, global>)
                 allGridsA[nb[i]]).domain() * targetDomain) << endl;
 #endif
 #ifdef SHARED_DIR

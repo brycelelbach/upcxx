@@ -133,10 +133,8 @@ struct timer {
 
 #ifdef STRIDEDNESS
 # define UNSTRIDED , STRIDEDNESS
-# define GUNSTRIDED , STRIDEDNESS
 #else
 # define UNSTRIDED
-# define GUNSTRIDED
 #endif
 
 using namespace std;

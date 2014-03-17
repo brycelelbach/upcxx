@@ -1,24 +1,24 @@
 // Stencil
 #include "globals.h"
 
-static int xdim, ydim, zdim;
-static int xparts, yparts, zparts;
-static ndarray<rectdomain<3>, 1> allDomains;
-static rectdomain<3> myDomain;
-static ndarray<double, 3, simple> myGridA, myGridB;
-static ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
-static ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
-static ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
-static int steps;
+int xdim, ydim, zdim;
+int xparts, yparts, zparts;
+ndarray<rectdomain<3>, 1> allDomains;
+rectdomain<3> myDomain;
+ndarray<double, 3, simple> myGridA, myGridB;
+ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
+ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
+ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
+int steps;
 
-static point<3> threadToPos(point<3> parts, int threads, int i) {
+point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
   int ypos = (i % (parts[2] * parts[3])) / parts[3];
   int zpos = i % parts[3];
   return PT(xpos, ypos, zpos);
 }
 
-static int posToThread(point<3> parts, int threads, point<3> pos) {
+int posToThread(point<3> parts, int threads, point<3> pos) {
   if (pos[1] < 0 || pos[1] >= parts[1] ||
       pos[2] < 0 || pos[2] >= parts[2] ||
       pos[3] < 0 || pos[3] >= parts[3]) {
@@ -29,9 +29,9 @@ static int posToThread(point<3> parts, int threads, point<3> pos) {
 }
 
 // Compute grid domains for each thread.
-static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
-                                                point<3> parts,
-                                                int threads) {
+ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
+                                         point<3> parts,
+                                         int threads) {
   ndarray<rectdomain<3>, 1> domains(RD(threads));
   for (int i = 0; i < threads; i++) {
     point<3> pos = threadToPos(parts, threads, i);
@@ -54,8 +54,8 @@ static ndarray<rectdomain<3>, 1> computeDomains(point<3> dims,
   return domains;
 }
 
-static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
-                                        int mythread) {
+ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
+                                 int mythread) {
   point<3> mypos = threadToPos(parts, threads, mythread);
   ndarray<int, 1> neighbors(RD(6));
   neighbors[0] = posToThread(parts, threads, mypos - PT(1,0,0));
@@ -67,7 +67,7 @@ static ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
   return neighbors;
 }
 
-static void initGrid(ndarray<double, 3> grid) {
+void initGrid(ndarray<double, 3> grid) {
 #ifdef RANDOM_VALUES
   foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
@@ -78,7 +78,7 @@ static void initGrid(ndarray<double, 3> grid) {
 }
 
 // Perform stencil.
-static void probe(int steps) {
+void probe(int steps) {
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
     for (int j = 0; j < 6; j++) {
