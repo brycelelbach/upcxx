@@ -118,6 +118,7 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
+#ifdef USE_CXX11
     // YZ: Needs C++11 auto, decltype
     template <typename T2>
     auto operator [](T2 i) -> decltype(this->get()[i])
@@ -125,6 +126,7 @@ namespace upcxx
       T tmp = get();
       return tmp[i];
     }
+#endif
 
     T* raw_ptr() const
     {
