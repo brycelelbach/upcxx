@@ -299,13 +299,13 @@ namespace upcxx
     template<typename Function>
     inline void operator()(Function kernel)
     {
-#ifdef USE_CXX11
+#if 0 && defined(USE_CXX11) // AK: this is broken
       typedef decltype(kernel()) return_t;
       if (aux_type_size<return_t>() == 0) {
         launch((generic_fp)kernel, (void *)NULL, (size_t)0);
       } else {
         // YZ: !! Need to figure out how/where to store the return value
-        return_t _rv;
+        return_t _rv; // AK: problem if this is void
         launch((generic_fp)kernel, (void *)NULL, (size_t)0,
                _rv, sizeof(_rv));
       }
