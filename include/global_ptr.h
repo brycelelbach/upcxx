@@ -73,12 +73,8 @@ namespace upcxx
 
     size_t operator-(const base_ptr<T, place_t> &x) const
     {
-      if (x.where() == this->where())
-        return this->raw_ptr() - x.raw_ptr();
-      else
-        // XXX really ought to signal an error or something.
-        // but that would break this code on the device.
-        return 0;
+      assert (x.where() == this->where());
+      return this->raw_ptr() - x.raw_ptr();
     }
 
     bool operator==(const base_ptr<T, place_t> &x) const
@@ -130,26 +126,6 @@ namespace upcxx
     inline
     global_ptr(const global_ptr<T> &p)
     : base_ptr<T, node>(p.raw_ptr(), p.where()) {}
-
-    /*
-    void get_value(const T &val)
-    {
-      if (this->where().islocal()) {
-        val = *(T *) this->raw_ptr();
-      } else {
-        gasnet_get(&val, this->where()->node_id(), this->raw_ptr(), sizeof(T));
-      }
-    }
-
-    void put_value(const T &val)
-    {
-      if (this->where().islocal()) {
-        *(T *) this->raw_ptr() = val;
-      } else {
-        gasnet_put(this->where().node_id(), this->raw_ptr(), &val, sizeof(T));
-      }
-    }
-    */
 
     // type casting operator for local pointers
     operator T*()

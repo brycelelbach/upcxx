@@ -21,14 +21,14 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-#define DEBUG
+// #define DEBUG
 
 #define VERIFY
 
 #define SFMT_MEXP 19937
 
 extern "C" {
-#include "../SFMT/SFMT.h" // for the Mersenne Twister random number generator
+#include "SFMT/SFMT.h" // for the Mersenne Twister random number generator
 }
 
 #define ELEMENT_T uint64_t
@@ -409,8 +409,9 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      //current = sorted[t].get()[index];
+      // current = sorted[t].get()[index];
       current = sorted[t][index];
+      // current = sorted[t][index];
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
