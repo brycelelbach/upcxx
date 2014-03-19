@@ -69,32 +69,4 @@ int upcxx::async_copy(global_ptr<void> src,
   return UPCXX_SUCCESS;
 }
 
-gasnet_handle_t upcxx::async_copy2(global_ptr<void> src,
-                                   global_ptr<void> dst,
-                                   size_t nbytes)
-{
-  // explicit non-blocking copy, need event->wait()/test() to
-  // synchronize later
-  gasnet_handle_t h;
-  if (dst.where().islocal()) {
-    h = gasnet_get_nb_bulk(dst.raw_ptr(),
-                           src.where().node_id(),
-                           src.raw_ptr(),
-                           nbytes);
-    
-  } else if (src.where().islocal()) {
-    h = gasnet_put_nb_bulk(dst.where().node_id(),
-                           dst.raw_ptr(),
-                           src.raw_ptr(),
-                           nbytes);
-    
-  } else {
-    // Not implemented
-    fprintf(stderr,
-            "copy_nb error: either the src pointer or the dst ptr needs to be local.\n");
-    exit(1);
-  }
-  return h;
-}
-
 

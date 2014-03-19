@@ -267,10 +267,6 @@ namespace upcxx
                  size_t bytes,
                  event *e = NULL);
 
-  gasnet_handle_t async_copy2(global_ptr<void> src,
-                              global_ptr<void> dst,
-                              size_t bytes);
-  
   inline void sync_nb(gasnet_handle_t h)
   {
     gasnet_wait_syncnb(h);
@@ -297,16 +293,6 @@ namespace upcxx
                       (global_ptr<void>)dst,
                       nbytes,
                       e);
-  }
-
-  template<typename T>
-  gasnet_handle_t async_copy2(global_ptr<T> src,
-                              global_ptr<T> dst,
-                              size_t count)
-  {
-    size_t nbytes = count * sizeof(T);
-    return async_copy2((global_ptr<void>)src, (global_ptr<void>)dst, 
-                       nbytes);
   }
 
   inline void async_copy_fence()
