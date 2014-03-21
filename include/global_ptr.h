@@ -265,7 +265,7 @@ namespace upcxx
   int async_copy(global_ptr<void> src,
                  global_ptr<void> dst,
                  size_t bytes,
-                 event *e = NULL);
+                 event *e = peek_event());
 
   inline void sync_nb(gasnet_handle_t h)
   {
@@ -286,7 +286,7 @@ namespace upcxx
   int async_copy(global_ptr<T> src,
                  global_ptr<T> dst,
                  size_t count,
-                 event *e = NULL)
+                 event *e = peek_event())
   {
     size_t nbytes = count * sizeof(T);
     return async_copy((global_ptr<void>)src,
@@ -297,12 +297,12 @@ namespace upcxx
 
   inline void async_copy_fence()
   {
-    gasnet_wait_syncnbi_all();
+    peek_event()->wait();
   }
 
   inline int async_copy_try()
   {
-    return gasnet_try_syncnbi_all();
+    return peek_event()->test();
   }
 
   /**
