@@ -14,12 +14,18 @@ using namespace std;
 
 namespace upcxx
 {
-  int event::test()
+  int event::async_try()
   {
-    if (_h_flag) {
-      if (gasnet_try_syncnb(_h) == GASNET_OK) {
-        _h_flag = 0;
-        decref();
+    if (!_h.empty()) {
+#if USE_CXX11
+      for (auto it=_h.begin(); it!=_h.end(); ++it) {
+#else
+      for (std::list<gasnet_handle_t>::iterator it=_h.begin(); it!=_h.end(); ++it) {
+#endif
+        if (gasnet_try_syncnb(*it) == GASNET_OK) {
+          it = _h.erase(it);
+          decref();
+        }
       }
     }
 
@@ -30,7 +36,8 @@ namespace upcxx
   {
     while (!test()) {
       advance(1, 10);
-      gasnett_sched_yield();
+      // YZ: don't need to yield if CPUs are not over-subscribed.
+      // gasnett_sched_yield();
     }
   }
 
