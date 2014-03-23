@@ -3,6 +3,7 @@ include_HEADERS =  \
   allocate.h \
   array.h \
   array_bulk.h \
+  array_defs.h \
   async.h \
   async_templates.h \
   broadcast.h \
@@ -47,7 +48,6 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/array_wrapper.h \
   upcxx-arrays/array_wrapper_specializations.h \
   upcxx-arrays/arrayflag_tools.h \
-  upcxx-arrays/coll.h \
   upcxx-arrays/defs.h \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
