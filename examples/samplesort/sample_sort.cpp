@@ -236,7 +236,7 @@ void redistribute(uint64_t key_count)
   // printf("sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
 
   sorted[MYTHREAD] = upcxx::allocate<ELEMENT_T>(MYTHREAD, offset);
-  assert(sorted[MYTHREAD] != NULL);
+  assert(sorted[MYTHREAD] != (void*)NULL);
 
   upcxx::barrier();
 
