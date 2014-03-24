@@ -22,7 +22,6 @@
 namespace upcxx
 {
 
-  gasnet_team_handle_t current_gasnet_team();
   struct ts_scope;
 
   struct team {
@@ -81,6 +80,10 @@ namespace upcxx
     inline team *mychild() const { return _mychild; }
 
     inline uint32_t color() const { return _color; }
+
+    inline gasnet_team_handle_t gasnet_team() const {
+      return _gasnet_team;
+    }
 
     // YZ: We can use a compact format to represent team members and only store
     // log2 number of neighbors on each node
@@ -174,7 +177,6 @@ namespace upcxx
     static team *global_team() { return _team_stack[0]; }
 
     friend int init(int *pargc, char ***pargv);
-    friend gasnet_team_handle_t current_gasnet_team();
     friend struct ts_scope;
 
   private:
@@ -223,10 +225,6 @@ namespace upcxx
                << ", size " << t.size() << ", myrank " << t.myrank();
   }
   
-  inline gasnet_team_handle_t current_gasnet_team() {
-    return team::current_team()->_gasnet_team;
-  }
-
   struct ts_scope {
     int done;
     inline ts_scope(team *t) : done(0) {
@@ -240,6 +238,26 @@ namespace upcxx
     }
   };
 
+  static inline gasnet_team_handle_t current_gasnet_team() {
+    return team::current_team()->gasnet_team();
+  }
+
+  static inline uint32_t ranks() {
+    return team::current_team()->size();
+  }
+
+  static inline uint32_t myrank() {
+    return team::current_team()->myrank();
+  }
+
+  static inline uint32_t global_ranks() {
+    return team::global_team()->size();
+  }
+
+  static inline uint32_t global_myrank() {
+    return team::global_team()->myrank();
+  }
+
 } // namespace upcxx
 
 extern upcxx::team team_all;
@@ -249,7 +267,5 @@ extern upcxx::team team_all;
 #define teamsplit_(name, t)                             \
   for (ts_scope name(t); name.done == 0; name.done = 1)
 
-#define CURRENT_GASNET_TEAM upcxx::current_gasnet_team()
-
-#define THREADS (upcxx::team::current_team()->size())
-#define MYTHREAD (upcxx::team::current_team()->myrank())
+#define THREADS upcxx::ranks()
+#define MYTHREAD upcxx::myrank()

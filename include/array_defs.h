@@ -87,11 +87,11 @@
 
 #define UPCXXA_BROADCAST_RAW(dst, sender, src, size)            \
   do {                                                          \
-    gasnet_coll_broadcast(CURRENT_GASNET_TEAM, dst, sender,     \
+    gasnet_coll_broadcast(current_gasnet_team(), dst, sender,   \
 			  src, size, UPCXX_GASNET_COLL_FLAG);   \
   } while (0)               
 #define UPCXXA_EXCHANGE_BULK(dst, src, bytes)                   \
   do {                                                          \
-    gasnet_coll_gather_all(CURRENT_GASNET_TEAM, dst, src,       \
+    gasnet_coll_gather_all(current_gasnet_team(), dst, src,     \
                            bytes, UPCXX_GASNET_COLL_FLAG);      \
   } while (0)               

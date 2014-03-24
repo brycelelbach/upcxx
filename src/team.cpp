@@ -64,7 +64,8 @@ namespace upcxx
   {
     gasnet_hsl_lock(&team::_tid_lock);
     assert(my_team_seq < TEAM_ID_SEQ_MASK);
-    uint32_t new_tid = (GLOBAL_MYTHREAD << TEAM_ID_BITS) + my_team_seq++;
+    uint32_t new_tid =
+      (global_myrank() << TEAM_ID_BITS) + my_team_seq++;
     gasnet_hsl_unlock(&team::_tid_lock);
     return new_tid;
   }
