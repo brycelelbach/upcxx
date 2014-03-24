@@ -195,9 +195,24 @@ extern "C"
     return (q->head == NULL);
   }
 
-#define queue_enqueue queue_insert_head
-#define queue_dequeue queue_remove_tail
-#define queue_steal queue_remove_head
+// #define queue_enqueue queue_insert_head
+// #define queue_dequeue queue_remove_tail
+// #define queue_steal queue_remove_head
+
+  static inline void queue_enqueue(queue_t *q, void *data)
+  {
+    queue_insert_head(q, data);
+  }
+
+  static inline void *queue_dequeue(queue_t *q)
+  {
+    return queue_remove_tail(q);
+  }
+
+  static inline void *queue_steal(queue_t *q)
+  {
+    return queue_remove_head(q);
+  }
 
 } // end of extern "C"
 
