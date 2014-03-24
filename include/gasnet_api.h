@@ -56,7 +56,6 @@ enum am_index_t {
   INC_AM,   // active broadcast reply
 
   /* array_bulk.c */
-  gasneti_handleridx(misc_null_reply),
   gasneti_handleridx(misc_delete_request),
   gasneti_handleridx(misc_alloc_request),
   gasneti_handleridx(misc_alloc_reply),
@@ -68,10 +67,7 @@ enum am_index_t {
   gasneti_handleridx(sparse_simpleScatter_request),
   gasneti_handleridx(sparse_done_reply),
   gasneti_handleridx(sparse_generalScatter_request),
-  gasneti_handleridx(sparse_largeScatterNoDelete_request),
   gasneti_handleridx(sparse_simpleGather_request),
   gasneti_handleridx(sparse_simpleGather_reply),
   gasneti_handleridx(sparse_generalGather_request),
-  gasneti_handleridx(sparse_largeGather_request),
-  gasneti_handleridx(sparse_largeGather_reply),
 };
