@@ -5,12 +5,13 @@
 #pragma once
 
 #ifdef __COUNTER__
-#define UNIQUIFY(prefix) CONCAT_(prefix, __COUNTER__)
+#define UPCXX_UNIQUIFY(prefix) UPCXX_CONCAT_(prefix, __COUNTER__)
 #else
-#define UNIQUIFY(prefix) CONCAT_(prefix, __LINE__)
+#define UPCXX_UNIQUIFY(prefix) UPCXX_CONCAT_(prefix, __LINE__)
 #endif
 
-#define UNIQUIFYN(prefix, name) UNIQUIFY(prefix ## name ## _)
+#define UPCXX_UNIQUIFYN(prefix, name)           \
+  UPCXX_UNIQUIFY(prefix ## name ## _)
 
-#define CONCAT_(a, b) CONCAT__(a, b)
-#define CONCAT__(a, b)  a ## b
+#define UPCXX_CONCAT_(a, b) UPCXX_CONCAT__(a, b)
+#define UPCXX_CONCAT__(a, b)  a ## b

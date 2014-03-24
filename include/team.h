@@ -263,8 +263,8 @@ namespace upcxx
 extern upcxx::team team_all;
 
 // Dynamically scoped hierarchical team construct
-#define teamsplit(t) teamsplit_(UNIQUIFY(fs_), t)
-#define teamsplit_(name, t)                             \
+#define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
+#define UPCXX_teamsplit_(name, t)                       \
   for (ts_scope name(t); name.done == 0; name.done = 1)
 
 #define THREADS upcxx::ranks()
