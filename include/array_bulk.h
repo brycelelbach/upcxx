@@ -1,5 +1,4 @@
-#ifndef _include_newbulk_h_
-#define _include_newbulk_h_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,9 +58,3 @@ LONG_HANDLER_DECL(sparse_largeGather_reply, 1, 2);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
-
-#endif /* !_include_newbulk_h_ */
-
-
-
-
