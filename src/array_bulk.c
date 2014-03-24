@@ -152,14 +152,6 @@ typedef void *(*unpack_method_t)(void *, void *);
  * Miscellaneous handlers. *
  ***************************/
 
-GASNETT_INLINE(misc_null_reply)
-void misc_null_reply(gasnet_token_t token) {
-  return;
-}
-TIC_SHORT_HANDLER(misc_null_reply, 0, 0,
-              (token),
-              (token));
-/* ------------------------------------------------------------------------------------ */
 GASNETT_INLINE(misc_delete_request)
 void misc_delete_request(gasnet_token_t token, void *addr) {
   ti_free_handlersafe(addr);

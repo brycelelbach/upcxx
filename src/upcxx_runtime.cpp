@@ -56,7 +56,6 @@ namespace upcxx
     {INC_AM,                  (void (*)())inc_am_handler},
 
     /* array_bulk.c */
-    gasneti_handler_tableentry_with_bits(misc_null_reply),
     gasneti_handler_tableentry_with_bits(misc_delete_request),
     gasneti_handler_tableentry_with_bits(misc_alloc_request),
     gasneti_handler_tableentry_with_bits(misc_alloc_reply),

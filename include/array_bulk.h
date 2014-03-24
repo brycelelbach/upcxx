@@ -34,7 +34,6 @@ void sparse_gather(void *tgt_data_list, void **remote_addr_list,
 
 /* handler declarations */
 
-SHORT_HANDLER_DECL(misc_null_reply, 0, 0);
 SHORT_HANDLER_DECL(misc_delete_request, 1, 2);
 SHORT_HANDLER_DECL(misc_alloc_request, 2, 3);
 SHORT_HANDLER_DECL(misc_alloc_reply, 2, 4);
