@@ -110,36 +110,41 @@ void buffer_init(){
 }
 
 /*
-  in the case of preallocate buffer, return a pointer to the buffer of size datasz or greater for node remote_box
+  in the case of preallocate buffer, return a pointer to the buffer of
+  size datasz or greater for node remote_box
 */
-void *get_remote_buffer(int datasz, int remote_box){
+void *get_remote_buffer(size_t datasz, int remote_box){
   void * volatile remoteAllocBuf = NULL;
   struct Buffer *myBuffers = bufferArray[MYBOXPROC];
   struct Buffer *buffer = myBuffers+remote_box;
   
-  /* Allocate a buffer to hold the array data on the remote sideif there is no preallocated buffer of this size or greater. */
+  /* Allocate a buffer to hold the array data on the remote sideif
+     there is no preallocated buffer of this size or greater. */
   if (buffer->size >= datasz){
       remoteAllocBuf = buffer->ptr;
   }
   else if (buffer->size == -1){
-      SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			 datasz, PACK(&remoteAllocBuf)));
-      GASNET_BLOCKUNTIL(remoteAllocBuf);
-      assert((((uintptr_t)remoteAllocBuf) % sizeof(void *) == 0));
-      buffer->size = datasz;
-      buffer->ptr = remoteAllocBuf;
+    array_alloc_am_t am = { datasz, (void*)&remoteAllocBuf };
+    GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_ALLOC_AM,
+                                        &am, sizeof(am)));
+    GASNET_BLOCKUNTIL(remoteAllocBuf);
+    assert((((uintptr_t)remoteAllocBuf) % sizeof(void *) == 0));
+    buffer->size = datasz;
+    buffer->ptr = remoteAllocBuf;
   }
   else{
-      /* first delete old buffer that is too small */
-      SHORT_REQ(1,2,(remote_box, gasneti_handleridx(misc_delete_request), 
-			 PACK(buffer->ptr)));
-      /* allocate new buffer with size datasz */
-      SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			 datasz, PACK(&remoteAllocBuf)));
-      GASNET_BLOCKUNTIL(remoteAllocBuf);
-      assert((((uintptr_t)remoteAllocBuf) % sizeof(void *) == 0));
-      buffer->size = datasz;
-      buffer->ptr = remoteAllocBuf;
+    /* first delete old buffer that is too small */
+    array_delete_am_t am1 = { buffer->ptr };
+    GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_DELETE_AM,
+                                        &am1, sizeof(am1)));
+    /* allocate new buffer with size datasz */
+    array_alloc_am_t am2 = { datasz, (void*)&remoteAllocBuf };
+    GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_ALLOC_AM,
+                                        &am2, sizeof(am2)));
+    GASNET_BLOCKUNTIL(remoteAllocBuf);
+    assert((((uintptr_t)remoteAllocBuf) % sizeof(void *) == 0));
+    buffer->size = datasz;
+    buffer->ptr = remoteAllocBuf;
   }      
   return remoteAllocBuf;
 }
@@ -152,38 +157,45 @@ typedef void *(*unpack_method_t)(void *, void *);
  * Miscellaneous handlers. *
  ***************************/
 
-GASNETT_INLINE(misc_delete_request)
-void misc_delete_request(gasnet_token_t token, void *addr) {
-  ti_free_handlersafe(addr);
-}
-TIC_SHORT_HANDLER(misc_delete_request, 1, 2,
-              (token, UNPACK(a0)    ),
-              (token, UNPACK2(a0, a1)));
-/* ------------------------------------------------------------------------------------ */
-/* Size is in bytes. */
-GASNETT_INLINE(misc_alloc_request)
-void misc_alloc_request(gasnet_token_t token, size_t size, void *destptr) {
-  void *buf = ti_malloc_handlersafe(size);
-  if (!buf) {
-    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
-            size, "array alloc AM handler");
-    abort();
+  void array_delete_am(gasnet_token_t token, void *ambuf,
+                       size_t nbytes) {
+    assert(ambuf != NULL);
+    assert(nbytes == sizeof(array_delete_am_t));
+    array_delete_am_t *am = (array_delete_am_t *)ambuf;
+    void *addr = am->addr;
+    ti_free_handlersafe(addr);
   }
-  SHORT_REP(2,4,(token, gasneti_handleridx(misc_alloc_reply), 
-                   PACK(buf), PACK(destptr)));
-}
-TIC_SHORT_HANDLER(misc_alloc_request, 2, 3,
-              (token, a0, UNPACK(a1)    ),
-              (token, a0, UNPACK2(a1, a2)));
-/* ------------------------------------------------------------------------------------ */
-GASNETT_INLINE(misc_alloc_reply)
-void misc_alloc_reply(gasnet_token_t token, void *buf, void *destptr) {
-  void ** premoteAllocBuf = (void **)destptr;
-  (*premoteAllocBuf) = (void *)buf;
-}
-TIC_SHORT_HANDLER(misc_alloc_reply, 2, 4,
-              (token, UNPACK(a0),     UNPACK(a1)),
-              (token, UNPACK2(a0, a1), UNPACK2(a2, a3)));
+
+  void array_alloc_am(gasnet_token_t token, void *ambuf,
+                      size_t nbytes) {
+    assert(ambuf != NULL);
+    assert(nbytes == sizeof(array_alloc_am_t));
+    array_alloc_am_t *am = (array_alloc_am_t *)ambuf;
+    size_t size = am->size;
+    void *destptr = am->destptr;
+    void *buf = ti_malloc_handlersafe(size);
+    if (!buf) {
+      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+              size, "array alloc AM handler");
+      abort();
+    }
+    array_alloc_reply_t reply;
+    reply.buf = buf;
+    reply.destptr = destptr;
+    GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_ALLOC_REPLY,
+                                      &reply, sizeof(reply)));
+  }
+
+  void array_alloc_reply(gasnet_token_t token, void *ambuf,
+                         size_t nbytes) {
+    assert(ambuf != NULL);
+    assert(nbytes == sizeof(array_alloc_reply_t));
+    array_alloc_reply_t *reply = (array_alloc_reply_t *)ambuf;
+    void *buf = reply->buf;
+    void *destptr = reply->destptr;
+    void ** premoteAllocBuf = (void **)destptr;
+    (*premoteAllocBuf) = buf;
+  }
 /* ------------------------------------------------------------------------------------ *
  *  Rectangular strided copy
  * ------------------------------------------------------------------------------------ */
@@ -281,8 +293,9 @@ extern void get_array(void *pack_method, void *copy_desc, int copy_desc_size,
                  tgt_box, ((uint8_t *)info.remoteBuffer) + gasnet_AMMaxMedium(), 
                  info.dataSize - gasnet_AMMaxMedium());
     /* now tell remote to delete temp space */
-    SHORT_REQ(1,2,(tgt_box, gasneti_handleridx(misc_delete_request), 
-			PACK(info.remoteBuffer)));
+    array_delete_am_t am = { info.remoteBuffer };
+    GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_DELETE_AM,
+                                        &am, sizeof(am)));
   }
 }
 
@@ -389,8 +402,9 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
   else { /* Slow case. */
     /* Allocate a buffer to hold the array data on the remote side. */
     void * volatile remoteAllocBuf = NULL;
-    SHORT_REQ(2,3,(tgt_box, gasneti_handleridx(misc_alloc_request), 
-			array_data_size, PACK(&remoteAllocBuf)));
+    array_alloc_am_t am = { array_data_size, (void*)&remoteAllocBuf };
+    GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_ALLOC_AM,
+                                        &am, sizeof(am)));
     GASNET_BLOCKUNTIL(remoteAllocBuf);
     /* Transfer the data to the buffer with libtic. */
     gasnet_put_bulk(tgt_box, remoteAllocBuf, array_data, array_data_size);
@@ -551,8 +565,9 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
     }
     else{
       /* Allocate a buffer to hold the array data on the remote side. */
-      SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			 datasz, PACK(&remoteAllocBuf)));
+      array_alloc_am_t am = { datasz, (void*)&remoteAllocBuf };
+      GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_ALLOC_AM,
+                                          &am, sizeof(am)));
       GASNET_BLOCKUNTIL(remoteAllocBuf);
     }
 
@@ -877,8 +892,9 @@ void sparse_gather_serial(void *tgt_data_list, void **remote_addr_list,
     }
     else{
       /* Allocate a buffer to hold the array data on the remote side. */
-      SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			 datasz, PACK(&remoteAllocBuf)));
+      array_alloc_am_t am = { datasz, (void*)&remoteAllocBuf };
+      GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_ALLOC_AM,
+                                          &am, sizeof(am)));
       GASNET_BLOCKUNTIL(remoteAllocBuf);
     }
 
@@ -898,8 +914,9 @@ void sparse_gather_serial(void *tgt_data_list, void **remote_addr_list,
                  (int) (num_elem * elem_sz)); /* (does not handle gp escape) */
 
     if (datasz > tic_prealloc){
-      SHORT_REQ(1,2,(remote_box, gasneti_handleridx(misc_delete_request), 
-			 PACK(remoteAllocBuf)));
+      array_delete_am_t am = { remoteAllocBuf };
+      GASNET_SAFE(gasnet_AMRequestMedium0(remote_box, ARRAY_DELETE_AM,
+                                          &am, sizeof(am)));
     }
   }
 }

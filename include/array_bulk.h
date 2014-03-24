@@ -33,10 +33,18 @@ void sparse_gather(void *tgt_data_list, void **remote_addr_list,
 
 
 /* handler declarations */
+  typedef struct { void *addr; } array_delete_am_t;
+  void array_delete_am(gasnet_token_t token, void *ambuf,
+                       size_t nbytes);
 
-SHORT_HANDLER_DECL(misc_delete_request, 1, 2);
-SHORT_HANDLER_DECL(misc_alloc_request, 2, 3);
-SHORT_HANDLER_DECL(misc_alloc_reply, 2, 4);
+  /* size is in bytes. */
+  typedef struct { size_t size; void *destptr; } array_alloc_am_t;
+  void array_alloc_am(gasnet_token_t token, void *ambuf,
+                      size_t nbytes);
+
+  typedef struct { void *buf; void *destptr; } array_alloc_reply_t;
+  void array_alloc_reply(gasnet_token_t token, void *ambuf,
+                         size_t nbytes);
 
 MEDIUM_HANDLER_DECL(strided_pack_request, 4, 7);
 MEDIUM_HANDLER_DECL(strided_pack_reply, 4, 7);
