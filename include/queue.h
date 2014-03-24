@@ -1,3 +1,5 @@
+#pragma once
+
 /* queue.h -- implementation of a general doubly-linked queue (list)
  *
  * Note: this queue implementation is not thread-safe so queue
@@ -5,9 +7,6 @@
  * multi-threaded environment.
  *
  */
-
-#ifndef QUEUE_H_
-#define QUEUE_H_
 
 /// \cond SHOW_INTERNAL
 
@@ -204,5 +203,3 @@ extern "C"
 
 
 /// \endcond
-
-#endif /* QUEUE_H_ */

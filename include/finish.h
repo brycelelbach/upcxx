@@ -1,5 +1,4 @@
-#ifndef FINISH_H_
-#define FINISH_H_
+#pragma once
 
 #include "event.h"
 #include "utils.h"
@@ -28,5 +27,3 @@ namespace upcxx {
 /* #define new_async(x) async(x, &_fs.e) */
 
 }
-
-#endif

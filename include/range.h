@@ -1,5 +1,4 @@
-#ifndef upcxx_range_h
-#define upcxx_range_h
+#pragma once
 
 #include <assert.h>
 
@@ -96,5 +95,3 @@ namespace upcxx
   }
   
 } // end of namespace 
-
-#endif

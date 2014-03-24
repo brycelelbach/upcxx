@@ -1,9 +1,8 @@
+#pragma once
+
 /**
  * gasnet_api.h - export the GASNet C API to C++ programs
  */
-
-#ifndef GASNET_API_H_
-#define GASNET_API_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -76,5 +75,3 @@ enum am_index_t {
   gasneti_handleridx(sparse_largeGather_request),
   gasneti_handleridx(sparse_largeGather_reply),
 };
-
-#endif // GASNET_API_H_
