@@ -307,12 +307,12 @@ namespace upcxx
 
   inline void async_copy_fence()
   {
-    peek_event()->wait();
+    gasnet_wait_syncnbi_all();
   }
 
   inline int async_copy_try()
   {
-    return peek_event()->test();
+    return gasnet_try_syncnbi_all();
   }
 
   /**

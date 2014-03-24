@@ -27,34 +27,30 @@ int upcxx::async_copy(global_ptr<void> src,
                       size_t nbytes,
                       event *e)
 {
-  if (e == NULL) {
-    // error: now must always pass event
-    fprintf(stderr,
-            "async_copy error: event must not be NULL.\n");
-  } else {
+
+  if (!dst.where().islocal() && !src.where().islocal()) {
+    fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
+    exit(1);
+  }
+  if (e == &default_event) {
+    // use implicit non-blocking copy for the global scope,
+    // need to call gasnet_wait_syncnbi_all() to synchronize later
+    if (dst.where().islocal()) {
+      gasnet_get_nbi_bulk(dst.raw_ptr(), src.where().id(), src.raw_ptr(), nbytes);
+    } else { // src.where().islocal() == true
+      gasnet_put_nbi_bulk(dst.where().id(), dst.raw_ptr(), src.raw_ptr(), nbytes);
+    }
+  } else { // e != &default_event)
     // explicit non-blocking copy, need event->wait()/test() to
     // synchronize later
     outstanding_events.push_back(e);
+    gasnet_handle_t h;
     if (dst.where().islocal()) {
-      gasnet_handle_t h;
-      h = gasnet_get_nb_bulk(dst.raw_ptr(),
-                             src.where().node_id(),
-                             src.raw_ptr(),
-                             nbytes);
-      e->sethandle(h);
-    } else if (src.where().islocal()) {
-      gasnet_handle_t h;
-      h = gasnet_put_nb_bulk(dst.where().node_id(),
-                             dst.raw_ptr(),
-                             src.raw_ptr(),
-                             nbytes);
-      e->sethandle(h);
-    } else {
-      // Not implemented
-      fprintf(stderr,
-              "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
-      exit(1);
+      h = gasnet_get_nb_bulk(dst.raw_ptr(), src.where().id(), src.raw_ptr(), nbytes);
+    } else { // src.where().islocal() == true
+      h = gasnet_put_nb_bulk(dst.where().id(), dst.raw_ptr(), src.raw_ptr(), nbytes);
     }
+    e->add_handle(h);
   }
   return UPCXX_SUCCESS;
 }

@@ -1,26 +1,25 @@
 #default build suggestion of MPI + OPENMP with gcc on Livermore machines you might have to change the compiler name
 
 SHELL = /bin/sh
-.SUFFIXES: .cc .o
+#.SUFFIXES: .cc .o
+
+.PHONY: all clean 
 
 #LULESH_EXEC = lulesh2.0 # lulesh2.0-upcxx
-LULESH_EXEC = lulesh2.0-upcxx
+LULESH_EXEC = lulesh2.0-upcxx lulesh2.0-mpi lulesh2.0
 all: $(LULESH_EXEC)
 
-TOPDIR=../..
-include $(TOPDIR)/upcxx.mak
+UPCXX_INSTALL_DIR ?= $(HOME)/upcxx_install
+include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
+
+VPATH=$(UPCXX_INSTALL_DIR)/include
 
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-SERCXX = icpc # -DUSE_MPI=0
-#SERCXX = clang++ -DUSE_MPI=0
-#MPICXX = mpiicpc -mmic -openmp 
-#MPICXX = mpiicpc -fopenmp
-MPICXX = $(MPI_PATH)/mpicxx
-#CXX = $(MPICXX) -DUSE_MPI=1 -DUSE_UPCXX=0
-CXX = $(MPICXX) -DUSE_MPI=0 -DUSE_UPCXX=1 -DUSE_OMP=1
-LIBS += -L $(BUILDDIR)/ -lupcxx 
+CXX = icpc -fast -DUSE_OMP=1 -fopenmp 
+MPICXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
+UPCXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
 
 SOURCES2.0 = \
 	lulesh.cc \
@@ -28,8 +27,15 @@ SOURCES2.0 = \
 	lulesh-viz.cc \
 	lulesh-util.cc \
 	lulesh-init.cc 
-  # lulesh-comm-upcxx.cc 
 OBJECTS2.0 = $(SOURCES2.0:.cc=.o)
+
+SOURCES2.0MPI = \
+	lulesh.cc \
+	lulesh-comm.cc \
+	lulesh-viz.cc \
+	lulesh-util.cc \
+	lulesh-init.cc 
+OBJECTS2.0MPI = $(SOURCES2.0MPI:.cc=.mpi.o)
 
 SOURCES2.0UPCXX = \
 	lulesh.cc \
@@ -37,8 +43,7 @@ SOURCES2.0UPCXX = \
 	lulesh-viz.cc \
 	lulesh-util.cc \
 	lulesh-init.cc 
-OBJECTS2.0UPCXX = $(SOURCES2.0UPCXX:.cc=.o)
-
+OBJECTS2.0UPCXX = $(SOURCES2.0UPCXX:.cc=.upcxx.o)
 
 ## -wd161 disable the openmp pragma warnings by Intel compilers
 #OMP_FLAG = -wd161 #-fopenmp
@@ -55,18 +60,29 @@ OBJECTS2.0UPCXX = $(SOURCES2.0UPCXX:.cc=.o)
 #CXXFLAGS = -g -openmp -DVIZ_MESH -I${SILO_INCDIR} -Wall -Wno-pragmas
 #LDFLAGS = -g -L${SILO_LIBDIR} -Wl,-rpath -Wl,${SILO_LIBDIR} -lsiloh5 -lhdf5
 
-.cc.o: lulesh.h
+%.o: %.cc lulesh.h
 	@echo "Building $<"
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	$(CXX) -c -DUSE_MPI=0 -DUSE_UPCXX=0 $(CXXFLAGS) -o $@ $<
 
-lulesh2.0: $(OBJECTS2.0)
+%.mpi.o: %.cc lulesh.h
+	@echo "Building $<"
+	$(MPICXX) -c -DUSE_MPI=1 -DUSE_UPCXX=0 $(CXXFLAGS) -o $@ $<
+
+%.upcxx.o: %.cc lulesh.h
+	@echo "Building $<"
+	$(UPCXX) -c -DUSE_MPI=0 -DUSE_UPCXX=1 $(CXXFLAGS) $(UPCXX_CXXFLAGS) -o $@ $<
+
+lulesh2.0: $(OBJECTS2.0) 
 	@echo "Linking"
-	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
+	$(CXX) $(LDFLAGS) $(OBJECTS2.0) -lm -o $@
 
-lulesh2.0-upcxx: $(OBJECTS2.0UPCXX)  $(UPCXX_LIB)
+lulesh2.0-mpi: $(OBJECTS2.0MPI) 
 	@echo "Linking"
-	$(CXX) $(OBJECTS2.0UPCXX) $(LDFLAGS) -lm $(LIBS) -o $@
+	$(MPICXX) $(LDFLAGS) $(OBJECTS2.0MPI) -lm -o $@
 
+lulesh2.0-upcxx: $(OBJECTS2.0UPCXX)
+	@echo "Linking"
+	$(UPCXX) $(LDFLAGS) $(UPCXX_LDFLAGS) $(OBJECTS2.0UPCXX) -o $@ -lm $(LIBS) $(UPCXX_LDLIBS)
 
 clean:
 	/bin/rm -f *.o *~ $(OBJECTS) $(LULESH_EXEC)
