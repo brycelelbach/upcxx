@@ -299,25 +299,12 @@ namespace upcxx
     template<typename Function>
     inline void operator()(Function kernel)
     {
-#if 0 && defined(USE_CXX11) // AK: this is broken
-      typedef decltype(kernel()) return_t;
-      if (aux_type_size<return_t>() == 0) {
-        launch((generic_fp)kernel, (void *)NULL, (size_t)0);
-      } else {
-        // YZ: !! Need to figure out how/where to store the return value
-        return_t _rv; // AK: problem if this is void
-        launch((generic_fp)kernel, (void *)NULL, (size_t)0,
-               _rv, sizeof(_rv));
-      }
-#else
       launch((generic_fp)kernel, (void *)NULL, (size_t)0);
-#endif
     }
 
     typedef void (*K1s)(group);
     inline void operator()(K1s kernel)
     {
-      // printf("Running kernel with a streaming_group\n");
       group g(_g.size(), _g.index());
       generic_arg1<K1s, group> args(kernel, g);
       launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));

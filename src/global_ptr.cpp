@@ -28,19 +28,9 @@ int upcxx::async_copy(global_ptr<void> src,
                       event *e)
 {
   if (e == NULL) {
-    // implicit non-blocking copy, need async_fence() to
-    // synchronize later
-    if (dst.where().islocal()) {
-      gasnet_get_nbi_bulk(dst.raw_ptr(), src.where().node_id(),
-                          src.raw_ptr(), nbytes);
-    } else if (src.where().islocal()) {
-      gasnet_put_nbi_bulk(dst.where().node_id(), dst.raw_ptr(),
-                          src.raw_ptr(), nbytes);
-    } else {
-      fprintf(stderr,
-              "memcpy_nb error: either the src pointer or the dst ptr needs to be local.\n");
-      exit(1);
-    }
+    // error: now must always pass event
+    fprintf(stderr,
+            "async_copy error: event must not be NULL.\n");
   } else {
     // explicit non-blocking copy, need event->wait()/test() to
     // synchronize later
@@ -62,39 +52,11 @@ int upcxx::async_copy(global_ptr<void> src,
     } else {
       // Not implemented
       fprintf(stderr,
-              "memcpy_nb error: either the src pointer or the dst ptr needs to be local.\n");
+              "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
       exit(1);
     }
   }
   return UPCXX_SUCCESS;
-}
-
-gasnet_handle_t upcxx::async_copy2(global_ptr<void> src,
-                                   global_ptr<void> dst,
-                                   size_t nbytes)
-{
-  // explicit non-blocking copy, need event->wait()/test() to
-  // synchronize later
-  gasnet_handle_t h;
-  if (dst.where().islocal()) {
-    h = gasnet_get_nb_bulk(dst.raw_ptr(),
-                           src.where().node_id(),
-                           src.raw_ptr(),
-                           nbytes);
-    
-  } else if (src.where().islocal()) {
-    h = gasnet_put_nb_bulk(dst.where().node_id(),
-                           dst.raw_ptr(),
-                           src.raw_ptr(),
-                           nbytes);
-    
-  } else {
-    // Not implemented
-    fprintf(stderr,
-            "copy_nb error: either the src pointer or the dst ptr needs to be local.\n");
-    exit(1);
-  }
-  return h;
 }
 
 
