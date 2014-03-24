@@ -1,8 +1,8 @@
 #pragma once
 
-#define HAVE_GASNET_TOOLS
-#define MEMORY_DISTRIBUTED
-#define COMM_AM2
+#define UPCXXA_HAVE_GASNET_TOOLS
+#define UPCXXA_MEMORY_DISTRIBUTED
+#define UPCXXA_COMM_AM2
 #ifdef USE_CXX11
 # define UPCXXA_USE_CXX11
 #endif
