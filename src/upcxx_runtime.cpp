@@ -68,12 +68,9 @@ namespace upcxx
     gasneti_handler_tableentry_with_bits(sparse_simpleScatter_request),
     gasneti_handler_tableentry_with_bits(sparse_done_reply),
     gasneti_handler_tableentry_with_bits(sparse_generalScatter_request),
-    gasneti_handler_tableentry_with_bits(sparse_largeScatterNoDelete_request),
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_request),
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_reply),
     gasneti_handler_tableentry_with_bits(sparse_generalGather_request),
-    gasneti_handler_tableentry_with_bits(sparse_largeGather_request),
-    gasneti_handler_tableentry_with_bits(sparse_largeGather_reply)
   };
 
   int *gpu_id_map;

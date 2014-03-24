@@ -775,52 +775,6 @@ TIC_SHORT_HANDLER(sparse_generalScatter_request, 4, 6,
   (token, UNPACK(a0),     a1, a2, UNPACK(a3)    ),
   (token, UNPACK2(a0, a1), a2, a3, UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
-GASNETT_INLINE(sparse_largeScatterNoDelete_request)
-void sparse_largeScatterNoDelete_request(gasnet_token_t token, void *addr_data_list, size_t addr_data_list_size, int num_elem, int elem_sz, void *_done_ctr){
-  int i;
-  void **addr_list = (void**)addr_data_list;
-  int offset = num_elem * sizeof(void *);
-  char *data = ((char*)addr_data_list) + offset;
-  FAST_UNPACK(elem_sz, data, addr_list);
-  SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply), PACK(_done_ctr)));
-} 
-TIC_LONG_HANDLER(sparse_largeScatterNoDelete_request, 3, 4,
-  (token,addr,nbytes, a0, a1, UNPACK(a2)),
-  (token,addr,nbytes, a0, a1, UNPACK2(a2, a3)));
-/* ------------------------------------------------------------------------------------ */
-GASNETT_INLINE(sparse_largeGather_request)
-void sparse_largeGather_request(gasnet_token_t token, void *_addr_list, size_t addr_list_size,
-				int num_elem, int elem_sz, 
-				void *_tgt_data_list, void *_done_ctr,
-				int atomic_elements) {
-  int i;
-  void **addr_list = (void**)_addr_list;
-  int datasz = num_elem * elem_sz;
-  int offset = num_elem * sizeof(void *);
-  char *data = ((char*)_addr_list) + offset;
-  
-  assert(addr_list_size == sizeof(void *)*num_elem);
- 
-  FAST_PACK(elem_sz, data, addr_list);
-  LONG_REP(1,2,(token, 
-                gasneti_handleridx(sparse_largeGather_reply), data, datasz,
-                (void *)(uintptr_t)(((char*)_tgt_data_list)),
-                PACK(_done_ctr)));  
-} 
-TIC_LONG_HANDLER(sparse_largeGather_request, 5, 7,
-  (token,addr,nbytes, a0, a1, UNPACK(a2),     UNPACK(a3),     a4),
-  (token,addr,nbytes, a0, a1, UNPACK2(a2, a3), UNPACK2(a4, a5), a6));
-/* ------------------------------------------------------------------------------------ */
-GASNETT_INLINE(sparse_largeGather_reply)
-void sparse_largeGather_reply(gasnet_token_t token, void *data_list, size_t data_list_size,
-			      void *_done_ctr){
-  int *done_ctr = (int *)_done_ctr;
-  *done_ctr = 1;
-}
-TIC_LONG_HANDLER(sparse_largeGather_reply, 1, 2,
-  (token,addr,nbytes, UNPACK(a0)    ),
-  (token,addr,nbytes, UNPACK2(a0, a1)));
-/* ------------------------------------------------------------------------------------ */
 extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list, 
 				   int remote_box, size_t num_elem, size_t elem_sz, int atomic_elements) {
   volatile int done_ctr = 0;
