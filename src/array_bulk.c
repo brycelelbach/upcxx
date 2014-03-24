@@ -5,6 +5,8 @@
 #include <portable_inttypes.h>
 #include "allocate.h"
 
+#undef GASNET_SAFE
+#define GASNET_SAFE(foo) foo
 /* No multithreading support for now */
 #define BOXES       gasnet_nodes() /* TODO: use UPC++ global_machine.node_count() */
 #define MYBOXPROCS  1              /* TODO: use UPC++ my_node.processor_count() */
@@ -157,45 +159,45 @@ typedef void *(*unpack_method_t)(void *, void *);
  * Miscellaneous handlers. *
  ***************************/
 
-  void array_delete_am(gasnet_token_t token, void *ambuf,
+void array_delete_am(gasnet_token_t token, void *ambuf,
+                     size_t nbytes) {
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_delete_am_t));
+  array_delete_am_t *am = (array_delete_am_t *)ambuf;
+  void *addr = am->addr;
+  ti_free_handlersafe(addr);
+}
+
+void array_alloc_am(gasnet_token_t token, void *ambuf,
+                    size_t nbytes) {
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_alloc_am_t));
+  array_alloc_am_t *am = (array_alloc_am_t *)ambuf;
+  size_t size = am->size;
+  void *destptr = am->destptr;
+  void *buf = ti_malloc_handlersafe(size);
+  if (!buf) {
+    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+            size, "array alloc AM handler");
+    abort();
+  }
+  array_alloc_reply_t reply;
+  reply.buf = buf;
+  reply.destptr = destptr;
+  GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_ALLOC_REPLY,
+                                    &reply, sizeof(reply)));
+}
+
+void array_alloc_reply(gasnet_token_t token, void *ambuf,
                        size_t nbytes) {
-    assert(ambuf != NULL);
-    assert(nbytes == sizeof(array_delete_am_t));
-    array_delete_am_t *am = (array_delete_am_t *)ambuf;
-    void *addr = am->addr;
-    ti_free_handlersafe(addr);
-  }
-
-  void array_alloc_am(gasnet_token_t token, void *ambuf,
-                      size_t nbytes) {
-    assert(ambuf != NULL);
-    assert(nbytes == sizeof(array_alloc_am_t));
-    array_alloc_am_t *am = (array_alloc_am_t *)ambuf;
-    size_t size = am->size;
-    void *destptr = am->destptr;
-    void *buf = ti_malloc_handlersafe(size);
-    if (!buf) {
-      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
-              size, "array alloc AM handler");
-      abort();
-    }
-    array_alloc_reply_t reply;
-    reply.buf = buf;
-    reply.destptr = destptr;
-    GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_ALLOC_REPLY,
-                                      &reply, sizeof(reply)));
-  }
-
-  void array_alloc_reply(gasnet_token_t token, void *ambuf,
-                         size_t nbytes) {
-    assert(ambuf != NULL);
-    assert(nbytes == sizeof(array_alloc_reply_t));
-    array_alloc_reply_t *reply = (array_alloc_reply_t *)ambuf;
-    void *buf = reply->buf;
-    void *destptr = reply->destptr;
-    void ** premoteAllocBuf = (void **)destptr;
-    (*premoteAllocBuf) = buf;
-  }
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_alloc_reply_t));
+  array_alloc_reply_t *reply = (array_alloc_reply_t *)ambuf;
+  void *buf = reply->buf;
+  void *destptr = reply->destptr;
+  void ** premoteAllocBuf = (void **)destptr;
+  (*premoteAllocBuf) = buf;
+}
 /* ------------------------------------------------------------------------------------ *
  *  Rectangular strided copy
  * ------------------------------------------------------------------------------------ */
@@ -203,25 +205,38 @@ typedef void *(*unpack_method_t)(void *, void *);
  * Get an array from a remote node. *
  ***********************************/
 
-/* Call _packMethod to pack the array with copy_desc as its "copy descriptor",
-   returning the packed data to remote address remoteBuffer. */
-GASNETT_INLINE(strided_pack_request)
-void strided_pack_request(gasnet_token_t token, void *copy_desc, size_t copy_desc_size,
-			void *_packMethod, void *remoteBuffer, void *pack_info_ptr, 
-			int atomicelements) {
+/* Call _packMethod to pack the array with copy_desc as its "copy
+   descriptor", returning the packed data to remote address
+   remoteBuffer. */
+void array_strided_pack_am(gasnet_token_t token, void *ambuf,
+                           size_t nbytes) {
+  printf("array_strided_pack_am on %d\n", gasnet_mynode());
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_strided_pack_am_t));
+  array_strided_pack_am_t *am = (array_strided_pack_am_t *) ambuf;
+  void *copy_desc = am->copy_desc;
+  size_t copy_desc_size = am->copy_desc_size;
+  void *_packMethod = am->_packMethod;
+  void *remoteBuffer = am->remoteBuffer;
+  void *pack_info_ptr = am->pack_info_ptr;
+  int atomicelements = am->atomicelements;
+
   size_t array_data_len;
   void *array_data;
   pack_method_t packMethod = (pack_method_t)_packMethod;
-  /* A NULL buffer pointer tells the packer to allocate its own buffer. 
-   * (void*)-1 tells it to use handlersafe, uncollectable memory so it doesn't disappear on us
+  /* A NULL buffer pointer tells the packer to allocate its own
+   * buffer. (void*)-1 tells it to use handlersafe, uncollectable
+   * memory so it doesn't disappear on us
    */
   array_data = (*packMethod)(copy_desc, &array_data_len, (void*)-1);
 
   if (array_data_len <= gasnet_AMMaxMedium()) {
     /* Common, fast case. Send back the packed data with the reply. */
-    MEDIUM_REP(4,7,(token, gasneti_handleridx(strided_pack_reply), array_data, array_data_len, 
-                      PACK(remoteBuffer), PACK(0), 
-                      0, PACK(pack_info_ptr)));
+    array_strided_pack_reply_t reply1 = {
+      array_data, array_data_len, remoteBuffer, NULL, 0, pack_info_ptr
+    };
+    GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_PACK_REPLY,
+                                      &reply1, sizeof(reply1)));
     ti_free_handlersafe(array_data);
   }
   else {
@@ -229,31 +244,41 @@ void strided_pack_request(gasnet_token_t token, void *copy_desc, size_t copy_des
     gasnett_local_wmb(); /* ensure data is committed before signalling initiator to pull data */
 #endif
     /* Slower case. Why doesn't the darned AM_ReplyXfer() work? */
-    MEDIUM_REP(4,7,(token, gasneti_handleridx(strided_pack_reply), array_data, gasnet_AMMaxMedium(), 
-                       PACK(remoteBuffer), PACK(array_data), 
-		       array_data_len, PACK(pack_info_ptr)));
+    array_strided_pack_reply_t reply2 = {
+      array_data, gasnet_AMMaxMedium(), remoteBuffer, array_data,
+      array_data_len, pack_info_ptr
+    };
+    GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_PACK_REPLY,
+                                      &reply2, sizeof(reply2)));
   }
 }
-TIC_MEDIUM_HANDLER(strided_pack_request, 4, 7,
-  (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     UNPACK(a2),     a3),
-  (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5), a6));
-
 /* ------------------------------------------------------------------------------------ */
-/* The reply handler needs to pass this information back to the caller. */
+/* The reply handler needs to pass this information back to the
+   caller. */
 typedef struct {
   volatile int pack_spin; /* 0 while waiting, 1 if completed, 2 if using fragmentation */
   void * volatile remoteBuffer;  
   volatile size_t dataSize;  
 } pack_return_info_t;
 
-/* Sets the spin flag to 1 if the array fit in the message reply and we're
-   done; otherwise it sets the spinlock variable to be the remote address 
-   of the packed data, which must be sent over with a libtic bulk 
-   transfer. */
-GASNETT_INLINE(strided_pack_reply)
-void strided_pack_reply(gasnet_token_t token, void *array_data, size_t array_data_size, 
-                             void *localBuffer, void *remoteBuf, 
-                             int dataSz, void *pack_info_ptr) {
+/* Sets the spin flag to 1 if the array fit in the message reply and
+   we're done; otherwise it sets the spinlock variable to be the
+   remote address of the packed data, which must be sent over with a
+   libtic bulk transfer. */
+void array_strided_pack_reply(gasnet_token_t token, void *ambuf,
+                              size_t nbytes) {
+  printf("array_strided_pack_reply on %d\n", gasnet_mynode());
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_strided_pack_reply_t));
+  array_strided_pack_reply_t *am =
+    (array_strided_pack_reply_t *) ambuf;
+  void *array_data = am->array_data;
+  size_t array_data_size = am->array_data_size;
+  void *localBuffer = am->localBuffer;
+  void *remoteBuf = am->remoteBuf;
+  size_t dataSz = am->dataSz;
+  void *pack_info_ptr = am->pack_info_ptr;
+
   int moreWaiting = (remoteBuf != 0 && dataSz != 0);
   pack_return_info_t* pinfo = (pack_return_info_t*)pack_info_ptr;
   memcpy((void *)localBuffer, array_data, array_data_size);
@@ -269,33 +294,36 @@ void strided_pack_reply(gasnet_token_t token, void *array_data, size_t array_dat
     pinfo->pack_spin = 2;
   }
 }
-TIC_MEDIUM_HANDLER(strided_pack_reply, 4, 7,
-  (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     a2, UNPACK(a3)    ),
-  (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), a4, UNPACK2(a5, a6)));
 /* ------------------------------------------------------------------------------------ */
-extern void get_array(void *pack_method, void *copy_desc, int copy_desc_size, 
-	              int tgt_box, void *buffer, int atomicelements) {
+extern void get_array(void *pack_method, void *copy_desc,
+                      size_t copy_desc_size, int tgt_box,
+                      void *buffer, int atomicelements) {
   pack_return_info_t info;
   info.pack_spin = 0;
   /* A copy_desc is an object that contains the array descriptor. */
-  assert(copy_desc && copy_desc_size > 0 && copy_desc_size <= gasnet_AMMaxMedium());
-  MEDIUM_REQ(4,7,(tgt_box, gasneti_handleridx(strided_pack_request), 
-		       copy_desc, copy_desc_size, 
-                       PACK(TIC_TRANSLATE_FUNCTION_ADDR(pack_method,tgt_box)), 
-		       PACK(buffer), 
-                       PACK(&info), atomicelements));
+  assert(copy_desc && copy_desc_size > 0 &&
+         copy_desc_size <= gasnet_AMMaxMedium());
+  array_strided_pack_am_t am1 = {
+    copy_desc, copy_desc_size,
+    TIC_TRANSLATE_FUNCTION_ADDR(pack_method, tgt_box),
+    buffer, &info, atomicelements
+  };
+  GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_PACK_AM,
+                                      &am1, sizeof(am1)));
   GASNET_BLOCKUNTIL(info.pack_spin);
   /* If the data was too big to be sent in the reply, use a Tic call
      to do the job. */
   if (info.pack_spin != 1) {
-    /* pull the data to use using a bulk copy (first fragment has already been copied) */
+    /* pull the data to use using a bulk copy (first fragment has
+       already been copied) */
     gasnet_get_bulk((void *)((uintptr_t)buffer+gasnet_AMMaxMedium()), 
-                 tgt_box, ((uint8_t *)info.remoteBuffer) + gasnet_AMMaxMedium(), 
-                 info.dataSize - gasnet_AMMaxMedium());
+                    tgt_box, ((uint8_t *)info.remoteBuffer) +
+                    gasnet_AMMaxMedium(),
+                    info.dataSize - gasnet_AMMaxMedium());
     /* now tell remote to delete temp space */
-    array_delete_am_t am = { info.remoteBuffer };
+    array_delete_am_t am2 = { info.remoteBuffer };
     GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_DELETE_AM,
-                                        &am, sizeof(am)));
+                                        &am2, sizeof(am2)));
   }
 }
 
@@ -304,10 +332,21 @@ extern void get_array(void *pack_method, void *copy_desc, int copy_desc_size,
  * Write an array to a remote node. *
  ***********************************/
 
-/* The fastest way of doing things....take the data given and unpack it. */
-GASNETT_INLINE(strided_unpackAll_request)
-void strided_unpackAll_request(gasnet_token_t token, void *packedArrayData, size_t nBytes, 
-		   void *_unpackMethod, int copyDescSize, void *unpack_spin_ptr) {
+/* The fastest way of doing things....take the data given and unpack
+   it. */
+void array_strided_unpackAll_am(gasnet_token_t token, void *ambuf,
+                                size_t nbytes) {
+  printf("array_strided_unpackAll_am on %d\n", gasnet_mynode());
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_strided_unpackAll_am_t));
+  array_strided_unpackAll_am_t *am =
+    (array_strided_unpackAll_am_t *) ambuf;
+  void *packedArrayData = am->packedArrayData;
+  size_t nBytes = am->nBytes;
+  void *_unpackMethod = am->_unpackMethod;
+  size_t copyDescSize = am->copyDescSize;
+  void *unpack_spin_ptr = am->unpack_spin_ptr;
+
  void *temp = NULL;
  if (((uintptr_t)packedArrayData) % 8 != 0) {
    /* it seems that some crappy AM implementations (ahem.. the NOW)
@@ -326,50 +365,66 @@ void strided_unpackAll_request(gasnet_token_t token, void *packedArrayData, size
  {
    unpack_method_t unpackMethod = (unpack_method_t)_unpackMethod;
    void *copyDesc = packedArrayData;
-   void *arrayData = (void *)((uintptr_t)packedArrayData + copyDescSize);
-   assert(((uintptr_t)copyDesc) % 8 == 0 && ((uintptr_t)arrayData) % 8 == 0);
+   void *arrayData =
+     (void *)((uintptr_t)packedArrayData + copyDescSize);
+   assert(((uintptr_t)copyDesc) % 8 == 0 &&
+          ((uintptr_t)arrayData) % 8 == 0);
    (*unpackMethod)(copyDesc, arrayData);
 #if 0
    gasnett_local_wmb(); /* ensure data is committed before signalling completion */
 #endif
-   SHORT_REP(1,2,(token, gasneti_handleridx(strided_unpack_reply), PACK(unpack_spin_ptr)));
+  array_strided_unpack_reply_t reply = { unpack_spin_ptr };
+  GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_UNPACK_REPLY,
+                                    &reply, sizeof(reply)));
  }
  if (temp) ti_free_handlersafe(temp);
 }
-TIC_MEDIUM_HANDLER(strided_unpackAll_request, 3, 5,
-  (token,addr,nbytes, UNPACK(a0),     a1, UNPACK(a2)    ),
-  (token,addr,nbytes, UNPACK2(a0, a1), a2, UNPACK2(a3, a4)));
 /* ------------------------------------------------------------------------------------ */
-GASNETT_INLINE(strided_unpack_reply)
-void strided_unpack_reply(gasnet_token_t token, void *unpack_spin_ptr) {
+void array_strided_unpack_reply(gasnet_token_t token, void *ambuf,
+                                size_t nbytes) {
+  printf("array_strided_unpack_reply on %d\n", gasnet_mynode());
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_strided_unpack_reply_t));
+  array_strided_unpack_reply_t *am =
+    (array_strided_unpack_reply_t *) ambuf;
+  void *unpack_spin_ptr = am->unpack_spin_ptr;
+
   int *punpack_spin = (int *)unpack_spin_ptr;
   *(punpack_spin) = 1;
 }
-TIC_SHORT_HANDLER(strided_unpack_reply, 1, 2,
-              (token, UNPACK(a0)    ),
-              (token, UNPACK2(a0, a1)));
 /* ------------------------------------------------------------------------------------ */
-/* The data was provided by previous calls; just unpack it with the given
-   descriptor. */
-GASNETT_INLINE(strided_unpackOnly_request)
-void strided_unpackOnly_request(gasnet_token_t token, void *copyDesc, size_t copyDescSize,
-			      void *bufAddr, void *_unpackMethod, void *unpack_spin_ptr) {
+/* The data was provided by previous calls; just unpack it with the
+   given descriptor. */
+void array_strided_unpackOnly_am(gasnet_token_t token, void *ambuf,
+                                 size_t nbytes) {
+  printf("array_strided_unpackOnly_am on %d\n", gasnet_mynode());
+  assert(ambuf != NULL);
+  assert(nbytes == sizeof(array_strided_unpackOnly_am_t));
+  array_strided_unpackOnly_am_t *am =
+    (array_strided_unpackOnly_am_t *) ambuf;
+  void *copyDesc = am->copyDesc;
+  size_t copyDescSize = am->copyDescSize;
+  void *bufAddr = am->bufAddr;
+  void *_unpackMethod = am->_unpackMethod;
+  void *unpack_spin_ptr = am->unpack_spin_ptr;
+
   unpack_method_t unpackMethod = (unpack_method_t)_unpackMethod;
   (*unpackMethod)(copyDesc, (void *)bufAddr);
   ti_free_handlersafe((void *)bufAddr);
 #if 0
   gasnett_local_wmb(); /* ensure data is committed before signalling completion */
 #endif
-  SHORT_REP(1,2,(token, gasneti_handleridx(strided_unpack_reply), PACK(unpack_spin_ptr)));
+  array_strided_unpack_reply_t reply = { unpack_spin_ptr };
+  GASNET_SAFE(gasnet_AMReplyMedium0(token, ARRAY_UNPACK_REPLY,
+                                    &reply, sizeof(reply)));
 }
-TIC_MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
-  (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     UNPACK(a2)    ),
-  (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
-/* Send a contiguous array of data to a node, and have it get unpacked into
-   a Titanium array. */
-extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
-                      void *array_data, size_t array_data_size, int tgt_box) {
+/* Send a contiguous array of data to a node, and have it get unpacked
+   into a Titanium array. */
+extern void put_array(void *unpack_method, void *copy_desc,
+                      size_t copy_desc_size,
+                      void *array_data, size_t array_data_size,
+                      int tgt_box) {
   void *data;
   /* ensure double-word alignment for array data */
   size_t copy_desc_size_padded = ((copy_desc_size-1)/8 + 1) * 8; 
@@ -378,8 +433,8 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
 
   /* Fast(er), hopefully common case. */
   if (data_size <= gasnet_AMMaxMedium()) {
-    /* The remote end needs the descriptor and the array data. Since the
-       data is small, copying the array data will be faster than
+    /* The remote end needs the descriptor and the array data. Since
+       the data is small, copying the array data will be faster than
        sending two messages. */
     data = (void *) ti_malloc_atomic_huge(data_size);
     if (!data) {
@@ -390,31 +445,38 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
     assert(data && copy_desc_size_padded % 8 == 0);
     memcpy(data, copy_desc, copy_desc_size);
     /* All math is done in bytes. sizeof(void*) should be irrelevant. */
-    memcpy((void *)((uintptr_t)data + copy_desc_size_padded), array_data, array_data_size);
-    MEDIUM_REQ(3,5,(tgt_box, gasneti_handleridx(strided_unpackAll_request), 
-			 data, data_size, 
-                         PACK(TIC_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
-			 copy_desc_size_padded, 
-                         PACK(&unpack_spin)));
+    memcpy((void *)((uintptr_t)data + copy_desc_size_padded),
+           array_data, array_data_size);
+    array_strided_unpackAll_am_t am1 = {
+      data, data_size,
+      TIC_TRANSLATE_FUNCTION_ADDR(unpack_method, tgt_box),
+      copy_desc_size_padded, (void *)&unpack_spin
+    };
+    GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_UNPACKALL_AM,
+                                        &am1, sizeof(am1)));
     GASNET_BLOCKUNTIL(unpack_spin);
     ti_free(data);
   }
   else { /* Slow case. */
     /* Allocate a buffer to hold the array data on the remote side. */
     void * volatile remoteAllocBuf = NULL;
-    array_alloc_am_t am = { array_data_size, (void*)&remoteAllocBuf };
+    array_alloc_am_t am2 = {
+      array_data_size, (void*)&remoteAllocBuf
+    };
     GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_ALLOC_AM,
-                                        &am, sizeof(am)));
+                                        &am2, sizeof(am2)));
     GASNET_BLOCKUNTIL(remoteAllocBuf);
     /* Transfer the data to the buffer with libtic. */
     gasnet_put_bulk(tgt_box, remoteAllocBuf, array_data, array_data_size);
     /* Tell the remote side to unpack the data. */
     assert(copy_desc_size <= gasnet_AMMaxMedium());
-    MEDIUM_REQ(3,6,(tgt_box, gasneti_handleridx(strided_unpackOnly_request),
-			 copy_desc, copy_desc_size, 
-                         PACK(remoteAllocBuf), 
-			 PACK(TIC_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
-                         PACK(&unpack_spin)));
+    array_strided_unpackOnly_am_t am3 = {
+      copy_desc, copy_desc_size, remoteAllocBuf,
+      TIC_TRANSLATE_FUNCTION_ADDR(unpack_method, tgt_box),
+      (void*)&unpack_spin
+    };
+    GASNET_SAFE(gasnet_AMRequestMedium0(tgt_box, ARRAY_UNPACKONLY_AM,
+                                        &am3, sizeof(am3)));
     GASNET_BLOCKUNTIL(unpack_spin);
   }
 }
