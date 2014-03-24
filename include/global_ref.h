@@ -139,7 +139,6 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
-#ifdef USE_CXX11
     // YZ: Needs C++11 auto, decltype
 #ifdef USE_CXX11
     template <typename T2>
