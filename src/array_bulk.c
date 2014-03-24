@@ -5,15 +5,10 @@
 #include <portable_inttypes.h>
 #include "allocate.h"
 
-#define AM2_HAS_HUGE_SEGMENTS 0 /* can't assume GASNet SEGMENT_EVERYTHING configuration */ 
-#define AM2_REPLY_REQUIRED    0
-
 /* No multithreading support for now */
 #define BOXES       gasnet_nodes() /* TODO: use UPC++ global_machine.node_count() */
 #define MYBOXPROCS  1              /* TODO: use UPC++ my_node.processor_count() */
 #define MYBOXPROC   0              /* TODO: use UPC++ my_processor.local_id() */
-
-#define TIC_AM_SEGOFFSET 0
 
 #if PLATFORM_ARCH_32
   #define TIC_SHORT_HANDLER(name, cnt32, cnt64, innerargs32, innerargs64)            \
@@ -47,14 +42,6 @@
 
 /* look into how to sync puts in UPC++ */
 #define ti_write_sync()
-
-/* macro for issuing a do-nothing AM reply */
-#if AM2_REPLY_REQUIRED
-  #define TIC_NULL_REPLY(token) \
-    SHORT_REP(0,0,(token, gasneti_handleridx(misc_null_reply)))
-#else
-  #define TIC_NULL_REPLY(token) 
-#endif
 
 /* FIX THIS VVV */
 #define TIC_TRANSLATE_FUNCTION_ADDR(localaddr, targetbox) \
@@ -176,7 +163,6 @@ TIC_SHORT_HANDLER(misc_null_reply, 0, 0,
 GASNETT_INLINE(misc_delete_request)
 void misc_delete_request(gasnet_token_t token, void *addr) {
   ti_free_handlersafe(addr);
-  TIC_NULL_REPLY(token);
 }
 TIC_SHORT_HANDLER(misc_delete_request, 1, 2,
               (token, UNPACK(a0)    ),
@@ -226,12 +212,6 @@ void strided_pack_request(gasnet_token_t token, void *copy_desc, size_t copy_des
    * (void*)-1 tells it to use handlersafe, uncollectable memory so it doesn't disappear on us
    */
   array_data = (*packMethod)(copy_desc, &array_data_len, (void*)-1);
-
-  #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-    /* inform distributed GC that some pointers may be escaping */
-    if (!atomicelements)
-      dgc_ptr_esc_all_gps(array_data, array_data_len, 1);
-  #endif
 
   if (array_data_len <= gasnet_AMMaxMedium()) {
     /* Common, fast case. Send back the packed data with the reply. */
@@ -564,11 +544,6 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
     }
     memcpy(data, remote_addr_list, offset);
     memcpy(data+offset, src_data_list, num_elem * elem_sz);
-    #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-      /* inform distributed GC that some pointers may be escaping */
-      if (!atomic_elements) 
-        GC_PTR_ESC_ALL_GPS(data+offset, num_elem * elem_sz);
-    #endif
     MEDIUM_REQ(3,4,(remote_box, gasneti_handleridx(sparse_simpleScatter_request),
 			 data, datasz, 
                          num_elem, elem_sz,
@@ -591,11 +566,6 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
 
     /* Transfer the addresses and data to the buffer with libtic (this could be optimized somewhat) */
     gasnet_put_nbi(remote_box, remoteAllocBuf, remote_addr_list, offset);
-    #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-      /* inform distributed GC that some pointers may be escaping */
-      if (!atomic_elements) 
-        GC_PTR_ESC_ALL_GPS(src_data_list, num_elem * elem_sz);
-    #endif
     gasnet_put_nbi(remote_box, ((char *)remoteAllocBuf)+offset, src_data_list, num_elem * elem_sz);
     ti_write_sync();
 
@@ -630,11 +600,6 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     }
     memcpy(data, remote_addr_list, offset);
     memcpy(data+offset, src_data_list, num_elem * elem_sz);
-    #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-      /* inform distributed GC that some pointers may be escaping */
-      if (!atomic_elements) 
-        GC_PTR_ESC_ALL_GPS(data+offset, num_elem * elem_sz);
-    #endif
     MEDIUM_REQ(3,4,(remote_box, gasneti_handleridx(sparse_simpleScatter_request),
 			 data, (int) datasz, 
                          (int) num_elem, (int) elem_sz,
@@ -657,14 +622,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     int addrLoadSize;
     int dataLoadSize;
 
-#if AM2_HAS_HUGE_SEGMENTS
-    void * volatile remoteAllocBuf = NULL;
-    void *curAllocBuf = NULL;
-    loadSize = gasnet_AMMaxLongRequest() / pairSize;
-#else
     loadSize = gasnet_AMMaxMedium() / pairSize;
-#endif
-
     addrLoadSize = loadSize*sizeof(void *);
     dataLoadSize = loadSize*elem_sz;
     loadSizeInBytes = addrLoadSize+dataLoadSize;
@@ -718,27 +676,6 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     }
     localCurBuf = localBuffer;
 
-#if AM2_HAS_HUGE_SEGMENTS      
-    if (bufferSize <= tic_prealloc){
-      /* use preallocate buffer if one is available */
-      remoteAllocBuf = get_remote_buffer(bufferSize, remote_box);
-    }
-    else{
-      /* get a buffer for this gather use only */
-      SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			 bufferSize, PACK(&remoteAllocBuf)));
-      GASNET_BLOCKUNTIL(remoteAllocBuf);
-    }
-
-    curAllocBuf = remoteAllocBuf;
-#endif
-         
-#if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-    /* inform distributed GC that some pointers may be escaping */
-    if (!atomic_elements) 
-      GC_PTR_ESC_ALL_GPS(src_data_list, num_elem * elem_sz);
-#endif
-
     {
       int volatile * done_ctr_array = (int *)ti_malloc_atomic_uncollectable(sizeof(int) * messageCount);
       int *curCtr;
@@ -766,20 +703,10 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
 	}
 
 	curCtr = (int *) (done_ctr_array+count);
-#if AM2_HAS_HUGE_SEGMENTS
-	LONG_REQ(3,4,(remote_box, 
-			       gasneti_handleridx(sparse_largeScatterNoDelete_request), (void *) (localCurBuf),
-			       currentLoadSizeInBytes, 
-                               (void *)(uintptr_t)(((char*)curAllocBuf)-TIC_AM_SEGOFFSET),
-                               currentLoadSize, (int) elem_sz,  
-			       PACK(curCtr)));
-	curAllocBuf = (void *) (((char *) curAllocBuf) + loadSizeInBytes);
-#else
 	MEDIUM_REQ(3,4,(remote_box, gasneti_handleridx(sparse_simpleScatter_request),
 			 localCurBuf, currentLoadSizeInBytes, 
                          currentLoadSize, (int) elem_sz,
                          PACK(curCtr)));
-#endif
 	total -= currentLoadSize;
 	localCurBuf += loadSizeInBytes;
 	count++;         
@@ -791,13 +718,6 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
 
       ti_free((void *) done_ctr_array);
       ti_free((void *) localBuffer);
-
-#if AM2_HAS_HUGE_SEGMENTS
-      if (bufferSize > tic_prealloc){
-	SHORT_REQ(1,2,(remote_box, gasneti_handleridx(misc_delete_request), 
-			   PACK(remoteAllocBuf)));
-      }
-#endif
     }
   }
 }
@@ -882,14 +802,9 @@ void sparse_largeGather_request(gasnet_token_t token, void *_addr_list, size_t a
   assert(addr_list_size == sizeof(void *)*num_elem);
  
   FAST_PACK(elem_sz, data, addr_list);
-  #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-    /* inform distributed GC that some pointers may be escaping */
-    if (!atomic_elements)
-      dgc_ptr_esc_all_gps(data, datasz, 1);
-  #endif
   LONG_REP(1,2,(token, 
                 gasneti_handleridx(sparse_largeGather_reply), data, datasz,
-                (void *)(uintptr_t)(((char*)_tgt_data_list)-TIC_AM_SEGOFFSET),
+                (void *)(uintptr_t)(((char*)_tgt_data_list)),
                 PACK(_done_ctr)));  
 } 
 TIC_LONG_HANDLER(sparse_largeGather_request, 5, 7,
@@ -930,63 +845,20 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
       int count = 0;
       int messageCount;
 
-#if AM2_HAS_HUGE_SEGMENTS
-      void * volatile remoteAllocBuf = NULL;
-      void *curAllocBuf = NULL;
-      size_t bufferSize;
-      int loadSizeInBytes;
-      int bufferPadding;
-      int lastLoadSize;
-      ptrLimit = gasnet_AMMaxLongRequest() / sizeof(void *);
-      dataLimit = (int) (gasnet_AMMaxLongReply() / elem_sz);
-#else
       ptrLimit = gasnet_AMMaxMedium() / sizeof(void *);
       dataLimit = (int) (gasnet_AMMaxMedium() / elem_sz);
-#endif
       if (ptrLimit > dataLimit){
 	loadSize = dataLimit;
       }
       else{
 	loadSize = ptrLimit;
       }
-      
-#if AM2_HAS_HUGE_SEGMENTS
-      loadSizeInBytes = (int) (loadSize*(sizeof(void *) + elem_sz));
-      bufferPadding = loadSizeInBytes % sizeof(void *);
-      if (bufferPadding != 0){
-	bufferPadding = sizeof(void *) - bufferPadding;
-      }
-      loadSizeInBytes += bufferPadding;
-      lastLoadSize = (int) (num_elem % loadSize);
-      if (lastLoadSize == 0){
-        messageCount = (int) (num_elem / loadSize);
-	bufferSize = loadSizeInBytes * messageCount;
-      }
-      else{
-        messageCount = (int) (num_elem / loadSize) + 1;
-	bufferSize = loadSizeInBytes * (messageCount - 1) + lastLoadSize * (sizeof(void *) + elem_sz);
-      }
-      
-      if (bufferSize <= tic_prealloc){
-	/* use preallocate buffer if one is available */
-	remoteAllocBuf = get_remote_buffer(bufferSize, remote_box);
-      }
-      else{
-	/* get a buffer for this gather use only */
-	SHORT_REQ(2,3,(remote_box, gasneti_handleridx(misc_alloc_request), 
-			   bufferSize, PACK(&remoteAllocBuf)));
-	GASNET_BLOCKUNTIL(remoteAllocBuf);
-      }
-
-      curAllocBuf = remoteAllocBuf;
-#else
       if (num_elem % loadSize == 0){
         messageCount = (int) (num_elem / loadSize);
       }
       else{
         messageCount = (int) (num_elem / loadSize) + 1;
       }
-#endif
 
     {
       int i;
@@ -1013,23 +885,12 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
 	}
 
 	curCtr = (int *) (done_ctr_array+count);
-#if AM2_HAS_HUGE_SEGMENTS
-	LONG_REQ(5,7,(remote_box, 
-			       gasneti_handleridx(sparse_largeGather_request), (void *) (remote_addr_list + count*loadSize),
-			       currentLoadSize*sizeof(void*), 
-                               (void *)(uintptr_t)(((char*)curAllocBuf)-TIC_AM_SEGOFFSET),
-                               currentLoadSize, (int) elem_sz, 
-			       PACK(((char *) tgt_data_list + count*elem_sz*loadSize)), 
-			       PACK(curCtr), atomic_elements));
-	curAllocBuf = (void *) (((char *) curAllocBuf) + loadSizeInBytes);
-#else
 	MEDIUM_REQ(5,7,(remote_box, gasneti_handleridx(sparse_simpleGather_request),
 			    (void *) (remote_addr_list + count*loadSize), currentLoadSize * sizeof(void *), 
 			    currentLoadSize, (int) elem_sz,
 			    PACK(((char *) tgt_data_list + count*elem_sz*loadSize)), 
 			    PACK(curCtr),
 			    atomic_elements));
-#endif
 	total -= currentLoadSize;
 	count++;         
       }
@@ -1039,13 +900,6 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
       }
 
       ti_free((void *) done_ctr_array);
-
-#if AM2_HAS_HUGE_SEGMENTS
-      if (bufferSize > tic_prealloc){
-	SHORT_REQ(1,2,(remote_box, gasneti_handleridx(misc_delete_request), 
-			   PACK(remoteAllocBuf)));
-      }
-#endif
     }
   }
 }
@@ -1130,11 +984,6 @@ void sparse_simpleGather_request(gasnet_token_t token, void *_addr_list, size_t 
   }
   assert(addr_list_size == sizeof(void *)*num_elem);
   FAST_PACK(elem_sz, data, addr_list);
-  #if defined(USE_DISTRIBUTED_GC) && !defined(USE_GC_NONE)
-    /* inform distributed GC that some pointers may be escaping */
-    if (!atomic_elements)
-      dgc_ptr_esc_all_gps(data, datasz, 1);
-  #endif
   MEDIUM_REP(4,6,(token, gasneti_handleridx(sparse_simpleGather_reply),
 		       data, datasz, 
                        num_elem, elem_sz,
