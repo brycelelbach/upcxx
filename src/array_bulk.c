@@ -10,41 +10,17 @@
 #define MYBOXPROCS  1              /* TODO: use UPC++ my_node.processor_count() */
 #define MYBOXPROC   0              /* TODO: use UPC++ my_processor.local_id() */
 
-#if PLATFORM_ARCH_32
-  #define TIC_SHORT_HANDLER(name, cnt32, cnt64, innerargs32, innerargs64)            \
-    GASNETI_HANDLER_SCOPE void name ## _32(gasnet_token_t token ARGS ## cnt32) { \
-      name innerargs32 ;                                               \
-    } static int _dummy_##name = sizeof(_dummy_##name)
-  #define TIC_MEDIUM_HANDLER(name, cnt32, cnt64, innerargs32, innerargs64)                     \
-    GASNETI_HANDLER_SCOPE void name ## _32(gasnet_token_t token, void *addr, size_t nbytes \
-                           ARGS ## cnt32) {                                                \
-      name innerargs32 ;                                                         \
-    } static int _dummy_##name = sizeof(_dummy_##name)
-#elif PLATFORM_ARCH_64
-  #define TIC_SHORT_HANDLER(name, cnt32, cnt64, innerargs32, innerargs64)            \
-    GASNETI_HANDLER_SCOPE void name ## _64(gasnet_token_t token ARGS ## cnt64) { \
-      name innerargs64 ;                                               \
-    } static int _dummy_##name = sizeof(_dummy_##name)
-  #define TIC_MEDIUM_HANDLER(name, cnt32, cnt64, innerargs32, innerargs64)                     \
-    GASNETI_HANDLER_SCOPE void name ## _64(gasnet_token_t token, void *addr, size_t nbytes \
-                           ARGS ## cnt64) {                                                \
-      name innerargs64 ;                                                         \
-    } static int _dummy_##name = sizeof(_dummy_##name)
-#endif
-
-#define TIC_LONG_HANDLER TIC_MEDIUM_HANDLER
-
-#define ti_malloc_handlersafe(s) gasnet_seg_alloc(s)
-#define ti_free_handlersafe(p)   gasnet_seg_free(p)
-#define ti_malloc_atomic_uncollectable(s) gasnet_seg_alloc(s)
-#define ti_malloc_atomic_huge(s) gasnet_seg_alloc(s)
-#define ti_free(p) gasnet_seg_free(p)
+#define upcxxa_malloc_handlersafe(s) gasnet_seg_alloc(s)
+#define upcxxa_free_handlersafe(p)   gasnet_seg_free(p)
+#define upcxxa_malloc_atomic_uncollectable(s) gasnet_seg_alloc(s)
+#define upcxxa_malloc_atomic_huge(s) gasnet_seg_alloc(s)
+#define upcxxa_free(p) gasnet_seg_free(p)
 
 /* look into how to sync puts in UPC++ */
-#define ti_write_sync()
+#define upcxxa_write_sync()
 
 /* FIX THIS VVV */
-#define TIC_TRANSLATE_FUNCTION_ADDR(localaddr, targetbox) \
+#define UPCXXA_TRANSLATE_FUNCTION_ADDR(localaddr, targetbox) \
   (localaddr)
 
 /**************************
@@ -54,12 +30,12 @@
 /*
   preallocate buffer size in bytes
 */
-static int tic_prealloc;
+static int upcxxa_prealloc;
 
 /*
   pipelining is 1 if using pipelining
 */
-static int tic_pipelining;
+static int upcxxa_pipelining;
 
 /* 
    struct definition to hold information about each remote buffer
@@ -83,7 +59,8 @@ static struct Buffer **bufferArray;
 */
 void buffer_init(){
   int i, j;
-  bufferArray = (struct Buffer **) ti_malloc_atomic_uncollectable(sizeof(struct Buffer *)*MYBOXPROCS);
+  bufferArray = (struct Buffer **)
+    upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer *)*MYBOXPROCS);
   if (!bufferArray) {
     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             (sizeof(struct Buffer *)*MYBOXPROCS),
@@ -93,7 +70,8 @@ void buffer_init(){
 
   for (i = 0; i < MYBOXPROCS; i++){
     struct Buffer *tmp;
-    bufferArray[i] = (struct Buffer *) ti_malloc_atomic_uncollectable(sizeof(struct Buffer)*BOXES);
+    bufferArray[i] = (struct Buffer *)
+      upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer)*BOXES);
     tmp = bufferArray[i];
     if (!tmp) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -154,16 +132,16 @@ typedef void *(*unpack_method_t)(void *, void *);
 
 GASNETT_INLINE(misc_delete_request)
 void misc_delete_request(gasnet_token_t token, void *addr) {
-  ti_free_handlersafe(addr);
+  upcxxa_free_handlersafe(addr);
 }
-TIC_SHORT_HANDLER(misc_delete_request, 1, 2,
+SHORT_HANDLER(misc_delete_request, 1, 2,
               (token, UNPACK(a0)    ),
               (token, UNPACK2(a0, a1)));
 /* ------------------------------------------------------------------------------------ */
 /* Size is in bytes. */
 GASNETT_INLINE(misc_alloc_request)
 void misc_alloc_request(gasnet_token_t token, size_t size, void *destptr) {
-  void *buf = ti_malloc_handlersafe(size);
+  void *buf = upcxxa_malloc_handlersafe(size);
   if (!buf) {
     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             size, "array alloc AM handler");
@@ -172,7 +150,7 @@ void misc_alloc_request(gasnet_token_t token, size_t size, void *destptr) {
   SHORT_REP(2,4,(token, gasneti_handleridx(misc_alloc_reply), 
                    PACK(buf), PACK(destptr)));
 }
-TIC_SHORT_HANDLER(misc_alloc_request, 2, 3,
+SHORT_HANDLER(misc_alloc_request, 2, 3,
               (token, a0, UNPACK(a1)    ),
               (token, a0, UNPACK2(a1, a2)));
 /* ------------------------------------------------------------------------------------ */
@@ -181,7 +159,7 @@ void misc_alloc_reply(gasnet_token_t token, void *buf, void *destptr) {
   void ** premoteAllocBuf = (void **)destptr;
   (*premoteAllocBuf) = (void *)buf;
 }
-TIC_SHORT_HANDLER(misc_alloc_reply, 2, 4,
+SHORT_HANDLER(misc_alloc_reply, 2, 4,
               (token, UNPACK(a0),     UNPACK(a1)),
               (token, UNPACK2(a0, a1), UNPACK2(a2, a3)));
 /* ------------------------------------------------------------------------------------ *
@@ -210,7 +188,7 @@ void strided_pack_request(gasnet_token_t token, void *copy_desc, size_t copy_des
     MEDIUM_REP(4,7,(token, gasneti_handleridx(strided_pack_reply), array_data, array_data_len, 
                       PACK(remoteBuffer), PACK(0), 
                       0, PACK(pack_info_ptr)));
-    ti_free_handlersafe(array_data);
+    upcxxa_free_handlersafe(array_data);
   }
   else {
 #if 0
@@ -222,7 +200,7 @@ void strided_pack_request(gasnet_token_t token, void *copy_desc, size_t copy_des
 		       array_data_len, PACK(pack_info_ptr)));
   }
 }
-TIC_MEDIUM_HANDLER(strided_pack_request, 4, 7,
+MEDIUM_HANDLER(strided_pack_request, 4, 7,
   (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     UNPACK(a2),     a3),
   (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5), a6));
 
@@ -257,7 +235,7 @@ void strided_pack_reply(gasnet_token_t token, void *array_data, size_t array_dat
     pinfo->pack_spin = 2;
   }
 }
-TIC_MEDIUM_HANDLER(strided_pack_reply, 4, 7,
+MEDIUM_HANDLER(strided_pack_reply, 4, 7,
   (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     a2, UNPACK(a3)    ),
   (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), a4, UNPACK2(a5, a6)));
 /* ------------------------------------------------------------------------------------ */
@@ -269,7 +247,7 @@ extern void get_array(void *pack_method, void *copy_desc, int copy_desc_size,
   assert(copy_desc && copy_desc_size > 0 && copy_desc_size <= gasnet_AMMaxMedium());
   MEDIUM_REQ(4,7,(tgt_box, gasneti_handleridx(strided_pack_request), 
 		       copy_desc, copy_desc_size, 
-                       PACK(TIC_TRANSLATE_FUNCTION_ADDR(pack_method,tgt_box)), 
+                       PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(pack_method,tgt_box)), 
 		       PACK(buffer), 
                        PACK(&info), atomicelements));
   GASNET_BLOCKUNTIL(info.pack_spin);
@@ -301,7 +279,7 @@ void strided_unpackAll_request(gasnet_token_t token, void *packedArrayData, size
     * fail to double-word align the medium-sized message buffer
     * fix that problem if it occurs
     */
-   temp = ti_malloc_handlersafe(nBytes+8);
+   temp = upcxxa_malloc_handlersafe(nBytes+8);
    if (!temp) {
      fprintf(stderr, "failed to allocate %zu bytes in %s\n",
              (nBytes+8), "array unpack AM handler");
@@ -321,9 +299,9 @@ void strided_unpackAll_request(gasnet_token_t token, void *packedArrayData, size
 #endif
    SHORT_REP(1,2,(token, gasneti_handleridx(strided_unpack_reply), PACK(unpack_spin_ptr)));
  }
- if (temp) ti_free_handlersafe(temp);
+ if (temp) upcxxa_free_handlersafe(temp);
 }
-TIC_MEDIUM_HANDLER(strided_unpackAll_request, 3, 5,
+MEDIUM_HANDLER(strided_unpackAll_request, 3, 5,
   (token,addr,nbytes, UNPACK(a0),     a1, UNPACK(a2)    ),
   (token,addr,nbytes, UNPACK2(a0, a1), a2, UNPACK2(a3, a4)));
 /* ------------------------------------------------------------------------------------ */
@@ -332,7 +310,7 @@ void strided_unpack_reply(gasnet_token_t token, void *unpack_spin_ptr) {
   int *punpack_spin = (int *)unpack_spin_ptr;
   *(punpack_spin) = 1;
 }
-TIC_SHORT_HANDLER(strided_unpack_reply, 1, 2,
+SHORT_HANDLER(strided_unpack_reply, 1, 2,
               (token, UNPACK(a0)    ),
               (token, UNPACK2(a0, a1)));
 /* ------------------------------------------------------------------------------------ */
@@ -343,13 +321,13 @@ void strided_unpackOnly_request(gasnet_token_t token, void *copyDesc, size_t cop
 			      void *bufAddr, void *_unpackMethod, void *unpack_spin_ptr) {
   unpack_method_t unpackMethod = (unpack_method_t)_unpackMethod;
   (*unpackMethod)(copyDesc, (void *)bufAddr);
-  ti_free_handlersafe((void *)bufAddr);
+  upcxxa_free_handlersafe((void *)bufAddr);
 #if 0
   gasnett_local_wmb(); /* ensure data is committed before signalling completion */
 #endif
   SHORT_REP(1,2,(token, gasneti_handleridx(strided_unpack_reply), PACK(unpack_spin_ptr)));
 }
-TIC_MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
+MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
   (token,addr,nbytes, UNPACK(a0),     UNPACK(a1),     UNPACK(a2)    ),
   (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
@@ -368,7 +346,7 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
     /* The remote end needs the descriptor and the array data. Since the
        data is small, copying the array data will be faster than
        sending two messages. */
-    data = (void *) ti_malloc_atomic_huge(data_size);
+    data = (void *) upcxxa_malloc_atomic_huge(data_size);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               data_size, "array put AM handler");
@@ -380,11 +358,11 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
     memcpy((void *)((uintptr_t)data + copy_desc_size_padded), array_data, array_data_size);
     MEDIUM_REQ(3,5,(tgt_box, gasneti_handleridx(strided_unpackAll_request), 
 			 data, data_size, 
-                         PACK(TIC_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
+                         PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
 			 copy_desc_size_padded, 
                          PACK(&unpack_spin)));
     GASNET_BLOCKUNTIL(unpack_spin);
-    ti_free(data);
+    upcxxa_free(data);
   }
   else { /* Slow case. */
     /* Allocate a buffer to hold the array data on the remote side. */
@@ -399,7 +377,7 @@ extern void put_array(void *unpack_method, void *copy_desc, int copy_desc_size,
     MEDIUM_REQ(3,6,(tgt_box, gasneti_handleridx(strided_unpackOnly_request),
 			 copy_desc, copy_desc_size, 
                          PACK(remoteAllocBuf), 
-			 PACK(TIC_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
+			 PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,tgt_box)), 
                          PACK(&unpack_spin)));
     GASNET_BLOCKUNTIL(unpack_spin);
   }
@@ -528,7 +506,7 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) { 
     /* fast case - everything fits in a medium msg */
-    char *data = ti_malloc_atomic_huge(datasz);
+    char *data = upcxxa_malloc_atomic_huge(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -541,11 +519,11 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
                          num_elem, elem_sz,
                          PACK(&done_ctr)));
     GASNET_BLOCKUNTIL(done_ctr);
-    ti_free(data);
+    upcxxa_free(data);
   } else {  /* slower case - need multiple messages */
     void * volatile remoteAllocBuf = NULL;
 
-    if (datasz <= tic_prealloc){
+    if (datasz <= upcxxa_prealloc){
       /* use preallocate buffer if one is available */
       remoteAllocBuf = get_remote_buffer(datasz, remote_box);
     }
@@ -559,7 +537,7 @@ extern void sparse_scatter_serial(void **remote_addr_list, void *src_data_list,
     /* Transfer the addresses and data to the buffer with libtic (this could be optimized somewhat) */
     gasnet_put_nbi(remote_box, remoteAllocBuf, remote_addr_list, offset);
     gasnet_put_nbi(remote_box, ((char *)remoteAllocBuf)+offset, src_data_list, num_elem * elem_sz);
-    ti_write_sync();
+    upcxxa_write_sync();
 
     /* Tell the remote side to scatter the data. */
     SHORT_REQ(4,6,(remote_box, gasneti_handleridx(sparse_generalScatter_request),
@@ -584,7 +562,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) { 
     /* fast case - everything fits in a medium msg */
-    char *data = ti_malloc_atomic_huge(datasz);
+    char *data = upcxxa_malloc_atomic_huge(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -597,7 +575,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
                          (int) num_elem, (int) elem_sz,
                          PACK(&done_ctr)));
     GASNET_BLOCKUNTIL(done_ctr);
-    ti_free(data);
+    upcxxa_free(data);
   } else {  /* slower case - need multiple messages */
     size_t total = num_elem;
     int loadSize;
@@ -631,7 +609,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       combine the address list and data list into
       a local buffer before sending
       */
-      localBuffer = ti_malloc_atomic_huge(bufferSize);
+      localBuffer = upcxxa_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -651,7 +629,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
       combine the address list and data list into
       a buffer before sending
       */
-      localBuffer = ti_malloc_atomic_huge(bufferSize);
+      localBuffer = upcxxa_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -669,7 +647,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
     localCurBuf = localBuffer;
 
     {
-      int volatile * done_ctr_array = (int *)ti_malloc_atomic_uncollectable(sizeof(int) * messageCount);
+      int volatile * done_ctr_array = (int *)upcxxa_malloc_atomic_uncollectable(sizeof(int) * messageCount);
       int *curCtr;
       if (!done_ctr_array) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -708,15 +686,15 @@ extern void sparse_scatter_pipeline(void **remote_addr_list, void *src_data_list
 	GASNET_BLOCKUNTIL(done_ctr_array[i]);
       }
 
-      ti_free((void *) done_ctr_array);
-      ti_free((void *) localBuffer);
+      upcxxa_free((void *) done_ctr_array);
+      upcxxa_free((void *) localBuffer);
     }
   }
 }
 /* ------------------------------------------------------------------------------------ */
 extern void sparse_scatter(void **remote_addr_list, void *src_data_list, 
                            int remote_box, size_t num_elem, size_t elem_sz, int atomic_elements) {
-  if (tic_pipelining){
+  if (upcxxa_pipelining){
     sparse_scatter_pipeline(remote_addr_list, src_data_list, remote_box, num_elem, elem_sz, atomic_elements);
   }
   else{
@@ -736,7 +714,7 @@ void sparse_simpleScatter_request(gasnet_token_t token, void *addr_data_list, si
   FAST_UNPACK(elem_sz, data, addr_list);
   SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply), PACK(_done_ctr)));
 } 
-TIC_MEDIUM_HANDLER(sparse_simpleScatter_request, 3, 4,
+MEDIUM_HANDLER(sparse_simpleScatter_request, 3, 4,
   (token,addr,nbytes, a0, a1, UNPACK(a2)    ),
   (token,addr,nbytes, a0, a1, UNPACK2(a2, a3)));
 /* ------------------------------------------------------------------------------------ */
@@ -745,7 +723,7 @@ void sparse_done_reply(gasnet_token_t token, void *_done_ctr) {
   int *done_ctr = (int *)_done_ctr;
   *done_ctr = 1;
 }
-TIC_SHORT_HANDLER(sparse_done_reply, 1, 2,
+SHORT_HANDLER(sparse_done_reply, 1, 2,
   (token, UNPACK(a0)    ),
   (token, UNPACK2(a0, a1)));
 /* ------------------------------------------------------------------------------------ */
@@ -759,11 +737,11 @@ void sparse_generalScatter_request(gasnet_token_t token, void *addr_data_list,
   char *data = ((char*)addr_data_list) + offset;
   FAST_UNPACK(elem_sz, data, addr_list);
   SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply), PACK(_done_ctr)));
-  if ((num_elem*elem_sz+offset) > tic_prealloc){
-    ti_free_handlersafe((void*)addr_data_list);
+  if ((num_elem*elem_sz+offset) > upcxxa_prealloc){
+    upcxxa_free_handlersafe((void*)addr_data_list);
   }
 } 
-TIC_SHORT_HANDLER(sparse_generalScatter_request, 4, 6,
+SHORT_HANDLER(sparse_generalScatter_request, 4, 6,
   (token, UNPACK(a0),     a1, a2, UNPACK(a3)    ),
   (token, UNPACK2(a0, a1), a2, a3, UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
@@ -808,7 +786,8 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
 
     {
       int i;
-      int volatile * done_ctr_array = (int *)ti_malloc_atomic_uncollectable(sizeof(int) * messageCount);
+      int volatile * done_ctr_array = (int *)
+        upcxxa_malloc_atomic_uncollectable(sizeof(int) * messageCount);
       int *curCtr;
       if (!done_ctr_array) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -845,7 +824,7 @@ extern void sparse_gather_pipeline(void *tgt_data_list, void **remote_addr_list,
 	GASNET_BLOCKUNTIL(done_ctr_array[i]);
       }
 
-      ti_free((void *) done_ctr_array);
+      upcxxa_free((void *) done_ctr_array);
     }
   }
 }
@@ -871,7 +850,7 @@ void sparse_gather_serial(void *tgt_data_list, void **remote_addr_list,
     size_t datasz = offset + num_elem * elem_sz;
     void * volatile remoteAllocBuf = NULL;
 
-    if (datasz <= tic_prealloc){
+    if (datasz <= upcxxa_prealloc){
       /* use a preallocated buffer if one is available */
       remoteAllocBuf = get_remote_buffer(datasz, remote_box);
     }
@@ -897,7 +876,7 @@ void sparse_gather_serial(void *tgt_data_list, void **remote_addr_list,
                  remote_box, ((char *)remoteAllocBuf)+offset,
                  (int) (num_elem * elem_sz)); /* (does not handle gp escape) */
 
-    if (datasz > tic_prealloc){
+    if (datasz > upcxxa_prealloc){
       SHORT_REQ(1,2,(remote_box, gasneti_handleridx(misc_delete_request), 
 			 PACK(remoteAllocBuf)));
     }
@@ -906,7 +885,7 @@ void sparse_gather_serial(void *tgt_data_list, void **remote_addr_list,
 /* ------------------------------------------------------------------------------------ */
 void sparse_gather(void *tgt_data_list, void **remote_addr_list, 
 		   int remote_box, size_t num_elem, size_t elem_sz, int atomic_elements) {
-  if (tic_pipelining){
+  if (upcxxa_pipelining){
     sparse_gather_pipeline(tgt_data_list, remote_addr_list, remote_box, num_elem, elem_sz, atomic_elements);
   }
   else{
@@ -922,7 +901,7 @@ void sparse_simpleGather_request(gasnet_token_t token, void *_addr_list, size_t 
   int i;
   void **addr_list = (void**)_addr_list;
   size_t datasz = num_elem * elem_sz;
-  char *data = ti_malloc_handlersafe(datasz);
+  char *data = upcxxa_malloc_handlersafe(datasz);
   if (!data) {
     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             datasz, "array gather AM handler");
@@ -934,9 +913,9 @@ void sparse_simpleGather_request(gasnet_token_t token, void *_addr_list, size_t 
 		       data, datasz, 
                        num_elem, elem_sz,
                        PACK(_tgt_data_list), PACK(_done_ctr)));
-  ti_free_handlersafe(data);
+  upcxxa_free_handlersafe(data);
 } 
-TIC_MEDIUM_HANDLER(sparse_simpleGather_request, 5, 7,
+MEDIUM_HANDLER(sparse_simpleGather_request, 5, 7,
   (token,addr,nbytes, a0, a1, UNPACK(a2),     UNPACK(a3),     a4),
   (token,addr,nbytes, a0, a1, UNPACK2(a2, a3), UNPACK2(a4, a5), a6));
 /* ------------------------------------------------------------------------------------ */
@@ -950,7 +929,7 @@ void sparse_simpleGather_reply(gasnet_token_t token, void *data_list, size_t dat
   memcpy(tgt_data_list, data_list, data_list_size);
   *done_ctr = 1;
 }
-TIC_MEDIUM_HANDLER(sparse_simpleGather_reply, 4, 6,
+MEDIUM_HANDLER(sparse_simpleGather_reply, 4, 6,
   (token,addr,nbytes, a0, a1, UNPACK(a2),     UNPACK(a3)    ),
   (token,addr,nbytes, a0, a1, UNPACK2(a2, a3), UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
@@ -965,7 +944,7 @@ void sparse_generalGather_request(gasnet_token_t token, void *addr_data_list,
   FAST_PACK(elem_sz, data, addr_list);
   SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply), PACK(_done_ctr)));
 } 
-TIC_SHORT_HANDLER(sparse_generalGather_request, 4, 6,
+SHORT_HANDLER(sparse_generalGather_request, 4, 6,
   (token, UNPACK(a0),     a1, a2, UNPACK(a3)    ),
   (token, UNPACK2(a0, a1), a2, a3, UNPACK2(a4, a5)));
 /* ------------------------------------------------------------------------------------ */
@@ -977,24 +956,24 @@ void gather_init(){
   char *preallocstr;
   char *pipeliningstr;
 
-  preallocstr = (char *) gasnet_getenv("TI_PREALLOC");
+  preallocstr = (char *) gasnet_getenv("UPCXXA_PREALLOC");
   if (preallocstr == NULL){
-    tic_prealloc = 0;
+    upcxxa_prealloc = 0;
   }
   else{
-    tic_prealloc = atoi(preallocstr);
-    assert(tic_prealloc >= 0);
-    if (tic_prealloc > 0){
+    upcxxa_prealloc = atoi(preallocstr);
+    assert(upcxxa_prealloc >= 0);
+    if (upcxxa_prealloc > 0){
       buffer_init();
       /* convert KB to bytes */
-      tic_prealloc *= 1024;
+      upcxxa_prealloc *= 1024;
     }
   }
-  pipeliningstr = (char *) gasnet_getenv("TI_PIPELINING");
+  pipeliningstr = (char *) gasnet_getenv("UPCXXA_PIPELINING");
   if (pipeliningstr == NULL){
-    tic_pipelining = 0;
+    upcxxa_pipelining = 0;
   }
   else{
-    tic_pipelining = atoi(pipeliningstr);
+    upcxxa_pipelining = atoi(pipeliningstr);
   }
 }
