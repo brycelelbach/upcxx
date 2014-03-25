@@ -184,7 +184,12 @@ namespace upcxx
     // pointer arithmetic
     bool operator !=(long p) const
     {
-      return (this->raw_ptr() != (void *) p);
+      return (this->raw_ptr() != (void *)p);
+    }
+
+    bool operator !=(int p) const
+    {
+      return (this->raw_ptr() != (void *)p);
     }
   };
 
