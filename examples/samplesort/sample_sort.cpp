@@ -413,9 +413,11 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-      // current = sorted[t].get()[index];
+#ifdef USE_CXX11
       current = sorted[t][index];
-      // current = sorted[t][index];
+#else
+      current = sorted[t].get()[index];
+#endif
       if (local_copy[i] != current) {
 #ifdef DEBUG
         printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);

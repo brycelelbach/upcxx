@@ -184,7 +184,12 @@ namespace upcxx
     // pointer arithmetic
     bool operator !=(long p) const
     {
-      return (this->raw_ptr() != (void *) p);
+      return (this->raw_ptr() != (void *)p);
+    }
+
+    bool operator !=(int p) const
+    {
+      return (this->raw_ptr() != (void *)p);
     }
   };
 
@@ -265,12 +270,8 @@ namespace upcxx
   int async_copy(global_ptr<void> src,
                  global_ptr<void> dst,
                  size_t bytes,
-                 event *e = NULL);
+                 event *e = peek_event());
 
-  gasnet_handle_t async_copy2(global_ptr<void> src,
-                              global_ptr<void> dst,
-                              size_t bytes);
-  
   inline void sync_nb(gasnet_handle_t h)
   {
     gasnet_wait_syncnb(h);
@@ -290,23 +291,13 @@ namespace upcxx
   int async_copy(global_ptr<T> src,
                  global_ptr<T> dst,
                  size_t count,
-                 event *e = NULL)
+                 event *e = peek_event())
   {
     size_t nbytes = count * sizeof(T);
     return async_copy((global_ptr<void>)src,
                       (global_ptr<void>)dst,
                       nbytes,
                       e);
-  }
-
-  template<typename T>
-  gasnet_handle_t async_copy2(global_ptr<T> src,
-                              global_ptr<T> dst,
-                              size_t count)
-  {
-    size_t nbytes = count * sizeof(T);
-    return async_copy2((global_ptr<void>)src, (global_ptr<void>)dst, 
-                       nbytes);
   }
 
   inline void async_copy_fence()

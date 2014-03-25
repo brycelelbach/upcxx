@@ -48,7 +48,11 @@ int main(int argc, char **argv)
             // allocate the actual data on a different thread (note "idx+1")
             arrays[l] = upcxx::allocate<double>((idx+1)%THREADS, 16);
             for (int m=0; m<16; m++) {
+#ifdef USE_CXX11
               arrays[l][m] = idx*100 + m;
+#else
+              arrays[l].get()[m] = idx*100 + m;
+#endif
             }
           }
         }
@@ -70,7 +74,11 @@ int main(int argc, char **argv)
           global_ptr<global_ptr<double> > arrays = memberof(box, data);
           for (int l=0; l<2; l++) {
             for (int m=0; m<8; m++) {
+#ifdef USE_CXX11
               std::cout << arrays[l][m] << " ";
+#else
+              std::cout << arrays[l].get()[m] << " ";
+#endif
             }
           }
           cout << "\n";

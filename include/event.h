@@ -40,15 +40,14 @@ namespace upcxx
    */
   struct event {
     volatile int _count; // outstanding number of tasks.
+    int owner;
     gasnet_hsl_t _lock;
-    int _h_flag; // wait on handle?
-    gasnet_handle_t _h;
+    list<gasnet_handle_t> _h;
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // vector<async_task &> _cont_tasks;
 
-    inline event() : _count(0), _h_flag(0), _h(GASNET_INVALID_HANDLE),
-                       _num_done_cb(0)
+    inline event() : _count(0), _num_done_cb(0)
     { 
       gasnet_hsl_init(&_lock);
     }
@@ -92,10 +91,9 @@ namespace upcxx
       }
     }
 
-    inline void sethandle(gasnet_handle_t h)
+    inline void add_handle(gasnet_handle_t h)
     {
-      _h = h;
-      _h_flag = 1;
+      _h.push_back(h);
       incref();
     }
 
@@ -118,7 +116,9 @@ namespace upcxx
     /**
      * Return 1 if the task is done; return 0 if not
      */
-    int test();
+    int async_try();
+
+    inline int test() { return async_try(); }
   };
   /// @}
 
@@ -147,21 +147,28 @@ namespace upcxx
     }
   }
 
-  inline void wait()
+  inline void async_wait()
   {
     while (!outstanding_events.empty()) {
       upcxx::advance(1,10);
     }
-    wait(&default_event);
+    default_event.wait();
+    gasnet_wait_syncnbi_all();
   }
 
-  inline int test(event *e = peek_event())
-  {
-    if (e == NULL) {
-      return 1;
-    }
+  inline void wait() { async_wait(); } // for backward compatibility
 
-    return e->test();
+  inline int async_try(event *e = peek_event())
+  {
+    // There is at least the default event.
+    assert (e != NULL);
+
+    int rv = e->async_try();
+
+    if (e == &default_event) {
+      rv = rv && gasnet_try_syncnbi_all();
+    }
+    return rv;
   }
 
 } // namespace upcxx
