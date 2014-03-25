@@ -34,7 +34,6 @@ void sparse_gather(void *tgt_data_list, void **remote_addr_list,
 
 /* handler declarations */
 
-SHORT_HANDLER_DECL(misc_null_reply, 0, 0);
 SHORT_HANDLER_DECL(misc_delete_request, 1, 2);
 SHORT_HANDLER_DECL(misc_alloc_request, 2, 3);
 SHORT_HANDLER_DECL(misc_alloc_reply, 2, 4);
@@ -51,9 +50,6 @@ SHORT_HANDLER_DECL(sparse_generalScatter_request, 4, 6);
 MEDIUM_HANDLER_DECL(sparse_simpleGather_request, 5, 7);
 MEDIUM_HANDLER_DECL(sparse_simpleGather_reply, 4, 6);
 SHORT_HANDLER_DECL(sparse_generalGather_request, 4, 6);
-LONG_HANDLER_DECL(sparse_largeGather_request, 5, 7);
-LONG_HANDLER_DECL(sparse_largeScatterNoDelete_request, 3, 4);
-LONG_HANDLER_DECL(sparse_largeGather_reply, 1, 2);
 
 #ifdef __cplusplus
 } /* extern "C" */
