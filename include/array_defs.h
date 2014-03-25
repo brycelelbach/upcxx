@@ -21,26 +21,13 @@
 #define UPCXXA_HANDLE_NBI                       ((UPCXXA_HANDLE_T *)-1)
 
 #if defined(GASNET_TRACE)
-# define UPCXXA_TRACE 
-# define UPCXXA_SRCPOS()                                \
-  GASNETT_TRACE_SETSOURCELINE(__FILE__,__LINE__)
-# define UPCXXA_SRCPOS_FREEZE()         GASNETT_TRACE_FREEZESOURCELINE()
-# define UPCXXA_SRCPOS_UNFREEZE()       GASNETT_TRACE_UNFREEZESOURCELINE()
-# define UPCXXA_TRACE_PRINTF(parenthesized_args) (  \
-    UPCXXA_SRCPOS(),                                \
-    (GASNETT_TRACE_ENABLED ?                        \
-     GASNETT_TRACE_PRINTF parenthesized_args :      \
-     ((void)0)),                                    \
-    ((void)0))
-# define UPCXXA_SET_SRCPOS(file,line)   GASNETT_TRACE_SETSOURCELINE(file,line)
-# define UPCXXA_GET_SRCPOS(file,line)   GASNETT_TRACE_GETSOURCELINE(file,line)
+# define UPCXXA_TRACE
+# define UPCXXA_TRACE_PRINTF(parenthesized_args)    \
+  (GASNETT_TRACE_ENABLED ?                          \
+   GASNETT_TRACE_PRINTF parenthesized_args :        \
+   ((void)0))
 #else
-# undef UPCXXA_TRACE
-# define UPCXXA_SRCPOS_FREEZE()   0
-# define UPCXXA_SRCPOS_UNFREEZE() 0
 # define UPCXXA_TRACE_PRINTF(parenthesized_args) ((void)0)
-# define UPCXXA_SET_SRCPOS(file,line)            ((void)0)
-# define UPCXXA_GET_SRCPOS(file,line)            ((void)0)
 #endif
 
 #define UPCXXA_BULK_READ(d_addr, s_box, s_addr, size) do {      \
