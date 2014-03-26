@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <array_bulk.h>
-#include "gasnet_api.h"
 #include <portable_inttypes.h>
 #include "allocate.h"
+#include "array_bulk.h"
+#include "array_bulk_internal.h"
 
 /* No multithreading support for now */
 /* TODO: use UPC++ global_machine.node_count() */

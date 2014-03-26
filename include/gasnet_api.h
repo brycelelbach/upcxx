@@ -12,7 +12,6 @@ extern "C"
 #include <gasnet.h>
 #include <gasnet_tools.h>
 #include <gasnet_coll.h>
-#include <gasnet_handler.h>
 
 #define GASNET_SAFE(fncall) do {                                      \
     int _retval;                                                      \
@@ -56,18 +55,18 @@ enum am_index_t {
   INC_AM,   // active broadcast reply
 
   /* array_bulk.c */
-  gasneti_handleridx(misc_delete_request),
-  gasneti_handleridx(misc_alloc_request),
-  gasneti_handleridx(misc_alloc_reply),
-  gasneti_handleridx(strided_pack_request),
-  gasneti_handleridx(strided_pack_reply),
-  gasneti_handleridx(strided_unpackAll_request),
-  gasneti_handleridx(strided_unpack_reply),
-  gasneti_handleridx(strided_unpackOnly_request),
-  gasneti_handleridx(sparse_simpleScatter_request),
-  gasneti_handleridx(sparse_done_reply),
-  gasneti_handleridx(sparse_generalScatter_request),
-  gasneti_handleridx(sparse_simpleGather_request),
-  gasneti_handleridx(sparse_simpleGather_reply),
-  gasneti_handleridx(sparse_generalGather_request),
+  ARRAY_MISC_DELETE_REQUEST,
+  ARRAY_MISC_ALLOC_REQUEST,
+  ARRAY_MISC_ALLOC_REPLY,
+  ARRAY_STRIDED_PACK_REQUEST,
+  ARRAY_STRIDED_PACK_REPLY,
+  ARRAY_STRIDED_UNPACKALL_REQUEST,
+  ARRAY_STRIDED_UNPACK_REPLY,
+  ARRAY_STRIDED_UNPACKONLY_REQUEST,
+  ARRAY_SPARSE_SIMPLESCATTER_REQUEST,
+  ARRAY_SPARSE_DONE_REPLY,
+  ARRAY_SPARSE_GENERALSCATTER_REQUEST,
+  ARRAY_SPARSE_SIMPLEGATHER_REQUEST,
+  ARRAY_SPARSE_SIMPLEGATHER_REPLY,
+  ARRAY_SPARSE_GENERALGATHER_REQUEST,
 };
