@@ -72,7 +72,7 @@ static struct Buffer **bufferArray;
   assumes only one thread in the box will run this code
   so it does not acquire any locks
 */
-void buffer_init(){
+static void buffer_init(){
   uint32_t i, j;
   bufferArray = (struct Buffer **)
     upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer *)*
@@ -108,7 +108,7 @@ void buffer_init(){
   in the case of preallocate buffer, return a pointer to the buffer of
   size datasz or greater for node remote_box
 */
-void *get_remote_buffer(size_t datasz, uint32_t remote_box){
+static void *get_remote_buffer(size_t datasz, uint32_t remote_box){
   void * volatile remoteAllocBuf = NULL;
   struct Buffer *myBuffers = bufferArray[MYBOXPROC];
   struct Buffer *buffer = myBuffers+remote_box;
@@ -561,10 +561,11 @@ extern void upcxxa_put_array(void *unpack_method, void *copy_desc,
       memcpy(dest, src, length);                      \
   } } while(0)
 
-void sparse_scatter_serial(void **remote_addr_list,
-                           void *src_data_list, uint32_t remote_box,
-                           size_t num_elem, size_t elem_sz,
-                           int atomic_elements) {
+static void sparse_scatter_serial(void **remote_addr_list,
+                                  void *src_data_list,
+                                  uint32_t remote_box,
+                                  size_t num_elem, size_t elem_sz,
+                                  int atomic_elements) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -624,10 +625,11 @@ void sparse_scatter_serial(void **remote_addr_list,
   }
 }
 /* ---------------------------------------------------------------- */
-void sparse_scatter_pipeline(void **remote_addr_list,
-                             void *src_data_list, uint32_t remote_box,
-                             size_t num_elem, size_t elem_sz,
-                             int atomic_elements) {
+static void sparse_scatter_pipeline(void **remote_addr_list,
+                                    void *src_data_list,
+                                    uint32_t remote_box,
+                                    size_t num_elem, size_t elem_sz,
+                                    int atomic_elements) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -852,10 +854,11 @@ SHORT_HANDLER(sparse_generalScatter_request, 4, 8,
               (token, UNPACK2(a0, a1), SUNPACK2(a2, a3),
                SUNPACK2(a4, a5), UNPACK2(a6, a7)));
 /* ---------------------------------------------------------------- */
-void sparse_gather_pipeline(void *tgt_data_list,
-                            void **remote_addr_list,
-                            uint32_t remote_box, size_t num_elem,
-                            size_t elem_sz, int atomic_elements) {
+static void sparse_gather_pipeline(void *tgt_data_list,
+                                   void **remote_addr_list,
+                                   uint32_t remote_box,
+                                   size_t num_elem, size_t elem_sz,
+                                   int atomic_elements) {
   volatile int done_ctr = 0;
 
   assert(tgt_data_list && remote_addr_list &&
@@ -944,12 +947,11 @@ void sparse_gather_pipeline(void *tgt_data_list,
   }
 }
 /* ---------------------------------------------------------------- */
-void sparse_gather_serial(void *tgt_data_list,
-                          void **remote_addr_list,
-                          uint32_t remote_box,
-                          size_t num_elem,
-                          size_t elem_sz,
-                          int atomic_elements) {
+static void sparse_gather_serial(void *tgt_data_list,
+                                 void **remote_addr_list,
+                                 uint32_t remote_box, size_t num_elem,
+                                 size_t elem_sz,
+                                 int atomic_elements) {
   volatile int done_ctr = 0;
 
   assert(tgt_data_list && remote_addr_list &&
