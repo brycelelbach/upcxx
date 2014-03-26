@@ -267,9 +267,9 @@ MEDIUM_HANDLER(strided_pack_reply, 4, 8,
                (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3),
                 SUNPACK2(a4, a5), UNPACK2(a6, a7)));
 /* ---------------------------------------------------------------- */
-extern void get_array(void *pack_method, void *copy_desc,
-                      size_t copy_desc_size, uint32_t tgt_box,
-                      void *buffer, int atomicelements) {
+extern void upcxxa_get_array(void *pack_method, void *copy_desc,
+                             size_t copy_desc_size, uint32_t tgt_box,
+                             void *buffer, int atomicelements) {
   pack_return_info_t info;
   info.pack_spin = 0;
   /* A copy_desc is an object that contains the array descriptor. */
@@ -384,9 +384,10 @@ MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
 /* ---------------------------------------------------------------- */
 /* Send a contiguous array of data to a node, and have it get unpacked
    into a Titanium array. */
-extern void put_array(void *unpack_method, void *copy_desc,
-                      size_t copy_desc_size, void *array_data,
-                      size_t array_data_size, uint32_t tgt_box) {
+extern void upcxxa_put_array(void *unpack_method, void *copy_desc,
+                             size_t copy_desc_size, void *array_data,
+                             size_t array_data_size,
+                             uint32_t tgt_box) {
   void *data;
   /* ensure double-word alignment for array data */
   size_t copy_desc_size_padded = ((copy_desc_size-1)/8 + 1) * 8;
@@ -551,12 +552,10 @@ extern void put_array(void *unpack_method, void *copy_desc,
       memcpy(dest, src, length);                      \
   } } while(0)
 
-extern void sparse_scatter_serial(void **remote_addr_list,
-                                  void *src_data_list,
-                                  uint32_t remote_box,
-                                  size_t num_elem,
-                                  size_t elem_sz,
-                                  int atomic_elements) {
+void sparse_scatter_serial(void **remote_addr_list,
+                           void *src_data_list, uint32_t remote_box,
+                           size_t num_elem, size_t elem_sz,
+                           int atomic_elements) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -616,12 +615,10 @@ extern void sparse_scatter_serial(void **remote_addr_list,
   }
 }
 /* ---------------------------------------------------------------- */
-extern void sparse_scatter_pipeline(void **remote_addr_list,
-                                    void *src_data_list,
-                                    uint32_t remote_box,
-                                    size_t num_elem,
-                                    size_t elem_sz,
-                                    int atomic_elements) {
+void sparse_scatter_pipeline(void **remote_addr_list,
+                             void *src_data_list, uint32_t remote_box,
+                             size_t num_elem, size_t elem_sz,
+                             int atomic_elements) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -776,12 +773,11 @@ extern void sparse_scatter_pipeline(void **remote_addr_list,
   }
 }
 /* ---------------------------------------------------------------- */
-extern void sparse_scatter(void **remote_addr_list,
-                           void *src_data_list,
-                           uint32_t remote_box,
-                           size_t num_elem,
-                           size_t elem_sz,
-                           int atomic_elements) {
+extern void upcxxa_sparse_scatter(void **remote_addr_list,
+                                  void *src_data_list,
+                                  uint32_t remote_box,
+                                  size_t num_elem, size_t elem_sz,
+                                  int atomic_elements) {
   if (upcxxa_pipelining){
     sparse_scatter_pipeline(remote_addr_list, src_data_list,
                             remote_box, num_elem, elem_sz,
@@ -847,12 +843,10 @@ SHORT_HANDLER(sparse_generalScatter_request, 4, 8,
               (token, UNPACK2(a0, a1), SUNPACK2(a2, a3),
                SUNPACK2(a4, a5), UNPACK2(a6, a7)));
 /* ---------------------------------------------------------------- */
-extern void sparse_gather_pipeline(void *tgt_data_list,
-                                   void **remote_addr_list,
-				   uint32_t remote_box,
-                                   size_t num_elem,
-                                   size_t elem_sz,
-                                   int atomic_elements) {
+void sparse_gather_pipeline(void *tgt_data_list,
+                            void **remote_addr_list,
+                            uint32_t remote_box, size_t num_elem,
+                            size_t elem_sz, int atomic_elements) {
   volatile int done_ctr = 0;
 
   assert(tgt_data_list && remote_addr_list &&
@@ -1006,9 +1000,11 @@ void sparse_gather_serial(void *tgt_data_list,
   }
 }
 /* ---------------------------------------------------------------- */
-void sparse_gather(void *tgt_data_list, void **remote_addr_list,
-		   uint32_t remote_box, size_t num_elem,
-                   size_t elem_sz, int atomic_elements) {
+extern void upcxxa_sparse_gather(void *tgt_data_list,
+                                 void **remote_addr_list,
+                                 uint32_t remote_box, size_t num_elem,
+                                 size_t elem_sz,
+                                 int atomic_elements) {
   if (upcxxa_pipelining){
     sparse_gather_pipeline(tgt_data_list, remote_addr_list,
                            remote_box, num_elem, elem_sz,
@@ -1096,7 +1092,7 @@ SHORT_HANDLER(sparse_generalGather_request, 4, 8,
 /*
   read environment variables prealloc and pipelining
 */
-void gather_init(){
+extern void upcxxa_gather_init(){
   char *preallocstr;
   char *pipeliningstr;
 
