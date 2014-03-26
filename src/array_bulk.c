@@ -33,7 +33,7 @@
 /*
   preallocate buffer size in bytes
 */
-static int upcxxa_prealloc;
+static size_t upcxxa_prealloc;
 
 /*
   pipelining is 1 if using pipelining
@@ -45,7 +45,7 @@ static int upcxxa_pipelining;
 */
 struct Buffer{
   void *ptr;
-  int size;
+  size_t size;
 };
 
 /*
@@ -61,7 +61,7 @@ static struct Buffer **bufferArray;
   so it does not acquire any locks
 */
 void buffer_init(){
-  int i, j;
+  uint32_t i, j;
   bufferArray = (struct Buffer **)
     upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer *)*
                                        MYBOXPROCS);
@@ -85,7 +85,7 @@ void buffer_init(){
       abort();
     }
     for (j = 0; j < BOXES; j++){
-	tmp->size = -1;
+	tmp->size = 0;
 	tmp->ptr = NULL;
 	tmp++;
     }
@@ -101,12 +101,12 @@ void *get_remote_buffer(size_t datasz, uint32_t remote_box){
   struct Buffer *myBuffers = bufferArray[MYBOXPROC];
   struct Buffer *buffer = myBuffers+remote_box;
 
-  /* Allocate a buffer to hold the array data on the remote sideif
+  /* Allocate a buffer to hold the array data on the remote side if
      there is no preallocated buffer of this size or greater. */
   if (buffer->size >= datasz){
       remoteAllocBuf = buffer->ptr;
   }
-  else if (buffer->size == -1){
+  else if (buffer->size == 0){
     SHORT_REQ(2,4,(remote_box, gasneti_handleridx(misc_alloc_request),
                    PACK(datasz), PACK(&remoteAllocBuf)));
     GASNET_BLOCKUNTIL(remoteAllocBuf);
@@ -639,19 +639,19 @@ extern void sparse_scatter_pipeline(void **remote_addr_list,
     upcxxa_free(data);
   } else {  /* slower case - need multiple messages */
     size_t total = num_elem;
-    int loadSize;
-    int count = 0;
-    int messageCount;
-    int pairSize = sizeof(void *)+elem_sz;
+    size_t loadSize;
+    size_t count = 0;
+    size_t messageCount;
+    size_t pairSize = sizeof(void *)+elem_sz;
     char *localBuffer;
     char *localCurBuf;
     size_t bufferSize;
-    int loadSizeInBytes;
-    int bufferPadding;
-    int lastLoadSize;
-    int i;
-    int addrLoadSize;
-    int dataLoadSize;
+    size_t loadSizeInBytes;
+    size_t bufferPadding;
+    size_t lastLoadSize;
+    size_t i;
+    size_t addrLoadSize;
+    size_t dataLoadSize;
 
     loadSize = gasnet_AMMaxMedium() / pairSize;
     addrLoadSize = loadSize*sizeof(void *);
@@ -662,11 +662,10 @@ extern void sparse_scatter_pipeline(void **remote_addr_list,
       bufferPadding = sizeof(void *) - bufferPadding;
     }
     loadSizeInBytes += bufferPadding;
-    lastLoadSize = (int) (num_elem % loadSize);
+    lastLoadSize = num_elem % loadSize;
     if (lastLoadSize == 0){
-      messageCount = (int) (num_elem / loadSize);
-      bufferSize =
-        ((size_t) loadSizeInBytes) * ((size_t) messageCount);
+      messageCount = num_elem / loadSize;
+      bufferSize = loadSizeInBytes * messageCount;
       /*
       combine the address list and data list into
       a local buffer before sending
@@ -687,7 +686,7 @@ extern void sparse_scatter_pipeline(void **remote_addr_list,
       }
     }
     else{
-      messageCount = (int) (num_elem / loadSize) + 1;
+      messageCount = (num_elem / loadSize) + 1;
       bufferSize = loadSizeInBytes * (messageCount - 1) +
         lastLoadSize * pairSize;
       /*
@@ -733,16 +732,16 @@ extern void sparse_scatter_pipeline(void **remote_addr_list,
       }
 
       while (total > 0){
-	int currentLoadSize;
-	int currentLoadSizeInBytes;
+	size_t currentLoadSize;
+	size_t currentLoadSizeInBytes;
 
 	if (total >= loadSize){
 	  currentLoadSize = loadSize;
 	  currentLoadSizeInBytes = loadSizeInBytes;
 	}
 	else{
-	  currentLoadSize = (int) total;
-	  currentLoadSizeInBytes = (int) (total*pairSize);
+	  currentLoadSize = total;
+	  currentLoadSizeInBytes = total*pairSize;
 	}
 
 	curCtr = (int *) (done_ctr_array+count);
@@ -792,7 +791,7 @@ void sparse_simpleScatter_request_inner(gasnet_token_t token,
                                         void *_done_ctr) {
   size_t i;
   void **addr_list = (void**)addr_data_list;
-  int offset = num_elem * sizeof(void *);
+  size_t offset = num_elem * sizeof(void *);
   char *data = ((char*)addr_data_list) + offset;
   assert(addr_data_list_size == offset + num_elem * elem_sz);
   FAST_UNPACK(elem_sz, data, addr_list);
@@ -822,7 +821,7 @@ void sparse_generalScatter_request_inner(gasnet_token_t token,
                                          void *_done_ctr) {
   size_t i;
   void **addr_list = (void**)addr_data_list;
-  int offset = num_elem * sizeof(void *);
+  size_t offset = num_elem * sizeof(void *);
   char *data = ((char*)addr_data_list) + offset;
   FAST_UNPACK(elem_sz, data, addr_list);
   SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply),
@@ -860,14 +859,14 @@ extern void sparse_gather_pipeline(void *tgt_data_list,
       GASNET_BLOCKUNTIL(done_ctr);
   } else { /*pipeline gather requests */
       size_t total = num_elem;
-      int loadSize;
-      int ptrLimit;
-      int dataLimit;
-      int count = 0;
-      int messageCount;
+      size_t loadSize;
+      size_t ptrLimit;
+      size_t dataLimit;
+      size_t count = 0;
+      size_t messageCount;
 
       ptrLimit = gasnet_AMMaxMedium() / sizeof(void *);
-      dataLimit = (int) (gasnet_AMMaxMedium() / elem_sz);
+      dataLimit = gasnet_AMMaxMedium() / elem_sz;
       if (ptrLimit > dataLimit){
 	loadSize = dataLimit;
       }
@@ -875,14 +874,14 @@ extern void sparse_gather_pipeline(void *tgt_data_list,
 	loadSize = ptrLimit;
       }
       if (num_elem % loadSize == 0){
-        messageCount = (int) (num_elem / loadSize);
+        messageCount = num_elem / loadSize;
       }
       else{
-        messageCount = (int) (num_elem / loadSize) + 1;
+        messageCount = (num_elem / loadSize) + 1;
       }
 
     {
-      int i;
+      size_t i;
       int volatile * done_ctr_array = (int *)
         upcxxa_malloc_atomic_uncollectable(sizeof(int) *
                                            messageCount);
@@ -899,13 +898,13 @@ extern void sparse_gather_pipeline(void *tgt_data_list,
       }
 
       while (total > 0){
-	int currentLoadSize;
+	size_t currentLoadSize;
 
 	if (total >= loadSize){
 	  currentLoadSize = loadSize;
 	}
 	else{
-          currentLoadSize = (int) total;
+          currentLoadSize = total;
 	}
 
 	curCtr = (int *) (done_ctr_array+count);
@@ -980,7 +979,8 @@ void sparse_gather_serial(void *tgt_data_list,
                    PACK(elem_sz), PACK(&done_ctr)));
     GASNET_BLOCKUNTIL(done_ctr);
 
-    /* Transfer the data from the buffer with libtic (this could be optimized somewhat) */
+    /* Transfer the data from the buffer with libtic (this could be
+       optimized somewhat) */
     gasnet_get_bulk(tgt_data_list,
                     remote_box, ((char *)remoteAllocBuf)+offset,
                     (num_elem * elem_sz)); /* (does not handle gp escape) */
@@ -1067,7 +1067,7 @@ void sparse_generalGather_request_inner(gasnet_token_t token,
                                         void *_done_ctr) {
   size_t i;
   void **addr_list = (void**)addr_data_list;
-  int offset = num_elem * sizeof(void *);
+  size_t offset = num_elem * sizeof(void *);
   char *data = ((char*)addr_data_list) + offset;
   FAST_PACK(elem_sz, data, addr_list);
   SHORT_REP(1,2,(token, gasneti_handleridx(sparse_done_reply),
@@ -1092,7 +1092,7 @@ void gather_init(){
     upcxxa_prealloc = 0;
   }
   else{
-    upcxxa_prealloc = atoi(preallocstr);
+    upcxxa_prealloc = (size_t) atoi(preallocstr);
     assert(upcxxa_prealloc >= 0);
     if (upcxxa_prealloc > 0){
       buffer_init();
