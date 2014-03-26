@@ -1,9 +1,8 @@
+#pragma once
+
 /*
  * upcxx_internal.h
  */
-
-#ifndef UPCXX_INTERNAL_H_
-#define UPCXX_INTERNAL_H_
 
 namespace upcxx {
   /**
@@ -58,5 +57,3 @@ namespace upcxx {
   void free_gpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
   void inc_am_handler(gasnet_token_t token, void *am, size_t nbytes);
 }
-
-#endif /* UPCXX_INTERNAL_H_ */

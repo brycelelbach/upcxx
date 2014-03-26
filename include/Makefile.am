@@ -3,6 +3,7 @@ include_HEADERS =  \
   allocate.h \
   array.h \
   array_bulk.h \
+  array_bulk_internal.h \
   array_defs.h \
   async.h \
   async_templates.h \

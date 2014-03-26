@@ -9,7 +9,7 @@
 
 #include "upcxx.h"
 #include "upcxx_internal.h"
-#include "array_bulk.h"
+#include "array_bulk_internal.h"
 
 // #define UPCXX_DEBUG
 
