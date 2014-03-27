@@ -162,7 +162,7 @@ namespace upcxx
     assert(out_task_queue != NULL);
 
     // Initialize array bulk operations
-    upcxxa_gather_init();
+    array_bulk_init();
 
     barrier();
 

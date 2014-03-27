@@ -8,9 +8,9 @@ libupcxx_la_CPPFLAGS = \
   $(GASNET_CFLAGS)
 
 libupcxx_la_SOURCES = \
-  array_bulk.c       \
   dl_malloc.c        \
   active_coll.cpp    \
+  array_bulk.cpp     \
   async.cpp          \
   barrier.cpp        \
   collective.cpp     \

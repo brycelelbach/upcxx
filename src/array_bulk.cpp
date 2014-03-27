@@ -38,6 +38,8 @@
 #define UPCXXA_TRANSLATE_FUNCTION_ADDR(localaddr, targetbox)    \
   (localaddr)
 
+namespace upcxx {
+
 /**************************
  * INITIALIZATION/STATICS *
  *************************/
@@ -276,9 +278,9 @@ MEDIUM_HANDLER(strided_pack_reply, 4, 8,
                (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3),
                 SUNPACK2(a4, a5), UNPACK2(a6, a7)));
 /* ---------------------------------------------------------------- */
-extern void upcxxa_get_array(void *pack_method, void *copy_desc,
-                             size_t copy_desc_size, uint32_t tgt_box,
-                             void *buffer, int atomicelements) {
+extern void get_array(void *pack_method, void *copy_desc,
+                      size_t copy_desc_size, uint32_t tgt_box,
+                      void *buffer, int atomicelements) {
   pack_return_info_t info;
   info.pack_spin = 0;
   /* A copy_desc is an object that contains the array descriptor. */
@@ -393,10 +395,9 @@ MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
 /* ---------------------------------------------------------------- */
 /* Send a contiguous array of data to a node, and have it get unpacked
    into a Titanium array. */
-extern void upcxxa_put_array(void *unpack_method, void *copy_desc,
-                             size_t copy_desc_size, void *array_data,
-                             size_t array_data_size,
-                             uint32_t tgt_box) {
+extern void put_array(void *unpack_method, void *copy_desc,
+                      size_t copy_desc_size, void *array_data,
+                      size_t array_data_size, uint32_t tgt_box) {
   void *data;
   /* ensure double-word alignment for array data */
   size_t copy_desc_size_padded = ((copy_desc_size-1)/8 + 1) * 8;
@@ -578,7 +579,7 @@ static void sparse_scatter_serial(void **remote_addr_list,
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    char *data = upcxxa_malloc_atomic_huge(datasz);
+    char *data = (char *) upcxxa_malloc_atomic_huge(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -642,7 +643,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    char *data = upcxxa_malloc_atomic_huge(datasz);
+    char *data = (char *) upcxxa_malloc_atomic_huge(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -689,7 +690,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
       combine the address list and data list into
       a local buffer before sending
       */
-      localBuffer = upcxxa_malloc_atomic_huge(bufferSize);
+      localBuffer = (char *) upcxxa_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -712,7 +713,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
       combine the address list and data list into
       a buffer before sending
       */
-      localBuffer = upcxxa_malloc_atomic_huge(bufferSize);
+      localBuffer = (char *) upcxxa_malloc_atomic_huge(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -784,11 +785,10 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
   }
 }
 /* ---------------------------------------------------------------- */
-extern void upcxxa_sparse_scatter(void **remote_addr_list,
-                                  void *src_data_list,
-                                  uint32_t remote_box,
-                                  size_t num_elem, size_t elem_sz,
-                                  int atomic_elements) {
+extern void sparse_scatter(void **remote_addr_list,
+                           void *src_data_list, uint32_t remote_box,
+                           size_t num_elem, size_t elem_sz,
+                           int atomic_elements) {
   if (upcxxa_pipelining){
     sparse_scatter_pipeline(remote_addr_list, src_data_list,
                             remote_box, num_elem, elem_sz,
@@ -1011,11 +1011,10 @@ static void sparse_gather_serial(void *tgt_data_list,
   }
 }
 /* ---------------------------------------------------------------- */
-extern void upcxxa_sparse_gather(void *tgt_data_list,
-                                 void **remote_addr_list,
-                                 uint32_t remote_box, size_t num_elem,
-                                 size_t elem_sz,
-                                 int atomic_elements) {
+extern void sparse_gather(void *tgt_data_list,
+                          void **remote_addr_list,
+                          uint32_t remote_box, size_t num_elem,
+                          size_t elem_sz, int atomic_elements) {
   if (upcxxa_pipelining){
     sparse_gather_pipeline(tgt_data_list, remote_addr_list,
                            remote_box, num_elem, elem_sz,
@@ -1039,7 +1038,7 @@ void sparse_simpleGather_request_inner(gasnet_token_t token,
   size_t i;
   void **addr_list = (void**)_addr_list;
   size_t datasz = num_elem * elem_sz;
-  char *data = upcxxa_malloc_handlersafe(datasz);
+  char *data = (char *) upcxxa_malloc_handlersafe(datasz);
   if (!data) {
     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             datasz, "array gather AM handler");
@@ -1103,7 +1102,7 @@ SHORT_HANDLER(sparse_generalGather_request, 4, 8,
 /*
   read environment variables prealloc and pipelining
 */
-extern void upcxxa_gather_init(){
+extern void array_bulk_init(){
   char *preallocstr;
   char *pipeliningstr;
 
@@ -1128,3 +1127,5 @@ extern void upcxxa_gather_init(){
     upcxxa_pipelining = atoi(pipeliningstr);
   }
 }
+
+} // namespace upcxx
