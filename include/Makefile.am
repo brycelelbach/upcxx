@@ -11,10 +11,7 @@ include_HEADERS =  \
   future.h \
   gasnet_api.h \
   group.h \
-  lapack_api.h \
   lock.h \
-  machine.h \
-  matrix.h \
   global_ptr.h \
   queue.h \
   range.h \
