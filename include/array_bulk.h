@@ -7,6 +7,7 @@ extern "C" {
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+#include "event.h"
 
 /* AM-based scatter-gather primitives (for internal use in array
    library only) */
@@ -18,7 +19,8 @@ namespace upcxx {
                  void *buffer);
   void put_array(void *unpack_method, void *copy_desc,
                  size_t copy_desc_size, void *array_data,
-                 size_t array_data_size, uint32_t tgt_box);
+                 size_t array_data_size, uint32_t tgt_box,
+                 event *done_event);
 
   /* sparse scatter/gather - transfer data back & forth between a
    * local, packed data list and the memory space of a remote proc

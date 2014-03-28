@@ -4,6 +4,7 @@
 #include "allocate.h"
 #include "array_bulk.h"
 #include "array_bulk_internal.h"
+#include "array_defs.h"
 
 /* No multithreading support for now */
 /* TODO: use UPC++ global_machine.node_count() */
@@ -316,7 +317,8 @@ void strided_unpackAll_request_inner(gasnet_token_t token,
                                      size_t nBytes,
                                      void *_unpackMethod,
                                      size_t copyDescSize,
-                                     void *unpack_spin_ptr) {
+                                     void *done_ptr,
+                                     uint32_t use_event) {
   void *temp = NULL;
   if (((uintptr_t)packedArrayData) % 8 != 0) {
    /* it seems that some crappy AM implementations (ahem.. the NOW)
@@ -343,26 +345,31 @@ void strided_unpackAll_request_inner(gasnet_token_t token,
 #if 0
     gasnett_local_wmb(); /* ensure data committed before signalling */
 #endif
-    SHORT_SRP(1,2,(token, gasneti_handleridx(strided_unpack_reply),
-                   PACK(unpack_spin_ptr)));
+    SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
+                   PACK(done_ptr), use_event));
   }
   if (temp) upcxxa_free_handlersafe(temp);
 }
-MEDIUM_HANDLER(strided_unpackAll_request, 3, 6,
+MEDIUM_HANDLER(strided_unpackAll_request, 4, 7,
                (token,addr,nbytes, UNPACK(a0),      SUNPACK(a1),
-                UNPACK(a2)     ),
+                UNPACK(a2),      a3),
                (token,addr,nbytes, UNPACK2(a0, a1), SUNPACK2(a2, a3),
-                UNPACK2(a4, a5)));
+                UNPACK2(a4, a5), a6));
 /* ---------------------------------------------------------------- */
 GASNETT_INLINE(strided_unpack_reply_inner)
-void strided_unpack_reply_inner(gasnet_token_t token,
-                                void *unpack_spin_ptr) {
-  int *punpack_spin = (int *)unpack_spin_ptr;
-  *(punpack_spin) = 1;
+void strided_unpack_reply_inner(gasnet_token_t token, void *done_ptr,
+                                uint32_t use_event) {
+  if (use_event) {
+    event *done_event = (event *) done_ptr;
+    done_event->decref();
+  } else {
+    int *punpack_spin = (int *)done_ptr;
+    *(punpack_spin) = 1;
+  }
 }
-SHORT_HANDLER(strided_unpack_reply, 1, 2,
-              (token, UNPACK(a0)     ),
-              (token, UNPACK2(a0, a1)));
+SHORT_HANDLER(strided_unpack_reply, 2, 3,
+              (token, UNPACK(a0),      a1),
+              (token, UNPACK2(a0, a1), a2));
 /* ---------------------------------------------------------------- */
 /* The data was provided by previous calls; just unpack it with the
    given descriptor. */
@@ -372,32 +379,42 @@ void strided_unpackOnly_request_inner(gasnet_token_t token,
                                       size_t copyDescSize,
                                       void *bufAddr,
                                       void *_unpackMethod,
-                                      void *unpack_spin_ptr) {
+                                      void *done_ptr,
+                                      uint32_t use_event) {
   unpack_method_t unpackMethod = (unpack_method_t)_unpackMethod;
   (*unpackMethod)(copyDesc, (void *)bufAddr);
   upcxxa_free_handlersafe((void *)bufAddr);
 #if 0
   gasnett_local_wmb(); /* ensure data committed before signalling */
 #endif
-  SHORT_SRP(1,2,(token, gasneti_handleridx(strided_unpack_reply),
-                 PACK(unpack_spin_ptr)));
+  SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
+                 PACK(done_ptr), use_event));
 }
-MEDIUM_HANDLER(strided_unpackOnly_request, 3, 6,
+MEDIUM_HANDLER(strided_unpackOnly_request, 4, 7,
                (token,addr,nbytes, UNPACK(a0),      UNPACK(a1),
-                UNPACK(a2)     ),
+                UNPACK(a2),      a3),
                (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3),
-                UNPACK2(a4, a5)));
+                UNPACK2(a4, a5), a6));
 /* ---------------------------------------------------------------- */
 /* Send a contiguous array of data to a node, and have it get unpacked
    into a Titanium array. */
 extern void put_array(void *unpack_method, void *copy_desc,
                       size_t copy_desc_size, void *array_data,
-                      size_t array_data_size, uint32_t tgt_box) {
+                      size_t array_data_size, uint32_t tgt_box,
+                      event *done_event) {
   void *data;
   /* ensure double-word alignment for array data */
   size_t copy_desc_size_padded = ((copy_desc_size-1)/8 + 1) * 8;
   size_t data_size = copy_desc_size_padded + array_data_size;
   volatile int unpack_spin = 0;
+  uint32_t use_event = (done_event != UPCXXA_EVENT_NONE);
+  void *done_ptr;
+  if (use_event) {
+    done_ptr = (void *) done_event;
+    done_event->incref();
+  } else {
+    done_ptr = (void *) &unpack_spin;
+  }
 
   /* Fast(er), hopefully common case. */
   if (data_size <= gasnet_AMMaxMedium()) {
@@ -416,13 +433,15 @@ extern void put_array(void *unpack_method, void *copy_desc,
      */
     memcpy((void *)((uintptr_t)data + copy_desc_size_padded),
            array_data, array_data_size);
-    MEDIUM_SRQ(3,6,(tgt_box,
+    MEDIUM_SRQ(4,7,(tgt_box,
                     gasneti_handleridx(strided_unpackAll_request),
                     data, data_size,
                     PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
                                                         tgt_box)),
-                    PACK(copy_desc_size_padded), PACK(&unpack_spin)));
-    GASNET_BLOCKUNTIL(unpack_spin);
+                    PACK(copy_desc_size_padded), PACK(done_ptr),
+                    use_event));
+    if (!use_event)
+      GASNET_BLOCKUNTIL(unpack_spin);
     upcxxa_free(data);
   }
   else { /* Slow case. */
@@ -436,14 +455,14 @@ extern void put_array(void *unpack_method, void *copy_desc,
                     array_data_size);
     /* Tell the remote side to unpack the data. */
     assert(copy_desc_size <= gasnet_AMMaxMedium());
-    MEDIUM_SRQ(3,6,(tgt_box,
+    MEDIUM_SRQ(4,7,(tgt_box,
                     gasneti_handleridx(strided_unpackOnly_request),
-                    copy_desc, copy_desc_size,
-                    PACK(remoteAllocBuf),
+                    copy_desc, copy_desc_size, PACK(remoteAllocBuf),
                     PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
                                                         tgt_box)),
-                    PACK(&unpack_spin)));
-    GASNET_BLOCKUNTIL(unpack_spin);
+                    PACK(done_ptr), use_event));
+    if (!use_event)
+      GASNET_BLOCKUNTIL(unpack_spin);
   }
 }
 /* ----------------------------------------------------------------

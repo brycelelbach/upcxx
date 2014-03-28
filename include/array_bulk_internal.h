@@ -56,9 +56,9 @@ namespace upcxx {
 
   MEDIUM_HANDLER_DECL(strided_pack_request, 3, 6);
   MEDIUM_HANDLER_DECL(strided_pack_reply, 4, 8);
-  MEDIUM_HANDLER_DECL(strided_unpackAll_request, 3, 6);
-  SHORT_HANDLER_DECL(strided_unpack_reply, 1, 2);
-  MEDIUM_HANDLER_DECL(strided_unpackOnly_request, 3, 6);
+  MEDIUM_HANDLER_DECL(strided_unpackAll_request, 4, 7);
+  SHORT_HANDLER_DECL(strided_unpack_reply, 2, 3);
+  MEDIUM_HANDLER_DECL(strided_unpackOnly_request, 4, 7);
 
   MEDIUM_HANDLER_DECL(sparse_simpleScatter_request, 3, 6);
   SHORT_HANDLER_DECL(sparse_done_reply, 1, 2);
