@@ -27,9 +27,8 @@
 
 #define upcxxa_malloc_handlersafe(s) gasnet_seg_alloc(s)
 #define upcxxa_free_handlersafe(p)   gasnet_seg_free(p)
-#define upcxxa_malloc_atomic_uncollectable(s) gasnet_seg_alloc(s)
-#define upcxxa_malloc_atomic_huge(s) gasnet_seg_alloc(s)
-#define upcxxa_free(p) gasnet_seg_free(p)
+#define upcxxa_malloc(s)             gasnet_seg_alloc(s)
+#define upcxxa_free(p)               gasnet_seg_free(p)
 
 /* look into how to sync puts in UPC++ */
 #define upcxxa_write_sync()
@@ -77,8 +76,7 @@ static struct Buffer **bufferArray;
 static void buffer_init(){
   uint32_t i, j;
   bufferArray = (struct Buffer **)
-    upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer *)*
-                                       MYBOXPROCS);
+    upcxxa_malloc(sizeof(struct Buffer *)* MYBOXPROCS);
   if (!bufferArray) {
     fprintf(stderr, "failed to allocate %zu bytes in %s\n",
             (sizeof(struct Buffer *)*MYBOXPROCS),
@@ -89,8 +87,7 @@ static void buffer_init(){
   for (i = 0; i < MYBOXPROCS; i++){
     struct Buffer *tmp;
     bufferArray[i] = (struct Buffer *)
-      upcxxa_malloc_atomic_uncollectable(sizeof(struct Buffer)*
-                                         BOXES);
+      upcxxa_malloc(sizeof(struct Buffer)* BOXES);
     tmp = bufferArray[i];
     if (!tmp) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -200,8 +197,7 @@ GASNETT_INLINE(strided_pack_request_inner)
 void strided_pack_request_inner(gasnet_token_t token, void *copy_desc,
                                 size_t copy_desc_size,
                                 void *_packMethod, void *remoteBuffer,
-                                void *pack_info_ptr,
-                                int atomicelements) {
+                                void *pack_info_ptr) {
   size_t array_data_len;
   void *array_data;
   pack_method_t packMethod = (pack_method_t)_packMethod;
@@ -231,11 +227,11 @@ void strided_pack_request_inner(gasnet_token_t token, void *copy_desc,
                     PACK(array_data_len), PACK(pack_info_ptr)));
   }
 }
-MEDIUM_HANDLER(strided_pack_request, 4, 7,
+MEDIUM_HANDLER(strided_pack_request, 3, 6,
                (token,addr,nbytes, UNPACK(a0),      UNPACK(a1),
-                UNPACK(a2),      a3),
+                UNPACK(a2),    ),
                (token,addr,nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3),
-                UNPACK2(a4, a5), a6));
+                UNPACK2(a4, a5)));
 
 /* ---------------------------------------------------------------- */
 /* The reply handler needs to pass this information back to the
@@ -280,18 +276,17 @@ MEDIUM_HANDLER(strided_pack_reply, 4, 8,
 /* ---------------------------------------------------------------- */
 extern void get_array(void *pack_method, void *copy_desc,
                       size_t copy_desc_size, uint32_t tgt_box,
-                      void *buffer, int atomicelements) {
+                      void *buffer) {
   pack_return_info_t info;
   info.pack_spin = 0;
   /* A copy_desc is an object that contains the array descriptor. */
   assert(copy_desc && copy_desc_size > 0 &&
          copy_desc_size <= gasnet_AMMaxMedium());
-  MEDIUM_SRQ(4,7,(tgt_box, gasneti_handleridx(strided_pack_request),
+  MEDIUM_SRQ(3,6,(tgt_box, gasneti_handleridx(strided_pack_request),
                   copy_desc, copy_desc_size,
                   PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(pack_method,
                                                       tgt_box)),
-                  PACK(buffer),
-                  PACK(&info), atomicelements));
+                  PACK(buffer), PACK(&info)));
   GASNET_BLOCKUNTIL(info.pack_spin);
   /* If the data was too big to be sent in the reply, use a Tic call
      to do the job. */
@@ -409,7 +404,7 @@ extern void put_array(void *unpack_method, void *copy_desc,
     /* The remote end needs the descriptor and the array data. Since
        the data is small, copying the array data will be faster than
        sending two messages. */
-    data = (void *) upcxxa_malloc_atomic_huge(data_size);
+    data = (void *) upcxxa_malloc(data_size);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               data_size, "array put AM handler");
@@ -565,8 +560,7 @@ extern void put_array(void *unpack_method, void *copy_desc,
 static void sparse_scatter_serial(void **remote_addr_list,
                                   void *src_data_list,
                                   uint32_t remote_box,
-                                  size_t num_elem, size_t elem_sz,
-                                  int atomic_elements) {
+                                  size_t num_elem, size_t elem_sz) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -579,7 +573,7 @@ static void sparse_scatter_serial(void **remote_addr_list,
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    char *data = (char *) upcxxa_malloc_atomic_huge(datasz);
+    char *data = (char *) upcxxa_malloc(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -629,8 +623,7 @@ static void sparse_scatter_serial(void **remote_addr_list,
 static void sparse_scatter_pipeline(void **remote_addr_list,
                                     void *src_data_list,
                                     uint32_t remote_box,
-                                    size_t num_elem, size_t elem_sz,
-                                    int atomic_elements) {
+                                    size_t num_elem, size_t elem_sz) {
   volatile int done_ctr = 0;
   size_t datasz;
   size_t offset;
@@ -643,7 +636,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
   datasz = offset + num_elem * elem_sz;
   if (datasz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    char *data = (char *) upcxxa_malloc_atomic_huge(datasz);
+    char *data = (char *) upcxxa_malloc(datasz);
     if (!data) {
       fprintf(stderr, "failed to allocate %zu bytes in %s\n",
               datasz, "array scatter AM handler");
@@ -690,7 +683,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
       combine the address list and data list into
       a local buffer before sending
       */
-      localBuffer = (char *) upcxxa_malloc_atomic_huge(bufferSize);
+      localBuffer = (char *) upcxxa_malloc(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -713,7 +706,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
       combine the address list and data list into
       a buffer before sending
       */
-      localBuffer = (char *) upcxxa_malloc_atomic_huge(bufferSize);
+      localBuffer = (char *) upcxxa_malloc(bufferSize);
       if (!localBuffer) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
                 bufferSize, "array scatter AM handler");
@@ -737,8 +730,7 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
 
     {
       int volatile * done_ctr_array = (int *)
-        upcxxa_malloc_atomic_uncollectable(sizeof(int) *
-                                           messageCount);
+        upcxxa_malloc(sizeof(int) * messageCount);
       int *curCtr;
       if (!done_ctr_array) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -787,16 +779,14 @@ static void sparse_scatter_pipeline(void **remote_addr_list,
 /* ---------------------------------------------------------------- */
 extern void sparse_scatter(void **remote_addr_list,
                            void *src_data_list, uint32_t remote_box,
-                           size_t num_elem, size_t elem_sz,
-                           int atomic_elements) {
+                           size_t num_elem, size_t elem_sz) {
   if (upcxxa_pipelining){
     sparse_scatter_pipeline(remote_addr_list, src_data_list,
-                            remote_box, num_elem, elem_sz,
-                            atomic_elements);
+                            remote_box, num_elem, elem_sz);
   }
   else{
     sparse_scatter_serial(remote_addr_list, src_data_list, remote_box,
-                          num_elem, elem_sz, atomic_elements);
+                          num_elem, elem_sz);
   }
 }
 /* ---------------------------------------------------------------- */
@@ -857,8 +847,7 @@ SHORT_HANDLER(sparse_generalScatter_request, 4, 8,
 static void sparse_gather_pipeline(void *tgt_data_list,
                                    void **remote_addr_list,
                                    uint32_t remote_box,
-                                   size_t num_elem, size_t elem_sz,
-                                   int atomic_elements) {
+                                   size_t num_elem, size_t elem_sz) {
   volatile int done_ctr = 0;
 
   assert(tgt_data_list && remote_addr_list &&
@@ -868,12 +857,11 @@ static void sparse_gather_pipeline(void *tgt_data_list,
   if (num_elem * sizeof(void *) <= gasnet_AMMaxMedium() &&
       num_elem * elem_sz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    MEDIUM_SRQ(5,9,(remote_box,
+    MEDIUM_SRQ(4,8,(remote_box,
                     gasneti_handleridx(sparse_simpleGather_request),
                     remote_addr_list, (num_elem * sizeof(void *)),
                     PACK(num_elem), PACK(elem_sz),
-                    PACK(tgt_data_list), PACK(&done_ctr),
-                    atomic_elements));
+                    PACK(tgt_data_list), PACK(&done_ctr)));
     GASNET_BLOCKUNTIL(done_ctr);
   } else { /*pipeline gather requests */
     size_t total = num_elem;
@@ -901,8 +889,7 @@ static void sparse_gather_pipeline(void *tgt_data_list,
     {
       size_t i;
       int volatile * done_ctr_array = (int *)
-        upcxxa_malloc_atomic_uncollectable(sizeof(int) *
-                                           messageCount);
+        upcxxa_malloc(sizeof(int) * messageCount);
       int *curCtr;
       if (!done_ctr_array) {
         fprintf(stderr, "failed to allocate %zu bytes in %s\n",
@@ -926,14 +913,14 @@ static void sparse_gather_pipeline(void *tgt_data_list,
 	}
 
 	curCtr = (int *) (done_ctr_array+count);
-	MEDIUM_SRQ(5,9,(remote_box,
+	MEDIUM_SRQ(4,8,(remote_box,
                         gasneti_handleridx(sparse_simpleGather_request),
                         (void *) (remote_addr_list + count*loadSize),
                         currentLoadSize * sizeof(void *),
                         PACK(currentLoadSize), PACK(elem_sz),
                         PACK(((char *) tgt_data_list +
                               count*elem_sz*loadSize)),
-                        PACK(curCtr), atomic_elements));
+                        PACK(curCtr)));
 	total -= currentLoadSize;
 	count++;
       }
@@ -950,8 +937,7 @@ static void sparse_gather_pipeline(void *tgt_data_list,
 static void sparse_gather_serial(void *tgt_data_list,
                                  void **remote_addr_list,
                                  uint32_t remote_box, size_t num_elem,
-                                 size_t elem_sz,
-                                 int atomic_elements) {
+                                 size_t elem_sz) {
   volatile int done_ctr = 0;
 
   assert(tgt_data_list && remote_addr_list &&
@@ -961,12 +947,11 @@ static void sparse_gather_serial(void *tgt_data_list,
   if (num_elem * sizeof(void *) <= gasnet_AMMaxMedium() &&
       num_elem * elem_sz <= gasnet_AMMaxMedium()) {
     /* fast case - everything fits in a medium msg */
-    MEDIUM_SRQ(5,9,(remote_box,
+    MEDIUM_SRQ(4,8,(remote_box,
                     gasneti_handleridx(sparse_simpleGather_request),
                     remote_addr_list, (num_elem * sizeof(void *)),
                     PACK(num_elem), PACK(elem_sz),
-                    PACK(tgt_data_list), PACK(&done_ctr),
-                    atomic_elements));
+                    PACK(tgt_data_list), PACK(&done_ctr)));
     GASNET_BLOCKUNTIL(done_ctr);
   } else {  /* slower case - need multiple messages */
     size_t offset = num_elem * sizeof(void *);
@@ -1014,15 +999,14 @@ static void sparse_gather_serial(void *tgt_data_list,
 extern void sparse_gather(void *tgt_data_list,
                           void **remote_addr_list,
                           uint32_t remote_box, size_t num_elem,
-                          size_t elem_sz, int atomic_elements) {
+                          size_t elem_sz) {
   if (upcxxa_pipelining){
     sparse_gather_pipeline(tgt_data_list, remote_addr_list,
-                           remote_box, num_elem, elem_sz,
-                           atomic_elements);
+                           remote_box, num_elem, elem_sz);
   }
   else{
     sparse_gather_serial(tgt_data_list, remote_addr_list, remote_box,
-                         num_elem, elem_sz, atomic_elements);
+                         num_elem, elem_sz);
   }
 }
 /* ---------------------------------------------------------------- */
@@ -1033,8 +1017,7 @@ void sparse_simpleGather_request_inner(gasnet_token_t token,
                                        size_t num_elem,
                                        size_t elem_sz,
                                        void *_tgt_data_list,
-                                       void *_done_ctr,
-                                       int atomic_elements) {
+                                       void *_done_ctr) {
   size_t i;
   void **addr_list = (void**)_addr_list;
   size_t datasz = num_elem * elem_sz;
@@ -1052,11 +1035,11 @@ void sparse_simpleGather_request_inner(gasnet_token_t token,
                   PACK(_tgt_data_list), PACK(_done_ctr)));
   upcxxa_free_handlersafe(data);
 }
-MEDIUM_HANDLER(sparse_simpleGather_request, 5, 9,
+MEDIUM_HANDLER(sparse_simpleGather_request, 4, 8,
                (token,addr,nbytes, SUNPACK(a0),      SUNPACK(a1),
-                UNPACK(a2),      UNPACK(a3),      a4),
+                UNPACK(a2),      UNPACK(a3),    ),
                (token,addr,nbytes, SUNPACK2(a0, a1), SUNPACK2(a2, a3),
-                UNPACK2(a4, a5), UNPACK2(a6, a7), a8));
+                UNPACK2(a4, a5), UNPACK2(a6, a7)));
 /* ---------------------------------------------------------------- */
 GASNETT_INLINE(sparse_simpleGather_reply_inner)
 void sparse_simpleGather_reply_inner(gasnet_token_t token,

@@ -72,14 +72,14 @@
   *phandle = gasnet_get_nb_bulk(destaddr, srcbox, srcaddr, nbytes)
 #define UPCXXA_GET_NBI_BULK_NOPTRS(destaddr, srcbox, srcaddr, nbytes)   \
   gasnet_get_nbi_bulk(destaddr, srcbox, srcaddr, nbytes)
-#define UPCXXA_GET_ARRAY(pmethod, cdesc, cdescsz, target, buffer, atomicelem) \
-  upcxx::get_array(pmethod, cdesc, cdescsz, target, buffer, atomicelem)
+#define UPCXXA_GET_ARRAY(pmethod, cdesc, cdescsz, target, buffer) \
+  upcxx::get_array(pmethod, cdesc, cdescsz, target, buffer)
 #define UPCXXA_PUT_ARRAY(umethod, cdesc, cdescsz, data, datasz, target) \
   upcxx::put_array(umethod, cdesc, cdescsz, data, datasz, target)
-#define UPCXXA_SPARSE_SCATTER(dsts, src, target, num, elemsz, atomicelem) \
-  upcxx::sparse_scatter(dsts, src, target, num, elemsz, atomicelem)
-#define UPCXXA_SPARSE_GATHER(dst, srcs, target, num, elemsz, atomicelem) \
-  upcxx::sparse_gather(dst, srcs, target, num, elemsz, atomicelem)
+#define UPCXXA_SPARSE_SCATTER(dsts, src, target, num, elemsz) \
+  upcxx::sparse_scatter(dsts, src, target, num, elemsz)
+#define UPCXXA_SPARSE_GATHER(dst, srcs, target, num, elemsz) \
+  upcxx::sparse_gather(dst, srcs, target, num, elemsz)
 
 #define UPCXXA_BROADCAST_RAW(dst, sender, src, size)            \
   do {                                                          \
