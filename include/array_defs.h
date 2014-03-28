@@ -16,29 +16,30 @@
 #define UPCXXA_ARRAY_MALLOC                     gasnet_seg_alloc
 #define UPCXXA_ARRAY_FREE                       gasnet_seg_free
 #define UPCXXA_GETENV_MASTER                    gasnet_getenv
-#define UPCXXA_HANDLE_T                         gasnet_handle_t
-#define UPCXXA_HANDLE_SETDONE(phandle)          *phandle = GASNET_INVALID_HANDLE
-#define UPCXXA_HANDLE_NBI                       ((UPCXXA_HANDLE_T *)-1)
+#define UPCXXA_EVENT_T                          upcxx::event *
+#define UPCXXA_DEFAULT_EVENT                    upcxx::peek_event()
+#define UPCXXA_EVENT_NONE                       NULL
 
 #if defined(GASNET_TRACE)
 # define UPCXXA_TRACE
-# define UPCXXA_TRACE_PRINTF(parenthesized_args)    \
-  (GASNETT_TRACE_ENABLED ?                          \
-   GASNETT_TRACE_PRINTF parenthesized_args :        \
+# define UPCXXA_TRACE_PRINTF(parenthesized_args)        \
+  (GASNETT_TRACE_ENABLED ?                              \
+   GASNETT_TRACE_PRINTF parenthesized_args :            \
    ((void)0))
 #else
 # define UPCXXA_TRACE_PRINTF(parenthesized_args) ((void)0)
 #endif
 
-#define UPCXXA_BULK_READ(d_addr, s_box, s_addr, size) do {      \
-    gasnet_get_bulk(d_addr, s_box, s_addr, size);               \
+#define UPCXXA_BULK_READ(d_addr, s_gaddr, size) do {    \
+    gasnet_get_bulk(d_addr, UPCXXA_GET_BOXID(s_gaddr),  \
+                    UPCXXA_TO_LOCAL(s_gaddr), size);    \
   } while(0)
-#define UPCXXA_BULK_WRITE(d_box, d_addr, s_addr, size) do {     \
-    gasnet_put_bulk(d_box, d_addr, s_addr, size);               \
+#define UPCXXA_BULK_WRITE(d_gaddr, s_addr, size) do {           \
+    gasnet_put_bulk(UPCXXA_GET_BOXID(d_gaddr),                  \
+                    UPCXXA_TO_LOCAL(d_gaddr), s_addr, size);    \
   } while(0)
-#define UPCXXA_ASSIGN_GLOBAL_ANONYMOUS_BULK(gptr, nitems, pval)         \
-  UPCXXA_BULK_WRITE(UPCXXA_GET_BOXID(gptr),                             \
-                    UPCXXA_TO_LOCAL(gptr), (void *)(pval),              \
+#define UPCXXA_ASSIGN_GLOBAL_ANONYMOUS_BULK(gptr, nitems, pval) \
+  UPCXXA_BULK_WRITE(gptr, (void *)(pval),                       \
                     sizeof(*(pval)) * (nitems))
 
 #define UPCXXA_LOCAL_TO_GLOBAL_COPY(local, global, nitems)      \
@@ -64,14 +65,14 @@
 #define UPCXXA_BOX_TO_FIRST_PROC(box)                   \
   upcxx::global_machine.cpu_id_local2global(box, 0)
 
-#define UPCXXA_PUT_NB_BULK(phandle, destbox, destaddr, srcaddr, nbytes) \
-  *phandle = gasnet_put_nb_bulk(destbox, destaddr, srcaddr, nbytes)
-#define UPCXXA_PUT_NBI_BULK(destbox, destaddr, srcaddr, nbytes) \
-  gasnet_put_nbi_bulk(destbox, destaddr, srcaddr, nbytes)
-#define UPCXXA_GET_NB_BULK(phandle, destaddr, srcbox, srcaddr, nbytes)  \
-  *phandle = gasnet_get_nb_bulk(destaddr, srcbox, srcaddr, nbytes)
-#define UPCXXA_GET_NBI_BULK(destaddr, srcbox, srcaddr, nbytes)  \
-  gasnet_get_nbi_bulk(destaddr, srcbox, srcaddr, nbytes)
+#define UPCXXA_PUT_NB_BULK(event, destgaddr, srcaddr, nbytes)   \
+  upcxx::async_copy(global_ptr<void>(srcaddr),                  \
+                    global_ptr<void>(destgaddr),                \
+                    nbytes, event)
+#define UPCXXA_GET_NB_BULK(event, destaddr, srcgaddr, nbytes)   \
+  upcxx::async_copy(global_ptr<void>(srcgaddr),                 \
+                    global_ptr<void>(destaddr),                 \
+                    nbytes, event)
 #define UPCXXA_GET_ARRAY(pmethod, cdesc, cdescsz, target, buffer) \
   upcxx::get_array(pmethod, cdesc, cdescsz, target, buffer)
 #define UPCXXA_PUT_ARRAY(umethod, cdesc, cdescsz, data, datasz, target) \
