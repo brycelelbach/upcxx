@@ -10,7 +10,7 @@
 #define UPCXXA_WEAK_ASSIGN                      UPCXXA_ASSIGN
 #define UPCXXA_INDEX_GLOBAL                     UPCXXA_INDEX_LOCAL
 
-#define UPCXXA_MALLOC_ATOMIC_HUGE               gasnet_seg_alloc
+#define UPCXXA_MALLOC                           gasnet_seg_alloc
 #define UPCXXA_FREE                             gasnet_seg_free
 #define UPCXXA_SYNC() /* FIX */
 #define UPCXXA_ARRAY_MALLOC                     gasnet_seg_alloc
@@ -68,9 +68,9 @@
   *phandle = gasnet_put_nb_bulk(destbox, destaddr, srcaddr, nbytes)
 #define UPCXXA_PUT_NBI_BULK(destbox, destaddr, srcaddr, nbytes) \
   gasnet_put_nbi_bulk(destbox, destaddr, srcaddr, nbytes)
-#define UPCXXA_GET_NB_BULK_NOPTRS(phandle, destaddr, srcbox, srcaddr, nbytes) \
+#define UPCXXA_GET_NB_BULK(phandle, destaddr, srcbox, srcaddr, nbytes)  \
   *phandle = gasnet_get_nb_bulk(destaddr, srcbox, srcaddr, nbytes)
-#define UPCXXA_GET_NBI_BULK_NOPTRS(destaddr, srcbox, srcaddr, nbytes)   \
+#define UPCXXA_GET_NBI_BULK(destaddr, srcbox, srcaddr, nbytes)  \
   gasnet_get_nbi_bulk(destaddr, srcbox, srcaddr, nbytes)
 #define UPCXXA_GET_ARRAY(pmethod, cdesc, cdescsz, target, buffer) \
   upcxx::get_array(pmethod, cdesc, cdescsz, target, buffer)
