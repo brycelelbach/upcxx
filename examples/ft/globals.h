@@ -23,7 +23,7 @@
 #define NONBLOCKING_ARRAYCOPY
 
 #ifdef NONBLOCKING_ARRAYCOPY
-#define COPY copy_nbi
+#define COPY async_copy
 #else
 #define COPY copy
 #endif
@@ -113,10 +113,11 @@ struct timer {
 
 #if USE_UPCXX
 # include <broadcast.h>
+# include <event.h>
 #else
 # define barrier()
 # define broadcast(val, src) val
-# define async_copy_fence()
+# define async_wait()
 # define THREADS 1
 # define MYTHREAD 0
 static void init(int *argc, char ***argv) {}

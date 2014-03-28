@@ -353,7 +353,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 
     // Handle.syncNBI();
-    async_copy_fence();
+    async_wait();
 
     TIMER_STOP_READ(myTimer, myTimes[T_SYNC][level][3*(iterationNum-1) +
                                                     callNumber]);
@@ -430,7 +430,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 
     // Handle.syncNBI();
-    async_copy_fence();
+    async_wait();
 
     TIMER_STOP_READ(myTimes[T_SYNC][level][3*(iterationNum-1) + callNumber]);
 #endif
@@ -524,7 +524,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       TIMER_START(myTimer);
 
       // Handle.syncNBI();
-      async_copy_fence();
+      async_wait();
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_SYNC][level][9*(iterationNum-1) +
@@ -621,7 +621,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       TIMER_START(myTimer);
 
       // Handle.syncNBI();
-      async_copy_fence();
+      async_wait();
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_SYNC][level][9*(iterationNum-1) +

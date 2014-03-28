@@ -185,7 +185,7 @@ void FT::FFT_3D(int direction, int iter) {
 #ifdef NONBLOCKING_ARRAYCOPY
   TIMER_START(myTimer);
 
-  async_copy_fence();
+  async_wait();
 
   TIMER_STOP_READ(myTimer, myTimes[T_SYNC][iter]);
 #endif

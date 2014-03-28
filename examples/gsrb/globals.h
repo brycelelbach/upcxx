@@ -84,9 +84,10 @@ namespace upcxx {
 
 #if USE_UPCXX
 # include <broadcast.h>
+# include <event.h>
 #else
 # define broadcast(val, src) val
-# define async_copy_fence()
+# define async_wait()
 # define THREADS 1
 # define MYTHREAD 0
 namespace upcxx {

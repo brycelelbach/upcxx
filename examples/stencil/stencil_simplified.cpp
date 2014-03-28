@@ -83,10 +83,10 @@ void probe(int steps) {
     // Copy ghost zones from previous timestep.
     for (int j = 0; j < 6; j++) {
       if (targetsA[j] != NULL) {
-        targetsA[j].copy_nbi(sourcesA[j]);
+        targetsA[j].async_copy(sourcesA[j]);
       }
     }
-    async_copy_fence(); // sync async copies
+    async_wait(); // sync async copies
     barrier(); // wait for puts from all nodes
 
     foreach3 (i, j, k, myDomain) {

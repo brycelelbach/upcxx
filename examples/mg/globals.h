@@ -37,7 +37,7 @@
 #define NONBLOCKING_ARRAYCOPY
 
 #ifdef NONBLOCKING_ARRAYCOPY
-#define COPY copy_nbi
+#define COPY async_copy
 #else
 #define COPY copy
 #endif
@@ -48,11 +48,12 @@
 # include <array.h>
 # include <broadcast.h>
 # include <reduce.h>
+# include <event.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
 # define barrier()
 # define broadcast(val, src) val
-# define async_copy_fence()
+# define async_wait()
 # define THREADS 1
 # define MYTHREAD 0
 static void init(int *argc, char ***argv) {}

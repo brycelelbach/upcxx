@@ -119,47 +119,47 @@ void probe(int steps) {
     // first x dimension
     TIMER_START(timers[LAUNCH_X_COPIES]);
     if (targetsA[0] != NULL) {
-      targetsA[0].copy_nbi(sourcesA[0]);
+      targetsA[0].async_copy(sourcesA[0]);
     }
     if (targetsA[1] != NULL) {
-      targetsA[1].copy_nbi(sourcesA[1]);
+      targetsA[1].async_copy(sourcesA[1]);
     }
     TIMER_STOP(timers[LAUNCH_X_COPIES]);
 #ifdef SYNC_BETWEEN_DIM
     TIMER_START(timers[SYNC_X_COPIES]);
     // Handle.syncNBI();
-    async_copy_fence();
+    async_wait();
     barrier();
     TIMER_STOP(timers[SYNC_X_COPIES]);
 #endif
     // now y dimension
     TIMER_START(timers[LAUNCH_Y_COPIES]);
     if (targetsA[2] != NULL) {
-      targetsA[2].copy_nbi(sourcesA[2]);
+      targetsA[2].async_copy(sourcesA[2]);
     }
     if (targetsA[3] != NULL) {
-      targetsA[3].copy_nbi(sourcesA[3]);
+      targetsA[3].async_copy(sourcesA[3]);
     }
     TIMER_STOP(timers[LAUNCH_Y_COPIES]);
 #ifdef SYNC_BETWEEN_DIM
     TIMER_START(timers[SYNC_Y_COPIES]);
     // Handle.syncNBI();
-    async_copy_fence();
+    async_wait();
     barrier();
     TIMER_STOP(timers[SYNC_Y_COPIES]);
 #endif
     // finally z dimension
     TIMER_START(timers[LAUNCH_Z_COPIES]);
     if (targetsA[4] != NULL) {
-      targetsA[4].copy_nbi(sourcesA[4]);
+      targetsA[4].async_copy(sourcesA[4]);
     }
     if (targetsA[5] != NULL) {
-      targetsA[5].copy_nbi(sourcesA[5]);
+      targetsA[5].async_copy(sourcesA[5]);
     }
     TIMER_STOP(timers[LAUNCH_Z_COPIES]);
     TIMER_START(timers[SYNC_Z_COPIES]);
     // Handle.syncNBI();
-    async_copy_fence();
+    async_wait();
     barrier(); // wait for puts from all nodes
     TIMER_STOP(timers[SYNC_Z_COPIES]);
 
