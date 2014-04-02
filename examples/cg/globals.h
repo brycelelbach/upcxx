@@ -20,6 +20,10 @@
    relaxed consistency model. */
 /* #define POINT_TO_POINT_COMM */
 
+#if !defined(USE_STRIDED) && !defined(USE_UNSTRIDED)
+# define USE_UNSTRIDED
+#endif
+
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
 # define STRIDEDNESS simple
 #endif

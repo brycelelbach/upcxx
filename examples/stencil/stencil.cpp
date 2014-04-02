@@ -392,9 +392,8 @@ void printTimingStats() {
 }
 
 int main(int argc, char **args) {
-#ifdef MEMORY_DISTRIBUTED
   init(&argc, &args);
-#endif
+
   if (argc > 1 && (argc < 8 || !strncmp(args[1], "-h", 2))) {
     cout << "Usage: stencil <xdim> <ydim> <zdim> "
          << "<xparts> <yparts> <zparts> <timesteps> "

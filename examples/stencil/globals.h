@@ -81,7 +81,14 @@ struct timer {
 # define TIMER_RESET(t)
 #endif
 
-#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP)
+#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
+# define ALT_LOOP
+#elif !defined(STANDARD_LOOP)
+# define SPEC_LOOP
+# define ALT_LOOP
+#endif
+
+#ifdef ALT_LOOP
 # define USE_UNSTRIDED
 #  define foreachh(N, dom, l_, u_, s_, d_)                              \
   for (point<N> l_ = dom.lwb(), u_ = dom.upb(), s_ = dom.stride(),      \
@@ -114,7 +121,7 @@ struct timer {
       foreachhd(v2, 1, lp_, up_, sp_)                   \
         foreachhd(v3, 2, lp_, up_, sp_)
 # endif /* ALT_FOREACH */
-#endif /* OPT_LOOP || SPLIT_LOOP || OMP_SPLIT_LOOP */
+#endif /* ALT_LOOP */
 
 #if defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # ifdef USE_CMAJOR

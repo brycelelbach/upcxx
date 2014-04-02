@@ -14,7 +14,7 @@ int Vector::iEnd;
 int Vector::numProcRows;
 int Vector::numProcCols;
 
-#ifdef TEAMS
+#ifdef VTEAMS
 team *Vector::rowTeam;
 #else
 ndarray<int, 1 UNSTRIDED> Vector::reduceExchangeProc;        // used to do communication in dot products
@@ -29,7 +29,7 @@ Vector::Vector() {
   ndarray<double, 1 UNSTRIDED> myArray(RECTDOMAIN((iStart), (iEnd+1)));
   allArrays.exchange(myArray);
 
-#if !defined(TEAMS)
+#if !defined(VTEAMS)
   // form the allResults array
   allResults = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
   // for myResult's first index, [0:log2numProcCols] are actual sums,
@@ -54,7 +54,7 @@ void Vector::initialize(int paramN) {
   numProcCols = Util::numProcCols;
   iStart = Util::colStart;
   iEnd = Util::colEnd;
-#ifdef TEAMS
+#ifdef VTEAMS
   rowTeam = Util::rowTeam;
 #else
   log2numProcCols = Util::log2numProcCols;
@@ -83,7 +83,7 @@ double Vector::dot(const Vector &a) {
     myResult += myArray[p] * myAArray[p];
   }
 
-#ifdef TEAMS
+#ifdef VTEAMS
   TIMER_START(reduceTimer);
   // a bug? in clang causes failure without the following line, likely
   // due to improper inlining of the reduction
@@ -102,7 +102,7 @@ double Vector::dot(const Vector &a) {
   }
   TIMER_STOP(reduceTimer);
   return myResult;
-#else // TEAMS
+#else // VTEAMS
   TIMER_START(reduceTimer);
   ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
   myResults[0] = myResult;
@@ -116,7 +116,7 @@ double Vector::dot(const Vector &a) {
 
   TIMER_STOP(reduceTimer);
   return myResults[log2numProcCols];
-#endif // TEAMS
+#endif // VTEAMS
 }
 
 // compute the L2 Norm of vector
@@ -128,7 +128,7 @@ double Vector::L2Norm() {
     myResult += myArray[p]*myArray[p];
   }
 
-#ifdef TEAMS
+#ifdef VTEAMS
   TIMER_START(reduceTimer);
   // a bug? in clang causes failure without the following line, likely
   // due to improper inlining of the reduction
@@ -147,7 +147,7 @@ double Vector::L2Norm() {
   }
   TIMER_STOP(reduceTimer);
   return sqrt(myResult);
-#else // TEAMS
+#else // VTEAMS
   TIMER_START(reduceTimer);
   ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
   myResults[0] = myResult;
@@ -161,5 +161,5 @@ double Vector::L2Norm() {
 
   TIMER_STOP(reduceTimer);
   return sqrt(myResults[log2numProcCols]);
-#endif // TEAMS
+#endif // VTEAMS
 }

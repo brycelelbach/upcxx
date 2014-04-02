@@ -116,6 +116,10 @@ struct timer {
 };
 #endif
 
+#if !defined(STANDARD_LOOP) && !defined(SPLIT_LOOP)
+# define SPLIT_LOOP
+#endif
+
 #ifdef SPLIT_LOOP
 # define USE_UNSTRIDED
 #endif
