@@ -3,9 +3,9 @@
 using namespace std;
 
 ParmParseTokenizer::ParmParseTokenizer() :
-  buf(new char[20]), buflen(20), peekc(' '),
-  eolIsSignificantP(false), slashSlashCommentsP(false),
-  slashStarCommentsP(false) {
+  buf(new char[20]), buflen(20), peekc(' '), pushedBack(false),
+  forceLower(false), LINENO(0), eolIsSignificantP(false),
+  slashSlashCommentsP(false), slashStarCommentsP(false) {
   // buf = new char[20];
   byte *ct = ctype;
   int i;
@@ -107,6 +107,7 @@ int ParmParseTokenizer::nextToken() {
         memcpy(nb, buf, buflen*sizeof(char));
         delete[] buf;
         buf = nb;
+        buflen *= 2;
       }
       buf[i++] = (char) c;
       c = readChar(); // input
@@ -178,6 +179,7 @@ int ParmParseTokenizer::nextToken() {
         memcpy(nb, buf, buflen*sizeof(char));
         delete[] buf;
         buf = nb;
+        buflen *= 2;
       }
       buf[i++] = (char) c;
     }

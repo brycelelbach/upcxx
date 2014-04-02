@@ -16,9 +16,8 @@ public:
    * @param I the input stream
    */
   ParmParseStringTokenizer(const string &argStringGiven) :
-    ParmParseTokenizer(), currentIndex(0) {
+    ParmParseTokenizer(), argString(argStringGiven), currentIndex(0) {
     LINENO = 0;
-    argString = argStringGiven;
   }
 
 protected:

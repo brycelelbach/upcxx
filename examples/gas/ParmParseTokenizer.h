@@ -120,7 +120,7 @@ public:
     if (low < 0)
       low = 0;
     if (hi > CTYPE_LENGTH)
-      hi = CTYPE_LENGTH;
+      hi = CTYPE_LENGTH-1;
     while (low <= hi)
       ctype[low++] |= CT_ALPHA;
   }
@@ -135,7 +135,7 @@ public:
     if (low < 0)
       low = 0;
     if (hi > CTYPE_LENGTH)
-      hi = CTYPE_LENGTH;
+      hi = CTYPE_LENGTH-1;
     while (low <= hi)
       ctype[low++] = CT_WHITESPACE;
   }
@@ -153,7 +153,7 @@ public:
     if (low < 0)
       low = 0;
     if (hi > CTYPE_LENGTH)
-      hi = CTYPE_LENGTH;
+      hi = CTYPE_LENGTH-1;
     while (low <= hi)
       ctype[low++] = 0;
   }
