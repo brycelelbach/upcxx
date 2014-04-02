@@ -155,6 +155,10 @@ struct timer {
 # define UNSTRIDED
 #endif
 
+#if !defined(USE_EXCHANGE) && !defined(SHARED_DIR)
+# define SHARED_DIR
+#endif
+
 using namespace std;
 using namespace upcxx;
 
