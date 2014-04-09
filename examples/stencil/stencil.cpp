@@ -223,6 +223,11 @@ void probe(int steps) {
         WEIGHT * myGridA(i, j, k);
     }
 #elif defined (UNPACKED_LOOP)
+# ifdef UNPACK_SPEC
+#  define UNPACK_SPEC_ARG , UNPACK_SPEC
+# else
+#  define UNPACK_SPEC_ARG
+# endif
 # if defined(USE_RESTRICT) && defined(__GNUC__)
     UNPACK_ARRAY3_QUAL(myGridA, __restrict__);
     UNPACK_ARRAY3_QUAL(myGridB, __restrict__);
@@ -234,14 +239,14 @@ void probe(int steps) {
     UNPACK_ARRAY3(myGridB);
 # endif
     cforeach3(i, j, k, myDomain) {
-      AINDEX3(myGridB, i, j, k) =
-	AINDEX3(myGridA, i, j, k+1) +
-	AINDEX3(myGridA, i, j, k-1) +
-	AINDEX3(myGridA, i, j+1, k) +
-	AINDEX3(myGridA, i, j-1, k) +
-	AINDEX3(myGridA, i+1, j, k) +
-	AINDEX3(myGridA, i-1, j, k) +
-	WEIGHT * AINDEX3(myGridA, i, j, k);
+      AINDEX3(myGridB, i, j, k UNPACK_SPEC_ARG) =
+	AINDEX3(myGridA, i, j, k+1 UNPACK_SPEC_ARG) +
+	AINDEX3(myGridA, i, j, k-1 UNPACK_SPEC_ARG) +
+	AINDEX3(myGridA, i, j+1, k UNPACK_SPEC_ARG) +
+	AINDEX3(myGridA, i, j-1, k UNPACK_SPEC_ARG) +
+	AINDEX3(myGridA, i+1, j, k UNPACK_SPEC_ARG) +
+	AINDEX3(myGridA, i-1, j, k UNPACK_SPEC_ARG) +
+	WEIGHT * AINDEX3(myGridA, i, j, k UNPACK_SPEC_ARG);
     }
 #elif defined(RAW_LOOP)
 # define Index3D(i,j,k)                                                 \

@@ -155,7 +155,7 @@ struct timer {
 # define UNSTRIDED
 #endif
 
-#if !defined(USE_EXCHANGE) && !defined(SHARED_DIR)
+#if !defined(USE_EXCHANGE) && !defined(SHARED_DIR) && USE_UPCXX
 # define SHARED_DIR
 #endif
 
