@@ -24,7 +24,7 @@ int main(int argc, char **argv)
   upcxx::init(&argc, &argv);
 
   // The master spawns tasks and the slaves wait.
-  if (upcxx::my_node.id() == 0) {
+  if (upcxx::myrank() == 0) {
     // start the user main function
     rv = _user_main(argc, argv);
     upcxx::signal_exit();

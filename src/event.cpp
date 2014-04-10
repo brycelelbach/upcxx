@@ -51,7 +51,7 @@ namespace upcxx
       for (int i=0; i<_num_done_cb; i++) {
         if (_done_cb[i] != NULL) {
           async_task *task = _done_cb[i];
-          if (task->_callee == my_node.id()) {
+          if (task->_callee == myrank()) {
             // local task
             assert(in_task_queue != NULL);
             gasnet_hsl_lock(&in_task_queue_lock);
@@ -74,7 +74,7 @@ namespace upcxx
   struct event_stack {
     vector<event *> stack;
     event_stack() {
-      stack.push_back(&default_event);
+      stack.push_back(&system_event);
     }
   };
 

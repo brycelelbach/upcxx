@@ -10,12 +10,12 @@ libupcxx_la_CPPFLAGS = \
 libupcxx_la_SOURCES = \
   dl_malloc.c        \
   active_coll.cpp    \
+  allocate.cpp       \
   async.cpp          \
+  async_copy.cpp     \
   barrier.cpp        \
   collective.cpp     \
   event.cpp          \
   lock.cpp           \
-  machine.cpp        \
-  global_ptr.cpp     \
   team.cpp           \
   upcxx_runtime.cpp

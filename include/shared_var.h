@@ -16,8 +16,8 @@ namespace upcxx
    * shared_var_addr = shared_var_addr_P0 - my_shared_var_addr;
    *
    * where shared_var_addr_P0 is the local address of a global
-   * datum on node 0 and my_shared_var_addr is the local address of
-   * the datum on my node.
+   * datum on rank 0 and my_shared_var_addr is the local address of
+   * the datum on my rank.
    */
   extern void *shared_var_addr;
   extern size_t total_shared_var_sz;
@@ -116,7 +116,7 @@ namespace upcxx
 
     inline global_ptr<T> operator &()
     {
-      return global_ptr<T>(&_val, node(0));
+      return global_ptr<T>(&_val, 0);
     }
 
   }; // struct shared_var

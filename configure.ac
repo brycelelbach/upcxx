@@ -8,7 +8,7 @@ dnl LT_INIT()
 LT_LANG([C++])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([upcxx_config.h])
 AC_CONFIG_FILES([
   Makefile
   include/Makefile
@@ -32,6 +32,7 @@ AC_ARG_WITH([gasnet],
   [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=/opt/gasnet/smp-conduit/smp-seq.mak etc.])]
 )
 
+AC_ARG_ENABLE(option-name, help-string, action-if-present, action-if-not-present)
 ## Check for C++11
 AC_LANG(C++)
 AX_CXX_COMPILE_STDCXX_11(noext,optional)
@@ -65,5 +66,16 @@ if test "x$CLANG" = "xyes"; then
   CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
+dnl Example of default-disabled feature
+AC_ARG_ENABLE([upcxx-array],
+    AS_HELP_STRING([--enable-upcxx-array], [Enable Titanium-style MD arrays]))
+
+AS_IF([test "x$enable_upcxx-array" = "xyes"], [
+  dnl Do the stuff needed for enabling upcxx-array
+  AC_DEFINE(HAVE_UPCXX_ARRAY,1,
+                [define if the upcxx-array feature is enabled])
+   
+  AC_SUBST(HAVE_UPCXX_ARRAY)
+])
 
 AC_OUTPUT

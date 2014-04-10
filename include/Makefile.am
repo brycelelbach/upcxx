@@ -2,6 +2,7 @@ include_HEADERS =  \
   active_coll.h \
   allocate.h \
   async.h \
+  async_copy.h \
   async_templates.h \
   collective.h \
   dl_malloc.h \
@@ -20,7 +21,9 @@ include_HEADERS =  \
   shared_var.h \
   team.h \
   upcxx.h \
-  upcxx_internal.h \
   upcxx_runtime.h \
   upcxx_types.h \
   upcxx.mak
+
+noinst_HEADERS = \
+  upcxx_internal.h 

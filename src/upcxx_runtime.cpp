@@ -24,11 +24,6 @@ using namespace std;
 //uint64_t *gasnet_dataseg_offsets; // data segment offsets for all gasnet nodes
 //uint64_t *gasnet_textseg_offsets; // text segment offsets for all gasnet nodes
 
-// static gasnet_seginfo_t* seginfo_table; // GASNet segments info, unused for now
-gasnet_seginfo_t *all_gasnet_seginfo;
-gasnet_seginfo_t *my_gasnet_seginfo;
-mspace _gasnet_mspace = 0;
-
 const char *upcxx_op_strs[] = {
   "UPCXX_MAX",
   "UPCXX_MIN",
@@ -55,20 +50,27 @@ namespace upcxx
     {INC_AM,                  (void (*)())inc_am_handler}
   };
 
-  int *gpu_id_map;
+  // static gasnet_seginfo_t* seginfo_table; // GASNet segments info, unused for now
+  gasnet_seginfo_t *all_gasnet_seginfo;
+  gasnet_seginfo_t *my_gasnet_seginfo;
+  mspace _gasnet_mspace = 0;
+
   gasnet_hsl_t async_lock;
   // queue_t *async_task_queue = NULL;
   gasnet_hsl_t in_task_queue_lock;
   gasnet_hsl_t out_task_queue_lock;
   queue_t *in_task_queue = NULL;
   queue_t *out_task_queue = NULL;
-  event default_event;
+  event system_event;
   int init_flag = 0;  //  equals 1 if the backend is initialized
   std::list<event*> outstanding_events;
 
   // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
   void *shared_var_addr = NULL;
   size_t total_shared_var_sz = 0;
+
+  rank_t _ranks; /**< total ranks of the parallel job */
+  rank_t _myrank; /**< my rank in the global universe */
 
   int init(int *pargc, char ***pargv)
   {
@@ -90,20 +92,8 @@ namespace upcxx
     // gasnet_coll_init(NULL, 0, NULL, 0, 0); // init gasnet collectives
     init_collectives();
       
-    int node_count = gasnet_nodes();
-    int my_node_id = gasnet_mynode();
-    int my_cpu_count = 1; // may read from env
-
-    my_node = node(my_node_id, my_cpu_count);
-
-    // Gather all nodes info.
-    node *all_nodes = new node[node_count];
-
-    gasnet_coll_gather_all(GASNET_TEAM_ALL, all_nodes, &my_node, sizeof(node),
-                           UPCXX_GASNET_COLL_FLAG);
-
-    global_machine.init(node_count, all_nodes, my_node_id);
-    my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment
+    _ranks = gasnet_nodes();
+    _myrank = gasnet_mynode();
 
     // Allocate gasnet segment space for shared_var
     if (total_shared_var_sz != 0) {
@@ -160,6 +150,18 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
+  uint32_t ranks()
+  {
+    assert(init_flag == true);
+    return _ranks;
+  }
+
+  uint32_t myrank()
+  {
+    assert(init_flag == true);
+    return _myrank;
+  }
+
   // Active Message handlers
   void inc_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
@@ -180,69 +182,13 @@ namespace upcxx
     assert(in_task_queue != NULL);
 
 #ifdef UPCXX_DEBUG
-    cerr << my_node << " is about to enqueue an async task.\n";
+    cerr << "Rank " << myrank() << " is about to enqueue an async task.\n";
     cerr << *task << endl;
 #endif
     // enqueue the async task
     gasnet_hsl_lock(&in_task_queue_lock);
     queue_enqueue(in_task_queue, task);
     gasnet_hsl_unlock(&in_task_queue_lock);
-  }
-
-  void alloc_cpu_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
-  {
-    assert(buf != NULL);
-    assert(nbytes == sizeof(alloc_am_t));
-    alloc_am_t *am = (alloc_am_t *)buf;
-
-#ifdef UPCXX_DEBUG
-    cerr << my_node << " is inside alloc_cpu_am_handler.\n";
-#endif
-
-    alloc_reply_t reply;
-    reply.ptr_addr = am->ptr_addr; // pass back the ptr_addr from the scr node
-#ifdef USE_GASNET_FAST_SEGMENT
-    reply.ptr = gasnet_seg_alloc(am->nbytes);
-#else
-    reply.ptr = malloc(am->nbytes);
-#endif
-
-#ifdef UPCXX_DEBUG
-    cerr << my_node << " allocated " << am->nbytes << " memory at " << reply.ptr << "\n";
-#endif
-
-    assert(reply.ptr != NULL);
-    reply.cb_event = am->cb_event;
-    GASNET_SAFE(gasnet_AMReplyMedium0(token, ALLOC_REPLY, &reply, sizeof(reply)));
-  }
-
-
-  void alloc_reply_handler(gasnet_token_t token, void *buf, size_t nbytes)
-  {
-    assert(buf != NULL);
-    assert(nbytes == sizeof(alloc_reply_t));
-    alloc_reply_t *reply = (alloc_reply_t *)buf;
-
-#ifdef UPCXX_DEBUG
-    cerr << my_node << " is in alloc_reply_handler. reply->ptr " 
-         << reply->ptr << "\n";
-#endif
-
-    *(reply->ptr_addr) = reply->ptr;
-    reply->cb_event->decref();
-  }      
-
-  void free_cpu_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
-  {
-    assert(buf != NULL);
-    assert(nbytes == sizeof(free_am_t));
-    free_am_t *am = (free_am_t *)buf;
-    assert(am->ptr != NULL);
-#ifdef USE_GASNET_FAST_SEGMENT
-    gasnet_seg_free(am->ptr);
-#else
-    free(am->ptr);
-#endif
   }
 
   void async_done_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
@@ -272,11 +218,11 @@ namespace upcxx
       gasnet_hsl_unlock(&in_task_queue_lock);
 
       assert (task != NULL);
-      assert (task->_callee == my_node.id());
+      assert (task->_callee == myrank());
 
 #ifdef UPCXX_DEBUG
-        cerr << my_node << " is about to execute async task.\n";
-        cerr << *task << endl;
+      cerr << "Rank " << myrank << " is about to execute async task.\n";
+      cerr << *task << endl;h
 #endif
 
         // execute the async task
@@ -285,7 +231,7 @@ namespace upcxx
         }
         
         if (task->_ack != NULL) {
-          if (task->_caller == my_node.id()) {
+          if (task->_caller == myrank()) {
             // local event acknowledgment
             task->_ack->decref(); // need to enqueue callback tasks
           } else {
@@ -318,10 +264,10 @@ namespace upcxx
       task = (async_task *)queue_dequeue(outq);
       gasnet_hsl_unlock(&out_task_queue_lock);
       assert (task != NULL);
-      assert (task->_callee != my_node.id());
+      assert (task->_callee != myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << my_node << " is about to send outgoing async task.\n";
+      cerr << "Rank " << myrank() << " is about to send outgoing async task.\n";
       cerr << *task << endl;
 #endif
 
@@ -399,9 +345,9 @@ namespace upcxx
   void signal_exit()
   {
     // Only the master process should wait for incoming tasks
-    assert(my_node.id() == 0);
+    assert(myrank() == 0);
 
-    for (int i = 1; i < global_machine.node_count(); i++) {
+    for (rank_t i = 1; i < ranks(); i++) {
       async(i)(signal_exit_am);
     }
 
@@ -413,11 +359,19 @@ namespace upcxx
   void wait_for_incoming_tasks()
   {
     // Only the worker processes should wait for incoming tasks
-    assert(my_node.id() != 0);
+    assert(myrank() != 0);
       
     // Wait until the master process sends out an exit signal 
     while (!exit_signal) {
-      progress();
+      advance();
     }
+  }
+
+  int remote_inc(global_ptr<long> ptr)
+  {
+    inc_am_t am;
+    am.ptr = ptr.raw_ptr();
+    GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am)));
+    return UPCXX_SUCCESS;
   }
 } // namespace upcxx
