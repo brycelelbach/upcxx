@@ -37,20 +37,22 @@ namespace upcxx
       return _ptr;
     }
 
-    size_t operator-(const base_ptr<T, place_t> &x) const
+    size_t operator - (const base_ptr<T, place_t> &x) const
     {
       assert (x.where() == this->where());
       return this->raw_ptr() - x.raw_ptr();
     }
 
-    bool operator==(const base_ptr<T, place_t> &x) const
+    template <typename T2>
+    bool operator == (const base_ptr<T2, place_t> &rhs) const
     {
-      return x.where() == this->where() && x.raw_ptr() == this->raw_ptr();
+      return (where() == rhs.where() && raw_ptr() == rhs.raw_ptr());
     }
 
-    bool operator!=(const base_ptr<T, place_t> &x) const
+    template <typename T2>
+    bool operator != (const base_ptr<T2, place_t> &rhs) const
     {
-      return x.where() != this->where() || x.raw_ptr() == this->raw_ptr();
+      return (where() != rhs.where() || raw_ptr() != rhs.raw_ptr());
     }
 
   protected:
@@ -142,9 +144,6 @@ namespace upcxx
   struct global_ptr<void> : public base_ptr<void, rank_t>
   {
   public:
-//     inline global_ptr(void *ptr = NULL) :
-//     base_ptr<void, rank_t>(ptr, my_rank_t) {}
-
     inline global_ptr(void *ptr = NULL, rank_t pla = myrank()) :
     base_ptr<void, rank_t>(ptr, pla) {}
 
@@ -178,18 +177,6 @@ namespace upcxx
       _ptr = p.raw_ptr();
       _pla = p.where();
       return *this;
-    }
-
-    template<typename T2>
-    bool operator == (const global_ptr<T2> &p)
-    {
-      return (_ptr == p.raw_ptr() && _pla == p.where());
-    }
-
-    template<typename T2>
-    bool operator != (const global_ptr<T2> &p)
-    {
-      return (_ptr != p.raw_ptr() || _pla != p.where());
     }
   };
 
