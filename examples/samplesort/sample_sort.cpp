@@ -21,7 +21,7 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-// #define DEBUG
+// #define DEBUG 1
 
 #define VERIFY
 
@@ -36,7 +36,7 @@ extern "C" {
 
 #ifndef DEBUG
 #define SAMPLES_PER_THREAD 128
-#define KEYS_PER_THREAD 4 * 1024 * 1024
+#define KEYS_PER_THREAD 1024 * 1024
 #else
 #define SAMPLES_PER_THREAD 8
 #define KEYS_PER_THREAD 128
@@ -376,7 +376,7 @@ int main(int argc, char **argv)
              total_key_size);
     }
 
-    printf("Verifying results...\n");
+    printf("Verifying results\n");
 
 #ifdef DEBUG
   {
@@ -408,8 +408,9 @@ int main(int argc, char **argv)
     uint64_t index = 0;
     ELEMENT_T current;
     for (i = 0; i < total_key_size; i++) {
+      if (!(i & 0x3FFF)) printf("."); // show some progress
 #ifdef DEBUG
-      printf("verifying: i %llu, t %d, index %llu\n", i, t, index);
+      printf("\nverifying: i %llu, t %d, index %llu\n", i, t, index);
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
@@ -420,7 +421,7 @@ int main(int argc, char **argv)
 #endif
       if (local_copy[i] != current) {
 #ifdef DEBUG
-        printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
+        printf("\nVerification error: %llu != expected %llu.\n", current, local_copy[i]);
 #endif
         num_errors++;
       }
@@ -433,9 +434,9 @@ int main(int argc, char **argv)
     }
 
     if (num_errors) {
-      printf("Verification errors %llu.\n", num_errors);
+      printf("\nVerification errors %llu.\n", num_errors);
     } else {
-      printf("Verification successful!\n");
+      printf("\nVerification successful!\n");
     }
   }
   barrier();
