@@ -89,9 +89,15 @@ namespace upcxx
     }
 
     template <typename T2>
+    bool operator == (const T2 &rhs)
+    {
+      return (get() == (T)rhs);
+    }
+
+    template <typename T2>
     bool operator != (const T2 &rhs)
     {
-      return (get() != rhs);
+      return (get() != (T)rhs);
     }
 
     T get() const

@@ -76,19 +76,17 @@ namespace upcxx
    *
    * \see test_global_ptr.cpp
    */
-  template<typename T>
+  template<typename T = void>
   class global_ptr : public base_ptr<T, rank_t>
   {
     typedef T value_type;
 
   public:
-    inline
-    global_ptr() :
-    base_ptr<T, rank_t>(NULL, myrank()) {}
+    explicit global_ptr() : base_ptr<T, rank_t>(NULL, myrank()) {}
 
-    inline
-    global_ptr(T *ptr) :
-    base_ptr<T, rank_t>(ptr, myrank()) {}
+    explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, myrank()) {}
+
+    explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, myrank()) { }
 
     inline
     global_ptr(T *ptr, rank_t pla) :
@@ -132,39 +130,10 @@ namespace upcxx
     }
 
     // pointer arithmetic
-    const global_ptr<T> operator +(int i) const
-    {
-      return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
-    }
-
-    // pointer arithmetic
-    const global_ptr<T> operator +(long i) const
-    {
-      return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
-    }
-
-    // pointer arithmetic
     template <typename T2>
     const global_ptr<T> operator +(T2 i) const
     {
       return global_ptr<T>(((T *)this->raw_ptr()) + i, this->where());
-    }
-
-    // pointer arithmetic
-    bool operator !=(void *p) const
-    {
-      return (this->raw_ptr() != p);
-    }
-
-    // pointer arithmetic
-    bool operator !=(long p) const
-    {
-      return (this->raw_ptr() != (void *)p);
-    }
-
-    bool operator !=(int p) const
-    {
-      return (this->raw_ptr() != (void *)p);
     }
   };
 
@@ -209,6 +178,18 @@ namespace upcxx
       _ptr = p.raw_ptr();
       _pla = p.where();
       return *this;
+    }
+
+    template<typename T2>
+    bool operator == (const global_ptr<T2> &p)
+    {
+      return (_ptr == p.raw_ptr() && _pla == p.where());
+    }
+
+    template<typename T2>
+    bool operator != (const global_ptr<T2> &p)
+    {
+      return (_ptr != p.raw_ptr() || _pla != p.where());
     }
   };
 
