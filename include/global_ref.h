@@ -140,7 +140,7 @@ namespace upcxx
     // YZ: Needs C++11 auto, decltype
 #ifdef USE_CXX11
     template <typename T2>
-    auto operator [](T2 i) -> decltype(this->get()[i])
+    auto operator [](T2 i) -> decltype(get()[i])
     {
       T tmp = get();
       return tmp[i];
@@ -157,7 +157,7 @@ namespace upcxx
       return _pla;
     }
 
-  //private:
+  private:
     T *_ptr;
     place_t _pla;
   }; // struct global_ref
