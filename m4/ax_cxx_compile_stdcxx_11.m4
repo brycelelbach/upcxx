@@ -65,7 +65,7 @@ m4_define([_AX_CXX_COMPILE_STDCXX_11_testbody], [[
     template <typename T> 
     struct Foo 
     {
-      T& get() { return *ptr; }
+      T& get() { return *_ptr; }
 
       template <typename T2>
       auto operator [](T2 i) -> decltype(get()[i]) 
