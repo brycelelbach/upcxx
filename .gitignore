@@ -14,7 +14,6 @@ BAK
 *.lo
 *.a
 *.la
-*.in
 
 # autotools dirs
 .deps
@@ -22,7 +21,9 @@ BAK
 
 # generated files
 Makefile
+Makefile.in
 config.h
+config.in
 config.h.in~
 aclocal.m4
 autom4te.cache
