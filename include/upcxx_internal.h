@@ -75,12 +75,6 @@ namespace upcxx
   {
     return advance_in_task_queue(in_task_queue, max_dispatched);
   }
-
-  // Internal function for the master node to signal worker nodes to exit
-  void signal_exit();
-  
-  // Internal function for worker nodes to wait for requests from the master node
-  void wait_for_incoming_tasks();
   
   // AM handler functions
   void async_am_handler(gasnet_token_t token, void *am, size_t nbytes);

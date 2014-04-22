@@ -13,9 +13,14 @@
 #define FORKJOIN_H_
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
 
 extern int _user_main(int argc, char **argv);
+
+namespace upcxx
+{
+  void signal_exit(); 
+  void wait_for_incoming_tasks();
+}
 
 int main(int argc, char **argv)
 {

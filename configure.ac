@@ -32,14 +32,25 @@ AC_ARG_WITH([gasnet],
   [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=/opt/gasnet/smp-conduit/smp-seq.mak etc.])]
 )
 
-AC_ARG_ENABLE(option-name, help-string, action-if-present, action-if-not-present)
-## Check for C++11
 AC_LANG(C++)
-AX_CXX_COMPILE_STDCXX_11(noext,optional)
 
-if test "$HAVE_CXX11" = 1; then
-  CXXFLAGS+=" -DUSE_CXX11 "
-fi
+dnl option to disable using C++11  (default is enable auto detection)
+AC_ARG_ENABLE([c++11],
+    AS_HELP_STRING([--disable-c++11], [Disable C++11 features]))
+
+AS_IF([test x$enableval = xno], 
+  [ dnl Do the stuff needed for disabling C++11
+    AC_DEFINE(HAVE_CXX11, 0, [define if the C++11 features are enabled])
+    AC_SUBST(HAVE_CXX11)
+  ],
+  [ dnl Do the stuff needed for enabling C++11
+    dnl Check for C++11   
+    AX_CXX_COMPILE_STDCXX_11(noext,optional)
+    if test "$HAVE_CXX11" = 1; then
+      CXXFLAGS+=" -DUSE_CXX11 "
+    fi
+  ]
+)
 
 ## Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
@@ -66,15 +77,13 @@ if test "x$CLANG" = "xyes"; then
   CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
-dnl Example of default-disabled feature
+dnl option to enable UPC++ arrays (default is disable)
 AC_ARG_ENABLE([upcxx-array],
     AS_HELP_STRING([--enable-upcxx-array], [Enable Titanium-style MD arrays]))
 
-AS_IF([test "x$enable_upcxx-array" = "xyes"], [
+AS_IF([test x$enableval = xyes], [
   dnl Do the stuff needed for enabling upcxx-array
-  AC_DEFINE(HAVE_UPCXX_ARRAY,1,
-                [define if the upcxx-array feature is enabled])
-   
+  AC_DEFINE(HAVE_UPCXX_ARRAY, 1, [define if the upcxx-array feature is enabled])
   AC_SUBST(HAVE_UPCXX_ARRAY)
 ])
 
