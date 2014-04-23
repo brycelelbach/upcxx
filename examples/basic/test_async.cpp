@@ -39,8 +39,7 @@ int main(int argc, char **argv)
 #endif
   }
 
-  
-  upcxx::wait();
+  async_wait();
 
   return 0;
 }
