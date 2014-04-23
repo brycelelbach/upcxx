@@ -16,9 +16,9 @@
 
 using namespace upcxx;
 
-void print_task(int task_id)
+void print_task(int n)
 {
-  cout << "MYTHREAD " << MYTHREAD <<  ": task_id " << task_id << "\n";
+  cout << "MYTHREAD " << MYTHREAD <<  ": n " << n << "\n";
 }
 
 int main(int argc, char **argv)
@@ -27,10 +27,18 @@ int main(int argc, char **argv)
          MYTHREAD, THREADS);
 
   for (int i = 0; i < THREADS; i++) {
-    printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
 
+#ifndef UPCXX_HAVE_CXX11
+    printf("Rank %d calls a named function on rank %d\n", MYTHREAD, i);
     async(i)(print_task, 1000+i);
+#else
+    printf("Rank %d calls a lambda function on rank %d\n", MYTHREAD, i);
+    async(i)([] (int n) 
+             { cout << "MYTHREAD " << MYTHREAD <<  ": n " << n << "\n"; },
+             1000+i);
+#endif
   }
+
   
   upcxx::wait();
 
