@@ -1,4 +1,5 @@
-/* define if the upcxx-array feature is enabled */
+
+/* define if the multidimensional array feature is enabled */
 #undef UPCXX_HAVE_MD_ARRAY
 
 /* define if the C++11 features are enabled */

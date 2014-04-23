@@ -124,7 +124,7 @@ namespace upcxx
       }
     }
 
-#if 0 // USE_CXX11 YZ: this is not yet supported by icpc 13.1
+#if 0 // UPCXX_HAVE_CXX11 YZ: this is not yet supported by icpc 13.1
     template<typename T2>
     explicit operator T2*() const
     {
@@ -138,7 +138,7 @@ namespace upcxx
     }
 
     // YZ: Needs C++11 auto, decltype
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
     template <typename T2>
     auto operator [](T2 i) -> decltype(get()[i])
     {

@@ -18,12 +18,12 @@
 #include <cassert>
 #include <ios>
 
+#include "upcxx_config.h"
 #include "gasnet_api.h"
 #include "upcxx_types.h"
 #include "upcxx_runtime.h"
 #include "allocate.h"
 #include "event.h"
-// #include "machine.h"
 #include "global_ptr.h"
 #include "async_copy.h"
 #include "queue.h"

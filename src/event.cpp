@@ -17,7 +17,7 @@ namespace upcxx
   int event::async_try()
   {
     if (!_h.empty()) {
-#if USE_CXX11
+#if UPCXX_HAVE_CXX11
       for (auto it=_h.begin(); it!=_h.end(); ++it) {
 #else
       for (std::list<gasnet_handle_t>::iterator it=_h.begin(); it!=_h.end(); ++it) {

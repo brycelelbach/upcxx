@@ -75,9 +75,9 @@ if test "x$CLANG" = "xyes"; then
   CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
-dnl Option to enable UPC++ multi-dimensional arrays (default is disable)
+dnl Option to enable UPC++ multidimensional arrays (default is disable)
 AC_ARG_ENABLE([md-array],
-    AS_HELP_STRING([--enable-md-array], [Enable Titanium-style MD arrays]))
+    AS_HELP_STRING([--enable-md-array], [Enable Titanium-style multidimensional arrays]))
 
 AS_IF([test x$enableval = xyes], [
   dnl Do the stuff needed for enabling md-array
