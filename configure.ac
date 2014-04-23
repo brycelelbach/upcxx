@@ -36,24 +36,20 @@ AC_ARG_WITH([gasnet],
 AC_LANG(C++)
 
 dnl option to disable using C++11  (default is enable auto detection)
-AC_ARG_ENABLE([c++11],
-    AS_HELP_STRING([--disable-c++11], [Disable C++11 features]))
+AC_ARG_ENABLE([cxx11],
+    AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
 
 AS_IF([test x$enableval = xno], 
-  [ dnl Do the stuff needed for disabling C++11
-    AC_DEFINE(UPCXX_HAVE_CXX11, 0, [define if the C++11 features are enabled])
-    AC_SUBST(UPCXX_HAVE_CXX11)
-  ],
-  [ dnl Do the stuff needed for enabling C++11
-    dnl Check for C++11   
-    AX_CXX_COMPILE_STDCXX_11(noext,optional)
-    if test "$HAVE_CXX11" = 1; then
-      AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
-      AC_SUBST(UPCXX_HAVE_CXX11)
-      CXXFLAGS+=" -DUSE_CXX11 "
-    fi
-  ]
-)
+      [:], 
+      [ dnl Do the stuff needed for enabling C++11
+        dnl Check for C++11   
+        AX_CXX_COMPILE_STDCXX_11(noext,optional)
+        if test "$HAVE_CXX11" = 1; then
+          AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
+          AC_SUBST(UPCXX_HAVE_CXX11)
+          CXXFLAGS+=" -DUSE_CXX11 "
+        fi
+      ])
 
 dnl Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
