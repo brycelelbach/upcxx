@@ -8,8 +8,10 @@ libupcxx_la_CPPFLAGS = \
   $(GASNET_CFLAGS)
 
 if UPCXX_MD_ARRAY
-  UPCXX_MD_ARRAY_SOURCES = \
-    array_bulk.cpp     \
+UPCXX_MD_ARRAY_CPP_FILES = \
+  array_bulk.cpp    
+else
+UPCXX_MD_ARRAY_CPP_FILES =   
 endif
 
 libupcxx_la_SOURCES = \
@@ -23,4 +25,4 @@ libupcxx_la_SOURCES = \
   event.cpp          \
   lock.cpp           \
   team.cpp           \
-  upcxx_runtime.cpp $(UPCXX_MD_ARRAY_SOURCES)
+  upcxx_runtime.cpp $(UPCXX_MD_ARRAY_CPP_FILES)

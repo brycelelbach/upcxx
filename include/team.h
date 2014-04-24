@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstring>
 #include <vector>
+#include <iostream>
 
 #include "upcxx_types.h"
 #include "upcxx_runtime.h"
@@ -202,11 +203,11 @@ namespace upcxx
     }
 
     static gasnet_hsl_t _tid_lock;
-    static vector<team *> _team_stack;
+    static std::vector<team *> _team_stack;
 
     static void descend_team(team *t) {
       if (t->_parent->_team_id != current_team()->_team_id) {
-        std::cerr << "team is not a subteam of current team" << endl;
+        std::cerr << "team is not a subteam of current team\n";
         abort();
       }
       _team_stack.push_back(t);

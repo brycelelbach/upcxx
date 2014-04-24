@@ -12,6 +12,7 @@
 #include "active_coll.h"
 #include "group.h"
 #include "range.h"
+#include "team.h"
 
 using namespace std;
 

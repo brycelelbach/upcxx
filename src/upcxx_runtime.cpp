@@ -50,6 +50,7 @@ namespace upcxx
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
     {INC_AM,                  (void (*)())inc_am_handler},
 
+#ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */
     gasneti_handler_tableentry_with_bits(misc_delete_request),
     gasneti_handler_tableentry_with_bits(misc_alloc_request),
@@ -65,6 +66,7 @@ namespace upcxx
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_request),
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_reply),
     gasneti_handler_tableentry_with_bits(sparse_generalGather_request),
+#endif
   };
 
   // static gasnet_seginfo_t* seginfo_table; // GASNet segments info, unused for now
@@ -151,8 +153,10 @@ namespace upcxx
     assert(in_task_queue != NULL);
     assert(out_task_queue != NULL);
 
+#ifdef UPCXX_HAVE_MD_ARRAY
     // Initialize array bulk operations
     array_bulk_init();
+#endif
 
     barrier();
 
@@ -169,6 +173,8 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
+  // ranks and myranks are defined in team.h
+  /*
   uint32_t ranks()
   {
     assert(init_flag == true);
@@ -180,6 +186,7 @@ namespace upcxx
     assert(init_flag == true);
     return _myrank;
   }
+  */
 
   // Active Message handlers
   void inc_am_handler(gasnet_token_t token, void *buf, size_t nbytes)

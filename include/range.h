@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <string>
 
 namespace upcxx
 {
@@ -91,7 +92,7 @@ namespace upcxx
     char buf[buf_sz];
     snprintf(buf, buf_sz, "range: (begin %u, end %u, step %u, count %u)",
             r.begin(), r.end(), r.step(), r.count());
-    return out << buf;
+    return out << std::string(buf);
   }
   
 } // end of namespace 

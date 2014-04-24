@@ -19,6 +19,8 @@ int main(int argc, char **argv)
 
   pointerArray.init(THREADS);
 
+  pointerArray[myrank()] = allocate<TaskQueue>(myrank(), 1); 
+
   memberof(pointerArray[1].get(), tid) = 1;
   int tid = memberof(pointerArray[0].get(), tid);
 

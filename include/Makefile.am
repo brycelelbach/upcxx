@@ -1,6 +1,6 @@
 if UPCXX_MD_ARRAY
-UPCXX_MD_ARRAY_HEADERS = 
-  array.h \
+UPCXX_MD_ARRAY_H_FILES = \
+	array.h \
   array_bulk.h \
   array_bulk_internal.h \
   array_defs.h \
@@ -8,6 +8,8 @@ UPCXX_MD_ARRAY_HEADERS =
   interfaces.h \
   interfaces_internal.h \
   reduce.h 
+else
+UPCXX_MD_ARRAY_H_FILES =
 endif
 
 include_HEADERS =  \
@@ -37,7 +39,7 @@ include_HEADERS =  \
   upcxx_runtime.h \
   upcxx_types.h \
   utils.h \
-  upcxx.mak $(UPCXX_MD_ARRAY_HEADERS)
+  upcxx.mak $(UPCXX_MD_ARRAY_H_FILES)
 
 noinst_HEADERS = \
   upcxx_internal.h 

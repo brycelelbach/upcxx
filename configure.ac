@@ -86,7 +86,7 @@ AS_IF([test x$enableval = xyes], [
   AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if the md-array feature is enabled])
   AC_SUBST(UPCXX_HAVE_MD_ARRAY)
 ])
-dnl set UPCXX_MD_ARRAY to try in Makefile.am
-AM_CONDITIONAL([UPCXX_MD_ARRAY], [test x$enableval = xyes]
+
+AM_CONDITIONAL([UPCXX_MD_ARRAY], [test x$enableval = xyes])
 
 AC_OUTPUT
