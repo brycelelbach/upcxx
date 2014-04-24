@@ -9,6 +9,7 @@
 
 #include "upcxx.h"
 #include "upcxx_internal.h"
+#include "array_bulk_internal.h"
 
 // #define UPCXX_DEBUG
 
@@ -47,7 +48,23 @@ namespace upcxx
     {LOCK_AM,                 (void (*)())shared_lock::lock_am_handler},
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
-    {INC_AM,                  (void (*)())inc_am_handler}
+    {INC_AM,                  (void (*)())inc_am_handler},
+
+    /* array_bulk.c */
+    gasneti_handler_tableentry_with_bits(misc_delete_request),
+    gasneti_handler_tableentry_with_bits(misc_alloc_request),
+    gasneti_handler_tableentry_with_bits(misc_alloc_reply),
+    gasneti_handler_tableentry_with_bits(strided_pack_request),
+    gasneti_handler_tableentry_with_bits(strided_pack_reply),
+    gasneti_handler_tableentry_with_bits(strided_unpackAll_request),
+    gasneti_handler_tableentry_with_bits(strided_unpack_reply),
+    gasneti_handler_tableentry_with_bits(strided_unpackOnly_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleScatter_request),
+    gasneti_handler_tableentry_with_bits(sparse_done_reply),
+    gasneti_handler_tableentry_with_bits(sparse_generalScatter_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleGather_request),
+    gasneti_handler_tableentry_with_bits(sparse_simpleGather_reply),
+    gasneti_handler_tableentry_with_bits(sparse_generalGather_request),
   };
 
   // static gasnet_seginfo_t* seginfo_table; // GASNet segments info, unused for now
@@ -110,12 +127,11 @@ namespace upcxx
 
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "thread %u, total_shared_var_sz %lu, shared_var_addr %p\n",
-            MYTHREAD, total_shared_var_sz, shared_var_addr);
+            GLOBAL_MYTHREAD, total_shared_var_sz, shared_var_addr);
 #endif
 
     // Initialize Team All
-    range r_all(0, gasnet_nodes());
-    team_all.init(0, gasnet_nodes(), gasnet_mynode(), r_all, GASNET_TEAM_ALL);
+    team_all.init_global_team();
 
     // Because we assume the data and text segments of processes are
     // aligned (offset is always 0).  We are not using the offsets arrays for
@@ -134,6 +150,9 @@ namespace upcxx
     out_task_queue = queue_new();
     assert(in_task_queue != NULL);
     assert(out_task_queue != NULL);
+
+    // Initialize array bulk operations
+    array_bulk_init();
 
     barrier();
 

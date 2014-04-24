@@ -1,0 +1,17 @@
+-Lx is the length in the x dimension of _each_ patch.
+-Ly is the length in the y dimension of each patch.
+-P is the number of processors and also the number of patches
+-I is the number of iterations that the program does
+
+The patches are all in a row, so the dimensions of the full domain are
+(<Lx>*<P>)x(<Ly>).  I set it up like this because I wanted a very easy test
+case, for which I knew the amount of communication and computation: there are
+6(<P><Lx><Ly>) floating point operations per iteration and 2(<Ly>) doubles sent
+from each processor to each of its neighbors.
+
+In fact, however, each iteration represents the following (the actual code
+for which is in the method smooth_level defined in amr_level.ti):
+communicate <Ly> border values with each neighbor
+solve for "red" values: 6(<P><Lx><Ly>/2) floating point operations
+communicate <Ly> border values with each neighbor
+solve for "black" values: 6(<P><Lx><Ly>/2) floating point operations

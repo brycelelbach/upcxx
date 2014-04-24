@@ -1,29 +1,72 @@
+if UPCXX_MD_ARRAY
+UPCXX_MD_ARRAY_HEADERS = 
+  array.h \
+  array_bulk.h \
+  array_bulk_internal.h \
+  array_defs.h \
+  broadcast.h \
+  interfaces.h \
+  interfaces_internal.h \
+  reduce.h 
+endif
+
 include_HEADERS =  \
   active_coll.h \
   allocate.h \
   async.h \
   async_copy.h \
   async_templates.h \
+  coll_flags.h \
   collective.h \
   dl_malloc.h \
   event.h \
   finish.h \
   forkjoin.h \
-  future.h \
   gasnet_api.h \
+  global_ptr.h \
+  global_ref.h \
   group.h \
   lock.h \
-  global_ptr.h \
   queue.h \
   range.h \
-  global_ref.h \
   shared_array.h \
   shared_var.h \
   team.h \
+  timer.h \
   upcxx.h \
   upcxx_runtime.h \
   upcxx_types.h \
-  upcxx.mak
+  utils.h \
+  upcxx.mak $(UPCXX_MD_ARRAY_HEADERS)
 
 noinst_HEADERS = \
   upcxx_internal.h 
+
+if UPCXX_MD_ARRAY
+arrayincludedir = $(includedir)/upcxx-arrays
+arrayinclude_HEADERS =  \
+  upcxx-arrays/array.h \
+  upcxx-arrays/array_addr.h \
+  upcxx-arrays/array_impl.h \
+  upcxx-arrays/array_impl.tpp \
+  upcxx-arrays/array_undefs.h \
+  upcxx-arrays/array_wrapper.h \
+  upcxx-arrays/array_wrapper_specializations.h \
+  upcxx-arrays/arrayflag_tools.h \
+  upcxx-arrays/defs.h \
+  upcxx-arrays/domain.h \
+  upcxx-arrays/domain.tpp \
+  upcxx-arrays/domain_undefs.h \
+  upcxx-arrays/domains.h \
+  upcxx-arrays/foreach.h \
+  upcxx-arrays/foreach_aux.h \
+  upcxx-arrays/iter.h \
+  upcxx-arrays/point.h \
+  upcxx-arrays/point.tpp \
+  upcxx-arrays/point_aux.h \
+  upcxx-arrays/rdomain.h \
+  upcxx-arrays/rdomain.tpp \
+  upcxx-arrays/utils.h \
+  upcxx-arrays/wrapper_tools.h \
+  upcxx-arrays/wrapper_tools_specializations.h
+endif

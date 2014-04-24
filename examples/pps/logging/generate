@@ -1,0 +1,167 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FileHandle;
+use Getopt::Long;
+
+use Barriers;
+use Event;
+use Events;
+use Phases;
+
+
+########################################################################
+#
+#  Globals.
+#
+
+my $barriers = new Barriers;
+my $phases = new Phases;
+my $events = new Events;
+
+my $numProcs;
+my $maxProc = 0;
+my $maxTime = 0;
+
+my %options;
+
+
+########################################################################
+#
+#  Maximize some scalar variable's value.
+#
+
+
+sub maximize (\$$) {
+    my ($old, $new) = @_;
+    $$old = $new if $$old < $new;
+}
+
+
+########################################################################
+#
+#  Display usage information
+#
+
+sub usage () {
+    local $, = "\n";
+    print("Usage: $0 [<selectors>...] <logfile>",
+	  "",
+	  "The list of <selectors> may include:",
+	  "  --barriers",
+	  "  --begins",
+	  "  --ends",
+	  "  --events",
+	  "",
+	  "Each <selector> may be followed by an optional comma-separated",
+	  "list of process numbers.  If no process list is given, the",
+	  "selected items for all processes will be included.",
+	  "");
+}
+
+
+########################################################################
+#
+#  Test whether an item has been selected for inclusion
+#
+
+sub selected ($$) {
+    my ($proc, $category) = @_;
+    my $list = $options{$category};
+    if (defined $list) {
+	if (@$list) {
+	    foreach (@$list) {
+		return 1 if $_ == $proc;
+	    }
+	    return 0;
+	} else {
+	    return 1;
+	}
+    } else {
+	return 0;
+    }
+}
+
+
+########################################################################
+#
+#  Process command-line options.
+#
+
+
+my $logname = pop;
+my $ok = GetOptions \%options, "barriers:s", "begins:s", "ends:s", "events:s", "help";
+
+if ($options{help}) {
+    usage;
+    exit;
+} elsif (!($ok && defined $logname && !@ARGV)) {
+    usage;
+    exit 1;
+}
+
+foreach (keys %options) {
+    $options{$_} = [ sort split /[,;\s]+/, $options{$_} ];
+    foreach (@{$options{$_}}) {
+	if ($_ !~ /^\d+$/) {
+	    print "Bad process number: $_\n";
+	    usage;
+	    exit 1;
+	}
+    }
+}
+
+
+########################################################################
+#
+#  Load the log file into the registry.
+#
+
+my $logfile = new FileHandle $logname, 'r';
+
+my $barrierBegin;
+
+while (<$logfile>) {
+
+    /^(\d+): (\d+): (.*)$/;
+    my ($proc, $time, $desc) = ($1, $2, $3);
+
+    maximize $maxProc, $proc;
+    maximize $maxTime, $time;
+
+    my $event = new Event $proc, $desc, $time;
+
+    if ($desc eq 'begin barrier') {
+	$barriers->begin($event) if selected $proc, 'barriers';
+    } elsif ($desc eq 'end barrier') {
+	$barriers->end($event) if selected $proc, 'barriers';
+    } elsif ($desc =~ /^begin (.*)$/) {
+	$phases->begin($event);
+	$events->push($event) if selected $proc, 'begins';
+    } elsif ($desc =~ /^end (.*)$/) {
+	$phases->end($event);
+	$events->push($event) if selected $proc, 'ends';
+    } else {
+	$events->push($event) if selected $proc, 'events';
+    }
+}
+
+$numProcs = $maxProc + 1;
+$logfile->close;
+
+
+########################################################################
+#
+#  Render the data
+#
+
+my $out = new FileHandle 'events.ps', 'w';
+
+$out->print("/maxTime $maxTime def\n");
+$out->print('/numCallouts ', @$events + @{$phases->complete}, " def\n");
+
+$phases->print($out);
+$barriers->print($out);
+$events->print($out);
+
+$out->close;

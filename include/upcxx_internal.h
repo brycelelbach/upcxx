@@ -42,7 +42,7 @@ namespace upcxx
 
   /**
    * \ingroup internal
-   * Advance the incoming task queue by processing local tasks
+   * Advance the outgoing task queue by processing local tasks
    *
    * Note that some local tasks may take
    *
@@ -59,7 +59,7 @@ namespace upcxx
 
   /*
    * \ingroup internal
-   * Advance the outgoing task queue by sending out remote task requests
+   * Advance the incoming task queue by sending out remote task requests
    *
    * Note that advance_out_task_queue() shouldn't be be called in
    * any GASNet AM handlers because it calls gasnet_AMPoll() and
@@ -86,7 +86,6 @@ namespace upcxx
   void free_gpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
   void inc_am_handler(gasnet_token_t token, void *am, size_t nbytes);
 
-
   //typedef struct {
   //  void *addr;
   //  uintptr_t size;
@@ -102,7 +101,7 @@ namespace upcxx
   static inline void init_gasnet_seg_mspace()
   {
     all_gasnet_seginfo =
-        (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
+      (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
     assert(all_gasnet_seginfo != NULL);
 
     int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());

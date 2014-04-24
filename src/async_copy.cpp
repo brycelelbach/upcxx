@@ -1,5 +1,6 @@
 #include "upcxx.h"
 
+// AK: should this be using bulk puts/gets?
 int upcxx::copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes)
 {
 #ifdef DEBUG

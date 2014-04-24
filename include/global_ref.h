@@ -137,6 +137,11 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
+    const global_ptr<T> operator &() const
+    {
+      return global_ptr<T>(_ptr, _pla);
+    }
+
     // YZ: Needs C++11 auto, decltype
 #ifdef UPCXX_HAVE_CXX11
     template <typename T2>

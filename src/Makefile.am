@@ -7,6 +7,11 @@ libupcxx_la_CPPFLAGS = \
   $(GASNET_CPPFLAGS) \
   $(GASNET_CFLAGS)
 
+if UPCXX_MD_ARRAY
+  UPCXX_MD_ARRAY_SOURCES = \
+    array_bulk.cpp     \
+endif
+
 libupcxx_la_SOURCES = \
   dl_malloc.c        \
   active_coll.cpp    \
@@ -18,4 +23,4 @@ libupcxx_la_SOURCES = \
   event.cpp          \
   lock.cpp           \
   team.cpp           \
-  upcxx_runtime.cpp
+  upcxx_runtime.cpp $(UPCXX_MD_ARRAY_SOURCES)

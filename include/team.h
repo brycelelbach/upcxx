@@ -7,28 +7,49 @@
 
 #include <cassert>
 #include <cstring>
+#include <vector>
 
 #include "upcxx_types.h"
 #include "upcxx_runtime.h"
 #include "gasnet_api.h"
 #include "range.h"
-#include "collective.h"
+#include "coll_flags.h"
+#include "utils.h"
 
 /// \cond SHOW_INTERNAL
 
-#define UPCXX_GASNET_COLL_FLAG                                          \
-  (GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL)
-
 namespace upcxx
 {
+
+  struct ts_scope;
+
   struct team {
-    team() {}
+    team() : _mychild(NULL) {
+      if (_team_stack.size() > 0) {
+        const team *other = current_team();
+        _parent = other->_parent;
+        _size = other->_size;
+        _myrank = other->_myrank;
+        _color = other->_color;
+        _team_id = other->_team_id;
+        _gasnet_team = other->_gasnet_team;
+      }
+    }
+
+    team(const team *other) : _mychild(NULL) {
+      _parent = other->_parent;
+      _size = other->_size;
+      _myrank = other->_myrank;
+      _color = other->_color;
+      _team_id = other->_team_id;
+      _gasnet_team = other->_gasnet_team;
+    }
     
-    team(uint32_t team_id, uint32_t size, uint32_t myrank, range &mbr,
-         gasnet_team_handle_t gasnet_team = NULL)
-      : _team_id(team_id), _size(size), _myrank(myrank), _mbr(mbr),
-        _gasnet_team(gasnet_team)
-    {}
+    /* team(uint32_t team_id, uint32_t size, uint32_t myrank, range &mbr, */
+    /*      gasnet_team_handle_t gasnet_team = NULL) */
+    /*   : _team_id(team_id), _size(size), _myrank(myrank), _mbr(mbr), */
+    /*     _gasnet_team(gasnet_team) */
+    /* {} */
 
     ~team()
     {
@@ -37,15 +58,15 @@ namespace upcxx
       //      }
     }
 
-    inline void init(uint32_t team_id, uint32_t size, uint32_t myrank,
-                     range &mbr, gasnet_team_handle_t gasnet_team = NULL)
-    {
-      _team_id = team_id;
-      _size = size;
-      _myrank = myrank;
-      _mbr = mbr;
-      _gasnet_team = gasnet_team;
-    }
+    /* inline void init(uint32_t team_id, uint32_t size, uint32_t myrank, */
+    /*                  range &mbr, gasnet_team_handle_t gasnet_team = NULL) */
+    /* { */
+    /*   _team_id = team_id; */
+    /*   _size = size; */
+    /*   _myrank = myrank; */
+    /*   _mbr = mbr; */
+    /*   _gasnet_team = gasnet_team; */
+    /* } */
 
     inline uint32_t myrank() const { return _myrank; }
     
@@ -53,43 +74,49 @@ namespace upcxx
     
     inline uint32_t team_id() const { return _team_id; }
     
-    inline void set_team_id(uint32_t team_id)
-    {
-      _team_id = team_id;
-    }
-    
-    // YZ: We can use a compact format to represent team members and only store
-    // log2 number of neighbors on each node
-    inline uint32_t member(uint32_t i) const
-    {
-      assert(i < _size);
-      return _mbr[i];
+    inline team *parent() const { return _parent; }
+
+    inline team *mychild() const { return _mychild; }
+
+    inline uint32_t color() const { return _color; }
+
+    inline gasnet_team_handle_t gasnet_team() const {
+      return _gasnet_team;
     }
 
-    inline bool is_team_all()
+    // YZ: We can use a compact format to represent team members and only store
+    // log2 number of neighbors on each node
+    /* inline uint32_t member(uint32_t i) const */
+    /* { */
+    /*   assert(i < _size); */
+    /*   return _mbr[i]; */
+    /* } */
+
+    inline bool is_team_all() const
     {
       return (_team_id == 0); // team_all has team_id 0
     }
 
-    inline int team_get_global_rank(upcxx::team t,
-                                    uint32_t team_rank,
-                                    uint32_t *global_rank)
-    {
-      if (team_rank < _mbr.count()) {
-        *global_rank = _mbr[team_rank];
-        return UPCXX_SUCCESS;
-      }
+    /* inline int team_get_global_rank(upcxx::team t, */
+    /*                                 uint32_t team_rank, */
+    /*                                 uint32_t *global_rank) */
+    /* { */
+    /*   if (team_rank < _mbr.count()) { */
+    /*     *global_rank = _mbr[team_rank]; */
+    /*     return UPCXX_SUCCESS; */
+    /*   } */
 
-      return UPCXX_ERROR;
-    }
+    /*   return UPCXX_ERROR; */
+    /* } */
     
     // Initialize the underlying gasnet team if necessary
-    int init_gasnet_team();
+    /* int init_gasnet_team(); */
     
     // void create_gasnet_team();
     int split(uint32_t color, uint32_t relrank, team *&new_team);
+    int split(uint32_t color, uint32_t relrank);
     
-    inline int barrier()
+    inline int barrier() const
     {
       int rv;
       assert(_gasnet_team != NULL);
@@ -107,7 +134,7 @@ namespace upcxx
 
     }
 
-    inline int bcast(void *src, void *dst, size_t nbytes, uint32_t root)
+    inline int bcast(void *src, void *dst, size_t nbytes, uint32_t root) const
     {
       assert(_gasnet_team != NULL);
       gasnet_coll_broadcast(_gasnet_team, dst, root, src, nbytes,
@@ -115,7 +142,7 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
   
-    inline int gather(void *src, void *dst, size_t nbytes, uint32_t root)
+    inline int gather(void *src, void *dst, size_t nbytes, uint32_t root) const
     {
       assert(_gasnet_team != NULL);
       gasnet_coll_gather(_gasnet_team, root, dst, src, nbytes, 
@@ -123,7 +150,7 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
 
-    inline int allgather(void *src, void *dst, size_t nbytes)
+    inline int allgather(void *src, void *dst, size_t nbytes) const
     {
       assert(_gasnet_team != NULL);
       gasnet_coll_gather_all(_gasnet_team, dst, src, nbytes, 
@@ -133,7 +160,7 @@ namespace upcxx
 
     template<class T>
     int reduce(T *src, T *dst, size_t count, uint32_t root,
-               upcxx_op_t op, upcxx_datatype_t dt)
+               upcxx_op_t op, upcxx_datatype_t dt) const
     {
       // YZ: check consistency of T and dt
       assert(_gasnet_team != NULL);
@@ -142,16 +169,52 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
     
-    static gasnet_hsl_t _tid_lock;
     static uint32_t new_team_id();
 
+    static team *current_team() { return _team_stack.back(); }
+
+    static team *global_team() { return _team_stack[0]; }
+
+    friend int init(int *pargc, char ***pargv);
+    friend struct ts_scope;
+
   private:
+    team *_parent, *_mychild;
+    uint32_t _size, _myrank, _color;
     uint32_t _team_id;
-    uint32_t _size;
-    uint32_t _myrank;
-    range _mbr;
     gasnet_team_handle_t _gasnet_team;
 
+    team(team *parent, int size, int rank, int color,
+         gasnet_team_handle_t handle) : _parent(parent),
+      _mychild(NULL), _size(size), _myrank(rank), _color(color),
+      _team_id(new_team_id()), _gasnet_team(handle) {}
+
+    void init_global_team() {
+      _parent = NULL;
+      _size = gasnet_nodes();
+      _myrank = gasnet_mynode();
+      _color = 0;
+      _team_id = 0;
+      _gasnet_team = GASNET_TEAM_ALL;
+      // add to top of team stack
+      if (_team_stack.size() == 0)
+        _team_stack.push_back(this);
+    }
+
+    static gasnet_hsl_t _tid_lock;
+    static vector<team *> _team_stack;
+
+    static void descend_team(team *t) {
+      if (t->_parent->_team_id != current_team()->_team_id) {
+        std::cerr << "team is not a subteam of current team" << endl;
+        abort();
+      }
+      _team_stack.push_back(t);
+    }
+
+    static void ascend_team() {
+      _team_stack.pop_back();
+    }
   }; // end of struct team
   
   inline
@@ -161,10 +224,47 @@ namespace upcxx
                << ", size " << t.size() << ", myrank " << t.myrank();
   }
   
+  struct ts_scope {
+    int done;
+    inline ts_scope(team *t) : done(0) {
+      team::descend_team(t->mychild());
+    }
+    inline ts_scope(team &t) : done(0) {
+      team::descend_team(t.mychild());
+    }
+    inline ~ts_scope() {
+      team::ascend_team();
+    }
+  };
+
+  static inline gasnet_team_handle_t current_gasnet_team() {
+    return team::current_team()->gasnet_team();
+  }
+
+  static inline uint32_t ranks() {
+    return team::current_team()->size();
+  }
+
+  static inline uint32_t myrank() {
+    return team::current_team()->myrank();
+  }
+
+  static inline uint32_t global_ranks() {
+    return team::global_team()->size();
+  }
+
+  static inline uint32_t global_myrank() {
+    return team::global_team()->myrank();
+  }
 
 } // namespace upcxx
 
 extern upcxx::team team_all;
 
+// Dynamically scoped hierarchical team construct
+#define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
+#define UPCXX_teamsplit_(name, t)                       \
+  for (ts_scope name(t); name.done == 0; name.done = 1)
 
-
+#define THREADS upcxx::ranks()
+#define MYTHREAD upcxx::myrank()

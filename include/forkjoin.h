@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * start_gasnet.h -- Single-thread start up emulation 
  *
@@ -8,9 +10,6 @@
  * main function.  We supply a stub main function for job start-up and
  * setting up the fork-join (async) execution model.
  */
-
-#ifndef FORKJOIN_H_
-#define FORKJOIN_H_
 
 #include "upcxx.h"
 
@@ -45,5 +44,3 @@ int main(int argc, char **argv)
 #define main _user_main
 
 const char *forkjoin_h_include_error = "forkjoin.h should only be included once in the main cpp file where user's main() function is defined!";
-
-#endif // FORKJOIN_H_
