@@ -8,7 +8,8 @@ dnl LT_INIT()
 LT_LANG([C++])
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS(config.h) dnl internal config header 
+AC_CONFIG_HEADERS(upcxx_config.h) dnl external config header
 AC_CONFIG_FILES([
   Makefile
   include/Makefile
@@ -32,38 +33,52 @@ AC_ARG_WITH([gasnet],
   [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=/opt/gasnet/smp-conduit/smp-seq.mak etc.])]
 )
 
-## Check for C++11
 AC_LANG(C++)
-AX_CXX_COMPILE_STDCXX_11(noext,optional)
 
-if test "$HAVE_CXX11" = 1; then
-  CXXFLAGS+=" -DUSE_CXX11 "
-fi
+dnl option to disable using C++11  (default is enable auto detection)
+AC_ARG_ENABLE([cxx11],
+    AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
 
-## Add flags for building UPC++
+AS_IF([test x$enableval = xno], 
+      [:], 
+      [ dnl Do the stuff needed for enabling C++11
+        dnl Check for C++11   
+        AX_CXX_COMPILE_STDCXX_11(noext,optional)
+        if test "$HAVE_CXX11" = 1; then
+          AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
+          AC_SUBST(UPCXX_HAVE_CXX11)
+          CXXFLAGS+=" -DUSE_CXX11 "
+        fi
+      ])
+
+dnl Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_SEQ -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES "
 CFLAGS+=${UPCXX_FLAGS}
 CXXFLAGS+=${UPCXX_FLAGS}
 
-## Check for Clang
+dnl Check for Clang
 AC_MSG_CHECKING([if compiling with clang])
 AC_COMPILE_IFELSE(
 [AC_LANG_PROGRAM([], [[
 #ifndef __clang__
        not clang
 #endif
-]])],
-[CLANG=yes], [CLANG=no])
-
+]])], [CLANG=yes], [CLANG=no])
 AC_MSG_RESULT([$CLANG])
-
-## -std=c++0x -DUSE_CXX11"
-
 ## for clang
 if test "x$CLANG" = "xyes"; then
   ## suppress warnings due to legacy usage of C in GASNet
   CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
+dnl Option to enable UPC++ multidimensional arrays (default is disable)
+AC_ARG_ENABLE([md-array],
+    AS_HELP_STRING([--enable-md-array], [Enable Titanium-style multidimensional arrays]))
+
+AS_IF([test x$enableval = xyes], [
+  dnl Do the stuff needed for enabling md-array
+  AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if the md-array feature is enabled])
+  AC_SUBST(UPCXX_HAVE_MD_ARRAY)
+])
 
 AC_OUTPUT

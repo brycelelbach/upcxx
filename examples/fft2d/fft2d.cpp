@@ -451,8 +451,8 @@ void fft2d(complex_t *my_A,
 #ifdef VERIFY
   if (myrank == 0) {
     global_ptr<complex_t> all_in, all_out;
-    all_in = allocate<complex_t>(my_node, nx * ny);
-    all_out = allocate<complex_t>(my_node, nx * ny);
+    all_in = allocate<complex_t>(myrank(), nx * ny);
+    all_out = allocate<complex_t>(myrank(), nx * ny);
     for (int i = 0; i < nprocs; i++) {
       async_copy(Input[i], all_in + i * size_per_p, size_per_p);
       async_copy(Output[i], all_out + i * size_per_p, size_per_p);

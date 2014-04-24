@@ -11,7 +11,6 @@
 #include "upcxx_types.h"
 #include "upcxx_runtime.h"
 #include "gasnet_api.h"
-#include "machine.h"
 #include "range.h"
 #include "collective.h"
 

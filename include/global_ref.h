@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "machine.h"
 #include "gasnet_api.h"
 #include "async.h"
 
@@ -22,7 +21,7 @@ namespace upcxx
     make_memberof((obj).where(), (obj).raw_ptr()->m)
 
   /// \cond SHOW_INTERNAL
-  template<typename T, typename place_t = node>
+  template<typename T, typename place_t = rank_t>
   struct global_ref
   {
     global_ref(place_t pla, T *ptr)
@@ -33,11 +32,11 @@ namespace upcxx
 
     global_ref<T>& operator = (const T &rhs)
     {
-      if (_pla.id() == my_node.id()) {
+      if (_pla == myrank()) {
         *_ptr = rhs;
       } else {
         // if not local
-        gasnet_put(_pla.id(), _ptr, (void *)&rhs, sizeof(T));
+        gasnet_put(_pla, _ptr, (void *)&rhs, sizeof(T));
       }
       return *this;
     }
@@ -45,11 +44,11 @@ namespace upcxx
     global_ref<T>& operator = (const global_ref<T> &rhs)
     {
       T val = rhs.get();
-      if (_pla.id() == my_node.id()) {
+      if (_pla == myrank()) {
         *_ptr = val;
       } else {
         // if not local
-        gasnet_put(_pla.id(), _ptr, (void *)&val, sizeof(T));
+        gasnet_put(_pla, _ptr, (void *)&val, sizeof(T));
       }
       return *this;
     }
@@ -63,65 +62,69 @@ namespace upcxx
 
     global_ref<T>& operator ^= (const T &rhs)
     {
-      int pla_id = _pla.id();
-      if (pla_id == gasnet_mynode()) {
+      if (_pla == myrank()) {
         *_ptr ^= rhs;
       } else {
         // if not local
         T tmp;
-        gasnet_get(&tmp, pla_id, _ptr, sizeof(T));
+        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
         tmp ^= rhs;
-        gasnet_put(pla_id, _ptr, (void *)&tmp, sizeof(T));
+        gasnet_put(_pla, _ptr, (void *)&tmp, sizeof(T));
       }
       return *this;
     }
 
     global_ref<T>& operator += (const T &rhs)
     {
-      int pla_id = _pla.id();
-      if (pla_id == gasnet_mynode()) {
+      if (_pla == myrank()) {
         *_ptr += rhs;
       } else {
         // if not local
         T tmp;
-        gasnet_get(&tmp, pla_id, _ptr, sizeof(T));
+        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
         tmp += rhs;
-        gasnet_put(pla_id, _ptr, (void *)&tmp, sizeof(T));
+        gasnet_put(_pla, _ptr, (void *)&tmp, sizeof(T));
       }
       return *this;
     }
 
     template <typename T2>
+    bool operator == (const T2 &rhs)
+    {
+      return (get() == (T)rhs);
+    }
+
+    template <typename T2>
     bool operator != (const T2 &rhs)
     {
-      return (get() != rhs);
+      return (get() != (T)rhs);
     }
 
     T get() const
     {
-      if (_pla.id() == my_node.id()) {
+      if (_pla == myrank()) {
         return (*_ptr);
       } else {
         // if not local
         T tmp;
-        gasnet_get(&tmp, _pla.id(), _ptr, sizeof(T));
+        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
         return tmp;
       }
     }
 
     operator T() const
     {
-      if (_pla.id() == my_node.id()) {
+      if (_pla == myrank()) {
         return (*_ptr);
       } else {
         // if not local
         T tmp;
-        gasnet_get(&tmp, _pla.id(), _ptr, sizeof(T));
+        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
         return tmp;
       }
     }
 
-#if 0 // USE_CXX11 YZ: this is not yet supported by icpc 13.1
+#if 0 // UPCXX_HAVE_CXX11 YZ: this is not yet supported by icpc 13.1
     template<typename T2>
     explicit operator T2*() const
     {
@@ -135,9 +138,9 @@ namespace upcxx
     }
 
     // YZ: Needs C++11 auto, decltype
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
     template <typename T2>
-    auto operator [](T2 i) -> decltype(this->get()[i])
+    auto operator [](T2 i) -> decltype(get()[i])
     {
       T tmp = get();
       return tmp[i];
@@ -154,7 +157,7 @@ namespace upcxx
       return _pla;
     }
 
-  //private:
+  private:
     T *_ptr;
     place_t _pla;
   }; // struct global_ref

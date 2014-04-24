@@ -13,12 +13,14 @@
 #include <cstring>
 #include <cassert>
 #include <ios>
+#include <stdint.h>
 
 #include "upcxx_types.h"
 #include "queue.h"
 
 namespace upcxx
 {
+  typedef uint32_t rank_t;
 
   /**
    * \defgroup initgroup Job initialization and query
@@ -43,6 +45,10 @@ namespace upcxx
    * once at the end of the client program.
    */
   int finalize();
+
+  rank_t ranks();
+
+  rank_t myrank();
 
   extern queue_t *in_task_queue;
 

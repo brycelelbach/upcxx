@@ -16,23 +16,29 @@
 
 using namespace upcxx;
 
-void print_task(int task_id)
+void print_task(int n)
 {
-  cout << "MYTHREAD " << MYTHREAD <<  ": task_id " << task_id << "\n";
+  printf("Rank %d n %d\n", myrank(), n); 
 }
 
 int main(int argc, char **argv)
 {
-  printf("MYTHREAD %d will spawn %d tasks...\n",
-         MYTHREAD, THREADS);
+  printf("Rank %d will spawn %d tasks...\n",
+         myrank(), ranks());
 
-  for (int i = 0; i < THREADS; i++) {
-    printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
+  for (int i = 0; i < ranks(); i++) {
 
+#ifndef UPCXX_HAVE_CXX11
+    printf("Rank %d calls a named function on rank %d\n", myrank(), i);
     async(i)(print_task, 1000+i);
+#else
+    printf("Rank %d calls a lambda function on rank %d\n", myrank(), i);
+    async(i)([] (int n) { printf("Rank %d n %d\n", myrank(), n); },
+             1000+i);
+#endif
   }
-  
-  upcxx::wait();
+
+  async_wait();
 
   return 0;
 }

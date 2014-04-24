@@ -3,6 +3,7 @@
  */
 
 #include "upcxx.h"
+#include "upcxx_internal.h"
 
 #ifndef GASNET_COLL_SCRATCH_SEG_SIZE
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)

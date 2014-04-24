@@ -414,7 +414,7 @@ int main(int argc, char **argv)
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
       current = sorted[t][index];
 #else
       current = sorted[t].get()[index];

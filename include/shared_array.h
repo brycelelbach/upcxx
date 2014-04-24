@@ -34,13 +34,13 @@ namespace upcxx
 
     void global2local(const size_t global_index,
                       size_t &local_index,
-                      node &node)
+                      rank_t &rank)
     {
-      int nplaces = (int)gasnet_nodes(); // global_machine.node_count();
+      rank_t nplaces = ranks();
       size_t block_id = global_index / _blk_sz;
       size_t phase = global_index % _blk_sz;
       local_index = (block_id / nplaces) * _blk_sz + phase ;
-      node = block_id % nplaces;
+      rank = block_id % nplaces;
     }
 
     shared_array(size_t size=0, size_t blk_sz=BLK_SZ)
@@ -86,13 +86,7 @@ namespace upcxx
       if (blk_sz != 0) _blk_sz = blk_sz;
       _local_size = (_size + nplaces - 1) / nplaces;
       
-#ifdef USE_GASNET_FAST_SEGMENT
-      // YZ: may want to use the "placement new" functions
-      // void * operator new[] (std::size_t, void *) throw();
-      _data = (T *)gasnet_seg_alloc(sizeof(T) * _local_size);
-#else
-      _data = new T[_local_size];
-#endif
+      _data = allocate<T>(myrank(), _local_size).raw_ptr();
       
       assert(_data != NULL);
       _alldata = (T **)malloc(nplaces * sizeof(T*));
@@ -106,7 +100,7 @@ namespace upcxx
       gasnet_coll_gather_all(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
                              GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL);
 #ifdef UPCXX_DEBUG
-      printf("my node %d, _data %p\n", my_cpu_place.id(), _data);
+      printf("my rank %d, _data %p\n", myrank(), _data);
       for (int i=0; i<nplaces; i++) {
         printf("_alldata[%d]=%p ", i, _alldata[i]);
       }
@@ -116,14 +110,9 @@ namespace upcxx
 
     ~shared_array()
     {
-      if (_data) {
-#ifdef USE_GASNET_FAST_SEGMENT
-        gasnet_seg_free((void *)_data);
-#else
-        delete _data;
-#endif
-      }
       if (_alldata) free(_alldata);
+      if (_data != NULL)
+        deallocate<T>(global_ptr<T>(_data));
     }
 
     // Collectively allocate a shared array of nblocks with count elements per block
@@ -134,8 +123,8 @@ namespace upcxx
     {
       // address translation
       size_t local_index;
-      node n;
-      global2local(global_index, local_index, n);
+      rank_t rank;
+      global2local(global_index, local_index, rank);
 
       // assert(_data != NULL);
       // assert(_alldata != NULL);
@@ -145,7 +134,7 @@ namespace upcxx
              global_index, local_index, n.id());
 #endif
       // only works with statically declared (and presumably aligned) data
-      return global_ref<T>(n, &_alldata[n.id()][local_index]);
+      return global_ref<T>(rank, &_alldata[rank][local_index]);
     }
   }; // struct shared_array
 
@@ -153,7 +142,7 @@ namespace upcxx
   template<typename T>
   void init_ga(shared_array<T> *ga, T val)
   {
-    // printf("node %d: ga %p, val %g\n", my_cpu_place.id(), ga, (double)val);
+    // printf("myrank %d: ga %p, val %g\n", myrank(), ga, (double)val);
     ga->init(val);
   }
 
@@ -161,7 +150,7 @@ namespace upcxx
   template<typename T>
   void set(shared_array<T> *ga, T val)
   {
-    int P = global_machine.node_count();
+    int P = ranks();
     for (int i=P-1; i>=0; i--)
       async(i)(init_ga<T>, ga, val);
   }

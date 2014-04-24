@@ -56,7 +56,7 @@ namespace upcxx
       bcast_arg->target = range(new_target.begin() + new_target.count() / 2,
                                 new_target.end(),
                                 new_target.step());
-      bcast_task.init_async_task(my_node.id(),
+      bcast_task.init_async_task(myrank(),
                                  bcast_arg->target[0],  // the first node
                                  NULL,
                                  am_bcast_launch,  // bcast kernel
@@ -70,7 +70,7 @@ namespace upcxx
     // If I'm in the targets, insert the task into the async queue.
     // Do this after sending the AM bcast packets to maximize parallelism
 
-    task._callee = my_node.id();
+    task._callee = myrank();
 
     submit_task(&task);
   }  // am_bcast_launch
@@ -92,8 +92,8 @@ namespace upcxx
     bcast_arg.target = target;
     bcast_arg.root_index = root_index;
     bcast_arg.use_domain = use_domain;
-    bcast_arg.task.init_async_task(my_node.id(),
-                                   my_node.id(),
+    bcast_arg.task.init_async_task(myrank(),
+                                   myrank(),
                                    ack,
                                    fp,
                                    arg_sz,
