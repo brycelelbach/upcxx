@@ -5,6 +5,7 @@
 #include "array_bulk.h"
 #include "array_bulk_internal.h"
 #include "array_defs.h"
+#include "upcxx_internal.h" // for gasnet_seg_alloc
 
 /* No multithreading support for now */
 /* TODO: use UPC++ global_machine.node_count() */

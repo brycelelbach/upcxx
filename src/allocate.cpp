@@ -32,7 +32,7 @@ namespace upcxx
     return ptr;
   }
 
-  int deallocate(global_ptr<void> ptr)
+  void deallocate(global_ptr<void> ptr)
   {
     if (ptr.where() == myrank()) {
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -45,7 +45,6 @@ namespace upcxx
       am.ptr = ptr.raw_ptr();
       GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where(), FREE_CPU_AM, &am, sizeof(am)));
     }
-    return UPCXX_SUCCESS;
   }
 
   void alloc_cpu_am_handler(gasnet_token_t token, void *buf, size_t nbytes)

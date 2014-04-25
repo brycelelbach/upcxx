@@ -18,6 +18,11 @@ namespace upcxx
    */
   global_ptr<void> allocate(rank_t rank, size_t nbytes);
 
+  static inline void* allocate(size_t nbytes) 
+  {
+    return allocate(myrank(), nbytes).raw_ptr();
+  }
+
   /**
    * \ingroup gasgroup
    * \brief allocate memory in the global address space at a specific rank_t
@@ -35,7 +40,19 @@ namespace upcxx
     return global_ptr<T>(allocate(rank, nbytes));
   }
 
-  int deallocate(global_ptr<void> ptr);
+  template<typename T>
+  T* allocate(size_t count)
+  {
+    size_t nbytes = count * sizeof(T);
+    return (T*)allocate(nbytes);
+  }
+
+  void deallocate(global_ptr<void> ptr);
+
+  static inline void deallocate(void *ptr) 
+  {
+    deallocate(global_ptr<void>(ptr));
+  }
 
   /**
    * \ingroup gasgroup
@@ -46,8 +63,8 @@ namespace upcxx
    * \param ptr the pointer to which the memory space should be freed
    */
   template<typename T>
-  int deallocate(global_ptr<T> ptr)
+  void deallocate(global_ptr<T> ptr)
   {
-    return deallocate(global_ptr<void>(ptr));
+    void deallocate(global_ptr<void>(ptr));
   }
 } // namespace upcxx

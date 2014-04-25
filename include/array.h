@@ -3,7 +3,7 @@
 #define UPCXXA_HAVE_GASNET_TOOLS
 #define UPCXXA_MEMORY_DISTRIBUTED
 #define UPCXXA_COMM_AM2
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
 # define UPCXXA_USE_CXX11
 #endif
 #include "allocate.h"

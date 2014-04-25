@@ -35,5 +35,6 @@
 #include "team.h"
 #include "collective.h"
 #include "shared_array.h"
+#include "machine.h"
 
 #endif /* UPCXX_H_ */

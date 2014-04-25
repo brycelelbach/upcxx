@@ -110,8 +110,22 @@ namespace upcxx
     // \TODO: add support for the PAR-SYNC build
     // gasnet_coll_init(NULL, 0, NULL, 0, 0); // init gasnet collectives
     init_collectives();
-      
-    _ranks = gasnet_nodes();
+
+    { 
+      // initialize global_machine 
+      int node_count = gasnet_nodes(); 
+      int my_node_id = gasnet_mynode(); 
+      int my_cpu_count = 1; // may read from env 
+      my_node = node(my_node_id, my_cpu_count); 
+      // Gather all nodes info. 
+      node *all_nodes = new node[node_count]; 
+      gasnet_coll_gather_all(GASNET_TEAM_ALL, all_nodes, &my_node, sizeof(node), 
+                             UPCXX_GASNET_COLL_FLAG); 
+      global_machine.init(node_count, all_nodes, my_node_id); 
+      my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment        
+    }
+
+   _ranks = gasnet_nodes();
     _myrank = gasnet_mynode();
 
     // Allocate gasnet segment space for shared_var
@@ -399,5 +413,31 @@ namespace upcxx
     am.ptr = ptr.raw_ptr();
     GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am)));
     return UPCXX_SUCCESS;
+  }
+
+  // free memory
+  void gasnet_seg_free(void *p)
+  {
+    if (_gasnet_mspace == 0) {
+      fprintf(stderr, "Error: the gasnet memory space is not initialized.\n");
+      fprintf(stderr, "It is likely due to the pointer (%p) was not from hp_malloc().\n",
+              p);
+      exit(1);
+    }
+    assert(p != 0);
+    mspace_free(_gasnet_mspace, p);
+  }
+
+  void *gasnet_seg_memalign(size_t nbytes, size_t alignment)
+  {
+    if (_gasnet_mspace== 0) {
+      init_gasnet_seg_mspace();
+    }
+    return mspace_memalign(_gasnet_mspace, alignment, nbytes);
+  }
+
+  void *gasnet_seg_alloc(size_t nbytes)
+  {
+    return gasnet_seg_memalign(nbytes, 64);
   }
 } // namespace upcxx
