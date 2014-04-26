@@ -250,6 +250,7 @@ namespace upcxx
     return team::current_team()->myrank();
   }
 
+  /*
   static inline uint32_t global_ranks() {
     return team::global_team()->size();
   }
@@ -257,6 +258,7 @@ namespace upcxx
   static inline uint32_t global_myrank() {
     return team::global_team()->myrank();
   }
+  */
 
 } // namespace upcxx
 

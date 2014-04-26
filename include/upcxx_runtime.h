@@ -46,9 +46,9 @@ namespace upcxx
    */
   int finalize();
 
-  rank_t ranks();
+  rank_t global_ranks();
 
-  rank_t myrank();
+  rank_t global_myrank();
 
   extern queue_t *in_task_queue;
 

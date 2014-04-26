@@ -71,10 +71,25 @@ AC_COMPILE_IFELSE(
 #endif
 ]])], [CLANG=yes], [CLANG=no])
 AC_MSG_RESULT([$CLANG])
-## for clang
+dnl for clang++
 if test "x$CLANG" = "xyes"; then
   ## suppress warnings due to legacy usage of C in GASNet
   CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
+fi
+
+dnl Check for Clang
+AC_MSG_CHECKING([if compiling with g++])
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([], [[
+#ifndef __GNUG__
+       not g++
+#endif
+]])], [GCC=yes], [GCC=no])
+AC_MSG_RESULT([$GCC])
+dnl for g++
+if test "x$GCC" = "xyes"; then
+  ## suppress warnings due to legacy usage of C in GASNet
+  CXXFLAGS+=" -Wno-literal-suffix"
 fi
 
 dnl Option to enable UPC++ multidimensional arrays (default is disable)

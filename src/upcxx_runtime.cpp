@@ -88,8 +88,8 @@ namespace upcxx
   void *shared_var_addr = NULL;
   size_t total_shared_var_sz = 0;
 
-  rank_t _ranks; /**< total ranks of the parallel job */
-  rank_t _myrank; /**< my rank in the global universe */
+  rank_t _global_ranks; /**< total ranks of the parallel job */
+  rank_t _global_myrank; /**< my rank in the global universe */
 
   int init(int *pargc, char ***pargv)
   {
@@ -125,8 +125,8 @@ namespace upcxx
       my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment        
     }
 
-   _ranks = gasnet_nodes();
-    _myrank = gasnet_mynode();
+    _global_ranks = gasnet_nodes();
+    _global_myrank = gasnet_mynode();
 
     // Allocate gasnet segment space for shared_var
     if (total_shared_var_sz != 0) {
@@ -187,20 +187,17 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-  // ranks and myranks are defined in team.h
-  /*
-  uint32_t ranks()
+  uint32_t global_ranks()
   {
     assert(init_flag == true);
-    return _ranks;
+    return _global_ranks;
   }
 
-  uint32_t myrank()
+  uint32_t global_myrank()
   {
     assert(init_flag == true);
-    return _myrank;
+    return _global_myrank;
   }
-  */
 
   // Active Message handlers
   void inc_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
