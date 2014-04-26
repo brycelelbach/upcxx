@@ -81,7 +81,7 @@ dnl Check for Clang
 AC_MSG_CHECKING([if compiling with g++])
 AC_COMPILE_IFELSE(
 [AC_LANG_PROGRAM([], [[
-#ifndef __GNUG__
+#if !defined(__GNUG__) || defined(__INTEL_COMPILER)        
        not g++
 #endif
 ]])], [GCC=yes], [GCC=no])
