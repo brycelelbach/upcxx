@@ -140,7 +140,7 @@ namespace upcxx
     // YZ: Needs C++11 auto, decltype
 #ifdef UPCXX_HAVE_CXX11
     template <typename T2>
-    auto operator [](T2 i) -> decltype(get()[i])
+    auto operator [](T2 i) -> decltype(this->get()[i])
     {
       T tmp = get();
       return tmp[i];
