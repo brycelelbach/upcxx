@@ -4,7 +4,6 @@
  * The most difficult case is when some of the keys are identical,
  * which requires careful handling to be correct!
  *
- * Use the Mersenne Twister random number generator (SFMT)
  */
 
 #include <upcxx.h>
@@ -24,12 +23,6 @@ using namespace upcxx;
 // #define DEBUG 1
 
 #define VERIFY
-
-#define SFMT_MEXP 19937
-
-extern "C" {
-#include "SFMT/SFMT.h" // for the Mersenne Twister random number generator
-}
 
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
@@ -59,7 +52,6 @@ shared_array<ELEMENT_T, 1> keys;
 
 shared_array<uint64_t, 1> sorted_key_counts;
 
-sfmt_t sfmt;
 
 double mysecond()
 {
@@ -73,12 +65,11 @@ void init_keys(ELEMENT_T *my_keys, uint64_t my_key_size)
 #ifdef DEBUG
   printf("Thread %d, my_key_size %llu\n", MYTHREAD, my_key_size);
 #endif
-  sfmt_init_gen_rand(&sfmt, RANDOM_SEED + MYTHREAD);
-  // The sfmt library only takes integer type of size
+  srand(time(0)+MYTHREAD);
   uint64_t i;
 
   for (i = 0; i < my_key_size; i++) {
-    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt); // % (KEYS_PER_THREAD * THREADS);
+    my_keys[i] = (ELEMENT_T)rand();
   }
 }
 
@@ -114,7 +105,7 @@ void compute_splitters(uint64_t key_count,
     // Sample the key space to find the partition splitters
     // Oversample by a factor "samples_per_thread"
     for (i = 0; i < candidate_count; i++) {
-      uint64_t s = sfmt_genrand_uint64(&sfmt) % key_count;
+      uint64_t s = rand() % key_count;
       candidates[i] = keys[s]; // global accesses on keys
     }
 
