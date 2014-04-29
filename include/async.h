@@ -209,7 +209,8 @@ namespace upcxx
     // Increase the reference of the ack event of the task
     if (tmp->_ack != NULL) {
        tmp->_ack->incref();
-       outstanding_events.push_back(tmp->_ack);
+       if (tmp->_ack != &system_event && tmp->_ack->count() == 1)
+         outstanding_events.push_back(tmp->_ack);
     }
 
     if (after != NULL) {

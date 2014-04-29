@@ -180,10 +180,10 @@ namespace upcxx
     
   int finalize()
   {
-    upcxx::wait();
+    async_wait();
     while (advance() > 0);
     barrier();
-    gasnet_exit(0);
+    // gasnet_exit(0);
     return UPCXX_SUCCESS;
   }
 
@@ -346,7 +346,7 @@ namespace upcxx
         assert(e != NULL);
         // cerr << "Advancing event: " << *e << endl;
         if (e->test()) {
-          outstanding_events.erase(it);
+          outstanding_events.remove(*it);
           break;
         }
       }
@@ -387,10 +387,7 @@ namespace upcxx
     for (rank_t i = 1; i < ranks(); i++) {
       async(i)(signal_exit_am);
     }
-
-    progress();
-
-    wait(); // wait for the default event;
+    async_wait(); 
   }
 
   void wait_for_incoming_tasks()
