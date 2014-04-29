@@ -87,6 +87,7 @@ namespace upcxx
 
   void pop_event()
   {
+    assert(events.stack.back() != &system_event);
     events.stack.pop_back();
   }
 
