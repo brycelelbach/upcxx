@@ -48,8 +48,8 @@
   UPCXXA_ASSIGN_GLOBAL_ANONYMOUS_BULK(global, nitems, local)
 #define UPCXXA_GPTR_TO_T upcxx::global_ptr<T>
 #define UPCXXA_GREF_TO_T upcxx::global_ref<T>
-#define UPCXXA_GET_BOXID(gptr) (UPCXXA_TO_BOX(gptr)).id()
-#define UPCXXA_BOX_T node
+#define UPCXXA_GET_BOXID(gptr) UPCXXA_TO_BOX(gptr)
+#define UPCXXA_BOX_T rank_t
 #define UPCXXA_TO_BOX(ptr) (ptr).where()
 #define UPCXXA_TO_LOCAL(ptr) (ptr).raw_ptr()
 #define UPCXXA_TO_GLOBALB(global, box, local)   \
