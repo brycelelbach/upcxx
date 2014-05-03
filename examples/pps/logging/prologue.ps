@@ -1,0 +1,247 @@
+%!PS-Adobe-2.0
+
+%
+%  global graphics context hackery
+%
+
+36 36 translate
+
+
+%
+% width of a single process bar
+%
+
+/procWidth 20 def
+
+
+%
+% blank width between adjacent visual elements
+%
+
+/gutter 10 def
+
+
+%
+% subbox inset for each unit of depth
+%
+
+/inset 2 def
+
+
+%
+%  largest vertical coordinate used in diagram
+%
+
+/maxY 720 def
+
+
+%
+%  left edge of event legend
+%
+
+/legendX 450 def
+
+
+%
+%  event legend font
+%
+
+/legendFont /Times-Roman findfont 9 scalefont def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+% compute the X coordinate of the left edge of a process bar
+%
+% <proc> procLeft <x>
+%
+
+/procLeft {
+    procWidth gutter add
+    mul
+} def
+
+
+%
+% compute the X coordinate of the right edge of a process bar
+%
+% <proc> procLeft <x>
+%
+
+/procRight {
+    procLeft procWidth add
+} def
+
+
+%
+%  compute the Y coordinate of a timestamp
+%
+%  <time> timeY <y>
+%
+
+/timeY {
+    maxTime 1 add div
+    maxY mul
+    maxY exch sub
+} def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+%  set the path to a process box corresponding to some time interval
+%
+%  The interval extends from the start of the <start> time through the
+%  end of the <finish> time.  Thus, "10 10" has height 1, not 0.
+%
+%  <proc> <start> <finish> <depth> intervalPath
+%
+
+/intervalPath {
+
+    /depth exch def
+    /finish exch 1 add def
+    /start  exch def
+    /proc   exch def
+    
+    /margin inset depth mul def
+
+    /left   proc   procLeft  margin add def
+    /right  proc   procRight margin sub def
+    /top    start  timeY     def
+    /bottom finish timeY     def
+    
+    newpath
+    left  top    moveto
+    left  bottom lineto
+    right bottom lineto
+    right top    lineto
+    closepath
+
+} def
+
+
+%
+%  paint a process box corresponding to time interval
+%
+%  The interval is as for /intervalPath, described above.  The
+%  darkness selects a grayscale fill color.
+%
+%  <proc> <start> <finish> <depth> <darkness> paintInterval
+%
+
+/paintBox {
+    gsave
+	setgray
+	intervalPath
+	gsave fill grestore
+	0 setgray 0 setlinewidth stroke
+    grestore
+} def
+
+
+%
+%  paint a process box corresponding to some depth and time interval
+%
+%  The interval is as for /intervalPath, described above.  The depth
+%  is used to compute a grayscale fill color.
+%
+%  <proc> <start> <finish> <depth> paintInterval
+%
+
+/paintInterval {
+    % dup 1 sub
+    % maxDepth 1 sub
+    % div
+    dup 2 mod
+    1 exch sub
+    
+    paintBox
+} def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+%  paint a barrier interval
+%
+%  <proc> <start> <finish> barrier
+%
+
+/barrier {
+    gsave
+	0.5 setgray
+	0 intervalPath
+	fill
+    grestore
+} def
+
+% /barrier { pop pop pop } def
+
+
+%
+%  paint a phase interval
+%
+%  <desc> <proc> <start> <finish> <depth> phase
+%
+
+/phase {
+    % not yet implemented
+    paintInterval
+    pop					% description
+} def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+/legendY maxY def
+
+/callout {
+    gsave
+	0.5 setlinewidth
+	[1] 0 setdash
+	stroke
+    grestore
+} def    
+
+
+%
+%  paint an event callout
+%
+%  <desc> <begin> <end> event
+%
+
+/event {
+    gsave
+
+	newpath
+	exch procRight exch timeY moveto
+	procWidth 0 rlineto
+	legendX legendY lineto
+	callout
+
+	gutter 0 rmoveto
+	legendFont setfont show
+	
+	/legendY
+	legendY
+	maxY numEvents div
+	sub
+	def
+	
+    grestore
+} def
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%
+%  begin automatically-generated event data
+%
+
