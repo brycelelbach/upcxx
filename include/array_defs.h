@@ -1,7 +1,5 @@
 #pragma once
 
-#include "machine.h"
-
 #define UPCXXA_PROCS THREADS
 #define UPCXXA_MYPROC MYTHREAD
 #define UPCXXA_GLOBAL_PROCS GLOBAL_THREADS
@@ -48,24 +46,24 @@
   UPCXXA_ASSIGN_GLOBAL_ANONYMOUS_BULK(global, nitems, local)
 #define UPCXXA_GPTR_TO_T upcxx::global_ptr<T>
 #define UPCXXA_GREF_TO_T upcxx::global_ref<T>
-#define UPCXXA_GET_BOXID(gptr) (UPCXXA_TO_BOX(gptr)).id()
-#define UPCXXA_BOX_T node
+#define UPCXXA_GET_BOXID(gptr) UPCXXA_TO_BOX(gptr)
+#define UPCXXA_BOX_T rank_t
 #define UPCXXA_TO_BOX(ptr) (ptr).where()
 #define UPCXXA_TO_LOCAL(ptr) (ptr).raw_ptr()
 #define UPCXXA_TO_GLOBALB(global, box, local)   \
   (global) = upcxx::global_ptr<T>(local, box)
 #define UPCXXA_EQUAL_GLOBAL(p, q) ((p) == (q))
-#define UPCXXA_MYBOX upcxx::my_node
+#define UPCXXA_MYBOX upcxx::myrank()
 #define UPCXXA_IS_DIRECTLY_ADDRESSABLE(ptr)     \
   ((ptr.where()) == upcxx::myrank())
 #define UPCXXA_GLOBALIZE(global, local)                 \
   UPCXXA_TO_GLOBALB(global, UPCXXA_MYBOX, local)
-#define UPCXXA_PROC_TO_BOXID_PROC(proc, boxid, bproc)           \
-  upcxx::global_machine.cpu_id_global2local(proc, boxid, bproc)
-#define UPCXXA_BOXID_TO_BOX(boxid)              \
-  upcxx::global_machine.get_node(boxid)
-#define UPCXXA_BOX_TO_FIRST_PROC(box)                   \
-  upcxx::global_machine.cpu_id_local2global(box, 0)
+#define UPCXXA_PROC_TO_BOXID_PROC(proc, boxid, bproc) do {      \
+    boxid = proc;                                               \
+    bproc = 0;                                                  \
+  } while (0)
+#define UPCXXA_BOXID_TO_BOX(boxid) boxid
+#define UPCXXA_BOX_TO_FIRST_PROC(box) box
 
 #define UPCXXA_PUT_NB_BULK(event, destgaddr, srcaddr, nbytes)   \
   upcxx::async_copy(global_ptr<void>(srcaddr),                  \
