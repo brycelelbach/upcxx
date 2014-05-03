@@ -225,7 +225,7 @@ namespace upcxx
       assert(!_allocated); // need to deallocate first
       assert(m_blks > 0 && n_blks > 0 && blk_sz > 0);
       assert(pgrid_nrow > 0 && pgrid_ncol > 0
-             && (pgrid_nrow * pgrid_ncol == global_machine.node_count()));
+             && (pgrid_nrow * pgrid_ncol == upcxx::ranks());
 
       _m_blks = m_blks;
       _n_blks = n_blks;

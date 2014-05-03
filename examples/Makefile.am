@@ -1,1 +1,5 @@
-SUBDIRS = basic cg gups knapsack mg samplesort stencil
+SUBDIRS = basic gups samplesort
+
+if UPCXX_MD_ARRAY
+SUBDIRS += cg knapsack mg stencil
+endif

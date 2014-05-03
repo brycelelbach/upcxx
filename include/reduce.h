@@ -118,7 +118,7 @@ namespace upcxx {
     template<class T> static T reduce_internal(T val, upcxx_op_t op) {
       static T *src, *dst;
       if (!src) {
-        src = (T *) gasnet_seg_alloc(2 * sizeof(T));
+        src = upcxx::allocate<T>(2); // YZ: memory leaking?
         dst = src + 1;
       }
       src[0] = reduce_internal(val, op, 0);
@@ -130,7 +130,7 @@ namespace upcxx {
                                                int root) {
       static T *src, *dst;
       if (!src) {
-        src = (T *) gasnet_seg_alloc(2 * sizeof(T));
+        src = upcxx::allocate<T>(2); // YZ: memory leaking?
         dst = src + 1;
       }
       src[0] = val;

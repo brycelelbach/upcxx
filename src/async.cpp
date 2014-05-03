@@ -4,13 +4,13 @@
 using namespace upcxx;
 
 template<>
-void gasnet_launcher<node>::launch(generic_fp fp,
-                                   void *async_args, 
-                                   size_t arg_sz)
+void gasnet_launcher<rank_t>::launch(generic_fp fp,
+                                     void *async_args,
+                                     size_t arg_sz)
 {
   async_task task;
-  task.init_async_task(my_node.id(),
-                       _there.id(),
+  task.init_async_task(myrank(),
+                       _there,
                        _ack,
                        fp,
                        arg_sz,

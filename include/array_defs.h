@@ -1,5 +1,7 @@
 #pragma once
 
+#include "machine.h"
+
 #define UPCXXA_PROCS THREADS
 #define UPCXXA_MYPROC MYTHREAD
 #define UPCXXA_GLOBAL_PROCS GLOBAL_THREADS
@@ -10,11 +12,11 @@
 #define UPCXXA_WEAK_ASSIGN                      UPCXXA_ASSIGN
 #define UPCXXA_INDEX_GLOBAL                     UPCXXA_INDEX_LOCAL
 
-#define UPCXXA_MALLOC                           gasnet_seg_alloc
-#define UPCXXA_FREE                             gasnet_seg_free
+#define UPCXXA_MALLOC                           upcxx::allocate
+#define UPCXXA_FREE                             upcxx::deallocate
 #define UPCXXA_SYNC() /* FIX */
-#define UPCXXA_ARRAY_MALLOC                     gasnet_seg_alloc
-#define UPCXXA_ARRAY_FREE                       gasnet_seg_free
+#define UPCXXA_ARRAY_MALLOC                     upcxx::allocate
+#define UPCXXA_ARRAY_FREE                       upcxx::deallocate
 #define UPCXXA_GETENV_MASTER                    gasnet_getenv
 #define UPCXXA_EVENT_T                          upcxx::event *
 #define UPCXXA_DEFAULT_EVENT                    upcxx::peek_event()
@@ -55,7 +57,7 @@
 #define UPCXXA_EQUAL_GLOBAL(p, q) ((p) == (q))
 #define UPCXXA_MYBOX upcxx::my_node
 #define UPCXXA_IS_DIRECTLY_ADDRESSABLE(ptr)     \
-  ((ptr.where().id()) == upcxx::my_node.id())
+  ((ptr.where()) == upcxx::myrank())
 #define UPCXXA_GLOBALIZE(global, local)                 \
   UPCXXA_TO_GLOBALB(global, UPCXXA_MYBOX, local)
 #define UPCXXA_PROC_TO_BOXID_PROC(proc, boxid, bproc)           \

@@ -1,44 +1,51 @@
-include_HEADERS =  \
-  active_coll.h \
-  allocate.h \
-  array.h \
+if UPCXX_MD_ARRAY
+UPCXX_MD_ARRAY_H_FILES = \
+	array.h \
   array_bulk.h \
   array_bulk_internal.h \
   array_defs.h \
-  async.h \
-  async_templates.h \
   broadcast.h \
+  interfaces.h \
+  interfaces_internal.h \
+  reduce.h 
+else
+UPCXX_MD_ARRAY_H_FILES =
+endif
+
+include_HEADERS =  \
+  active_coll.h \
+  allocate.h \
+  async.h \
+  async_copy.h \
+  async_templates.h \
   coll_flags.h \
   collective.h \
   dl_malloc.h \
   event.h \
   finish.h \
   forkjoin.h \
-  future.h \
   gasnet_api.h \
   global_ptr.h \
   global_ref.h \
   group.h \
-  interfaces.h \
-  interfaces_internal.h \
-  lapack_api.h \
   lock.h \
-  machine.h \
-  matrix.h \
+	machine.h \
   queue.h \
   range.h \
-  reduce.h \
   shared_array.h \
   shared_var.h \
   team.h \
   timer.h \
   upcxx.h \
-  upcxx_internal.h \
   upcxx_runtime.h \
   upcxx_types.h \
   utils.h \
-  upcxx.mak
+  upcxx.mak $(UPCXX_MD_ARRAY_H_FILES)
 
+noinst_HEADERS = \
+  upcxx_internal.h 
+
+if UPCXX_MD_ARRAY
 arrayincludedir = $(includedir)/upcxx-arrays
 arrayinclude_HEADERS =  \
   upcxx-arrays/array.h \
@@ -65,3 +72,4 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/utils.h \
   upcxx-arrays/wrapper_tools.h \
   upcxx-arrays/wrapper_tools_specializations.h
+endif

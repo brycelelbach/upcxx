@@ -12,9 +12,14 @@
  */
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
 
 extern int _user_main(int argc, char **argv);
+
+namespace upcxx
+{
+  void signal_exit(); 
+  void wait_for_incoming_tasks();
+}
 
 int main(int argc, char **argv)
 {
@@ -23,7 +28,7 @@ int main(int argc, char **argv)
   upcxx::init(&argc, &argv);
 
   // The master spawns tasks and the slaves wait.
-  if (upcxx::my_node.id() == 0) {
+  if (upcxx::myrank() == 0) {
     // start the user main function
     rv = _user_main(argc, argv);
     upcxx::signal_exit();
