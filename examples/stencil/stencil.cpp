@@ -233,14 +233,14 @@ void probe(int steps) {
 #  define AINDEX3_SPEC AINDEX3
 # endif
 # if defined(USE_RESTRICT) && defined(__GNUC__)
-    UNPACK_ARRAY3_QUAL(myGridA, __restrict__);
-    UNPACK_ARRAY3_QUAL(myGridB, __restrict__);
+    AINDEX3_SETUP_QUAL(myGridA, __restrict__);
+    AINDEX3_SETUP_QUAL(myGridB, __restrict__);
 # elif defined(USE_RESTRICT)
-    UNPACK_ARRAY3_QUAL(myGridA, __restrict);
-    UNPACK_ARRAY3_QUAL(myGridB, __restrict);
+    AINDEX3_SETUP_QUAL(myGridA, __restrict);
+    AINDEX3_SETUP_QUAL(myGridB, __restrict);
 # else
-    UNPACK_ARRAY3(myGridA);
-    UNPACK_ARRAY3(myGridB);
+    AINDEX3_SETUP(myGridA);
+    AINDEX3_SETUP(myGridB);
 # endif
     cforeach3(i, j, k, myDomain) {
       AINDEX3_SPEC(myGridB, i, j, k) =
