@@ -111,20 +111,6 @@ namespace upcxx
     // gasnet_coll_init(NULL, 0, NULL, 0, 0); // init gasnet collectives
     init_collectives();
 
-    { 
-      // initialize global_machine 
-      int node_count = gasnet_nodes(); 
-      int my_node_id = gasnet_mynode(); 
-      int my_cpu_count = 1; // may read from env 
-      my_node = node(my_node_id, my_cpu_count); 
-      // Gather all nodes info. 
-      node *all_nodes = new node[node_count]; 
-      gasnet_coll_gather_all(GASNET_TEAM_ALL, all_nodes, &my_node, sizeof(node), 
-                             UPCXX_GASNET_COLL_FLAG); 
-      global_machine.init(node_count, all_nodes, my_node_id); 
-      my_processor = processor(my_node_id, 0); // we have one cpu per place at the moment        
-    }
-
     _global_ranks = gasnet_nodes();
     _global_myrank = gasnet_mynode();
 

@@ -29,7 +29,6 @@ include_HEADERS =  \
   global_ref.h \
   group.h \
   lock.h \
-	machine.h \
   queue.h \
   range.h \
   shared_array.h \

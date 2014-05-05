@@ -24,6 +24,5 @@ libupcxx_la_SOURCES = \
   collective.cpp     \
   event.cpp          \
   lock.cpp           \
-  machine.cpp	       \
   team.cpp           \
   upcxx_runtime.cpp $(UPCXX_MD_ARRAY_CPP_FILES)
