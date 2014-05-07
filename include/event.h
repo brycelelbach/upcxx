@@ -79,7 +79,7 @@ namespace upcxx
         fprintf(stderr,
                 "Fatal error: attempt to decrement a event (%p) with 0 references!\n",
                 this);
-        exit(1);
+        gasnet_exit(1);
       }
         
       gasnet_hsl_lock(&_lock);

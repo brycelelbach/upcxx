@@ -169,7 +169,7 @@ namespace upcxx
     async_wait();
     while (advance() > 0);
     barrier();
-    // gasnet_exit(0);
+    gasnet_exit(0);
     return UPCXX_SUCCESS;
   }
 
@@ -402,7 +402,7 @@ namespace upcxx
       fprintf(stderr, "Error: the gasnet memory space is not initialized.\n");
       fprintf(stderr, "It is likely due to the pointer (%p) was not from hp_malloc().\n",
               p);
-      exit(1);
+      gasnet_exit(1);
     }
     assert(p != 0);
     mspace_free(_gasnet_mspace, p);

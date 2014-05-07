@@ -74,7 +74,7 @@ namespace upcxx {
     default:
       fprintf(stderr, "Reduction op %s is not supported yet!\n",
               upcxx_op_strs[op_t]);
-      exit(1);
+      gasnet_exit(1);
     }
   } // end of _int_reduce_fn
 
@@ -112,7 +112,7 @@ namespace upcxx {
     default:
       fprintf(stderr, "Reduction op %s is not supported yet!\n",
               upcxx_op_strs[op_t]);
-      exit(1);
+      gasnet_exit(1);
     }
   } // end of _float_reduce_fn
 

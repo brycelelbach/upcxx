@@ -32,7 +32,7 @@ namespace upcxx
         fprintf(stderr, "node %d is trying to lock a lock that it is holding!\n",
         srcnode);
       */
-      //exit(1);
+      //gasnet_exit(1);
     }
     gasnet_hsl_unlock(&lock->_hsl);
 
@@ -75,7 +75,7 @@ namespace upcxx
     if (am->lock->_owner != srcnode) {
       fprintf(stderr, "unlock_am_handler error: srcnode %u attempts to unlock a lock owned by %u!\n",
               srcnode, am->lock->_owner);
-      exit(1);
+      gasnet_exit(1);
     }
 
     gasnet_hsl_lock(&am->lock->_hsl);

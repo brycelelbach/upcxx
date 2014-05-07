@@ -31,7 +31,7 @@ int upcxx::async_copy(global_ptr<void> src,
 
   if (dst.where() != myrank() && src.where() != myrank()) {
     fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
-    exit(1);
+    gasnet_exit(1);
   }
   if (e == &system_event) {
     // use implicit non-blocking copy for the global scope,
