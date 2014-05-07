@@ -9,10 +9,10 @@
 #include "gasnet_api.h"
 #include "event.h"
 #include "async_templates.h"
-#include "machine.h"
 #include "active_coll.h"
 #include "group.h"
 #include "range.h"
+#include "team.h"
 
 using namespace std;
 
@@ -25,15 +25,15 @@ namespace upcxx
 
   /// \cond SHOW_INTERNAL
   struct async_task  {
-    int _caller; // the place where async is called, for reply
-    int _callee; // the place where the task should be executed
+    rank_t _caller; // the place where async is called, for reply
+    rank_t _callee; // the place where the task should be executed
     event *_ack; // Acknowledgment event pointer on caller node
     generic_fp _fp;  // use an index to a function table instead?
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
 
-    inline void init_async_task(int caller,
-                                int callee,
+    inline void init_async_task(rank_t caller,
+                                rank_t callee,
                                 event *ack,
                                 generic_fp fp,
                                 size_t arg_sz,
@@ -60,7 +60,7 @@ namespace upcxx
     inline async_task() : _arg_sz(0) { };
 
     template<typename Function>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel)
     {
       init_async_task(caller, callee, ack,
@@ -68,7 +68,7 @@ namespace upcxx
     }
 
     template<typename Function, typename T1>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1 &a1)
     {
       generic_arg1<Function, T1> args(kernel, a1);
@@ -79,7 +79,7 @@ namespace upcxx
     }
 
     template<typename Function, typename T1, typename T2>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2)
     {
       generic_arg2<Function, T1, T2> args(kernel, a1, a2);
@@ -90,7 +90,7 @@ namespace upcxx
     }
 
     template<typename Function, typename T1, typename T2, typename T3>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3)
     {
       generic_arg3<Function, T1, T2, T3> args(kernel, a1, a2, a3);
@@ -102,7 +102,7 @@ namespace upcxx
 
     template<typename Function, typename T1, typename T2, typename T3,
              typename T4>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3,
                       const T4& a4)
     {
@@ -115,7 +115,7 @@ namespace upcxx
 
     template<typename Function, typename T1, typename T2, typename T3,
              typename T4, typename T5>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3,
                       const T4& a4, const T5& a5)
     {
@@ -130,7 +130,7 @@ namespace upcxx
 
     template<typename Function, typename T1, typename T2, typename T3,
              typename T4, typename T5, typename T6>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3,
                       const T4& a4, const T5& a5, const T6& a6)
     {
@@ -145,7 +145,7 @@ namespace upcxx
 
     template<typename Function, typename T1, typename T2, typename T3,
              typename T4, typename T5, typename T6, typename T7>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3,
                       const T4& a4, const T5& a5, const T6& a6, const T7& a7)
     {
@@ -160,7 +160,7 @@ namespace upcxx
 
     template<typename Function, typename T1, typename T2, typename T3,
              typename T4, typename T5, typename T6, typename T7, typename T8>
-    inline async_task(int caller, int callee, event *ack,
+    inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel, const T1& a1, const T2& a2, const T3& a3,
                       const T4& a4, const T5& a5, const T6& a6, const T7& a7,
                       const T8& a8)
@@ -209,7 +209,8 @@ namespace upcxx
     // Increase the reference of the ack event of the task
     if (tmp->_ack != NULL) {
        tmp->_ack->incref();
-       outstanding_events.push_back(tmp->_ack);
+       if (tmp->_ack != &system_event && tmp->_ack->count() == 1)
+         outstanding_events.push_back(tmp->_ack);
     }
 
     if (after != NULL) {
@@ -218,7 +219,7 @@ namespace upcxx
     }
 
     // enqueue the async task
-    if (task->_callee == my_node.id()) {
+    if (task->_callee == myrank()) {
       // local task
       assert(in_task_queue != NULL);
       gasnet_hsl_lock(&in_task_queue_lock);
@@ -263,7 +264,7 @@ namespace upcxx
    * \tparam dest the type of the places where the async function
    *
    */
-  template<typename dest = node>
+  template<typename dest = rank_t>
   struct gasnet_launcher {
   private:
     dest _there; // should we use node_t?
@@ -273,7 +274,7 @@ namespace upcxx
 
   public:
     gasnet_launcher(dest there, event *ack, event *after=NULL)
-      : _there(there), _ack(ack), _after(after), _g(group(there.count(), -1))
+      : _there(there), _ack(ack), _after(after), _g(group(1, -1))
     {
     }
 
@@ -401,41 +402,35 @@ namespace upcxx
    * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async(int node_id, event *ack)(function, arg1, arg2, ...);
+   * async(rank_t rank, event *ack)(function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_async.cpp
    *
    */
-  inline gasnet_launcher<node> async(int node_id,
-                                     event *e = peek_event())
+  inline gasnet_launcher<rank_t> async(rank_t rank,
+                                       event *e = peek_event())
   {
-    return gasnet_launcher<node>(node(node_id), e);
+    return gasnet_launcher<rank_t>(rank, e);
   }
 
-  inline gasnet_launcher<node> async(node there,
-                                     event *e = peek_event())
+  /*
+  inline gasnet_launcher<rank_t> async(rank_t there,
+                                       event *e = peek_event())
   {
-    return gasnet_launcher<node>(there, e);
+    return gasnet_launcher<rank_t>(there, e);
   }
-
+  */
   /**
    * \ingroup asyncgroup
    *
    * Asynchronous function execution
    *
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async(node_range there)(function, arg1, arg2, ...);
+   * async(range ranks)(function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_am_bcast.cpp
    *
    */
-  template<typename dest>
-  inline gasnet_launcher<dest> async(dest there,
-                                     event *e = peek_event())
-  {
-    return gasnet_launcher<dest>(there, e);
-  }
-
   inline gasnet_launcher<range> async(range r,
                                       event *e = peek_event())
   {
@@ -443,7 +438,6 @@ namespace upcxx
     launcher.set_group(group(r.count(), -1));
     return launcher;
   }
-
 
   /**
    * \ingroup asyncgroup
@@ -454,27 +448,31 @@ namespace upcxx
    * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async_after(int node_id, event *after, event *ack)(function, arg1, arg2, ...);
+   * async_after(uint32_t rank, event *after, event *ack)(function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_async.cpp
    *
    */
-  inline gasnet_launcher<node> async_after(int node_id, event *after,
+  inline gasnet_launcher<rank_t> async_after(rank_t rank, event *after,
                                            event *ack = peek_event())
   {
-    return gasnet_launcher<node>(node(node_id), ack, after);
+    return gasnet_launcher<rank_t>(rank, ack, after);
   }
 
-  inline gasnet_launcher<node> async(node there, event *after,
+  // YZ: this overloaded async would cause compiler ambiguity
+  // when calling async(rank, event)
+  /*
+  inline gasnet_launcher<rank_t> async(rank_t there, event *after,
                                      event *ack = peek_event())
   {
-    return gasnet_launcher<node>(there, ack, after);
+    return gasnet_launcher<rank_t>(there, ack, after);
   }
+  */
 
   template<>
-  void gasnet_launcher<node>::launch(generic_fp fp,
-                                     void *async_args,
-                                     size_t arg_sz);
+  void gasnet_launcher<rank_t>::launch(generic_fp fp,
+                                       void *async_args,
+                                       size_t arg_sz);
     
   template<>
   void gasnet_launcher<range>::launch(generic_fp fp,

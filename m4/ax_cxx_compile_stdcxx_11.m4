@@ -61,6 +61,19 @@ m4_define([_AX_CXX_COMPILE_STDCXX_11_testbody], [[
 
     auto d = a;
     auto l = [](){};
+    
+    template <typename T> 
+    struct Foo 
+    {
+      T& get() { return *_ptr; }
+
+      template <typename T2>
+      auto operator [](T2 i) -> decltype(get()[i]) 
+      { return get()[i]; }
+
+    private:
+      T *_ptr;
+    };
 ]])
 
 AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl

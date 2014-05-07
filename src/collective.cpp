@@ -145,11 +145,7 @@ namespace upcxx {
     fntable[UPCXX_DOUBLE].fnptr = _float_reduce_fn<double>;
     fntable[UPCXX_DOUBLE].flags = 0;
 
-#if GASNET_PAR
-#error "UPCXX Lib doens't support collectives in GASNET_PAR mode for now!"
-#else
     gasnet_coll_init(NULL, 0, fntable, UPCXX_DATATYPE_COUNT, 0);
-#endif
   }
 
 } // end of namespace upcxx

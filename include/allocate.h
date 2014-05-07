@@ -4,75 +4,67 @@
 
 #pragma once
 
-#define ONLY_MSPACES 1 // only use mspace from dl malloc
-#include "dl_malloc.h"
+#include "global_ptr.h"
 
-#include <stdlib.h>
-#include <assert.h>
-#include "gasnet_api.h"
-
-//typedef struct {
-//  void *addr;
-//  uintptr_t size;
-//} gasnet_seginfo_t;
-
-// int gasnet_getSegmentInfo (gasnet_seginfo_t *seginfo table, int numentries);
-
-// This may need to be a thread-private data if GASNet supports per-thread segment in the future
-extern gasnet_seginfo_t *all_gasnet_seginfo;
-extern gasnet_seginfo_t *my_gasnet_seginfo;
-extern mspace _gasnet_mspace;
-
-static inline void init_gasnet_seg_mspace()
+namespace upcxx
 {
-  all_gasnet_seginfo =
-      (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
-  assert(all_gasnet_seginfo != NULL);
+  /**
+   * \ingroup gasgroup
+   * \brief allocate memory in the global address space of a rank (process)
+   *
+   * \return the pointer to the allocated pace
+   * \param nbytes the number of element to be copied
+   * \param rank the rank_t where the memory space should be allocated
+   */
+  global_ptr<void> allocate(rank_t rank, size_t nbytes);
 
-  int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());
-  assert(rv == GASNET_OK);
-
-  my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
-
-  _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
-                                           my_gasnet_seginfo->size, 1);
-  assert(_gasnet_mspace != 0);
-
-  // Set the mspace limit to the gasnet segment size so it won't go outside.
-  mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
-}
-
-// allocate memory from the GASNet network-addressable segment
-// static inline void *gasnet_seg_alloc(size_t nbytes)
-// {
-//   if (_gasnet_mspace == 0) {
-//     init_gasnet_seg_mspace();
-//   }
-//   return mspace_malloc(_gasnet_mspace, nbytes);
-// }
-
-// free memory
-static inline void gasnet_seg_free(void *p)
-{
-  if (_gasnet_mspace == 0) {
-    fprintf(stderr, "Error: the gasnet memory space is not initialized.\n");
-    fprintf(stderr, "It is likely due to the pointer (%p) was not from hp_malloc().\n",
-            p);
-     exit(1);
+  static inline void* allocate(size_t nbytes) 
+  {
+    return allocate(myrank(), nbytes).raw_ptr();
   }
-  assert(p != 0);
-  mspace_free(_gasnet_mspace, p);
-}
 
-static inline void *gasnet_seg_memalign(size_t nbytes, size_t alignment)
-{
-  if (_gasnet_mspace== 0) {
-    init_gasnet_seg_mspace();
+  /**
+   * \ingroup gasgroup
+   * \brief allocate memory in the global address space at a specific rank_t
+   *
+   * \tparam T type of the element
+   *
+   * \return the pointer to the allocated pace
+   * \param count the number of element to be copied
+   * \param rank the rank_t where the memory space should be allocated
+   */
+  template<typename T>
+  global_ptr<T> allocate(rank_t rank, size_t count)
+  {
+    size_t nbytes = count * sizeof(T);
+    return global_ptr<T>(allocate(rank, nbytes));
   }
-  return mspace_memalign(_gasnet_mspace, alignment, nbytes);
-}
 
-static inline void *gasnet_seg_alloc(size_t nbytes)
-{
-  return gasnet_seg_memalign(nbytes, 64);
-}
+  template<typename T>
+  T* allocate(size_t count)
+  {
+    size_t nbytes = count * sizeof(T);
+    return (T*)allocate(nbytes);
+  }
+
+  void deallocate(global_ptr<void> ptr);
+
+  static inline void deallocate(void *ptr) 
+  {
+    deallocate(global_ptr<void>(ptr));
+  }
+
+  /**
+   * \ingroup gasgroup
+   * \brief free memory in the global address space
+   *
+   * \tparam T type of the element
+   *
+   * \param ptr the pointer to which the memory space should be freed
+   */
+  template<typename T>
+  void deallocate(global_ptr<T> ptr)
+  {
+    void deallocate(global_ptr<void>(ptr));
+  }
+} // namespace upcxx

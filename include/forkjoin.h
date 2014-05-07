@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * start_gasnet.h -- Single-thread start up emulation 
  *
@@ -9,13 +11,15 @@
  * setting up the fork-join (async) execution model.
  */
 
-#ifndef FORKJOIN_H_
-#define FORKJOIN_H_
-
 #include "upcxx.h"
-#include "upcxx_internal.h"
 
 extern int _user_main(int argc, char **argv);
+
+namespace upcxx
+{
+  void signal_exit(); 
+  void wait_for_incoming_tasks();
+}
 
 int main(int argc, char **argv)
 {
@@ -24,7 +28,7 @@ int main(int argc, char **argv)
   upcxx::init(&argc, &argv);
 
   // The master spawns tasks and the slaves wait.
-  if (upcxx::my_node.id() == 0) {
+  if (upcxx::myrank() == 0) {
     // start the user main function
     rv = _user_main(argc, argv);
     upcxx::signal_exit();
@@ -40,5 +44,3 @@ int main(int argc, char **argv)
 #define main _user_main
 
 const char *forkjoin_h_include_error = "forkjoin.h should only be included once in the main cpp file where user's main() function is defined!";
-
-#endif // FORKJOIN_H_

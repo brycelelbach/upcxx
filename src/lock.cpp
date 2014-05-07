@@ -20,7 +20,7 @@ namespace upcxx
     gasnet_node_t srcnode;
     GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
 
-    assert(my_node.id() == 0);
+    assert(myrank() == 0);
      
     gasnet_hsl_lock(&lock->_hsl);
     if (lock->_locked == 0) {
@@ -56,7 +56,7 @@ namespace upcxx
     gasnet_node_t srcnode;
     GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
     assert(srcnode == 0);
-    assert(my_node.id() != 0);
+    assert(myrank() != 0);
 
     reply->lock->_owner = reply->lock_owner;
     reply->cb_event->decref();
@@ -92,7 +92,7 @@ namespace upcxx
     // gasneti_assert(locked == 0);
     int replied;
 
-    if (my_node.id() == 0) {
+    if (myrank() == 0) {
       gasnet_hsl_lock(&_hsl);
       if (_locked == 0) {
         _locked = 1;
@@ -107,7 +107,7 @@ namespace upcxx
       gasnet_hsl_lock(&_hsl);
       event e;
       lock_am_t am;
-      am.id = my_node.id();
+      am.id = myrank();
       am.lock = this;
       e.incref();
       am.cb_event = &e;
@@ -115,7 +115,7 @@ namespace upcxx
       GASNET_SAFE(gasnet_AMRequestMedium0(0, LOCK_AM, &am, sizeof(am)));
       e.wait();
 
-      if (_owner == my_node.id()) {
+      if (_owner == myrank()) {
         _locked = 1;
         gasnet_hsl_unlock(&_hsl);
         return 1;
@@ -135,9 +135,9 @@ namespace upcxx
   {
     assert(_locked);
 
-    if (my_node.id() != 0) {
+    if (myrank() != 0) {
       unlock_am_t am;
-      am.id = my_node.id();
+      am.id = myrank();
       am.lock = this;
       GASNET_SAFE(gasnet_AMRequestMedium0(0, UNLOCK_AM, &am, sizeof(am)));
       // If Active Messages may be delivered out-of-order, we need

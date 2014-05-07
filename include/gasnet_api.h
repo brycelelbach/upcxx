@@ -1,11 +1,10 @@
+#pragma once
+
 /**
  * gasnet_api.h - export the GASNet C API to C++ programs
  */
 
-#ifndef GASNET_API_H_
-#define GASNET_API_H_
-
-#ifdef _cpluscplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -13,9 +12,6 @@ extern "C"
 #include <gasnet.h>
 #include <gasnet_tools.h>
 #include <gasnet_coll.h>
-
-#define THREADS gasnet_nodes()
-#define MYTHREAD gasnet_mynode()
 
 #define GASNET_SAFE(fncall) do {                                      \
     int _retval;                                                      \
@@ -36,7 +32,7 @@ extern "C"
     gasnet_barrier_wait(0, GASNET_BARRIERFLAG_ANONYMOUS);   \
   } while (0)
 
-#ifdef _cpluscplus
+#ifdef __cplusplus
 } // end of extern "C"
 #endif
 
@@ -57,6 +53,20 @@ enum am_index_t {
   AM_BCAST,         // active broadcast
   AM_BCAST_REPLY,   // active broadcast reply
   INC_AM,   // active broadcast reply
-};
 
-#endif // GASNET_API_H_
+  /* array_bulk.c */
+  ARRAY_MISC_DELETE_REQUEST,
+  ARRAY_MISC_ALLOC_REQUEST,
+  ARRAY_MISC_ALLOC_REPLY,
+  ARRAY_STRIDED_PACK_REQUEST,
+  ARRAY_STRIDED_PACK_REPLY,
+  ARRAY_STRIDED_UNPACKALL_REQUEST,
+  ARRAY_STRIDED_UNPACK_REPLY,
+  ARRAY_STRIDED_UNPACKONLY_REQUEST,
+  ARRAY_SPARSE_SIMPLESCATTER_REQUEST,
+  ARRAY_SPARSE_DONE_REPLY,
+  ARRAY_SPARSE_GENERALSCATTER_REQUEST,
+  ARRAY_SPARSE_SIMPLEGATHER_REQUEST,
+  ARRAY_SPARSE_SIMPLEGATHER_REPLY,
+  ARRAY_SPARSE_GENERALGATHER_REQUEST,
+};

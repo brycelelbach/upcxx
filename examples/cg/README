@@ -1,0 +1,5 @@
+The following code is a UPC++ parallel version of the
+NAS CG Parallel Benchmark.  It finds the smallest eigenvalue
+of a sparse s.p.d. matrix A by using performing "niter"
+iterations of the inverse power method.  Within each iteration,
+the system Az=x is solved by several iterations of CG.

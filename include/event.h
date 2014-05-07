@@ -48,7 +48,7 @@ namespace upcxx
     // vector<async_task &> _cont_tasks;
 
     inline event() : _count(0), _num_done_cb(0)
-    { 
+    {
       gasnet_hsl_init(&_lock);
     }
 
@@ -132,7 +132,7 @@ namespace upcxx
                << "\n";
   }
 
-  extern event default_event; // defined in upcxx.cpp
+  extern event system_event; // defined in upcxx.cpp
   extern std::list<event *> outstanding_events;
 
   /* event stack interface used by finish */
@@ -152,7 +152,7 @@ namespace upcxx
     while (!outstanding_events.empty()) {
       upcxx::advance(1,10);
     }
-    default_event.wait();
+    system_event.wait();
     gasnet_wait_syncnbi_all();
   }
 
@@ -165,7 +165,7 @@ namespace upcxx
 
     int rv = e->async_try();
 
-    if (e == &default_event) {
+    if (e == &system_event) {
       rv = rv && gasnet_try_syncnbi_all();
     }
     return rv;

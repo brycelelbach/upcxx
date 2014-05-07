@@ -9,9 +9,8 @@
 
 #include "gasnet_api.h"
 #include "upcxx_types.h"
-
-#define UPCXX_GASNET_COLL_FLAG \
-  (GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL)
+#include "coll_flags.h"
+#include "team.h"
 
 namespace upcxx
 {
@@ -20,33 +19,34 @@ namespace upcxx
                     upcxx_op_t op, upcxx_datatype_t dt)
   {
     // YZ: check consistency of T and dt
-    gasnet_coll_reduce(GASNET_TEAM_ALL, root, dst, src, 0, 0, sizeof(T),
-                       count, dt, op, UPCXX_GASNET_COLL_FLAG);
+    gasnet_coll_reduce(current_gasnet_team(), root, dst, src, 0, 0,
+                       sizeof(T), count, dt, op,
+                       UPCXX_GASNET_COLL_FLAG);
   }
 
   void init_collectives();
   
   static inline void upcxx_bcast(void *src, void *dst, size_t nbytes, uint32_t root)
   {
-    gasnet_coll_broadcast(GASNET_TEAM_ALL, dst, root, src, nbytes, 
-                          UPCXX_GASNET_COLL_FLAG);
+    gasnet_coll_broadcast(current_gasnet_team(), dst, root, src,
+                          nbytes, UPCXX_GASNET_COLL_FLAG);
   }
   
   static inline void upcxx_gather(void *src, void *dst, size_t nbytes, uint32_t root)
   {
-    gasnet_coll_gather(GASNET_TEAM_ALL, root, dst, src, nbytes,
+    gasnet_coll_gather(current_gasnet_team(), root, dst, src, nbytes,
                        UPCXX_GASNET_COLL_FLAG);
   }
   
   static inline void upcxx_allgather(void *src, void *dst, size_t nbytes)
   {
-    gasnet_coll_gather_all(GASNET_TEAM_ALL, dst, src, nbytes,
+    gasnet_coll_gather_all(current_gasnet_team(), dst, src, nbytes,
                            UPCXX_GASNET_COLL_FLAG);
   }
 
   static inline void upcxx_alltoall(void *src, void *dst, size_t nbytes)
   {
-    gasnet_coll_exchange(GASNET_TEAM_ALL, dst, src, nbytes,
+    gasnet_coll_exchange(current_gasnet_team(), dst, src, nbytes,
                          UPCXX_GASNET_COLL_FLAG);
   }
   

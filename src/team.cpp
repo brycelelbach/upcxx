@@ -3,6 +3,7 @@
  */
 
 #include "upcxx.h"
+#include "upcxx_internal.h"
 
 #ifndef GASNET_COLL_SCRATCH_SEG_SIZE
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
@@ -14,6 +15,7 @@ namespace upcxx
 {
   uint32_t my_team_seq = 1;
   gasnet_hsl_t team::_tid_lock = GASNET_HSL_INITIALIZER;
+  vector<team *> team::_team_stack;
 
 #define TEAM_ID_BITS 8
 #define TEAM_ID_SEQ_MASK 0xFF
@@ -37,23 +39,34 @@ namespace upcxx
     assert(new_gasnet_team != NULL);
   
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);
-    range r_tmp = range(0,0,0);
-    new_team = new upcxx::team(new_team_id(),
-                               team_sz, // size
-                               key, // rank
-                               r_tmp,
-                               new_gasnet_team);
+    // range r_tmp = range(0,0,0);
+    new_team = new team(this, team_sz, key, color, new_gasnet_team);
     
     assert(new_team != NULL);
+
+    if (_mychild == NULL) _mychild = new_team;
     
     return UPCXX_SUCCESS;
   } // team::split
   
+  int team::split(uint32_t color,
+                  uint32_t key)
+  {
+    if (_mychild) {
+      std::cerr << "team has already been split; "
+                << "split a copy instead" << endl;
+      abort();
+    }
+    team *new_team;
+    return split(color, key, new_team);
+  }
+
   uint32_t team::new_team_id()
   {
     gasnet_hsl_lock(&team::_tid_lock);
     assert(my_team_seq < TEAM_ID_SEQ_MASK);
-    uint32_t new_tid = (MYTHREAD << TEAM_ID_BITS) + my_team_seq++;
+    uint32_t new_tid =
+      (global_myrank() << TEAM_ID_BITS) + my_team_seq++;
     gasnet_hsl_unlock(&team::_tid_lock);
     return new_tid;
   }

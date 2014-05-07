@@ -12,12 +12,12 @@ void test(upcxx_datatype_t dt, size_t count)
   global_ptr<T> src;
   global_ptr<T> dst;
   
-  src = allocate<T>(my_node, count);
-  dst = allocate<T>(my_node, count);
+  src = allocate<T>(myrank(), count);
+  dst = allocate<T>(myrank(), count);
   
 #ifdef DEBUG
-  cerr << my_node << " scr: " << src << "\n";
-  cerr << my_node << " dst: " << dst << "\n";
+  cerr << myrank() << " scr: " << src << "\n";
+  cerr << myrank() << " dst: " << dst << "\n";
 #endif
   
   // Initialize data pointed by host_ptr by a local pointer
@@ -32,7 +32,7 @@ void test(upcxx_datatype_t dt, size_t count)
   upcxx_reduce<T>(src, dst, count, root, UPCXX_MAX, dt);
   
   if (MYTHREAD == 0) {
-    cout << my_node << " dst: ";
+    cout << myrank() << " dst: ";
     T *ldst = (T *)dst;
     for (int i=0; i<count; i++) {
       cout << ldst[i] << " ";
@@ -43,7 +43,7 @@ void test(upcxx_datatype_t dt, size_t count)
   upcxx_reduce<T>(src, dst, count, root, UPCXX_SUM, dt);
   
   if (MYTHREAD == 0) {
-    cout << my_node << " dst: ";
+    cout << myrank() << " dst: ";
     T *ldst = (T *)dst;
     for (int i=0; i<count; i++) {
       cout << ldst[i] << " ";

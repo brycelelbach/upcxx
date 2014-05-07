@@ -4,7 +4,6 @@
  * The most difficult case is when some of the keys are identical,
  * which requires careful handling to be correct!
  *
- * Use the Mersenne Twister random number generator (SFMT)
  */
 
 #include <upcxx.h>
@@ -21,22 +20,16 @@ using namespace upcxx;
 //#include <algorithm>    // std::sort
 //#include <vector>       // std::vector
 
-// #define DEBUG
+// #define DEBUG 1
 
 #define VERIFY
-
-#define SFMT_MEXP 19937
-
-extern "C" {
-#include "SFMT/SFMT.h" // for the Mersenne Twister random number generator
-}
 
 #define ELEMENT_T uint64_t
 #define RANDOM_SEED 12345
 
 #ifndef DEBUG
 #define SAMPLES_PER_THREAD 128
-#define KEYS_PER_THREAD 4 * 1024 * 1024
+#define KEYS_PER_THREAD 1024 * 1024
 #else
 #define SAMPLES_PER_THREAD 8
 #define KEYS_PER_THREAD 128
@@ -59,7 +52,6 @@ shared_array<ELEMENT_T, 1> keys;
 
 shared_array<uint64_t, 1> sorted_key_counts;
 
-sfmt_t sfmt;
 
 double mysecond()
 {
@@ -73,12 +65,11 @@ void init_keys(ELEMENT_T *my_keys, uint64_t my_key_size)
 #ifdef DEBUG
   printf("Thread %d, my_key_size %llu\n", MYTHREAD, my_key_size);
 #endif
-  sfmt_init_gen_rand(&sfmt, RANDOM_SEED + MYTHREAD);
-  // The sfmt library only takes integer type of size
+  srand(time(0)+MYTHREAD);
   uint64_t i;
 
   for (i = 0; i < my_key_size; i++) {
-    my_keys[i] = (ELEMENT_T)sfmt_genrand_uint64(&sfmt); // % (KEYS_PER_THREAD * THREADS);
+    my_keys[i] = (ELEMENT_T)rand();
   }
 }
 
@@ -114,7 +105,7 @@ void compute_splitters(uint64_t key_count,
     // Sample the key space to find the partition splitters
     // Oversample by a factor "samples_per_thread"
     for (i = 0; i < candidate_count; i++) {
-      uint64_t s = sfmt_genrand_uint64(&sfmt) % key_count;
+      uint64_t s = rand() % key_count;
       candidates[i] = keys[s]; // global accesses on keys
     }
 
@@ -236,7 +227,7 @@ void redistribute(uint64_t key_count)
   // printf("sorted_key_counts[%d]=%llu\n", MYTHREAD, sorted_key_counts[MYTHREAD]);
 
   sorted[MYTHREAD] = upcxx::allocate<ELEMENT_T>(MYTHREAD, offset);
-  assert(sorted[MYTHREAD] != NULL);
+  assert((ELEMENT_T*)(sorted[MYTHREAD].get()) != NULL);
 
   upcxx::barrier();
 
@@ -376,7 +367,7 @@ int main(int argc, char **argv)
              total_key_size);
     }
 
-    printf("Verifying results...\n");
+    printf("Verifying results\n");
 
 #ifdef DEBUG
   {
@@ -408,19 +399,20 @@ int main(int argc, char **argv)
     uint64_t index = 0;
     ELEMENT_T current;
     for (i = 0; i < total_key_size; i++) {
+      if (!(i & 0x3FFF)) printf("."); // show some progress
 #ifdef DEBUG
-      printf("verifying: i %llu, t %d, index %llu\n", i, t, index);
+      printf("\nverifying: i %llu, t %d, index %llu\n", i, t, index);
 #endif
       while (sorted_key_counts[t] == 0) t++;
       
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
       current = sorted[t][index];
 #else
       current = sorted[t].get()[index];
 #endif
       if (local_copy[i] != current) {
 #ifdef DEBUG
-        printf("Verification error: %llu != expected %llu.\n", current, local_copy[i]);
+        printf("\nVerification error: %llu != expected %llu.\n", current, local_copy[i]);
 #endif
         num_errors++;
       }
@@ -433,9 +425,9 @@ int main(int argc, char **argv)
     }
 
     if (num_errors) {
-      printf("Verification errors %llu.\n", num_errors);
+      printf("\nVerification errors %llu.\n", num_errors);
     } else {
-      printf("Verification successful!\n");
+      printf("\nVerification successful!\n");
     }
   }
   barrier();
