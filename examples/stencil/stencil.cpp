@@ -33,13 +33,13 @@ enum timer_index {
 };
 timer timers[NUM_TIMERS];
 string timerStrings[] = {"launch x copies", "sync x copies",
-                                "launch y copies", "sync y copies",
-                                "launch z copies", "sync z copies",
-                                "probe compute", "post compute barrier"};
+                         "launch y copies", "sync y copies",
+                         "launch z copies", "sync z copies",
+                         "probe compute", "post compute barrier"};
 timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
-                                  COMMUNICATION, COMMUNICATION,
-                                  COMMUNICATION, COMMUNICATION,
-                                  COMPUTATION, COMPUTATION};
+                           COMMUNICATION, COMMUNICATION,
+                           COMMUNICATION, COMMUNICATION,
+                           COMPUTATION, COMPUTATION};
 
 point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);

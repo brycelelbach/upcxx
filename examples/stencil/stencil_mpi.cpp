@@ -41,6 +41,27 @@ MPI_Request requests[12];
 int s2r[] = { 1, 0, 3, 2, 5, 4 };
 int steps;
 
+enum timer_type {
+  COMMUNICATION,
+  COMPUTATION
+};
+enum timer_index {
+  POST_RECEIVES = 0,
+  PACK,
+  POST_SENDS,
+  WAITALL,
+  UNPACK,
+  COMPUTE,
+  NUM_TIMERS
+};
+timer timers[NUM_TIMERS];
+string timerStrings[] = {"post receives", "pack",
+                         "post sends", "sync messages",
+                         "unpack", "probe compute"};
+timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
+                           COMMUNICATION, COMMUNICATION,
+                           COMMUNICATION, COMPUTATION};
+
 position threadToPos(position parts, int threads, int i) {
   int xpos = i / (parts.y * parts.z);
   int ypos = (i % (parts.y * parts.z)) / parts.z;
@@ -166,6 +187,7 @@ void unpack(double *grid, double **bufs) {
 void probe(int steps) {
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
+    timers[POST_RECEIVES].start();
     int messageNum = 0;
     for (int j = 0; j < 6; j++) {
       if (neighbors[j] != -1) {
@@ -174,7 +196,11 @@ void probe(int steps) {
                   MPI_COMM_WORLD, &requests[messageNum++]);
       }
     }
+    timers[POST_RECEIVES].stop();
+    timers[PACK].start();
     pack(myGridA, outBufs);
+    timers[PACK].stop();
+    timers[POST_SENDS].start();
     for (int j = 0; j < 6; j++) {
       if (neighbors[j] != -1) {
         MPI_Isend(outBufs[j], planeSizes[j] * GHOST_WIDTH, MPI_DOUBLE,
@@ -182,9 +208,15 @@ void probe(int steps) {
                   &requests[messageNum++]);
       }
     }
+    timers[POST_SENDS].stop();
+    timers[WAITALL].start();
     MPI_Waitall(messageNum, requests, MPI_STATUSES_IGNORE);
+    timers[WAITALL].stop();
+    timers[UNPACK].start();
     unpack(myGridA, inBufs);
+    timers[UNPACK].stop();
 
+    timers[COMPUTE].start();
     for (int FIRST_DIM(i, j, k) = GHOST_WIDTH;
          FIRST_DIM(i, j, k) < FIRST_DIM(nx, ny, nz)-GHOST_WIDTH;
          FIRST_DIM(i, j, k)++) {
@@ -203,9 +235,28 @@ void probe(int steps) {
         }
       }
     }
+    timers[COMPUTE].stop();
 
     // Swap pointers
     SWAP(myGridA, myGridB);
+  }
+}
+
+# define report(d, s) do { \
+    if (MYTHREAD == 0)      \
+      cout << s;            \
+    report_value(d);        \
+  } while (0)
+
+void report_value(double d) {
+  if (MYTHREAD == 0) {
+    cout << ": " << d << endl;
+  }
+}
+
+void printTimingStats() {
+  for (int i = 0; i < NUM_TIMERS; i++) {
+    report(timers[i].secs(), "Time for " << timerStrings[i] << " (s)");
   }
 }
 
@@ -285,6 +336,18 @@ int main(int argc, char **args) {
          << "x" << zparts << " (s): " << t.secs() << endl;
     cout << "Verification value: " << val << endl;
   }
+  printTimingStats();
+  double comm = 0, comp = 0;
+  for (int j = 0; j < NUM_TIMERS; j++) {
+    if (timerTypes[j] == COMMUNICATION) {
+      comm += timers[j].secs();
+    } else {
+      comp += timers[j].secs();
+    }
+    timers[j].reset();
+  }
+  report(comm, "Time for total communication");
+  report(comp, "Time for total computation");
 
   MPI_Finalize();
 }
