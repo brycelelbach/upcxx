@@ -5,11 +5,15 @@
 # define USE_UPCXX 1
 #endif
 
+#ifndef USE_MPI
+# define USE_MPI 0
+#endif
+
 #if USE_UPCXX
 # include <upcxx.h>
 # include <array.h>
 # include <event.h>
-#else
+#elif !USE_MPI
 # include "../../include/upcxx-arrays/array.h"
 # define barrier()
 # define async_wait()
@@ -83,7 +87,7 @@ struct timer {
 
 #if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # define ALT_LOOP
-#elif !defined(STANDARD_LOOP)
+#elif !defined(STANDARD_LOOP) && !USE_MPI
 # define SPEC_LOOP
 # define ALT_LOOP
 #endif
@@ -123,7 +127,7 @@ struct timer {
 # endif /* ALT_FOREACH */
 #endif /* ALT_LOOP */
 
-#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
+#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI
 # ifdef USE_CMAJOR
 #  define FIRST_DIM(i, j, k) k
 #  define LAST_DIM(i, j, k) i
@@ -160,7 +164,9 @@ struct timer {
 #endif
 
 using namespace std;
+#if !USE_MPI
 using namespace upcxx;
+#endif
 
 #ifndef DEBUG
 # define DEBUG 0
