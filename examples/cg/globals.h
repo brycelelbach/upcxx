@@ -73,7 +73,7 @@ struct timer {
     cur = std::chrono::system_clock::now();
   }
   inline void stop() {
-    elap = std::chrono::system_clock::now() - cur;
+    elap += std::chrono::system_clock::now() - cur;
   }
   inline void reset() {
     elap = std::chrono::duration<double>::zero();
@@ -91,7 +91,7 @@ struct timer {
     cur = clock();
   }
   inline void stop() {
-    elap = clock() - cur;
+    elap += clock() - cur;
   }
   inline void reset() {
     elap = 0;
