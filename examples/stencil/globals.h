@@ -1,5 +1,7 @@
 #include <cstring>
 #include <cstdlib>
+#include <string>
+#include <iostream>
 
 #ifndef USE_UPCXX
 # define USE_UPCXX 1
