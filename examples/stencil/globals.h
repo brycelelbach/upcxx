@@ -15,6 +15,8 @@
 # include <upcxx.h>
 # include <array.h>
 # include <event.h>
+#elif USE_MPI && defined(USE_ARRAYS)
+# include "../../include/upcxx-arrays/array.h"
 #elif !USE_MPI
 # include "../../include/upcxx-arrays/array.h"
 # define barrier()
@@ -139,6 +141,10 @@ struct timer {
 # endif
 #endif
 
+#if USE_MPI && !defined(USE_UNSTRIDED)
+# define USE_UNSTRIDED
+#endif
+
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
 # ifdef USE_CMAJOR
 #  define STRIDEDNESS simple_column
@@ -166,7 +172,7 @@ struct timer {
 #endif
 
 using namespace std;
-#if !USE_MPI
+#if !USE_MPI || defined(USE_ARRAYS)
 using namespace upcxx;
 #endif
 

@@ -31,7 +31,11 @@ int xdim, ydim, zdim;
 int xparts, yparts, zparts;
 int nx, ny, nz;
 int nx_interior, ny_interior, nz_interior;
-double *myGridA, *myGridB;
+#ifdef USE_ARRAYS
+rectdomain<3> myDomain;
+ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
+#endif
+double *myGridAPtr, *myGridBPtr;
 int neighbors[6];
 int planeSizes[6];
 position packStarts[6], packEnds[6];
@@ -198,7 +202,7 @@ void probe(int steps) {
     }
     timers[POST_RECEIVES].stop();
     timers[PACK].start();
-    pack(myGridA, outBufs);
+    pack(myGridAPtr, outBufs);
     timers[PACK].stop();
     timers[POST_SENDS].start();
     for (int j = 0; j < 6; j++) {
@@ -213,10 +217,22 @@ void probe(int steps) {
     MPI_Waitall(messageNum, requests, MPI_STATUSES_IGNORE);
     timers[WAITALL].stop();
     timers[UNPACK].start();
-    unpack(myGridA, inBufs);
+    unpack(myGridAPtr, inBufs);
     timers[UNPACK].stop();
 
     timers[COMPUTE].start();
+#ifdef USE_ARRAYS
+    cforeach3 (i, j, k, myDomain) {
+      myGridB[PT(i, j, k)] =
+        myGridA[PT(i, j, k+1)] +
+        myGridA[PT(i, j, k-1)] +
+        myGridA[PT(i, j+1, k)] +
+        myGridA[PT(i, j-1, k)] +
+        myGridA[PT(i+1, j, k)] +
+        myGridA[PT(i-1, j, k)] +
+        WEIGHT * myGridA[PT(i, j, k)];
+    }
+#else
     for (int FIRST_DIM(i, j, k) = GHOST_WIDTH;
          FIRST_DIM(i, j, k) < FIRST_DIM(nx, ny, nz)-GHOST_WIDTH;
          FIRST_DIM(i, j, k)++) {
@@ -224,21 +240,25 @@ void probe(int steps) {
         for (int LAST_DIM(i, j, k) = GHOST_WIDTH;
              LAST_DIM(i, j, k) < LAST_DIM(nx, ny, nz)-GHOST_WIDTH;
              LAST_DIM(i, j, k)++) {
-          myGridB[Index3D(i, j, k)] =
-            myGridA[Index3D(i, j, k+1)] +
-            myGridA[Index3D(i, j, k-1)] +
-            myGridA[Index3D(i, j+1, k)] +
-            myGridA[Index3D(i, j-1, k)] +
-            myGridA[Index3D(i+1, j, k)] +
-            myGridA[Index3D(i-1, j, k)] +
-            WEIGHT * myGridA[Index3D(i, j, k)];
+          myGridBPtr[Index3D(i, j, k)] =
+            myGridAPtr[Index3D(i, j, k+1)] +
+            myGridAPtr[Index3D(i, j, k-1)] +
+            myGridAPtr[Index3D(i, j+1, k)] +
+            myGridAPtr[Index3D(i, j-1, k)] +
+            myGridAPtr[Index3D(i+1, j, k)] +
+            myGridAPtr[Index3D(i-1, j, k)] +
+            WEIGHT * myGridAPtr[Index3D(i, j, k)];
         }
       }
     }
+#endif
     timers[COMPUTE].stop();
 
     // Swap pointers
+#ifdef USE_ARRAYS
     SWAP(myGridA, myGridB);
+#endif
+    SWAP(myGridAPtr, myGridBPtr);
   }
 }
 
@@ -296,8 +316,17 @@ int main(int argc, char **args) {
   ny = size.y + 2 * GHOST_WIDTH;
   nz = size.z + 2 * GHOST_WIDTH;
 
-  myGridA = (double *) malloc(nx * ny * nz * sizeof(double));
-  myGridB = (double *) malloc(nx * ny * nz * sizeof(double));
+#ifdef USE_ARRAYS
+  myDomain =
+    RD(PT(0, 0, 0), PT(nx_interior, ny_interior, nz_interior));
+  myGridA.create(myDomain.accrete(GHOST_WIDTH) CMAJOR);
+  myGridB.create(myDomain.accrete(GHOST_WIDTH) CMAJOR);
+  myGridAPtr = myGridA.base_ptr();
+  myGridBPtr = myGridB.base_ptr();
+#else
+  myGridAPtr = (double *) malloc(nx * ny * nz * sizeof(double));
+  myGridBPtr = (double *) malloc(nx * ny * nz * sizeof(double));
+#endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   setupComm(POS(xparts,yparts,zparts), THREADS, MYTHREAD);
@@ -322,15 +351,15 @@ int main(int argc, char **args) {
   }
 
   timer t;
-  initGrid(myGridA, nx * ny * nz);
-  initGrid(myGridB, nx * ny * nz);
+  initGrid(myGridAPtr, nx * ny * nz);
+  initGrid(myGridBPtr, nx * ny * nz);
   MPI_Barrier(MPI_COMM_WORLD); // wait for all threads before starting
   t.start();
   probe(steps);
   t.stop();
 
   double val =
-    myGridA[Index3D(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH)];
+    myGridAPtr[Index3D(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH)];
   if (MYTHREAD == 0) {
     cout << "Time for stencil with split " << xparts << "x" << yparts
          << "x" << zparts << " (s): " << t.secs() << endl;
