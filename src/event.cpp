@@ -18,13 +18,15 @@ namespace upcxx
   {
     if (!_h.empty()) {
 #if UPCXX_HAVE_CXX11
-      for (auto it=_h.begin(); it!=_h.end(); ++it) {
+      for (auto it = _h.begin(); it != _h.end();) {
 #else
-      for (std::list<gasnet_handle_t>::iterator it=_h.begin(); it!=_h.end(); ++it) {
+      for (std::list<gasnet_handle_t>::iterator it = _h.begin(); it != _h.end();) {
 #endif
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
-          it = _h.erase(it);
+          it = _h.erase(it); // erase increments the iterator!
           decref();
+        } else {
+          ++it;
         }
       }
     }

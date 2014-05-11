@@ -169,7 +169,7 @@ namespace upcxx
     async_wait();
     while (advance() > 0);
     barrier();
-    gasnet_exit(0);
+    // gasnet_exit(0);
     return UPCXX_SUCCESS;
   }
 
