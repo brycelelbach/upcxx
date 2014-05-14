@@ -341,17 +341,6 @@ namespace upcxx
     return num_out + num_in;
   } // advance()
 
-  /**
-   * An alias of the advance function for backward compatibility.
-   * The advance function is recommended.
-   */
-  inline int progress() { return advance(); }
-
-  inline int drain(int max_dispatched)
-  {
-    return advance(max_dispatched, max_dispatched);
-  } // drain()
-
   int peek()
   {
     gasnet_AMPoll();
