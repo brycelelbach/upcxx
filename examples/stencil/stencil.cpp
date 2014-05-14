@@ -1,4 +1,9 @@
 // Stencil
+#if USE_MPI
+# define USE_UPCXX 0
+# define USE_ARRAYS
+# define MPI_STYLE
+#endif
 #include "globals.h"
 
 int xdim, ydim, zdim;
@@ -26,6 +31,9 @@ struct buffer_list {
 buffer_list inBufs, outBufs, targetBufs;
 ndarray<buffer_list, 1> allInBufs;
 int s2r[] = { 1, 0, 3, 2, 5, 4 };
+# if USE_MPI
+MPI_Request requests[12];
+# endif
 #endif
 int steps;
 int numTrials = 1;
@@ -35,7 +43,13 @@ enum timer_type {
   COMPUTATION
 };
 enum timer_index {
-#ifdef MPI_STYLE
+#if USE_MPI
+  POST_RECEIVES = 0,
+  PACK,
+  POST_SENDS,
+  WAITALL,
+  UNPACK,
+#elif defined(MPI_STYLE)
   PACK = 0,
   LAUNCH_PUTS,
   SYNC_PUTS,
@@ -55,7 +69,9 @@ enum timer_index {
 };
 timer timers[NUM_TIMERS];
 string timerStrings[] = {
-#ifdef MPI_STYLE
+#if USE_MPI
+  "post receives", "pack", "post sends", "sync messages", "unpack",
+#elif defined(MPI_STYLE)
   "pack", "launch puts", "sync puts", "put barrier", "unpack",
 #else
   "launch x copies", "sync x copies", "launch y copies",
@@ -224,9 +240,35 @@ void probe(int steps) {
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
 #ifdef MPI_STYLE
+# if USE_MPI
+    timers[POST_RECEIVES].start();
+    int messageNum = 0;
+    for (int j = 0; j < 6; j++) {
+      if (neighbors[j] != -1) {
+        MPI_Irecv(inBufs.buffers[s2r[j]], planeSizes[j] * GHOST_WIDTH,
+                  MPI_DOUBLE, neighbors[j], s2r[j],
+                  MPI_COMM_WORLD, &requests[messageNum++]);
+      }
+    }
+    timers[POST_RECEIVES].stop();
+# endif
     timers[PACK].start();
     pack(myGridA.base_ptr(), outBufs.buffers);
     timers[PACK].stop();
+# if USE_MPI
+    timers[POST_SENDS].start();
+    for (int j = 0; j < 6; j++) {
+      if (neighbors[j] != -1) {
+        MPI_Isend(outBufs.buffers[j], planeSizes[j] * GHOST_WIDTH,
+                  MPI_DOUBLE, neighbors[j], j, MPI_COMM_WORLD,
+                  &requests[messageNum++]);
+      }
+    }
+    timers[POST_SENDS].stop();
+    timers[WAITALL].start();
+    MPI_Waitall(messageNum, requests, MPI_STATUSES_IGNORE);
+    timers[WAITALL].stop();
+# else
     timers[LAUNCH_PUTS].start();
     for (int j = 0; j < 6; j++) {
       if (neighbors[j] != -1) {
@@ -242,10 +284,11 @@ void probe(int steps) {
     timers[PUT_BARRIER].start();
     barrier();
     timers[PUT_BARRIER].stop();
+# endif
     timers[UNPACK].start();
     unpack(myGridA.base_ptr(), inBufs.buffers);
     timers[UNPACK].stop();
-#else
+#else // MPI_STYLE
     // first x dimension
     TIMER_START(timers[LAUNCH_X_COPIES]);
     if (targetsA[0] != NULL) {
@@ -292,7 +335,7 @@ void probe(int steps) {
     async_wait();
     barrier(); // wait for puts from all nodes
     TIMER_STOP(timers[SYNC_Z_COPIES]);
-#endif
+#endif // MPI_STYLE
 
     TIMER_START(timers[PROBE_COMPUTE]);
 #ifdef OPT_LOOP
@@ -652,21 +695,31 @@ int main(int argc, char **args) {
         (double *) allocate(planeSizes[i] * GHOST_WIDTH *
                             sizeof(double));
     }
+# if DEBUG
+    point<3> p = packEnds[i] - packStarts[i];
+    point<3> q = unpackEnds[i] - unpackStarts[i];
+    cout << MYTHREAD << ": Ghost size in dir " << i << ": "
+         << (planeSizes[i] * GHOST_WIDTH) << ", "
+         << (p[1] * p[2] * p[3]) << ", "
+         << (q[1] * q[2] * q[3]) << endl;
+# endif
   }
 
+# if !USE_MPI
   allInBufs.create(RD(THREADS));
   allInBufs.exchange(inBufs);
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
       targetBufs.buffers[i] =
         allInBufs[neighbors[i]].buffers[i];
-# if DEBUG
+#  if DEBUG
       cout << MYTHREAD << ": target " << i << ": "
            << targetBufs.buffers[i] << endl;
-# endif
+#  endif
     }
   }
-#endif
+# endif
+#endif // MPI_STYLE
 
 #ifdef TIMERS_ENABLED
   timer t;

@@ -15,21 +15,44 @@
 # include <upcxx.h>
 # include <array.h>
 # include <event.h>
-#elif USE_MPI && defined(USE_ARRAYS)
-# include "../../include/upcxx-arrays/array.h"
-#elif !USE_MPI
+#elif USE_MPI
+# include <assert.h>
+# include <mpi.h>
+# ifdef USE_ARRAYS
+#  include "../../include/upcxx-arrays/array.h"
+# endif
+# define barrier() MPI_Barrier(MPI_COMM_WORLD)
+# define async_wait()
+# define allocate malloc
+static int THREADS, MYTHREAD;
+static void init(int *argc, char ***argv) {
+  MPI_Init(argc, argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &THREADS);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYTHREAD);
+}
+static void finalize() {
+  MPI_Finalize();
+}
+
+struct reduce {
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
+};
+#else
 # include "../../include/upcxx-arrays/array.h"
 # define barrier()
 # define async_wait()
 # define THREADS 1
 # define MYTHREAD 0
+# define allocate malloc
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
 struct reduce {
-  template<class T> static T add(T val, int = 0) { return val; } 
-  template<class T> static T max(T val, int = 0) { return val; } 
-  template<class T> static T min(T val, int = 0) { return val; } 
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
 };
 #endif
 
