@@ -15,21 +15,62 @@
 # include <upcxx.h>
 # include <array.h>
 # include <event.h>
-#elif USE_MPI && defined(USE_ARRAYS)
-# include "../../include/upcxx-arrays/array.h"
-#elif !USE_MPI
+#elif USE_MPI
+# include <assert.h>
+# include <mpi.h>
+# ifdef USE_ARRAYS
+#  include "../../include/upcxx-arrays/array.h"
+# endif
+# define barrier() MPI_Barrier(MPI_COMM_WORLD)
+# define async_wait()
+# define allocate malloc
+static int THREADS, MYTHREAD;
+static void init(int *argc, char ***argv) {
+  MPI_Init(argc, argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &THREADS);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYTHREAD);
+}
+static void finalize() {
+  MPI_Finalize();
+}
+
+struct reduce {
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
+  static double add(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_SUM, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
+  static double max(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_MAX, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
+  static double min(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_MIN, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
+};
+#else
 # include "../../include/upcxx-arrays/array.h"
 # define barrier()
 # define async_wait()
 # define THREADS 1
 # define MYTHREAD 0
+# define allocate malloc
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
 struct reduce {
-  template<class T> static T add(T val, int = 0) { return val; } 
-  template<class T> static T max(T val, int = 0) { return val; } 
-  template<class T> static T min(T val, int = 0) { return val; } 
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
 };
 #endif
 
@@ -91,7 +132,7 @@ struct timer {
 
 #if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # define ALT_LOOP
-#elif !defined(STANDARD_LOOP) && !USE_MPI
+#elif !defined(STANDARD_LOOP)
 # define SPEC_LOOP
 # define ALT_LOOP
 #endif
@@ -131,7 +172,7 @@ struct timer {
 # endif /* ALT_FOREACH */
 #endif /* ALT_LOOP */
 
-#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI
+#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI || defined(MPI_STYLE)
 # ifdef USE_CMAJOR
 #  define FIRST_DIM(i, j, k) k
 #  define LAST_DIM(i, j, k) i
@@ -139,10 +180,6 @@ struct timer {
 #  define FIRST_DIM(i, j, k) i
 #  define LAST_DIM(i, j, k) k
 # endif
-#endif
-
-#if USE_MPI && !defined(USE_UNSTRIDED)
-# define USE_UNSTRIDED
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)

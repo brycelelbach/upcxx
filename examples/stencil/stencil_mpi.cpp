@@ -26,7 +26,6 @@ inline position POS(int x, int y, int z) {
   return p;
 }
 
-int THREADS, MYTHREAD;
 int xdim, ydim, zdim;
 int xparts, yparts, zparts;
 int nx, ny, nz;
