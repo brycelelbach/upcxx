@@ -38,6 +38,24 @@ struct reduce {
   template<class T> static T add(T val, int = 0) { return val; }
   template<class T> static T max(T val, int = 0) { return val; }
   template<class T> static T min(T val, int = 0) { return val; }
+  static double add(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_SUM, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
+  static double max(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_MAX, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
+  static double min(double val, int root) {
+    double res = 0;
+    MPI_Reduce(&val, &res, 1, MPI_DOUBLE, MPI_MIN, root,
+               MPI_COMM_WORLD);
+    return res;
+  }
 };
 #else
 # include "../../include/upcxx-arrays/array.h"
