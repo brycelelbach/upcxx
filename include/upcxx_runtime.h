@@ -81,22 +81,18 @@ namespace upcxx
    * \return the total number of tasks that have been processed in the incoming
    * and outgoing task queues
    */
-   int advance(int max_in = MAX_DISPATCHED_IN, int max_out = MAX_DISPATCHED_OUT);
+  int advance(int max_in = MAX_DISPATCHED_IN, int max_out = MAX_DISPATCHED_OUT);
 
-   int progress();
+  // An alias of the advance function for backward compatibility.
+  // The advance function is recommended.
+  inline int progress() { return advance(); }
 
-  /**
-   * \ingroup asyncgroup
-   *
-   * Advance the incoming and outgoing tasks queues
-   *
-   * Poll the task queue (once) and process any asynchronous
-   * tasks received until either the queue is empty or the optional
-   * user-specified maximum number of tasks have been processed.
-   * Like progress(), drain cannot be called in any GASNet AM
-   * handlers because it calls gasnet_AMPoll().
-   */
-  int drain(int max_dispatched = 0);
+  // drain() is superceded by avdance(), provided for backward compatibility.
+  // The advance function is recommended.
+  inline int drain(int max_dispatched = 0)
+  {
+    return advance(max_dispatched, max_dispatched);
+  } 
 
   /**
    * \ingroup asyncgroup
