@@ -341,17 +341,6 @@ namespace upcxx
     return num_out + num_in;
   } // advance()
 
-  /**
-   * An alias of the advance function for backward compatibility.
-   * The advance function is recommended.
-   */
-  inline int progress() { return advance(); }
-
-  inline int drain(int max_dispatched)
-  {
-    return advance(max_dispatched, max_dispatched);
-  } // drain()
-
   int peek()
   {
     gasnet_AMPoll();
@@ -402,7 +391,7 @@ namespace upcxx
       fprintf(stderr, "Error: the gasnet memory space is not initialized.\n");
       fprintf(stderr, "It is likely due to the pointer (%p) was not from hp_malloc().\n",
               p);
-      exit(1);
+      gasnet_exit(1);
     }
     assert(p != 0);
     mspace_free(_gasnet_mspace, p);
