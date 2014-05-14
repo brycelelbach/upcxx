@@ -13,6 +13,20 @@ ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
 #endif
 ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
 ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
+#ifdef MPI_STYLE
+int nx, ny, nz;
+int nx_interior, ny_interior, nz_interior;
+int neighbors[6];
+int planeSizes[6];
+point<3> packStarts[6], packEnds[6];
+point<3> unpackStarts[6], unpackEnds[6];
+struct buffer_list {
+  double *buffers[6];
+};
+buffer_list inBufs, outBufs, targetBufs;
+ndarray<buffer_list, 1> allInBufs;
+int s2r[] = { 1, 0, 3, 2, 5, 4 };
+#endif
 int steps;
 int numTrials = 1;
 
@@ -21,25 +35,41 @@ enum timer_type {
   COMPUTATION
 };
 enum timer_index {
+#ifdef MPI_STYLE
+  PACK = 0,
+  LAUNCH_PUTS,
+  SYNC_PUTS,
+  PUT_BARRIER,
+  UNPACK,
+#else
   LAUNCH_X_COPIES = 0,
   SYNC_X_COPIES,
   LAUNCH_Y_COPIES,
   SYNC_Y_COPIES,
   LAUNCH_Z_COPIES,
   SYNC_Z_COPIES,
+#endif
   PROBE_COMPUTE,
   POST_COMPUTE_BARRIER,
   NUM_TIMERS
 };
 timer timers[NUM_TIMERS];
-string timerStrings[] = {"launch x copies", "sync x copies",
-                         "launch y copies", "sync y copies",
-                         "launch z copies", "sync z copies",
-                         "probe compute", "post compute barrier"};
-timer_type timerTypes[] = {COMMUNICATION, COMMUNICATION,
-                           COMMUNICATION, COMMUNICATION,
-                           COMMUNICATION, COMMUNICATION,
-                           COMPUTATION, COMPUTATION};
+string timerStrings[] = {
+#ifdef MPI_STYLE
+  "pack", "launch puts", "sync puts", "put barrier", "unpack",
+#else
+  "launch x copies", "sync x copies", "launch y copies",
+  "sync y copies", "launch z copies", "sync z copies",
+#endif
+  "probe compute", "post compute barrier"
+};
+timer_type timerTypes[] = {
+  COMMUNICATION, COMMUNICATION, COMMUNICATION, COMMUNICATION,
+#ifndef MPI_STYLE
+  COMMUNICATION,
+#endif
+  COMMUNICATION, COMPUTATION, COMPUTATION
+};
 
 point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
@@ -111,11 +141,111 @@ void initGrid(ndarray<double, 3> grid) {
 #endif
 }
 
+#ifdef MPI_STYLE
+void setupComm(point<3> parts, int threads, int mythread) {
+  point<3> mypos = threadToPos(parts, threads, mythread);
+  neighbors[0] = posToThread(parts, threads, mypos - PT(1,0,0));
+  neighbors[1] = posToThread(parts, threads, mypos + PT(1,0,0));
+  neighbors[2] = posToThread(parts, threads, mypos - PT(0,1,0));
+  neighbors[3] = posToThread(parts, threads, mypos + PT(0,1,0));
+  neighbors[4] = posToThread(parts, threads, mypos - PT(0,0,1));
+  neighbors[5] = posToThread(parts, threads, mypos + PT(0,0,1));
+  planeSizes[0] = ny_interior * nz_interior;
+  planeSizes[1] = ny_interior * nz_interior;
+  planeSizes[2] = nx_interior * nz_interior;
+  planeSizes[3] = nx_interior * nz_interior;
+  planeSizes[4] = nx_interior * ny_interior;
+  planeSizes[5] = nx_interior * ny_interior;
+  packStarts[0] = PT(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH);
+  packStarts[1] = PT(nx-2*GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH);
+  packStarts[2] = PT(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH);
+  packStarts[3] = PT(GHOST_WIDTH, ny-2*GHOST_WIDTH, GHOST_WIDTH);
+  packStarts[4] = PT(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH);
+  packStarts[5] = PT(GHOST_WIDTH, GHOST_WIDTH, nz-2*GHOST_WIDTH);
+  packEnds[0] = PT(2*GHOST_WIDTH, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  packEnds[1] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  packEnds[2] = PT(nx-GHOST_WIDTH, 2*GHOST_WIDTH, nz-GHOST_WIDTH);
+  packEnds[3] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  packEnds[4] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, 2*GHOST_WIDTH);
+  packEnds[5] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  unpackStarts[0] = PT(0, GHOST_WIDTH, GHOST_WIDTH);
+  unpackStarts[1] = PT(nx-GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH);
+  unpackStarts[2] = PT(GHOST_WIDTH, 0, GHOST_WIDTH);
+  unpackStarts[3] = PT(GHOST_WIDTH, ny-GHOST_WIDTH, GHOST_WIDTH);
+  unpackStarts[4] = PT(GHOST_WIDTH, GHOST_WIDTH, 0);
+  unpackStarts[5] = PT(GHOST_WIDTH, GHOST_WIDTH, nz-GHOST_WIDTH);
+  unpackEnds[0] = PT(GHOST_WIDTH, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  unpackEnds[1] = PT(nx, ny-GHOST_WIDTH, nz-GHOST_WIDTH);
+  unpackEnds[2] = PT(nx-GHOST_WIDTH, GHOST_WIDTH, nz-GHOST_WIDTH);
+  unpackEnds[3] = PT(nx-GHOST_WIDTH, ny, nz-GHOST_WIDTH);
+  unpackEnds[4] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, GHOST_WIDTH);
+  unpackEnds[5] = PT(nx-GHOST_WIDTH, ny-GHOST_WIDTH, nz);
+}
+
+#define PackIndex3D(i,j,k)                                      \
+  ((LAST_DIM(i, j, k))+                                         \
+   (LAST_DIM(nx, ny, nz))*((j) + (ny)*(FIRST_DIM(i, j, k))))
+
+void pack(double *grid, double **bufs) {
+  for (int i = 0; i < 6; i++) {
+    if (neighbors[i] != -1) {
+      double *buf = bufs[i];
+      int bidx = 0;
+      for (int x = packStarts[i][1]; x < packEnds[i][1]; x++) {
+        for (int y = packStarts[i][2]; y < packEnds[i][2]; y++) {
+          for (int z = packStarts[i][3]; z < packEnds[i][3]; z++) {
+            buf[bidx++] = grid[PackIndex3D(x, y, z)];
+          }
+        }
+      }
+    }
+  }
+}
+
+void unpack(double *grid, double **bufs) {
+  for (int i = 0; i < 6; i++) {
+    if (neighbors[i] != -1) {
+      double *buf = bufs[s2r[i]];
+      int bidx = 0;
+      for (int x = unpackStarts[i][1]; x < unpackEnds[i][1]; x++) {
+        for (int y = unpackStarts[i][2]; y < unpackEnds[i][2]; y++) {
+          for (int z = unpackStarts[i][3]; z < unpackEnds[i][3]; z++) {
+            grid[PackIndex3D(x, y, z)] = buf[bidx++];
+          }
+        }
+      }
+    }
+  }
+}
+#endif
+
 // Perform stencil.
 void probe(int steps) {
-  double fac = myGridA[myGridA.domain().min()]; // prevent constant folding
   for (int i = 0; i < steps; i++) {
     // Copy ghost zones from previous timestep.
+#ifdef MPI_STYLE
+    timers[PACK].start();
+    pack(myGridA.base_ptr(), outBufs.buffers);
+    timers[PACK].stop();
+    timers[LAUNCH_PUTS].start();
+    for (int j = 0; j < 6; j++) {
+      if (neighbors[j] != -1) {
+        gasnet_put_nbi_bulk(neighbors[j], targetBufs.buffers[j],
+                            outBufs.buffers[j], planeSizes[j] *
+                            GHOST_WIDTH * sizeof(double));
+      }
+    }
+    timers[LAUNCH_PUTS].stop();
+    timers[SYNC_PUTS].start();
+    async_wait();
+    timers[SYNC_PUTS].stop();
+    timers[PUT_BARRIER].start();
+    barrier();
+    timers[PUT_BARRIER].stop();
+    timers[UNPACK].start();
+    unpack(myGridA.base_ptr(), inBufs.buffers);
+    timers[UNPACK].stop();
+#else
     // first x dimension
     TIMER_START(timers[LAUNCH_X_COPIES]);
     if (targetsA[0] != NULL) {
@@ -125,13 +255,13 @@ void probe(int steps) {
       targetsA[1].async_copy(sourcesA[1]);
     }
     TIMER_STOP(timers[LAUNCH_X_COPIES]);
-#ifdef SYNC_BETWEEN_DIM
+# ifdef SYNC_BETWEEN_DIM
     TIMER_START(timers[SYNC_X_COPIES]);
     // Handle.syncNBI();
     async_wait();
     barrier();
     TIMER_STOP(timers[SYNC_X_COPIES]);
-#endif
+# endif
     // now y dimension
     TIMER_START(timers[LAUNCH_Y_COPIES]);
     if (targetsA[2] != NULL) {
@@ -141,13 +271,13 @@ void probe(int steps) {
       targetsA[3].async_copy(sourcesA[3]);
     }
     TIMER_STOP(timers[LAUNCH_Y_COPIES]);
-#ifdef SYNC_BETWEEN_DIM
+# ifdef SYNC_BETWEEN_DIM
     TIMER_START(timers[SYNC_Y_COPIES]);
     // Handle.syncNBI();
     async_wait();
     barrier();
     TIMER_STOP(timers[SYNC_Y_COPIES]);
-#endif
+# endif
     // finally z dimension
     TIMER_START(timers[LAUNCH_Z_COPIES]);
     if (targetsA[4] != NULL) {
@@ -162,6 +292,7 @@ void probe(int steps) {
     async_wait();
     barrier(); // wait for puts from all nodes
     TIMER_STOP(timers[SYNC_Z_COPIES]);
+#endif
 
     TIMER_START(timers[PROBE_COMPUTE]);
 #ifdef OPT_LOOP
@@ -502,6 +633,40 @@ int main(int argc, char **args) {
 #endif
     }
   }
+
+#ifdef MPI_STYLE
+  nx_interior = myDomain.upb()[1] - myDomain.lwb()[1];
+  ny_interior = myDomain.upb()[2] - myDomain.lwb()[2];
+  nz_interior = myDomain.upb()[3] - myDomain.lwb()[3];
+  nx = nx_interior + 2 * GHOST_WIDTH;
+  ny = ny_interior + 2 * GHOST_WIDTH;
+  nz = nz_interior + 2 * GHOST_WIDTH;
+  setupComm(PT(xparts,yparts,zparts), THREADS, MYTHREAD);
+
+  for (int i = 0; i < 6; i++) {
+    if (neighbors[i] != -1) {
+      inBufs.buffers[s2r[i]] =
+        (double *) allocate(planeSizes[i] * GHOST_WIDTH *
+                            sizeof(double));
+      outBufs.buffers[i] =
+        (double *) allocate(planeSizes[i] * GHOST_WIDTH *
+                            sizeof(double));
+    }
+  }
+
+  allInBufs.create(RD(THREADS));
+  allInBufs.exchange(inBufs);
+  for (int i = 0; i < 6; i++) {
+    if (neighbors[i] != -1) {
+      targetBufs.buffers[i] =
+        allInBufs[neighbors[i]].buffers[i];
+# if DEBUG
+      cout << MYTHREAD << ": target " << i << ": "
+           << targetBufs.buffers[i] << endl;
+# endif
+    }
+  }
+#endif
 
 #ifdef TIMERS_ENABLED
   timer t;

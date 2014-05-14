@@ -131,7 +131,7 @@ struct timer {
 # endif /* ALT_FOREACH */
 #endif /* ALT_LOOP */
 
-#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI
+#if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI || defined(MPI_STYLE)
 # ifdef USE_CMAJOR
 #  define FIRST_DIM(i, j, k) k
 #  define LAST_DIM(i, j, k) i
