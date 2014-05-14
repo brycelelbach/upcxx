@@ -132,7 +132,7 @@ struct timer {
 
 #if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # define ALT_LOOP
-#elif !defined(STANDARD_LOOP) && !USE_MPI
+#elif !defined(STANDARD_LOOP)
 # define SPEC_LOOP
 # define ALT_LOOP
 #endif
@@ -180,10 +180,6 @@ struct timer {
 #  define FIRST_DIM(i, j, k) i
 #  define LAST_DIM(i, j, k) k
 # endif
-#endif
-
-#if USE_MPI && !defined(USE_UNSTRIDED)
-# define USE_UNSTRIDED
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
