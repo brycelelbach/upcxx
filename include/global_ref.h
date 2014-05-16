@@ -17,8 +17,8 @@ namespace upcxx
 
   // obj is a global_ref or a global_ptr of the object.
   // m is a field/member of the global object.
-  #define memberof(obj, m) \
-    make_memberof((obj).where(), (obj).raw_ptr()->m)
+  #define memberof(obj, m)                                      \
+    upcxx::make_memberof((obj).where(), (obj).raw_ptr()->m)
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = rank_t>

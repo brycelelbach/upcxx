@@ -21,8 +21,8 @@ namespace upcxx {
   };
 
 #define finish UPCXX_finish_(UPCXX_UNIQUIFY(fs_))
-#define UPCXX_finish_(name)                             \
-  for (f_scope name; name.done == 0; name.done = 1)
+#define UPCXX_finish_(name)                                     \
+  for (upcxx::f_scope name; name.done == 0; name.done = 1)
 
 /* #define new_async(x) async(x, &_fs.e) */
 
