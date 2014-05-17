@@ -135,9 +135,8 @@ namespace upcxx
     assert(in_task_queue != NULL);
     assert(out_task_queue != NULL);
 
-    barrier();
-
     init_flag = 1;
+    barrier();
     return UPCXX_SUCCESS;
   }
     
