@@ -66,27 +66,26 @@ namespace upcxx
     inline int incref(uint32_t c=1)
     {
       gasnet_hsl_lock(&_lock);
-      _count += c;
+      int tmp = _count += c;
       gasnet_hsl_unlock(&_lock);
-
-      return _count;
+      return tmp;
     }
 
     // Decrement the reference counter for the event
     inline void decref() 
     {
+      gasnet_hsl_lock(&_lock);
       if (_count == 0) {
         fprintf(stderr,
-                "Fatal error: attempt to decrement a event (%p) with 0 references!\n",
+                "Fatal error: attempt to decrement an event (%p) with 0 references!\n",
                 this);
         gasnet_exit(1);
       }
         
-      gasnet_hsl_lock(&_lock);
-      _count--;
+      int tmp = --_count; // obtain the value of count before unlock
       gasnet_hsl_unlock(&_lock);
 
-      if (_count == 0) {
+      if (tmp == 0) {
         enqueue_cb();
       }
     }

@@ -158,9 +158,8 @@ namespace upcxx
     array_bulk_init();
 #endif
 
-    barrier();
-
     init_flag = 1;
+    barrier();
     return UPCXX_SUCCESS;
   }
     
