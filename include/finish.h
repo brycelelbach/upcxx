@@ -1,5 +1,4 @@
-#ifndef FINISH_H_
-#define FINISH_H_
+#pragma once
 
 #include "event.h"
 #include "utils.h"
@@ -21,11 +20,10 @@ namespace upcxx {
     }
   };
 
-#define finish finish_(UNIQUIFY(fs_))
-#define finish_(name) for (f_scope name; name.done == 0; name.done = 1)
+#define finish UPCXX_finish_(UPCXX_UNIQUIFY(fs_))
+#define UPCXX_finish_(name)                                     \
+  for (upcxx::f_scope name; name.done == 0; name.done = 1)
 
 /* #define new_async(x) async(x, &_fs.e) */
 
 }
-
-#endif
