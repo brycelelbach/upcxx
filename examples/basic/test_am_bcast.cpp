@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   printf("Node %d spawns %d tasks sequentially...\n",
          MYTHREAD, THREADS);
 
-  for (int i = 0; i < THREADS; i++) {
+  for (uint32_t i = 0; i < THREADS; i++) {
     printf("Node %d spawns a task at place %d\n",
            MYTHREAD, i);
 

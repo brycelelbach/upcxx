@@ -13,7 +13,7 @@ using namespace upcxx;
 
 const int task_iters = 1000000;
 
-shared_var<int> task_count[3];
+shared_var<uint32_t> task_count[3];
 shared_lock count_lock[3];
 
 int task(int group)
@@ -31,7 +31,7 @@ int spawn_tasks()
 {
   finish {
     int spawned = 0;
-    for (int i = 0; i < THREADS; i++) {
+    for (uint32_t i = 0; i < THREADS; i++) {
       printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
       async(i)(task, 2);
       spawned += 1;
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     task_count[i] = 0;
 
   finish {
-    for (int i = 0; i < THREADS; i++) {
+    for (uint32_t i = 0; i < THREADS; i++) {
       printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
       async(i)(task, 0);
       spawned += 1;
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     printf("group %d complete? %d\n", 0, task_count[0] == THREADS);
 
     finish {
-      for (int i = 0; i < THREADS; i++) {
+      for (uint32_t i = 0; i < THREADS; i++) {
         printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
         async(i)(task, 1);
         spawned += 1;

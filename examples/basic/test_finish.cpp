@@ -24,7 +24,7 @@ int main(int argc, char **argv)
          MYTHREAD, THREADS);
 
   finish {
-    for (int i = 0; i < THREADS; i++) {
+    for (uint32_t i = 0; i < THREADS; i++) {
       printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
       async(i)(print_task, 1000+i);
     }

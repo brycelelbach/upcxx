@@ -47,8 +47,10 @@ namespace upcxx
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // vector<async_task &> _cont_tasks;
 
-    inline event() : _count(0), _num_done_cb(0), _h()
+    inline event()
     {
+      _count = 0;
+      _num_done_cb = 0;
       gasnet_hsl_init(&_lock);
     }
 

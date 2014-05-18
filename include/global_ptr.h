@@ -56,8 +56,8 @@ namespace upcxx
     }
 
   protected:
-    place_t _pla;
     T *_ptr;
+    place_t _pla;
   }; // close of base_ptr
   /// \endcond SHOW_INTERNAL
 
