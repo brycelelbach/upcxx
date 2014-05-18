@@ -204,19 +204,24 @@ namespace upcxx
     assert(tmp != NULL);
     assert(task != NULL);
     memcpy(tmp, task, task->nbytes());
-    
+
     // Increase the reference of the ack event of the task
     if (tmp->_ack != NULL) {
-      int n = tmp->_ack->incref();
-      if (tmp->_ack != &system_event && n == 1)
-        outstanding_events.push_back(tmp->_ack);
+      tmp->_ack->incref();
     }
-    
-    if (after != NULL) {
-      after->add_done_cb(tmp);
-      return;
+
+    if (after != NULL ) {
+      after->lock();
+      // add task to the callback list if the event is inflight
+      //
+      if (after->count() > 0) {
+        after->add_done_cb(tmp);
+        after->unlock();
+        return;
+      }
+      after->unlock();
     }
-    
+
     // enqueue the async task
     if (task->_callee == myrank()) {
       // local task
@@ -472,7 +477,7 @@ namespace upcxx
   void gasnet_launcher<rank_t>::launch(generic_fp fp,
                                        void *async_args,
                                        size_t arg_sz);
-    
+
   template<>
   void gasnet_launcher<range>::launch(generic_fp fp,
                                       void *async_args,
