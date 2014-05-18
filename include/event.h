@@ -41,7 +41,9 @@ namespace upcxx
   struct event {
     volatile int _count; // outstanding number of tasks.
     int owner;
-    gasnet_hsl_t _lock;
+#ifdef UPCXX_THREAD_SAFE
+    pthread_mutex_t _mutex;
+#endif
     list<gasnet_handle_t> _h;
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
@@ -51,7 +53,9 @@ namespace upcxx
     {
       _count = 0;
       _num_done_cb = 0;
-      gasnet_hsl_init(&_lock);
+#ifdef UPCXX_THREAD_SAFE
+      pthread_mutex_init(&_mutex, NULL);
+#endif
     }
 
     inline ~event()
@@ -79,9 +83,9 @@ namespace upcxx
 
     void remove_handle(gasnet_handle_t h);
 
-    inline void lock() { gasnet_hsl_lock(&_lock); }
+    inline void lock() { upcxx_mutex_lock(&_mutex); }
 
-    inline void unlock() { gasnet_hsl_unlock(&_lock); }
+    inline void unlock() { upcxx_mutex_unlock(&_mutex); }
 
     inline int num_done_cb() const { return _num_done_cb; }
 

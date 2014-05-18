@@ -3,8 +3,7 @@
  *
  * This lock only provides mutual exclusion among processes (gasnet
  * nodes) but not for threads within the same process.  If
- * thread-level lock is needed, the client may use pthread_mutex_t or
- * gasnet_hsl_t.
+ * thread-level lock is needed, the client may use pthread_mutex_t.
  *
  */
 
@@ -29,14 +28,20 @@ namespace upcxx
   private:
     volatile int _locked; /**< lock state: 1 - locked, 0 - unlocked */
     volatile gasnet_node_t _owner; /**< current owner of the lock */
-    gasnet_hsl_t _hsl; /**< local handler-safe lock for thread/signal safety */
+    int _init_flag;
+#ifdef UPCXX_THREAD_SAFE
+    pthread_mutex_t _mutex; /**< local handler-safe lock for thread/signal safety */
+#endif
 
   public:
     inline shared_lock()
     {
       _locked = 0;
       _owner = 0;
-      gasnet_hsl_init(&_hsl);
+      _init_flag = 0;
+#ifdef UPCXX_THREAD_SAFE
+      pthread_mutex_init(&_mutex, NULL);
+#endif
     }
 
     /**

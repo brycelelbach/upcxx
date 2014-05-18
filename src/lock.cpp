@@ -22,7 +22,8 @@ namespace upcxx
 
     assert(myrank() == 0);
      
-    gasnet_hsl_lock(&lock->_hsl);
+    upcxx_mutex_lock(&lock->_mutex);
+
     if (lock->_locked == 0) {
       lock->_owner = srcnode; 
       lock->_locked = 1;
@@ -34,9 +35,7 @@ namespace upcxx
       */
       //gasnet_exit(1);
     }
-    gasnet_hsl_unlock(&lock->_hsl);
-
-    //(gasnet_hsl_trylock(&lock1) == GASNET_OK);
+    upcxx_mutex_unlock(&lock->_mutex);
 
     lock_reply_t reply;
     reply.lock_owner = lock->_owner;
@@ -72,16 +71,17 @@ namespace upcxx
     gasnet_node_t srcnode;
     GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
 
+    upcxx_mutex_lock(&am->lock->_mutex);
     if (am->lock->_owner != srcnode) {
       fprintf(stderr, "unlock_am_handler error: srcnode %u attempts to unlock a lock owned by %u!\n",
               srcnode, am->lock->_owner);
+      upcxx_mutex_unlock(&am->lock->_mutex);
       gasnet_exit(1);
     }
 
-    gasnet_hsl_lock(&am->lock->_hsl);
     am->lock->_owner = 0;
     am->lock->_locked = 0;
-    gasnet_hsl_unlock(&am->lock->_hsl);
+    upcxx_mutex_unlock(&am->lock->_mutex);
   }
 
   int shared_lock::trylock()
@@ -93,18 +93,18 @@ namespace upcxx
     int replied;
 
     if (myrank() == 0) {
-      gasnet_hsl_lock(&_hsl);
+      upcxx_mutex_lock(&_mutex);
       if (_locked == 0) {
         _locked = 1;
         _owner = 0;
-        gasnet_hsl_unlock(&_hsl);
+        upcxx_mutex_unlock(&_mutex);
         return 1;
       } else {
-        gasnet_hsl_unlock(&_hsl);
+        upcxx_mutex_unlock(&_mutex);
         return 0;
       }
     } else {
-      gasnet_hsl_lock(&_hsl);
+      upcxx_mutex_lock(&_mutex);
       event e;
       lock_am_t am;
       am.id = myrank();
@@ -117,11 +117,11 @@ namespace upcxx
 
       if (_owner == myrank()) {
         _locked = 1;
-        gasnet_hsl_unlock(&_hsl);
+        upcxx_mutex_unlock(&_mutex);
         return 1;
       }
+      upcxx_mutex_unlock(&_mutex);
 
-      gasnet_hsl_unlock(&_hsl);
       return 0;
     }
   }
@@ -148,10 +148,10 @@ namespace upcxx
       // event in the unlock AM struct.
     } 
       
-    gasnet_hsl_lock(&_hsl);
+    upcxx_mutex_lock(*_mutex);
     _locked = 0;
     _owner = 0;
-    gasnet_hsl_unlock(&_hsl);
+    upcxx_mutex_unlock(&_mutex);
   }
 } // namespace upcxx
 
