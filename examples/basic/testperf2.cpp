@@ -46,7 +46,7 @@ int main (int argc, char **arsv)
   }
   barrier();
   if (MYTHREAD == 0) {
-    assert((int)sv == niters * THREADS);
+    assert((uint32_t)sv == niters * THREADS);
   }
   
   printf("MYTHREAD %d: lock time %lg (us), unlock time % lg (us), shared variable access time (read+write) %lg (us)\n",

@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   printf("Rank %d will spawn %d tasks...\n",
          myrank(), ranks());
 
-  for (int i = 0; i < ranks(); i++) {
+  for (uint32_t i = 0; i < ranks(); i++) {
 
 #ifndef UPCXX_HAVE_CXX11
     printf("Rank %d calls a named function on rank %d\n", myrank(), i);

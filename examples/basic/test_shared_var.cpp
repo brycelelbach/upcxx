@@ -33,7 +33,7 @@ int main (int argc, char **arsv)
   barrier();
   */
 
-  for (int i=0; i<THREADS; i++) {
+  for (uint32_t i=0; i<THREADS; i++) {
     if (MYTHREAD == i) {
       sv = sv + 1;
       cout << "MYTHREAD: " << MYTHREAD << " ga = " << sv << "\n";
