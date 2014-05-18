@@ -117,6 +117,7 @@ namespace upcxx
 
   extern event system_event; // defined in upcxx.cpp
   extern std::list<event *> outstanding_events;
+  extern gasnet_hsl_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);

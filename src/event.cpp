@@ -119,17 +119,17 @@ namespace upcxx
 
     void event::add_handle(gasnet_handle_t h)
     {
-      gasnet_hsl_lock(_lock);
+      gasnet_hsl_lock(&_lock);
       _h.push_back(h);
-      gasnet_hsl_unlock(_lock);
+      gasnet_hsl_unlock(&_lock);
       incref();
     }
 
     void event::remove_handle(gasnet_handle_t h)
     {
-      gasnet_hsl_lock(_lock);
+      gasnet_hsl_lock(&_lock);
       _h.remove(h);
-      gasnet_hsl_unlock(_lock);
+      gasnet_hsl_unlock(&_lock);
       decref();
     }
 
