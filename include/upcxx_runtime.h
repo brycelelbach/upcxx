@@ -10,6 +10,15 @@
 #ifndef UPCXX_RUNTIME_H_
 #define UPCXX_RUNTIME_H_
 
+#ifdef UPCXX_THREAD_SAFE
+#include <pthread.h>
+#define upcxx_mutex_lock      pthread_mutex_lock
+#define upcxx_mutex_unlock    pthread_mutex_unlock
+#else
+#define upcxx_mutex_lock(X)
+#define upcxx_mutex_unlock(X)
+#endif
+
 #include <cstring>
 #include <cassert>
 #include <ios>

@@ -44,7 +44,7 @@ namespace upcxx
     {
       assert (_count == 0);
 
-      gasnet_hsl_lock(&_lock);
+      upcxx_mutex_lock(&_mutex);
       // add done_cb to the task queue
       if (_num_done_cb > 0) {
         for (int i=0; i<_num_done_cb; i++) {
@@ -67,28 +67,28 @@ namespace upcxx
         }
         _num_done_cb = 0;
       }
-      gasnet_hsl_unlock(&_lock);
+      upcxx_mutex_unlock(&_mutex);
     }
 
     // Increment the reference counter for the event
     void event::incref(uint32_t c)
     {
-      gasnet_hsl_lock(&_lock);
+      upcxx_mutex_lock(&_mutex);
       int old = _count;
       _count += c;
       if (this != &system_event && old == 0) {
         gasnet_hsl_lock(&outstanding_events_lock);
         // fprintf(stderr, "P %u   Add outstanding_event %p\n", myrank(), this);
         outstanding_events.push_back(this);
-        gasnet_hsl_unlock(&out_task_queue_lock);
+        gasnet_hsl_unlock(&outstanding_events_lock);
       }
-      gasnet_hsl_unlock(&_lock);
+      upcxx_mutex_unlock(&_mutex);
     }
 
     // Decrement the reference counter for the event
     void event::decref()
     {
-      gasnet_hsl_lock(&_lock);
+      upcxx_mutex_lock(&_mutex);
       if (_count == 0) {
         fprintf(stderr,
                 "Fatal error: attempt to decrement an event (%p) with 0 references!\n",
@@ -97,7 +97,7 @@ namespace upcxx
       }
 
       int tmp = --_count; // obtain the value of count before unlock
-      gasnet_hsl_unlock(&_lock);
+      upcxx_mutex_unlock(&_mutex);
 
       if (tmp == 0) {
         enqueue_cb();
@@ -119,17 +119,17 @@ namespace upcxx
 
     void event::add_handle(gasnet_handle_t h)
     {
-      gasnet_hsl_lock(&_lock);
+      upcxx_mutex_lock(&_mutex);
       _h.push_back(h);
-      gasnet_hsl_unlock(&_lock);
+      upcxx_mutex_unlock(&_mutex);
       incref();
     }
 
     void event::remove_handle(gasnet_handle_t h)
     {
-      gasnet_hsl_lock(&_lock);
+      upcxx_mutex_lock(&_mutex);
       _h.remove(h);
-      gasnet_hsl_unlock(&_lock);
+      upcxx_mutex_unlock(&_mutex);
       decref();
     }
 
