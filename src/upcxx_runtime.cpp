@@ -83,6 +83,7 @@ namespace upcxx
   event system_event;
   int init_flag = 0;  //  equals 1 if the backend is initialized
   std::list<event*> outstanding_events;
+  gasnet_hsl_t outstanding_events_lock;
 
   // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
   void *shared_var_addr = NULL;
@@ -152,6 +153,9 @@ namespace upcxx
     out_task_queue = queue_new();
     assert(in_task_queue != NULL);
     assert(out_task_queue != NULL);
+
+    gasnet_hsl_init(&async_lock);
+    gasnet_hsl_init(&outstanding_events_lock);
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     // Initialize array bulk operations
@@ -329,11 +333,9 @@ namespace upcxx
         // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
         event *e = (*it);
         assert(e != NULL);
-        // cerr << "Advancing event: " << *e << endl;
-        if (e->test()) {
-          outstanding_events.remove(*it);
-          break;
-        }
+        // fprintf(stderr, "P %u Advance event: %p\n", myrank(), e);
+        e->test();
+        break;
       }
     }
 

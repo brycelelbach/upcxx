@@ -44,7 +44,6 @@ int upcxx::async_copy(global_ptr<void> src,
   } else { // e != &system_event)
     // explicit non-blocking copy, need event->wait()/test() to
     // synchronize later
-    outstanding_events.push_back(e);
     gasnet_handle_t h;
     if (dst.where() == myrank()) {
       h = gasnet_get_nb_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);

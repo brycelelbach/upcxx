@@ -47,9 +47,14 @@ namespace upcxx
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // vector<async_task &> _cont_tasks;
 
-    inline event() : _count(0), _num_done_cb(0)
+    inline event() : _count(0), _num_done_cb(0), _h()
     {
       gasnet_hsl_init(&_lock);
+    }
+
+    inline ~event()
+    {
+      this->wait();
     }
 
     inline int count() const { return _count; }
@@ -63,48 +68,27 @@ namespace upcxx
     }
       
     // Increment the reference counter for the event
-    inline int incref(uint32_t c=1)
-    {
-      gasnet_hsl_lock(&_lock);
-      int tmp = _count += c;
-      gasnet_hsl_unlock(&_lock);
-      return tmp;
-    }
+    void incref(uint32_t c=1);
 
     // Decrement the reference counter for the event
-    inline void decref() 
-    {
-      gasnet_hsl_lock(&_lock);
-      if (_count == 0) {
-        fprintf(stderr,
-                "Fatal error: attempt to decrement an event (%p) with 0 references!\n",
-                this);
-        gasnet_exit(1);
-      }
-        
-      int tmp = --_count; // obtain the value of count before unlock
-      gasnet_hsl_unlock(&_lock);
+    void decref();
 
-      if (tmp == 0) {
-        enqueue_cb();
-      }
-    }
+    void add_handle(gasnet_handle_t h);
 
-    inline void add_handle(gasnet_handle_t h)
-    {
-      _h.push_back(h);
-      incref();
-    }
+    void remove_handle(gasnet_handle_t h);
+
+    inline void lock() { gasnet_hsl_lock(&_lock); }
+
+    inline void unlock() { gasnet_hsl_unlock(&_lock); }
 
     inline int num_done_cb() const { return _num_done_cb; }
 
     inline void add_done_cb(async_task *task)
     {
-      gasnet_hsl_lock(&_lock);
+      // _lock should be held already
       assert(_num_done_cb < MAX_NUM_DONE_CB);
       _done_cb[_num_done_cb] = task;
       _num_done_cb++;
-      gasnet_hsl_unlock(&_lock);
     }
 
     /**
