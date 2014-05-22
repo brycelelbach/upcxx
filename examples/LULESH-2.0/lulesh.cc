@@ -2770,8 +2770,8 @@ int main(int argc, char *argv[])
    MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
 #elif USE_UPCXX
   Real_t *nodalMass;
-  numRanks = global_machine.node_count();
-  myRank = my_node.id() ;
+  numRanks = upcxx::ranks();
+  myRank = upcxx::myrank() ;
 #else
    numRanks = 1;
    myRank = 0;
@@ -2854,12 +2854,13 @@ int main(int argc, char *argv[])
    
    // BEGIN timestep to solution */
    Real_t start;
-#if USE_MPI   
+#if USE_MPI 
    start = MPI_Wtime();
-#else
-   // start = clock();
+#elif USE_OMP
    extern double omp_get_wtime();
    start = omp_get_wtime();
+#else
+   start = my_get_time();   
 #endif
 //debug to see region sizes
 //   for(int i = 0; i < locDom->numReg(); i++)
@@ -2877,11 +2878,12 @@ int main(int argc, char *argv[])
 
    // Use reduced max elapsed time
    Real_t elapsed_time;
-#if USE_MPI   
+#if USE_MPI 
    elapsed_time = MPI_Wtime() - start;
-#else
-   // elapsed_time = (clock() - start) / CLOCKS_PER_SEC;
+#elif USE_OMP
    elapsed_time = omp_get_wtime() - start;
+#else 
+   elapsed_time = my_get_time() - start;
 #endif
    double elapsed_timeG;
 #if USE_UPCXX
