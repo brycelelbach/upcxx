@@ -104,11 +104,6 @@ using namespace upcxx;
  
 */
 
-// Every node posts its own Recv and Send buffers
-// #define MAX_PROCS 4096
-// global_array_t< ptr_to_shared<Real_t> > AllCommDataRecv(MAX_PROCS);
-
-
 /******************************************/
 
 // YZ: Post the non-blocking receives for the messages,
@@ -433,7 +428,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
                     Index_t xferFields, Real_t **fieldData,
                     Index_t dx, Index_t dy, Index_t dz, bool doSend, bool planeOnly)
 {
-  ptr_to_shared<Real_t> *AllCommDataRecv = domain.AllCommDataRecv;
+  global_ptr<Real_t> *AllCommDataRecv = domain.AllCommDataRecv;
   
   if (domain.numRanks() == 1)
     return ;
@@ -539,7 +534,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank + domain.tp()*domain.tp();
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -567,7 +562,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank - domain.tp()*domain.tp();
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -629,7 +624,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank + domain.tp();
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -658,7 +653,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank - domain.tp();
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -725,7 +720,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank + 1;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -755,7 +750,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg]) ;
       */
       int target_rank = myRank - 1;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          AllCommDataRecv[target_rank] + pmsg * maxPlaneComm,
                          xferFields * sendCount);
       ++pmsg ;
@@ -783,9 +778,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dz);
       ++emsg ;
@@ -808,9 +803,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dx);
       ++emsg ;
@@ -833,9 +828,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dy);
       ++emsg ;
@@ -858,9 +853,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dz);
       ++emsg ;
@@ -882,9 +877,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dx);
       ++emsg ;
@@ -906,9 +901,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dy);
       ++emsg ;
@@ -932,9 +927,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dz);
       ++emsg ;
@@ -957,9 +952,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dx);
       ++emsg ;
@@ -982,9 +977,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dy);
       ++emsg ;
@@ -1008,9 +1003,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dz, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dz);
       ++emsg ;
@@ -1033,9 +1028,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dx, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dx);
       ++emsg ;
@@ -1058,9 +1053,9 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(destAddr, xferFields*dy, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm);
-      async_copy<Real_t>(ptr_to_shared<Real_t>(destAddr, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(destAddr),
                          target_ptr,
                          xferFields * dy);
       ++emsg ;
@@ -1083,10 +1078,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1106,10 +1101,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1130,10 +1125,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1153,10 +1148,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1177,10 +1172,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1200,10 +1195,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1224,10 +1219,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1246,10 +1241,10 @@ void CommSend_upcxx(Domain& domain, int msgType,
         MPI_Isend(comBuf, xferFields, baseType, toRank, msgType,
         MPI_COMM_WORLD, &domain.sendRequest[pmsg+emsg+cmsg]) ;
       */
-      ptr_to_shared<Real_t> target_ptr =
+      global_ptr<Real_t> target_ptr =
         AllCommDataRecv[toRank] + (pmsg * maxPlaneComm) + (emsg * maxEdgeComm)
         + cmsg * CACHE_COHERENCE_PAD_REAL;
-      async_copy<Real_t>(ptr_to_shared<Real_t>(comBuf, my_node),
+      async_copy<Real_t>(global_ptr<Real_t>(comBuf),
                          target_ptr,
                          xferFields);
       ++cmsg ;
@@ -1306,7 +1301,7 @@ void CommSBN_upcxx(Domain& domain, int xferFields, Real_t **fieldData) {
   }
   
   // MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
-  myRank = my_node.id();
+  myRank = upcxx::myrank();
   
   if (planeMin | planeMax) {
     /* ASSUMING ONE DOMAIN PER RANK, CONSTANT BLOCK SIZE HERE */
