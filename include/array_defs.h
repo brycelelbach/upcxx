@@ -82,6 +82,10 @@
 #define UPCXXA_SPARSE_GATHER(dst, srcs, target, num, elemsz) \
   upcxx::sparse_gather(dst, srcs, target, num, elemsz)
 
+#define UPCXXA_SEND_ARRAYS(umethod, count, srcbuf, dstbuf, datasz, target, event) \
+  upcxx::put_multi_array(umethod, count, target, srcbuf, dstbuf,        \
+                         datasz, event)
+
 #define UPCXXA_BROADCAST_RAW(dst, sender, src, size)            \
   do {                                                          \
     gasnet_coll_broadcast(current_gasnet_team(), dst, sender,   \
@@ -91,4 +95,9 @@
   do {                                                          \
     gasnet_coll_gather_all(current_gasnet_team(), dst, src,     \
                            bytes, UPCXX_GASNET_COLL_FLAG);      \
+  } while (0)
+#define UPCXXA_ALL_TO_ALL(src, dst, bytes)                      \
+  do {                                                          \
+    gasnet_coll_exchange(current_gasnet_team(), dst, src,       \
+                         bytes, UPCXX_GASNET_COLL_FLAG);        \
   } while (0)

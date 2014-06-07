@@ -35,4 +35,10 @@ namespace upcxx {
                      void **remote_addr_list,
                      uint32_t remote_box, size_t num_elem,
                      size_t elem_sz);
+
+  /* aggregated rectangular scatter/gather */
+  void put_multi_array(void *unpack_method, size_t count,
+                       uint32_t tgt_box, void *src_buf,
+                       void *dst_buf, size_t data_size,
+                       event *done_event);
 } // namespace upcxx
