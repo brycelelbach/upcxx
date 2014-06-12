@@ -9,7 +9,7 @@ SHELL = /bin/sh
 LULESH_EXEC = lulesh2.0-upcxx lulesh2.0-mpi lulesh2.0
 all: $(LULESH_EXEC)
 
-UPCXX_INSTALL_DIR ?= $(HOME)/upcxx_install
+UPCXX_INSTALL_DIR ?= $(HOME)/work/upcxx_install
 include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
 
 VPATH=$(UPCXX_INSTALL_DIR)/include
@@ -17,9 +17,13 @@ VPATH=$(UPCXX_INSTALL_DIR)/include
 MPI_INC = /opt/local/include/openmpi
 MPI_LIB = /opt/local/lib
 
-CXX = icpc -fast -DUSE_OMP=1 -fopenmp 
-MPICXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
-UPCXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
+#CXX = icpc -fast -DUSE_OMP=1 -fopenmp 
+#MPICXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
+#UPCXX = mpicxx -fast -DUSE_OMP=1 -fopenmp
+CXX = clang++ -DUSE_OMP=0
+MPICXX = mpicxx -DUSE_OMP=0
+UPCXX = mpicxx -DUSE_OMP=0
+
 
 SOURCES2.0 = \
 	lulesh.cc \

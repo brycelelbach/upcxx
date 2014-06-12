@@ -41,15 +41,26 @@ namespace upcxx
   struct event {
     volatile int _count; // outstanding number of tasks.
     int owner;
-    gasnet_hsl_t _lock;
+#ifdef UPCXX_THREAD_SAFE
+    pthread_mutex_t _mutex;
+#endif
     list<gasnet_handle_t> _h;
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // vector<async_task &> _cont_tasks;
 
-    inline event() : _count(0), _num_done_cb(0)
+    inline event()
     {
-      gasnet_hsl_init(&_lock);
+      _count = 0;
+      _num_done_cb = 0;
+#ifdef UPCXX_THREAD_SAFE
+      pthread_mutex_init(&_mutex, NULL);
+#endif
+    }
+
+    inline ~event()
+    {
+      this->wait();
     }
 
     inline int count() const { return _count; }
@@ -63,49 +74,27 @@ namespace upcxx
     }
       
     // Increment the reference counter for the event
-    inline int incref(uint32_t c=1)
-    {
-      gasnet_hsl_lock(&_lock);
-      _count += c;
-      gasnet_hsl_unlock(&_lock);
-
-      return _count;
-    }
+    void incref(uint32_t c=1);
 
     // Decrement the reference counter for the event
-    inline void decref() 
-    {
-      if (_count == 0) {
-        fprintf(stderr,
-                "Fatal error: attempt to decrement a event (%p) with 0 references!\n",
-                this);
-        gasnet_exit(1);
-      }
-        
-      gasnet_hsl_lock(&_lock);
-      _count--;
-      gasnet_hsl_unlock(&_lock);
+    void decref();
 
-      if (_count == 0) {
-        enqueue_cb();
-      }
-    }
+    void add_handle(gasnet_handle_t h);
 
-    inline void add_handle(gasnet_handle_t h)
-    {
-      _h.push_back(h);
-      incref();
-    }
+    void remove_handle(gasnet_handle_t h);
+
+    inline void lock() { upcxx_mutex_lock(&_mutex); }
+
+    inline void unlock() { upcxx_mutex_unlock(&_mutex); }
 
     inline int num_done_cb() const { return _num_done_cb; }
 
     inline void add_done_cb(async_task *task)
     {
-      gasnet_hsl_lock(&_lock);
+      // _lock should be held already
       assert(_num_done_cb < MAX_NUM_DONE_CB);
       _done_cb[_num_done_cb] = task;
       _num_done_cb++;
-      gasnet_hsl_unlock(&_lock);
     }
 
     /**
@@ -134,6 +123,7 @@ namespace upcxx
 
   extern event system_event; // defined in upcxx.cpp
   extern std::list<event *> outstanding_events;
+  extern gasnet_hsl_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);

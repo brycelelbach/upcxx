@@ -14,9 +14,18 @@
 #endif
 
 #if USE_UPCXX
-#include "../../include/upcxx.h"
+#include <upcxx.h>
 using namespace upcxx;
 #endif
+
+#include <time.h>
+#include <sys/time.h>
+inline double my_get_time()
+{
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return tv.tv_sec + ((double) tv.tv_usec / 1000000);
+}
 
 #include <math.h>
 #include <vector>
@@ -268,10 +277,10 @@ class Domain {
 #endif
 
 #if USE_UPCXX
-    ptr_to_shared<Real_t> gCommDataSend; // global pointer for the send buffer
-    ptr_to_shared<Real_t> gCommDataRecv; // global pointer for the recv buffer
-    ptr_to_shared<Real_t> *AllCommDataSend; // all global pointers for the send buffers
-    ptr_to_shared<Real_t> *AllCommDataRecv; // all global pointers for the recv buffers
+    global_ptr<Real_t> gCommDataSend; // global pointer for the send buffer
+    global_ptr<Real_t> gCommDataRecv; // global pointer for the recv buffer
+    global_ptr<Real_t> *AllCommDataSend; // all global pointers for the send buffers
+    global_ptr<Real_t> *AllCommDataRecv; // all global pointers for the recv buffers
 #endif
 
    // Parameters 

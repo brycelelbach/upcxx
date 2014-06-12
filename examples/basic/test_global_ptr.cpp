@@ -36,7 +36,7 @@ int main (int argc, char **argv)
 
     // Initialize data pointed by ptr by a local pointer
     double *local_ptr1 = (double *)ptr1;
-    for (int i=0; i<count; i++) {
+    for (size_t i=0; i<count; i++) {
       local_ptr1[i] = (double)i + MYTHREAD * 1e6;
     }
     

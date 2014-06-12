@@ -56,8 +56,8 @@ namespace upcxx
     }
 
   protected:
-    place_t _pla;
     T *_ptr;
+    place_t _pla;
   }; // close of base_ptr
   /// \endcond SHOW_INTERNAL
 
@@ -84,11 +84,11 @@ namespace upcxx
     typedef T value_type;
 
   public:
-    explicit global_ptr() : base_ptr<T, rank_t>(NULL, myrank()) {}
+    explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
 
-    explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, myrank()) {}
+    explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, global_myrank()) {}
 
-    explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, myrank()) { }
+    explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, global_myrank()) { }
 
     inline
     global_ptr(T *ptr, rank_t pla) :

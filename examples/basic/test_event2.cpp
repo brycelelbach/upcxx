@@ -16,15 +16,16 @@ using namespace std;
 
 void done_compute()
 {
-  printf("myrank() %d finishes computing...\n", myrank());
+  printf("Rank %d Step 4 finishes computing...\n", myrank());
 }
 
 void compute_task(int i, event *e, global_ptr<double> src, global_ptr<double> dst, size_t sz)
 {
-  printf("myrank() %d: finished async_copy, src[%lu] = %f, dst[%lu] = %f\n",
+  printf("Rank %d Step 2 finishes async_copy, src[%lu] = %f, dst[%lu] = %f\n",
          myrank(), sz-1, src[sz-1].get(), sz-1, dst[sz-1].get());
   assert(e->isdone());
-  cout << "myrank(): " << myrank() << " starts computing...\n";
+  cout << "Rank " << myrank() << " Step 3 starts computing...\n";
+  sleep(1);
 }
 
 int main(int argc, char **argv)
@@ -42,18 +43,16 @@ int main(int argc, char **argv)
     
   barrier();
 
-  event copy_e, compute_e ,done_e;
+  event copy_e, compute_e;
 
-  async_after(myrank(), &copy_e, &compute_e)(compute_task, myrank()*100, &copy_e, src, dst, sz);
-  async_after(myrank(), &compute_e, &done_e)(done_compute);
-
-  printf("Process %d starts async_copy...\n", myrank());
-
+  printf("Rank %d Step 1 starts async_copy...\n", myrank());
   async_copy(src, dst, sz, &copy_e);
+  async_after(myrank(), &copy_e, &compute_e)(compute_task, myrank()*100, &copy_e, src, dst, sz);
+  async_after(myrank(), &compute_e)(done_compute);
 
-  upcxx::wait(); // wait for all tasks to be done!
+  async_wait(); // wait for all tasks to be done!
 
-  printf("Process %d finishes waiting...\n", myrank());
+  printf("Rank %d Step 5 finishes waiting...\n", myrank());
 
   finalize();
 

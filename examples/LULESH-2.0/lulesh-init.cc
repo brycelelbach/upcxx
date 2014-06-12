@@ -396,24 +396,24 @@ Domain::SetupCommBuffers(Int_t edgeNodes)
 		 (m_rowMax & m_colMax & m_planeMax)) * CACHE_COHERENCE_PAD_REAL ;
 
 #if USE_UPCXX
-  gCommDataSend = upcxx::allocate<Real_t>(my_node, comBufSize);
+  gCommDataSend = upcxx::allocate<Real_t>(upcxx::myrank(), comBufSize);
   commDataSend = (Real_t *)gCommDataSend.raw_ptr();
   //cerr << "gCommDataSend " << gCommDataSend << "\n";
-  gCommDataRecv = upcxx::allocate<Real_t>(my_node, comBufSize);
+  gCommDataRecv = upcxx::allocate<Real_t>(upcxx::myrank(), comBufSize);
   commDataRecv = (Real_t *)gCommDataRecv.raw_ptr();
   //cerr << "gCommDataRecv " << gCommDataRecv << "\n";
   assert(commDataSend != NULL);
   assert(commDataRecv != NULL);
-  int nprocs = global_machine.node_count();
+  int nprocs = upcxx::myrank();
   
-  AllCommDataSend = (ptr_to_shared<Real_t> *)malloc(sizeof(ptr_to_shared<Real_t>) * nprocs);
+  AllCommDataSend = (global_ptr<Real_t> *)malloc(sizeof(global_ptr<Real_t>) * nprocs);
   assert(AllCommDataSend != NULL);
-  AllCommDataRecv = (ptr_to_shared<Real_t> *)malloc(sizeof(ptr_to_shared<Real_t>) * nprocs);
+  AllCommDataRecv = (global_ptr<Real_t> *)malloc(sizeof(global_ptr<Real_t>) * nprocs);
   assert(AllCommDataRecv != NULL);
   
   // upcxx_allgather(void *src, void *dst, size_t nbytes)
-  upcxx_allgather(&gCommDataSend, AllCommDataSend, sizeof(ptr_to_shared<Real_t>));
-  upcxx_allgather(&gCommDataRecv, AllCommDataRecv, sizeof(ptr_to_shared<Real_t>));
+  upcxx_allgather(&gCommDataSend, AllCommDataSend, sizeof(global_ptr<Real_t>));
+  upcxx_allgather(&gCommDataRecv, AllCommDataRecv, sizeof(global_ptr<Real_t>));
   
 #else // should be USE_MPI
   commDataSend = new Real_t[comBufSize] ;
@@ -444,7 +444,7 @@ Domain::CreateRegionIndexSets(Int_t nr, Int_t balance)
    srand(myRank);
 #elif USE_UPCXX
   Index_t myRank;
-  myRank = my_node.id();
+  myRank = upcxx::myrank();
   srand(myRank);
 #else
    srand(0);
