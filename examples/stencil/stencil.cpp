@@ -374,6 +374,17 @@ void probe(int steps) {
         myGridA[PT(i-1, j, k)] +
         WEIGHT * myGridA[PT(i, j, k)];
     }
+#elif defined(SPEC_LOOPP)
+    foreach3p (p, myDomain) {
+      myGridB[p] =
+        myGridA[p + PT( 0,  0, +1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0, +1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT(+1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
+        WEIGHT * myGridA[p];
+    }
 #elif defined(SPLIT_LOOP)
     cforeach3 (i, j, k, myDomain) {
       myGridB[i][j][k] =

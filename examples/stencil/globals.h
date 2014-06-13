@@ -130,7 +130,7 @@ struct timer {
 # define TIMER_RESET(t)
 #endif
 
-#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
+#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPEC_LOOPP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # define ALT_LOOP
 #elif !defined(STANDARD_LOOP) && !USE_MPI
 # define SPEC_LOOP
@@ -139,10 +139,10 @@ struct timer {
 
 #ifdef ALT_LOOP
 # define USE_UNSTRIDED
-#  define foreachh(N, dom, l_, u_, s_, d_)                              \
+# define foreachh(N, dom, l_, u_, s_, d_)                               \
   for (point<N> l_ = dom.lwb(), u_ = dom.upb(), s_ = dom.stride(),      \
          d_ = point<N>::all(0); !d_.x[0]; d_.x[0] = 1)
-#  define foreachhd(var, dim, lp_, up_, sp_)                            \
+# define foreachhd(var, dim, lp_, up_, sp_)                             \
   for (int var = lp_.x[dim]; var < up_.x[dim]; var += sp_.x[dim])
 # ifdef ALT_FOREACH
 #  undef foreach1
@@ -170,6 +170,22 @@ struct timer {
       foreachhd(v2, 1, lp_, up_, sp_)                   \
         foreachhd(v3, 2, lp_, up_, sp_)
 # endif /* ALT_FOREACH */
+inline upcxx::cint_t nextp3(upcxx::cint_t i, upcxx::cint_t j,
+                            upcxx::cint_t k, upcxx::point<3> &p,
+                            upcxx::cint_t u) {
+  p.x[0] = i;
+  p.x[1] = j;
+  p.x[2] = k;
+  return u;
+}
+# define foreach3p(p, dom)                                      \
+  for (point<3> p = {{ 0, 0, 0 }}; p.x[0] == 0; p.x[0] = 1)     \
+    foreachd(p1, dom, 1)                                        \
+      foreachd(p2, dom, 2)                                      \
+      for (cint_t u_ = (dom).upb()[3],                          \
+             s_ = (dom).raw_stride()[3],                        \
+             var = (dom).lwb()[3];                              \
+           var < nextp3(p1, p2, var, p, u_); var += s_)
 #endif /* ALT_LOOP */
 
 #if defined(RAW_LOOP) || defined(RAW_FOR_LOOP) || USE_MPI || defined(MPI_STYLE)
