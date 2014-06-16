@@ -26,7 +26,10 @@ int main(int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
   int i, j;
+  upcxx::global_ptr<int> counter_ptr = upcxx::allocate<int>(upcxx::myrank(), 1);
+  *counter_ptr = 0;
 
+  upcxx::barrier();
   finish {
     for (i=0; i<3; i++) {
       for (j=0; j<2; j++) {
@@ -34,6 +37,7 @@ int main(int argc, char **argv)
         auto lambda = [=] () {
           printf("lambda task from src rank %u, i %d, j %d, executing on rank %u\n",
                  src_rank, i, j, upcxx::myrank());
+          *counter_ptr = *counter_ptr + upcxx::myrank();
         };
         upcxx::global_ptr<decltype(lambda)> remote_lambda 
           = upcxx::allocate<decltype(lambda)>(src_rank, 1);
@@ -42,6 +46,10 @@ int main(int argc, char **argv)
       }
     }
   } // close finish
+  upcxx::barrier();
+
+  printf("myrank %u, counter updated by my right (+1) neighbor is %d\n", 
+         upcxx::myrank(), (int)(*counter_ptr)); 
 
   upcxx::finalize();
   return 0;

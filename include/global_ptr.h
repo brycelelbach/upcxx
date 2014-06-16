@@ -103,30 +103,30 @@ namespace upcxx
     : base_ptr<T, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
-    operator T*()
+    operator T*() const
     {
       return this->raw_ptr();
     }
 
-    global_ref<T> operator [] (int i)
+    global_ref<T> operator [] (int i) const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
     template <typename T2>
-    global_ref<T> operator [] (T2 i)
+    global_ref<T> operator [] (T2 i) const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
-    global_ref<T> operator *()
+    global_ref<T> operator *() const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr());
     }
 
     // type casting operator for placed pointers
     template<typename T2>
-    operator global_ptr<T2>()
+    operator global_ptr<T2>() const
     {
       return global_ptr<T2>((T2 *)this->raw_ptr(), this->where());
     }
