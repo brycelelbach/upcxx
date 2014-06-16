@@ -84,7 +84,7 @@ namespace upcxx
     typedef T value_type;
 
   public:
-    explicit global_ptr() : base_ptr<T, rank_t>(NULL, myrank()) {}
+    explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
 
     explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, myrank()) {}
 
