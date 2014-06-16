@@ -17,7 +17,8 @@ bin_PROGRAMS = \
   testperf2 \
   test_memberof \
   test_memberof2 \
-	test_memberof3
+	test_memberof3 \
+	test_copy_closure
 
 hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
@@ -36,6 +37,7 @@ testperf2_SOURCES = testperf2.cpp
 test_memberof_SOURCES = test_memberof.cpp
 test_memberof2_SOURCES = test_memberof2.cpp
 test_memberof3_SOURCES = test_memberof3.cpp
+test_copy_closure_SOURCES = test_copy_closure.cpp
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/include \
