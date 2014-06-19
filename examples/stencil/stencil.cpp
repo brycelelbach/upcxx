@@ -37,6 +37,10 @@ MPI_Request requests[12];
 #endif
 int steps;
 int numTrials = 1;
+#ifdef USE_PLAN
+copy_plan<double, 3> cplan;
+int cphase = 0;
+#endif
 
 enum timer_type {
   COMMUNICATION,
@@ -288,6 +292,11 @@ void probe(int steps) {
     timers[UNPACK].start();
     unpack(myGridA.base_ptr(), inBufs.buffers);
     timers[UNPACK].stop();
+#elif defined(USE_PLAN)
+    barrier();
+    cplan.copy(cphase);
+    barrier();
+    cphase = 1 - cphase;
 #else // MPI_STYLE
     // first x dimension
     TIMER_START(timers[LAUNCH_X_COPIES]);
@@ -731,6 +740,16 @@ int main(int argc, char **args) {
   }
 # endif
 #endif // MPI_STYLE
+
+#ifdef USE_PLAN
+  for (int i = 0; i < 6; i++) {
+    if (targetsA[i] != NULL) {
+      cplan.add(targetsA[i], sourcesA[i], 0);
+      cplan.add(targetsB[i], sourcesB[i], 1);
+    }
+  }
+  cplan.setup();
+#endif
 
 #ifdef TIMERS_ENABLED
   timer t;
