@@ -86,6 +86,7 @@
   upcxx::put_multi_array(umethod, count, target, srcbuf, dstbuf,        \
                          datasz, event)
 
+#define UPCXXA_BARRIER() upcxx::barrier()
 #define UPCXXA_BROADCAST_RAW(dst, sender, src, size)            \
   do {                                                          \
     gasnet_coll_broadcast(current_gasnet_team(), dst, sender,   \
