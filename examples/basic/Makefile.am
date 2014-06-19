@@ -4,6 +4,7 @@ if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_BIN_FILES = \
   test_array \
   test_array_dist \
+  test_array_plan \
   test_reduce \
   test_safe_broadcast 
 else
@@ -48,6 +49,7 @@ test_memberof3_SOURCES = test_memberof3.cpp
 if UPCXX_MD_ARRAY
 test_array_SOURCES = test_array.cpp
 test_array_dist_SOURCES = test_array_dist.cpp
+test_array_plan_SOURCES = test_array_plan.cpp
 test_reduce_SOURCES = test_reduce.cpp
 test_safe_broadcast_SOURCES = test_safe_broadcast.cpp
 endif
