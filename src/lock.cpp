@@ -78,7 +78,6 @@ namespace upcxx
       upcxx_mutex_unlock(&am->lock->_mutex);
       gasnet_exit(1);
     }
-
     am->lock->_owner = 0;
     am->lock->_locked = 0;
     upcxx_mutex_unlock(&am->lock->_mutex);
