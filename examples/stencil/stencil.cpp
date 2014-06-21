@@ -294,7 +294,8 @@ void probe(int steps) {
     timers[UNPACK].stop();
 #elif defined(USE_PLAN)
     barrier();
-    cplan.copy(cphase);
+    cplan.async_copy(cphase);
+    async_wait();
     barrier();
     cphase = 1 - cphase;
 #else // MPI_STYLE
