@@ -274,6 +274,7 @@ void probe(int steps) {
     timers[WAITALL].stop();
 # else
     timers[LAUNCH_PUTS].start();
+    barrier(); // need to ensure dsts are available
     for (int j = 0; j < 6; j++) {
       if (neighbors[j] != -1) {
         gasnet_put_nbi_bulk(neighbors[j], targetBufs.buffers[j],
@@ -293,10 +294,11 @@ void probe(int steps) {
     unpack(myGridA.base_ptr(), inBufs.buffers);
     timers[UNPACK].stop();
 #elif defined(USE_PLAN)
-    barrier();
+    barrier(); // need to ensure dsts are available
     cplan.async_copy(cphase);
     async_wait();
     barrier();
+    cplan.unpack(cphase);
     cphase = 1 - cphase;
 #else // MPI_STYLE
     // first x dimension
