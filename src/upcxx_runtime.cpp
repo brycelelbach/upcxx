@@ -66,8 +66,6 @@ namespace upcxx
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_request),
     gasneti_handler_tableentry_with_bits(sparse_simpleGather_reply),
     gasneti_handler_tableentry_with_bits(sparse_generalGather_request),
-    gasneti_handler_tableentry_with_bits(strided_multi_unpack_request),
-    gasneti_handler_tableentry_with_bits(strided_multi_unpackOnly_request),
 #endif
   };
 

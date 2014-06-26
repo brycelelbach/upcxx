@@ -46,10 +46,6 @@ namespace upcxx {
     ARRAY_SPARSE_SIMPLEGATHER_REPLY,
     gasneti_handleridx(sparse_generalGather_request) =
     ARRAY_SPARSE_GENERALGATHER_REQUEST,
-    gasneti_handleridx(strided_multi_unpack_request) =
-    ARRAY_STRIDED_MULTI_UNPACK_REQUEST,
-    gasneti_handleridx(strided_multi_unpackOnly_request) =
-    ARRAY_STRIDED_MULTI_UNPACKONLY_REQUEST,
   };
 
   /* handler declarations */
@@ -63,9 +59,6 @@ namespace upcxx {
   MEDIUM_HANDLER_DECL(strided_unpackAll_request, 4, 7);
   SHORT_HANDLER_DECL(strided_unpack_reply, 2, 3);
   MEDIUM_HANDLER_DECL(strided_unpackOnly_request, 4, 7);
-
-  LONG_HANDLER_DECL(strided_multi_unpack_request, 4, 7);
-  SHORT_HANDLER_DECL(strided_multi_unpackOnly_request, 5, 9);
 
   MEDIUM_HANDLER_DECL(sparse_simpleScatter_request, 3, 6);
   SHORT_HANDLER_DECL(sparse_done_reply, 1, 2);

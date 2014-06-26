@@ -23,10 +23,6 @@
   GASNET_SAFE(MEDIUM_REQ(cnt32, cnt64, args))
 #define MEDIUM_SRP(cnt32, cnt64, args)          \
   GASNET_SAFE(MEDIUM_REP(cnt32, cnt64, args))
-#define LONG_SRQ(cnt32, cnt64, args)            \
-  GASNET_SAFE(LONG_REQ(cnt32, cnt64, args))
-#define LONG_SRP(cnt32, cnt64, args)            \
-  GASNET_SAFE(LONG_REP(cnt32, cnt64, args))
 
 #define SUNPACK(a0) ((size_t)UNPACK(a0))
 #define SUNPACK2(a0, a1) ((size_t)UNPACK2(a0, a1))
@@ -149,7 +145,6 @@ static void *get_remote_buffer(size_t datasz, uint32_t remote_box){
 
 typedef void *(*pack_method_t)(void *, size_t *, void *);
 typedef void *(*unpack_method_t)(void *, void *);
-typedef void *(*multi_unpack_method_t)(void *, size_t);
 
 /* ---------------------------------------------------------------- */
 /***************************
@@ -467,101 +462,6 @@ extern void put_array(void *unpack_method, void *copy_desc,
                     PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
                                                         tgt_box)),
                     PACK(done_ptr), use_event));
-    if (!use_event)
-      GASNET_BLOCKUNTIL(unpack_spin);
-  }
-}
-/* ---------------------------------------------------------------- */
-/*******************************************
- * Write multiple arrays to a remote node. *
- ******************************************/
-
-/* The fastest way of doing things....take the data given and unpack
-   it. */
-GASNETT_INLINE(strided_multi_unpack_request_inner)
-void strided_multi_unpack_request_inner(gasnet_token_t token,
-                                        void *packedArrayData,
-                                        size_t nBytes,
-                                        void *_unpackMethod,
-                                        size_t count,
-                                        void *done_ptr,
-                                        uint32_t use_event) {
-  {
-    multi_unpack_method_t unpackMethod =
-      (multi_unpack_method_t)_unpackMethod;
-    // for now, do unpacking rather than queueing it
-    (*unpackMethod)(packedArrayData, count);
-    SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
-                   PACK(done_ptr), use_event));
-  }
-}
-LONG_HANDLER(strided_multi_unpack_request, 4, 7,
-             (token,addr,nbytes, UNPACK(a0),      SUNPACK(a1),
-              UNPACK(a2),      a3),
-             (token,addr,nbytes, UNPACK2(a0, a1), SUNPACK2(a2, a3),
-              UNPACK2(a4, a5), a6));
-/* ---------------------------------------------------------------- */
-/* The data was provided by previous calls; just unpack it with the
-   given descriptor. */
-GASNETT_INLINE(strided_multi_unpackOnly_request_inner)
-void strided_multi_unpackOnly_request_inner(gasnet_token_t token,
-                                            void *bufAddr,
-                                            void *_unpackMethod,
-                                            size_t count,
-                                            void *done_ptr,
-                                            uint32_t use_event) {
-  multi_unpack_method_t unpackMethod =
-    (multi_unpack_method_t)_unpackMethod;
-  // for now, do unpacking rather than queueing it
-  (*unpackMethod)(bufAddr, count);
-  SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
-                 PACK(done_ptr), use_event));
-}
-SHORT_HANDLER(strided_multi_unpackOnly_request, 5, 9,
-              (token, UNPACK(a0),      UNPACK(a1),
-               SUNPACK(a2),      UNPACK(a3),      a4),
-              (token, UNPACK2(a0, a1), UNPACK2(a2, a3),
-               SUNPACK2(a4, a5), UNPACK2(a6, a7), a8));
-/* ---------------------------------------------------------------- */
-/* Send an aggregation of multiple arrays to a node, and have them get
-   unpacked into Titanium arrays. */
-extern void put_multi_array(void *unpack_method, size_t count,
-                            uint32_t tgt_box, void *src_buf,
-                            void *dst_buf, size_t data_size,
-                            event *done_event) {
-  void *data;
-  /* ensure double-word alignment for array data */
-  volatile int unpack_spin = 0;
-  uint32_t use_event = (done_event != UPCXXA_EVENT_NONE);
-  void *done_ptr;
-  if (use_event) {
-    done_ptr = (void *) done_event;
-    done_event->incref();
-  } else {
-    done_ptr = (void *) &unpack_spin;
-  }
-
-  /* Fast(er), hopefully common case. */
-  if (data_size <= gasnet_AMMaxLongRequest()) {
-    LONG_SRQ(4,7,(tgt_box,
-                  gasneti_handleridx(strided_multi_unpack_request),
-                  src_buf, data_size, dst_buf,
-                  PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
-                                                      tgt_box)),
-                  PACK(count), PACK(done_ptr), use_event));
-    if (!use_event)
-      GASNET_BLOCKUNTIL(unpack_spin);
-  }
-  else { /* Slow case. */
-    /* Transfer the data to the buffer with libtic. */
-    gasnet_put_bulk(tgt_box, dst_buf, src_buf, data_size);
-    /* Tell the remote side to unpack the data. */
-    SHORT_SRQ(5,9,(tgt_box,
-                   gasneti_handleridx(strided_multi_unpackOnly_request),
-                   PACK(dst_buf),
-                   PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
-                                                       tgt_box)),
-                   PACK(count), PACK(done_ptr), use_event));
     if (!use_event)
       GASNET_BLOCKUNTIL(unpack_spin);
   }

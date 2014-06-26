@@ -82,10 +82,6 @@
 #define UPCXXA_SPARSE_GATHER(dst, srcs, target, num, elemsz) \
   upcxx::sparse_gather(dst, srcs, target, num, elemsz)
 
-#define UPCXXA_SEND_ARRAYS(umethod, count, srcbuf, dstbuf, datasz, target, event) \
-  upcxx::put_multi_array(umethod, count, target, srcbuf, dstbuf,        \
-                         datasz, event)
-
 #define UPCXXA_BARRIER() upcxx::barrier()
 #define UPCXXA_BROADCAST_RAW(dst, sender, src, size)            \
   do {                                                          \
