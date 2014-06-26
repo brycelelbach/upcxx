@@ -63,6 +63,7 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/foreach.h \
   upcxx-arrays/foreach_aux.h \
   upcxx-arrays/iter.h \
+  upcxx-arrays/plan.h \
   upcxx-arrays/point.h \
   upcxx-arrays/point.tpp \
   upcxx-arrays/point_aux.h \
