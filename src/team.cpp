@@ -34,8 +34,9 @@ namespace upcxx
 #endif
     assert(scratch_seg.addr != NULL);
 
+
     gasnet_team_handle_t new_gasnet_team
-      = gasnete_coll_team_split(_gasnet_team, color, key, &scratch_seg);
+      = gasnete_coll_team_split(_gasnet_team, color, key, &scratch_seg GASNETE_THREAD_GET);
     assert(new_gasnet_team != NULL);
   
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);

@@ -95,14 +95,22 @@ namespace upcxx
   int init(int *pargc, char ***pargv)
   {
 #ifdef UPCXX_DEBUG
-    cerr << "upcxx::init()" << endl;
+    cerr << "upcxx::init()\n";
 #endif
 
     if (init_flag) {
       return UPCXX_ERROR;
     }
 
+#ifdef UPCXX_DEBUG
+    cerr << "gasnet_init()\n";
+#endif
     gasnet_init(pargc, pargv); // init gasnet
+
+
+#ifdef UPCXX_DEBUG
+    cerr << "gasnet_attach()\n";
+#endif
     GASNET_SAFE(gasnet_attach(AMtable,
                               sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
                               gasnet_getMaxLocalSegmentSize(),
@@ -110,6 +118,9 @@ namespace upcxx
     // The following collectives initialization only works with SEG build
     // \TODO: add support for the PAR-SYNC build
     // gasnet_coll_init(NULL, 0, NULL, 0, 0); // init gasnet collectives
+#ifdef UPCXX_DEBUG
+    cerr << "init_collectives()\n";
+#endif
     init_collectives();
 
     _global_ranks = gasnet_nodes();
@@ -129,8 +140,8 @@ namespace upcxx
     }
 
 #ifdef UPCXX_DEBUG
-    fprintf(stderr, "thread %u, total_shared_var_sz %lu, shared_var_addr %p\n",
-            GLOBAL_MYTHREAD, total_shared_var_sz, shared_var_addr);
+    fprintf(stderr, "rank %u, total_shared_var_sz %lu, shared_var_addr %p\n",
+            gasnet_mynode(), total_shared_var_sz, shared_var_addr);
 #endif
 
     // Initialize Team All
@@ -247,8 +258,8 @@ namespace upcxx
       assert (task->_callee == myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << "Rank " << myrank << " is about to execute async task.\n";
-      cerr << *task << endl;h
+      cerr << "Rank " << myrank() << " is about to execute async task.\n";
+      cerr << *task << "\n";
 #endif
 
         // execute the async task
