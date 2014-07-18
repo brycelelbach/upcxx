@@ -87,7 +87,7 @@ AC_MSG_RESULT([$GCC])
 dnl for g++
 if test "x$GCC" = "xyes"; then
   ## suppress warnings due to legacy usage of C in GASNet
-  CXXFLAGS+=" -Wno-literal-suffix"
+  CXXFLAGS+=" -Wno-literal-suffix -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS=1 "
 fi
 
 dnl Option to enable UPC++ multidimensional arrays (default is disable)

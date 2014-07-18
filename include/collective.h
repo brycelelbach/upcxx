@@ -40,8 +40,12 @@ namespace upcxx
   
   static inline void upcxx_allgather(void *src, void *dst, size_t nbytes)
   {
-    gasnet_coll_gather_all(current_gasnet_team(), dst, src, nbytes,
-                           UPCXX_GASNET_COLL_FLAG);
+    // gasnet_coll_gather_all(current_gasnet_team(), dst, src, nbytes,
+    //                        UPCXX_GASNET_COLL_FLAG);
+    void *temp = malloc(nbytes * ranks());
+    assert(temp != NULL);
+    upcxx_gather(src, temp, nbytes, 0);
+    upcxx_bcast(temp, dst, nbytes*ranks(), 0);
   }
 
   static inline void upcxx_alltoall(void *src, void *dst, size_t nbytes)

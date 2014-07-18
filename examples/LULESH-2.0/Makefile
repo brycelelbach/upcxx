@@ -9,7 +9,7 @@ SHELL = /bin/sh
 LULESH_EXEC = lulesh2.0-upcxx lulesh2.0-mpi lulesh2.0
 all: $(LULESH_EXEC)
 
-UPCXX_INSTALL_DIR ?= $(HOME)/work/upcxx_install
+UPCXX_INSTALL_DIR ?= $(HOME)/install/upcxx
 include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
 
 VPATH=$(UPCXX_INSTALL_DIR)/include

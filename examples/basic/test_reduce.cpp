@@ -51,6 +51,8 @@ void test(upcxx_datatype_t dt, size_t count)
     cout << endl;
   }
 
+  // Need to add verification of the reduce
+  
   barrier();
 }
 

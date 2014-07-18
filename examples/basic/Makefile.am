@@ -15,6 +15,7 @@ bin_PROGRAMS = \
   test_am_bcast \
   test_async \
   test_dynamic_finish \
+	test_copy_closure \
   test_event \
   test_event2 \
   test_finish \
@@ -44,6 +45,7 @@ testperf2_SOURCES = testperf2.cpp
 test_memberof_SOURCES = test_memberof.cpp
 test_memberof2_SOURCES = test_memberof2.cpp
 test_memberof3_SOURCES = test_memberof3.cpp
+test_copy_closure_SOURCES = test_copy_closure.cpp
 
 if UPCXX_MD_ARRAY
 test_array_SOURCES = test_array.cpp
