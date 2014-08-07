@@ -19,6 +19,7 @@
 #define UPCXXA_EVENT_T                          upcxx::event *
 #define UPCXXA_DEFAULT_EVENT                    upcxx::peek_event()
 #define UPCXXA_EVENT_NONE                       NULL
+#define UPCXXA_ASYNC_WAIT                       upcxx::async_wait
 
 #if defined(GASNET_TRACE)
 # define UPCXXA_TRACE
