@@ -99,3 +99,10 @@
     gasnet_coll_exchange(current_gasnet_team(), dst, src,       \
                          bytes, UPCXX_GASNET_COLL_FLAG);        \
   } while (0)
+
+#include "timer.h"
+#define UPCXXA_TIMER                            upcxx::timer
+#define UPCXXA_TIMER_START(timer)               timer.start()
+#define UPCXXA_TIMER_STOP(timer)                timer.stop()
+#define UPCXXA_TIMER_RESET(timer)               timer.reset()
+#define UPCXXA_TIMER_READ(timer)                timer.secs()
