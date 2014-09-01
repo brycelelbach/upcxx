@@ -49,6 +49,7 @@ namespace upcxx
       printf("In shared_array constructor, size %lu\n", size);
 #endif
       _data = NULL;
+      _alldata = NULL;
       _blk_sz = blk_sz;
       _local_size = size;
       _size = size;
