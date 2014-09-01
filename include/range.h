@@ -8,10 +8,15 @@ namespace upcxx
   /**
    * \brief data structure for describing a range of integers
    *
-   * in the begin element is included in the range but the end element of the range
-   * is excluded.  For example, range(0, 5, 1) = {0,1, 2, 3, 4};
+   * UPC++ range is left-closed and right-open: the first (begin)
+   * element is inclusive while the last (end) element is exclusive.
+   * For example, range(0, 5, 1) = {0, 1, 2, 3, 4};
    */
   struct range {
+
+    typedef       int iterator;
+    typedef const int const_iterator;
+
     int _begin;
     int _end;
     int _step;
@@ -44,6 +49,11 @@ namespace upcxx
       return (_end - _begin) / _step;
     }
     
+    inline int size() const
+    {
+      return count();
+    }
+
     inline int begin() const
     {
       return _begin;
@@ -53,15 +63,12 @@ namespace upcxx
     {
       return _end;
     }
-
-
     
     inline int step() const
     {
       return _step;
     }
     
-
     int operator [] (int i) const
     {
       assert(i < this->count());
