@@ -255,7 +255,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     ndarray<double, 1> myNewData = myResults.slice(1, -(i+1));
     FOREACH (p, myNewResults.domain()) {
       myNewResults[p] = myNewData[p] + myOldResults[p];
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMP][(multiplyCallCount-1) * log2numProcCols + (i+1)]);
     COUNTER_STOP_READ(myCounter, myCounts[T_SPMV_REDUCTION_COMP][(multiplyCallCount-1) * log2numProcCols + (i+1)]);
@@ -310,15 +310,15 @@ void SparseMat::resetProfile() {
   FOREACH (component, myTimes.domain()) {
     FOREACH (timing, myTimes[component].domain()) {
       myTimes[component][timing] = 0;
-    }
-  }
+    };
+  };
 #endif
 #ifdef COUNTERS_ENABLED
   FOREACH (component, myCounts.domain()) {
     FOREACH (count, myCounts[component].domain()) {
       myCounts[component][count] = 0;
-    }
-  }
+    };
+  };
 #endif
 }
 
@@ -360,7 +360,7 @@ void SparseMat::printSummary() {
     double totalComponentTime = 0.0;
     FOREACH (timing, myTimes[timerIdx].domain()) {
       totalComponentTime += myTimes[timerIdx][timing];
-    }
+    };
     totalTime += totalComponentTime;
     if (timerIdx != T_SPMV_LOCAL_COMP)
       totalCommTime += totalComponentTime;
@@ -378,7 +378,7 @@ void SparseMat::printSummary() {
       long totalComponentCount = 0;
       FOREACH (count, myCounts[timerIdx].domain()) {
         totalComponentCount += myCounts[timerIdx][count];
-      }
+      };
 		
       long minTotalComponentCount = reduce::min(totalComponentCount);
       long sumTotalComponentCount = reduce::add(totalComponentCount);
@@ -460,7 +460,7 @@ void SparseMat::printProfile() {
         }
         lsumTime += value;
         numReadingsPerProc++;
-      }
+      };
 		
       double gminTime = reduce::min(lminTime);
       double gmax = reduce::max(lmaxTime);
@@ -503,7 +503,7 @@ void SparseMat::printProfile() {
           }
           lsumCount += value;
           numReadingsPerProc++;
-        }
+        };
 		    
         long gminCount = reduce::min(lminCount);
         long gmaxCount = reduce::max(lmaxCount);

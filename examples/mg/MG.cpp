@@ -68,7 +68,7 @@ MG::MG() {
   foreach (level, RECTDOMAIN((1), (startLevel+1))) {
     myTimes[T_APPLY_SMOOTHER][level] =
       ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+  };
 
   foreach (level, RECTDOMAIN((2), (startLevel+1))) {
     if (level[1] != startLevel) {
@@ -83,7 +83,7 @@ MG::MG() {
       ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     myTimes[T_PROLONGATE][level] =
       ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+  };
 
   myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL] =
     ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+1)));
@@ -177,7 +177,7 @@ MG::MG() {
     myTimes[T_UNPACKING] =
       ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
 #endif
-  }
+  };
 
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
@@ -208,7 +208,7 @@ MG::MG() {
   foreach (level, RECTDOMAIN((1), (startLevel+1))) {
     myCounts[T_APPLY_SMOOTHER][level] =
       ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+  };
 
   foreach (level, RECTDOMAIN((2), (startLevel+1))) {
     if (level[1] != startLevel) {
@@ -223,7 +223,7 @@ MG::MG() {
       ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
     myCounts[T_PROLONGATE][level] =
       ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+  };
 #endif
 #endif
 }
@@ -246,11 +246,11 @@ double MG::getL2Norm(Grid &gridA, int callNumber) {
 #ifdef SPLIT_LOOP
   foreach3 (i, j, k, myAPoints.domain().shrink(1)) {
     myASquareSum += sqr(myAPoints[i][j][k]);
-  }
+  };
 #else
   foreach (p, myAPoints.domain().shrink(1)) {
     myASquareSum += sqr(myAPoints[p]);
-  }
+  };
 #endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_L2NORM][startLevel][callNumber]);
@@ -296,7 +296,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       if (dir[1] == 0 || dir[2] == 0) {
         myOutBuffer[dir].copy(myPoints);
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_PACKING][level][3*(iterationNum-1) +
                                                        callNumber]);
@@ -344,7 +344,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 #else
       myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection]);
 #endif
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) +
                                                            callNumber]);
@@ -375,7 +375,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       if (dir[1] == 0 || dir[2] == 0) {
         myPoints.copy(myInBuffer[dir]);
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_UNPACKING][level][3*(iterationNum-1) +
                                                          callNumber]);
@@ -422,7 +422,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         myTranslatedBlockPoints.COPY(gridA.blocks[actualBlockPos].points.constrict(gridA.blocks[actualBlockPos].points.domain().shrink(1)));
 #endif
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) + callNumber]);
 
@@ -514,7 +514,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         buf = gridA.outBuffers[actualBlockPos][-dimDir];
         myInBuffer[dimDir].COPY(buf.translate(actualToNeighborVector));
 #endif
-      }
+      };
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
@@ -608,7 +608,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
           ((neighborBlockPos - myBlockPos) * numCellsPerBlock);
         myPoints.COPY(gridA.points[actualBlockPos].translate(actualToNeighborVector).constrict(remoteFromRectDomain));
 #endif		    
-      }
+      };
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
@@ -682,7 +682,7 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   if (level == 1) {
     // foreach (p, myAPoints.domain().shrink(1)) {
     //   myAPoints[p] = 0;
-    // }
+    // };
     myAPoints.constrict(myAPoints.domain().shrink(1)).set(0);
   }
 
@@ -715,7 +715,7 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
       sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
         myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
       gridBZLine[q] = myBPoints[r];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       myAPoints[r] += S0 * myBPoints[r]
@@ -724,8 +724,8 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
                 sumEdgesOfXYPlane[q[1]+1]);
       // Enable the following if S3 != 0
       // + S3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]);
-    }
-  }
+    };
+  };
 #endif // SPLIT_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_APPLY_SMOOTHER][level][iterationNum]);
@@ -778,7 +778,7 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
         myBPoints[Pzmz(r)] + myBPoints[Pzpz(r)];
       sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
         myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       myCPoints[r] = myAPoints[r]
@@ -789,8 +789,8 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
            + A2 * (sumCornersOfXYPlane[q] + sumEdgesOfXYPlane[q[1]-1] +
                    sumEdgesOfXYPlane[q[1]+1])
            + A3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]));
-    }
-  }
+    };
+  };
 #endif // SPLIT_LOOP
 
   if (level != startLevel) {
@@ -873,7 +873,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myAPoints[Ppzm(s)] + myAPoints[Pzpm(s)];
       sumCornersOfLowerYZPlane[q] = myAPoints[Pmmm(s)] + myAPoints[Ppmm(s)] +
         myAPoints[Pmpm(s)] + myAPoints[Pppm(s)];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       Point<3> s = {{2*r[1]+1, 2*r[2]+1, 2*r[3]+1}};
@@ -886,8 +886,8 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         + P2 * (sumEdgesOfLowerYZPlane[q] + sumEdgesOfLowerYZPlane[q+1] +
                 sumCornersOfCenterYZPlane)
         + P3 * (sumCornersOfLowerYZPlane[q] + sumCornersOfLowerYZPlane[q+1]);
-    }
-  }
+    };
+  };
 #endif // SPLIT_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_COARSEN][level][iterationNum]);
@@ -908,7 +908,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
     if (MYTHREAD == 0) {
       foreach (p, gridB.localBuffersOnProc0.domain()) {
         gridB.points[POINT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
-      }
+      };
     }
 
     TIMER_STOP_READ(myTimer,
@@ -941,7 +941,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
     if (MYTHREAD == 0) {
       foreach (p, gridA.localBuffersOnProc0.domain()) {
         gridA.localBuffersOnProc0[p].copy(gridA.points[POINT(0, 0, 0)]);
-      }
+      };
     }
 
     barrier();
@@ -998,7 +998,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
         sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
           myAPoints[Pppz(r)];
-      }
+      };
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
@@ -1012,8 +1012,8 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myBPoints[Pmzz(s)] = Q2 * (ySumOfLowerXYPlane[q] +
                                   ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] = Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
-      }
-    }
+      };
+    };
 #endif // SPLIT_LOOP
   }
   else {
@@ -1050,7 +1050,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
         sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
           myAPoints[Pppz(r)];
-      }
+      };
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
@@ -1064,8 +1064,8 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myBPoints[Pmzz(s)] += Q2 * (ySumOfLowerXYPlane[q] +
                                    ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] += Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
-      }
-    }
+      };
+    };
   }
 #endif // SPLIT_LOOP
 
@@ -1118,9 +1118,9 @@ void MG::resetProfile() {
     foreach (level, myTimes[timer].domain()) {
       foreach (reading, myTimes[timer][level].domain()) {
         myTimes[timer][level][reading] = 0;
-      }
-    }
-  }
+      };
+    };
+  };
 #ifdef COUNTERS_ENABLED
   myCounter.clear();
 
@@ -1128,9 +1128,9 @@ void MG::resetProfile() {
     foreach (level, myCounts[timer].domain()) {
       foreach (reading, myCounts[timer][level].domain()) {
         myCounts[timer][level][reading] = 0;
-      }
-    }
-  }
+      };
+    };
+  };
 #endif
 #endif
 }
@@ -1189,8 +1189,8 @@ void MG::printSummary() {
     foreach (level, myTimes[timerIdx].domain()) {
       foreach (timing, myTimes[timerIdx][level].domain()) {
         totalComponentTime += myTimes[timerIdx][level][timing];
-      }
-    }
+      };
+    };
 
     double minTotalComponentTime = reduce::min(totalComponentTime);
     double sumTotalComponentTime = reduce::add(totalComponentTime);
@@ -1208,8 +1208,8 @@ void MG::printSummary() {
       foreach (level, myCounts[timerIdx].domain()) {
         foreach (count, myCounts[timerIdx][level].domain()) {
           totalComponentCount += myCounts[timerIdx][level][count];
-        }
-      }
+        };
+      };
 		
       long minTotalComponentCount = reduce::min(totalComponentCount);
       long sumTotalComponentCount = reduce::add(totalComponentCount);
@@ -1302,7 +1302,7 @@ void MG::printProfile() {
             }
             lsum += value;
             numReadingsPerProc++;
-          }
+          };
 
           println("Num Readings On Proc 0:\t" << numReadingsPerProc);
           println("Min Time On Proc 0:\t" << lmin);
@@ -1364,7 +1364,7 @@ void MG::printProfile() {
             lsum3 += value;
             numReadingsPerProc3++;
           }
-        }
+        };
 		    
         double gmin1 = reduce::min(lmin1);
         double gmax1 = reduce::max(lmax1);
@@ -1431,7 +1431,7 @@ void MG::printProfile() {
             lsum2 += value;
             numReadingsPerProc2++;
           }
-        }
+        };
 		    
         double gmin1 = reduce::min(lmin1);
         double gmax1 = reduce::max(lmax1);
@@ -1469,7 +1469,7 @@ void MG::printProfile() {
             minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
             sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
             maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
-          }
+          };
 			
           double sumMins1 = 0;
           double sumSums1 = 0;
@@ -1488,7 +1488,7 @@ void MG::printProfile() {
               sumSums2 += sumArray[p];
               sumMaxs2 += maxArray[p];
             }
-          }
+          };
 			
           double meanMins1 = sumMins1/(domainRange.size()/2);
           double meanMeans1 = (sumSums1/((domainRange.size()/2)*THREADS));
@@ -1530,7 +1530,7 @@ void MG::printProfile() {
           minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
           sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
           maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
-        }
+        };
 
         double sumMins = 0;
         double sumSums = 0;
@@ -1539,7 +1539,7 @@ void MG::printProfile() {
           sumMins += minArray[p];
           sumSums += sumArray[p];
           sumMaxs += maxArray[p];
-        }
+        };
 
         double meanMins = sumMins/domainRange.size();
         double meanMeans = (sumSums/(domainRange.size()*THREADS));
@@ -1569,7 +1569,7 @@ void MG::printProfile() {
           }
           lsum += value;
           numReadingsPerProc++;
-        }
+        };
 		    
         double gmin = reduce::min(lmin);
         double gmax = reduce::max(lmax);
@@ -1606,7 +1606,7 @@ void MG::printProfile() {
               }
               lsum += value;
               numReadingsPerProc++;
-            }
+            };
 
             println("Num Readings On Proc 0:\t" << numReadingsPerProc);
             println("Min Count On Proc 0:\t" << lmin);
@@ -1633,7 +1633,7 @@ void MG::printProfile() {
             }
             lsum += value;
             numReadingsPerProc++;
-          }
+          };
 			
           long gmin = reduce::min(lmin);
           long gmax = reduce::max(lmax);

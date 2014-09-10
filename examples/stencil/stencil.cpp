@@ -151,7 +151,7 @@ void initGrid(ndarray<double, 3> grid) {
 #ifdef RANDOM_VALUES
   foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
-  }
+  };
 #else
   grid.set(CONSTANT_VALUE);
 #endif
@@ -535,7 +535,7 @@ void probe(int steps) {
         myGridA[p + POINT(-1,  0,  0)] +
         WEIGHT * myGridA[p];
 # endif
-    }
+    };
 #endif
     TIMER_STOP(timers[PROBE_COMPUTE]);
     TIMER_START(timers[POST_COMPUTE_BARRIER]);
