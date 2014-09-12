@@ -70,25 +70,35 @@ bool node_comp2(node_t &a, node_t &b)
 void get_reach(const vector<int> &xadj,
                upcxx::shared_array<int> &adj,
                // const vector<int> &adj,
-               vector<node_t> &nodes,
+               upcxx::shared_array<node_t> &nodes,
+               // vector<node_t> &nodes,
                const int min_node_id,
                const int elim_step, 
-               vector<node_t*> &reach_set)
+               // vector<node_t*> &reach_set
+               vector< upcxx::global_ptr<node_t> > &reach_set)
 {
   //this array is used to mark the node so that 
   //they are not added twice into the reachable set
   vector<bool> explored(nodes.size(), false);
   //this list contains the nodes to explore
-  vector<node_t *> explore_set;
-
+  
+  // vector<node_t *> explore_set;
+  vector< upcxx::global_ptr<node_t> > explore_set;
+  
+  /*
+  fprintf(stdout, "get_reach: min_node_id %d, elim_step %d\n",
+          min_node_id, elim_step);
+  */
   //initialize explore_set with the neighborhood
   // of min_node in the original graph 
   int beg = xadj[min_node_id-1];
   int end = xadj[min_node_id]-1;
   for(int i = beg;i<=end;++i){
     int curr_adj = adj[i-1]; // remote access once
+    // fprintf(stdout, "i %d, curr_adj %d\n", i, curr_adj);
     if(curr_adj != 0) {
-      node_t * next_node = &nodes[curr_adj-1];
+      // node_t * next_node = &nodes[curr_adj-1];
+      upcxx::global_ptr<node_t> next_node = &nodes[curr_adj-1];
       explore_set.push_back(next_node);
       explored[curr_adj-1] = true;
     } else {
@@ -100,24 +110,32 @@ void get_reach(const vector<int> &xadj,
   //now find path between min_nodes and other nodes
   while (explore_set.size()>0) {
     //pop a node
-    node_t *cur_node = explore_set.back();
-
+    // node_t *cur_node = explore_set.back();
+    upcxx::global_ptr<node_t> cur_node = explore_set.back();
+    
     explore_set.pop_back();
 
-    if (cur_node->id == min_node_id) {
+    // if (cur_node->id == min_node_id) {
+    if (memberof(cur_node, id) == min_node_id) {
       continue;
     }
 
-    if (cur_node->elim_step == -1) {
+    // if (cur_node->elim_step == -1) {
+    if (memberof(cur_node, elim_step) == -1) {
       reach_set.push_back(cur_node);
     } else {
-      int beg = xadj[cur_node->id-1];  
-      int end = xadj[cur_node->id]-1;
+      // int beg = xadj[cur_node->id-1];
+      int beg = xadj[memberof(cur_node, id) - 1];
+      // int end = xadj[cur_node->id]-1;
+      int end = xadj[memberof(cur_node, id)] - 1;
+      // fprintf(stdout, "beg %d, end %d\n", beg, end);
       for (int i=beg; i<=end; ++i) {
         int curr_adj = adj[i-1]; // remote access once
         if (curr_adj != 0) {
           if (!explored[curr_adj-1]) {
-            node_t *next_node = &nodes[curr_adj-1];
+            // node_t *next_node = &nodes[curr_adj-1];
+            upcxx::global_ptr<node_t> next_node = &nodes[curr_adj-1];
+            
             explore_set.push_back(next_node);
             explored[curr_adj-1] = true;
           }
@@ -139,8 +157,9 @@ int main(int argc, char *argv[])
   srand (seed);
 
   vector<int> xadj;
-  upcxx::shared_array<int> xadj_shared;
-
+  // upcxx::shared_array<int> xadj_shared;
+  // xadj doesn't need to be shared because it's static and relatively small.
+  
   vector<int> local_adj;
   upcxx::shared_array<int> adj;
 
@@ -185,40 +204,48 @@ int main(int argc, char *argv[])
   printf("\n");
 
   int n = xadj.size()-1;
-  vector<node_t> nodes(n);
-  upcxx::shared_array<node_t> nodes_shared(n);
-  nodes_shared.init();
+  // vector<node_t> nodes(n);
+  upcxx::shared_array<node_t> nodes(n);
+  nodes.init();
 
   vector<node_t *> remain(n);
 
-  int initEdgeCnt = 0;
-  int edgeCnt = 0;
+  // YZ: comment out unused variables
+  // int initEdgeCnt = 0;
+  // int edgeCnt = 0;
 
   // YZ: todo "nodes" need to shared or be updated
 
   //initialize nodes
-  for (int i=0; i<n; ++i) {
-    node_t &cur_node = nodes[i];
-    // upcxx::global_ptr<node_t> cur_node = &nodes_shared[i];
+  for (int i = upcxx::myrank(); i < n; i += upcxx::ranks()) {
+    //node_t &cur_node = nodes[i];
+    upcxx::global_ptr<node_t> cur_node = &nodes[i];
 
-    cur_node.id = i+1;
-    // memberof(cur_node, id) = i+1;
+    // cur_node.id = i+1;
+    memberof(cur_node, id) = i+1;
 
-    cur_node.degree = xadj[i+1] - xadj[i];
-    // memberof(cur_node, degree) = xadj[i+1] - xadj[i];
+    // cur_node.degree = xadj[i+1] - xadj[i];
+    memberof(cur_node, degree) = xadj[i+1] - xadj[i];
     
-    cur_node.elim_step = -1;
-    // memberof(cur_node, elim_step) = 1;
+    // cur_node.elim_step = -1;
+    memberof(cur_node, elim_step) = -1;
 
-    remain[i] = &cur_node;
+    // remain[i] = &cur_node;
 
+    /*
     for(int idx = xadj[i]; idx <= xadj[i+1]-1; ++idx) {
       if(local_adj[idx-1]>i+1){
         initEdgeCnt++;
       }
     }
+     */
   }
 
+  upcxx::shared_array<int> all_min_degress(upcxx::ranks());
+  upcxx::shared_array<int> all_min_ids(upcxx::ranks());
+  all_min_degress.init();
+  all_min_ids.init();
+  
   vector<int> schedule;
   // vector< upcxx::global_ptr<node_t> > schedule_shared;
 
@@ -236,41 +263,108 @@ int main(int argc, char *argv[])
     // its local minimum of Un-eliminated nodes and then finds the
     // global minimum by Allreduce(MIN)
 
+    /*
     vector<node_t *>::iterator min_node = std::min_element(remain.begin(), remain.end(), node_comp);
     assert(min_node != remain.end());
-
-    /*
-    for (int i = upcxx:myrank(), node_t *cur_node = nodes_shared[i];
-         i < nodes_shared.local_size();
-         i += upcxx::ranks();) {
-      node_t *my_min;
-      int min_degree = MAX_INT;
-      if (min_degree > cur_node->id) {
-        my_min = current_node;
-      }
-    }
-    if (upcxx::myrank() == 0) {
-      // find the global min node
-    }
     */
     
-    schedule.push_back((*min_node)->id);
+    node_t *local_nodes = (node_t *)&nodes[upcxx::myrank()];
+    node_t *my_min = NULL;
+    // YZ: need to handle the case when n is not a multiple of ranks()!!
+    int local_size = n / upcxx::ranks();
+    if (upcxx::myrank() < (n - local_size * upcxx::ranks())) {
+      local_size++;
+    }
+    printf("step %d, local_size %d\n", step, local_size);
+    int cur_min_degree = -1;
+    for (int i = 0; i < local_size; i++) {
+      node_t *cur_node = &local_nodes[i];
+      if (cur_node->elim_step == -1) {
+        if (cur_min_degree == -1 || cur_node->degree < cur_min_degree) {
+          cur_min_degree = cur_node->degree;
+          my_min = cur_node;
+        }
+      }
+    }
+    assert(my_min != NULL);
+    
+    all_min_degress[upcxx::myrank()] = my_min->degree;
+    all_min_ids[upcxx::myrank()] = my_min->id;
+    
+    printf("Rank %d, my_min->degree %d, my_min->id %d\n",
+           upcxx::myrank(), my_min->degree, my_min->id);
+    
+    upcxx::barrier();
+    
+    int global_min_id;
+    
+    if (upcxx::myrank() == 0) {
+      int cur_min_degree = my_min->degree;
+      int min_rank = 0;
+      // find the global min node
+      for (int i=1; i<upcxx::ranks(); i++) {
+        if (cur_min_degree > all_min_degress[i]) {
+          cur_min_degree = all_min_degress[i];
+          min_rank = i;
+        }
+      }
+      
+      printf("Rank %d, all_min_ids[%d] %d\n",
+             upcxx::myrank(), min_rank, all_min_ids[min_rank].get());
+      
+      for (int i = 0; i < local_size; i++) {
+        node_t *cur_node = &local_nodes[i];
+        fprintf(stdout, "local_nodes[%d], id %d, degree %d, elim_step %d\n",
+                i, local_nodes[i].id, local_nodes[i].degree, local_nodes[i].elim_step);
+      }
+      printf("\n");
 
-    (*min_node)->elim_step = step;
 
+      upcxx::global_ptr<node_t> min_node = &nodes[all_min_ids[min_rank]-1];
+      global_min_id = all_min_ids[min_rank]; // memberof(min_node, id);
+      memberof(min_node, elim_step) = step;
+      
+      fprintf(stdout, "Rank %d, min_node->elim_step %d, min_node->id %d\n",
+              upcxx::myrank(), memberof(min_node, elim_step).get(),
+              memberof(min_node, id).get());
+      
+      fprintf(stdout, "global_min_id %d\n", global_min_id);
+      
+      for (int i = 0; i < local_size; i++) {
+        node_t *cur_node = &local_nodes[i];
+        fprintf(stdout, "local_nodes[%d], id %d, degree %d, elim_step %d\n",
+                i, local_nodes[i].id, local_nodes[i].degree, local_nodes[i].elim_step);
+      }
+      printf("\n");
+
+      
+    }
+    
+    // upcxx::barrier();
+
+
+    
+    upcxx::upcxx_bcast(&global_min_id, &global_min_id, sizeof(int), 0);
+
+    schedule.push_back(global_min_id);
+
+    // (*min_node)->elim_step = step;
+    
     //update the degree of its reachable set
-    vector<node_t *> reach;
+    // vector<node_t *> reach;
+    vector< upcxx::global_ptr<node_t> > reach;
+    
+    get_reach(xadj, adj, nodes, global_min_id, step, reach);
 
-    get_reach(xadj, adj, nodes, (*min_node)->id, step, reach);
-
-    remain.erase(min_node);
+    // remain.erase(min_node);
 
     // YZ: Use UPC++ to parallel this loop.  There is no data dependencies
     // inside the for loop because the get_reach function does not change
     // the original graph (and the adjacency list) though some nodes' degree
     // might be changed.
 #ifdef USE_UPCXX
-    for (vector<node_t *>::iterator it = reach.begin() + upcxx::myrank();
+    // vector< upcxx::global_ptr<node_t> >::iterator
+    for (auto it = reach.begin() + upcxx::myrank();
         it != reach.end();
         it += upcxx::ranks()) {
 #else
@@ -279,10 +373,15 @@ int main(int argc, char *argv[])
          it != reach.end();
          ++it) {
 #endif
-      node_t *cur_neighbor = *it; // YZ: todo: this would need to be a global pointer; another option would be to batch the local updates and then do an allgather at the end
-      vector<node_t *> nghb_reach;
-      get_reach(xadj, adj, nodes, cur_neighbor->id, step+1, nghb_reach);
-      cur_neighbor->degree = nghb_reach.size(); // YZ: todo: need to update the shared copy of Nodes!!  So we can find the new minimum-degree node in the next round.
+      // node_t *cur_neighbor = *it;
+      upcxx::global_ptr<node_t> cur_neighbor = *it;
+      
+      // vector<node_t *> nghb_reach;
+      vector<upcxx::global_ptr<node_t> > nghb_reach;
+      
+      get_reach(xadj, adj, nodes, memberof(cur_neighbor, id).get(), step+1, nghb_reach);
+      // cur_neighbor->degree = nghb_reach.size();
+      memberof(cur_neighbor, degree) = nghb_reach.size();
     }
     upcxx::barrier();
   } // close of  for (int step=1; step<=n; ++step)
@@ -297,7 +396,3 @@ int main(int argc, char *argv[])
 
   return 0;
 }
-
-
-
-

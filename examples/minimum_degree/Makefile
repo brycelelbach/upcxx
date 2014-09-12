@@ -8,7 +8,8 @@ all: clean
 clean:
 	-rm -f *.o $(EXE)
 
-UPCXX_INSTALL_DIR ?= $(HOME)/upcxx_install
+#UPCXX_INSTALL_DIR ?= $(HOME)/upcxx_install
+UPCXX_INSTALL_DIR ?= $(HOME)/install/upcxx_clang
 include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
 
 VPATH=$(UPCXX_INSTALL_DIR)/include
