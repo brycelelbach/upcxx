@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <climits>
 
 #include <stdlib.h>
 #include <time.h>
@@ -30,6 +31,8 @@ struct node_t {
   int degree;
   int elim_step;
 };
+
+void dump_local_nodes(node_t *local_nodes, int n);
 
 bool node_comp(node_t * & a, node_t * & b)
 {
@@ -86,16 +89,19 @@ void get_reach(const vector<int> &xadj,
   vector< upcxx::global_ptr<node_t> > explore_set;
   
   /*
-  fprintf(stdout, "get_reach: min_node_id %d, elim_step %d\n",
-          min_node_id, elim_step);
+  fprintf(stdout, "Rank %d, get_reach: min_node_id %d, elim_step %d\n",
+          upcxx::myrank(), min_node_id, elim_step);
   */
+  
   //initialize explore_set with the neighborhood
   // of min_node in the original graph 
   int beg = xadj[min_node_id-1];
   int end = xadj[min_node_id]-1;
-  for(int i = beg;i<=end;++i){
+  for(int i = beg; i<=end; ++i){
     int curr_adj = adj[i-1]; // remote access once
+    
     // fprintf(stdout, "i %d, curr_adj %d\n", i, curr_adj);
+    
     if(curr_adj != 0) {
       // node_t * next_node = &nodes[curr_adj-1];
       upcxx::global_ptr<node_t> next_node = &nodes[curr_adj-1];
@@ -115,6 +121,8 @@ void get_reach(const vector<int> &xadj,
     
     explore_set.pop_back();
 
+    assert(cur_node.raw_ptr() != NULL);
+    
     // if (cur_node->id == min_node_id) {
     if (memberof(cur_node, id) == min_node_id) {
       continue;
@@ -241,9 +249,9 @@ int main(int argc, char *argv[])
      */
   }
 
-  upcxx::shared_array<int> all_min_degress(upcxx::ranks());
+  upcxx::shared_array<int> all_min_degrees(upcxx::ranks());
   upcxx::shared_array<int> all_min_ids(upcxx::ranks());
-  all_min_degress.init();
+  all_min_degrees.init();
   all_min_ids.init();
   
   vector<int> schedule;
@@ -275,7 +283,7 @@ int main(int argc, char *argv[])
     if (upcxx::myrank() < (n - local_size * upcxx::ranks())) {
       local_size++;
     }
-    printf("step %d, local_size %d\n", step, local_size);
+    // printf("step %d, local_size %d\n", step, local_size);
     int cur_min_degree = -1;
     for (int i = 0; i < local_size; i++) {
       node_t *cur_node = &local_nodes[i];
@@ -286,40 +294,40 @@ int main(int argc, char *argv[])
         }
       }
     }
-    assert(my_min != NULL);
     
-    all_min_degress[upcxx::myrank()] = my_min->degree;
-    all_min_ids[upcxx::myrank()] = my_min->id;
-    
-    printf("Rank %d, my_min->degree %d, my_min->id %d\n",
-           upcxx::myrank(), my_min->degree, my_min->id);
-    
+    if (my_min != NULL) {
+      all_min_degrees[upcxx::myrank()] = my_min->degree;
+      all_min_ids[upcxx::myrank()] = my_min->id;
+    } else {
+      all_min_degrees[upcxx::myrank()] = INT_MAX;
+      all_min_ids[upcxx::myrank()] = -1;
+    }
+    /*
+    if (my_min != NULL) {
+      printf("Rank %d, my_min->degree %d, my_min->id %d\n",
+             upcxx::myrank(), my_min->degree, my_min->id);
+    }
+    */
     upcxx::barrier();
     
     int global_min_id;
     
     if (upcxx::myrank() == 0) {
-      int cur_min_degree = my_min->degree;
+      int cur_min_degree = INT_MAX;
       int min_rank = 0;
       // find the global min node
-      for (int i=1; i<upcxx::ranks(); i++) {
-        if (cur_min_degree > all_min_degress[i]) {
-          cur_min_degree = all_min_degress[i];
+      for (int i=0; i<upcxx::ranks(); i++) {
+        if (cur_min_degree > all_min_degrees[i]) {
+          cur_min_degree = all_min_degrees[i];
           min_rank = i;
         }
       }
       
+      /*
       printf("Rank %d, all_min_ids[%d] %d\n",
              upcxx::myrank(), min_rank, all_min_ids[min_rank].get());
+       */
       
-      for (int i = 0; i < local_size; i++) {
-        node_t *cur_node = &local_nodes[i];
-        fprintf(stdout, "local_nodes[%d], id %d, degree %d, elim_step %d\n",
-                i, local_nodes[i].id, local_nodes[i].degree, local_nodes[i].elim_step);
-      }
-      printf("\n");
-
-
       upcxx::global_ptr<node_t> min_node = &nodes[all_min_ids[min_rank]-1];
       global_min_id = all_min_ids[min_rank]; // memberof(min_node, id);
       memberof(min_node, elim_step) = step;
@@ -327,25 +335,19 @@ int main(int argc, char *argv[])
       fprintf(stdout, "Rank %d, min_node->elim_step %d, min_node->id %d\n",
               upcxx::myrank(), memberof(min_node, elim_step).get(),
               memberof(min_node, id).get());
-      
-      fprintf(stdout, "global_min_id %d\n", global_min_id);
-      
-      for (int i = 0; i < local_size; i++) {
-        node_t *cur_node = &local_nodes[i];
-        fprintf(stdout, "local_nodes[%d], id %d, degree %d, elim_step %d\n",
-                i, local_nodes[i].id, local_nodes[i].degree, local_nodes[i].elim_step);
-      }
-      printf("\n");
-
-      
     }
     
-    // upcxx::barrier();
-
-
+    dump_local_nodes(local_nodes, n);
     
+    upcxx::barrier();
+
     upcxx::upcxx_bcast(&global_min_id, &global_min_id, sizeof(int), 0);
 
+    assert(global_min_id != -1);
+    
+    fprintf(stdout, "Rank %d, global_min_id %d\n",
+            upcxx::myrank(), global_min_id);
+    
     schedule.push_back(global_min_id);
 
     // (*min_node)->elim_step = step;
@@ -365,7 +367,7 @@ int main(int argc, char *argv[])
 #ifdef USE_UPCXX
     // vector< upcxx::global_ptr<node_t> >::iterator
     for (auto it = reach.begin() + upcxx::myrank();
-        it != reach.end();
+        it < reach.end();
         it += upcxx::ranks()) {
 #else
 #pragma omp parallel for
@@ -386,13 +388,34 @@ int main(int argc, char *argv[])
     upcxx::barrier();
   } // close of  for (int step=1; step<=n; ++step)
 
-  cout<<"Schedule: ";
-  for (int step=1; step<=n; ++step) {
-    cout << " " << schedule[step-1];
+  for (int i = 0; i < upcxx::ranks(); i++) {
+    if (upcxx::myrank() == i) {
+      cout << "\n";
+      cout<<"Rank " << upcxx::myrank() << " Schedule: ";
+      for (int step=1; step<=n; ++step) {
+        cout << " " << schedule[step-1];
+      }
+      cout << "\n";
+    }
+    upcxx::barrier();
   }
-  cout << "\n\n";
 
   upcxx::finalize();
 
   return 0;
 }
+  
+void dump_local_nodes(node_t *local_nodes, int n)
+  {
+    int local_size = n / upcxx::ranks();
+    if (upcxx::myrank() < (n - local_size * upcxx::ranks())) {
+      local_size++;
+    }
+    for (int i = 0; i < local_size; i++) {
+      node_t *cur_node = &local_nodes[i];
+      fprintf(stdout, "local_nodes[%d], id %d, degree %d, elim_step %d\n",
+              i, local_nodes[i].id, local_nodes[i].degree, local_nodes[i].elim_step);
+    }
+    printf("\n");
+  }
+  
