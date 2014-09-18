@@ -52,24 +52,6 @@ bool node_comp(node_t * & a, node_t * & b)
   }
 }
 
-bool node_comp2(node_t &a, node_t &b)
-{
-  if (a.degree < b.degree) {
-    return true;
-  } else {
-    if(a.degree == b.degree) {
-#ifdef USE_RANDOM_TIE_BREAK
-      double tmp = fmod(rand(),10.0);
-      return (tmp>5.0);
-#else
-      return a.id < b.id; // use deterministic tie break
-#endif
-    } else {
-      return false;
-    }
-  }
-}
-
 void get_reach(const vector<int> &xadj,
                upcxx::shared_array<int> &adj,
                // const vector<int> &adj,
@@ -99,9 +81,6 @@ void get_reach(const vector<int> &xadj,
   int end = xadj[min_node_id]-1;
   for(int i = beg; i<=end; ++i){
     int curr_adj = adj[i-1]; // remote access once
-    
-    // fprintf(stdout, "i %d, curr_adj %d\n", i, curr_adj);
-    
     if(curr_adj != 0) {
       // node_t * next_node = &nodes[curr_adj-1];
       upcxx::global_ptr<node_t> next_node = &nodes[curr_adj-1];
@@ -209,7 +188,7 @@ int main(int argc, char *argv[])
     adj[i] = local_adj[i];
     // printf("adj[%lu] %d ", i, (int)adj[i]);
   }
-  printf("\n");
+  // printf("\n");
 
   int n = xadj.size()-1;
   // vector<node_t> nodes(n);
@@ -221,8 +200,6 @@ int main(int argc, char *argv[])
   // YZ: comment out unused variables
   // int initEdgeCnt = 0;
   // int edgeCnt = 0;
-
-  // YZ: todo "nodes" need to shared or be updated
 
   //initialize nodes
   for (int i = upcxx::myrank(); i < n; i += upcxx::ranks()) {
@@ -331,13 +308,14 @@ int main(int argc, char *argv[])
       upcxx::global_ptr<node_t> min_node = &nodes[all_min_ids[min_rank]-1];
       global_min_id = all_min_ids[min_rank]; // memberof(min_node, id);
       memberof(min_node, elim_step) = step;
-      
+      /*
       fprintf(stdout, "Rank %d, min_node->elim_step %d, min_node->id %d\n",
               upcxx::myrank(), memberof(min_node, elim_step).get(),
               memberof(min_node, id).get());
+       */
     }
     
-    dump_local_nodes(local_nodes, n);
+    // dump_local_nodes(local_nodes, n);
     
     upcxx::barrier();
 
@@ -345,8 +323,10 @@ int main(int argc, char *argv[])
 
     assert(global_min_id != -1);
     
+    /*
     fprintf(stdout, "Rank %d, global_min_id %d\n",
             upcxx::myrank(), global_min_id);
+    */
     
     schedule.push_back(global_min_id);
 
