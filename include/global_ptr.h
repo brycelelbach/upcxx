@@ -88,7 +88,7 @@ namespace upcxx
 
     explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, global_myrank()) {}
 
-    explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, global_myrank()) { }
+     // explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, global_myrank()) { }
 
     inline
     global_ptr(T *ptr, rank_t pla) :
