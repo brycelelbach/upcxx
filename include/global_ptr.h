@@ -78,7 +78,7 @@ namespace upcxx
    *
    * \see test_global_ptr.cpp
    */
-  template<typename T = void>
+  template<typename T>
   class global_ptr : public base_ptr<T, rank_t>
   {
     typedef T value_type;
@@ -139,8 +139,10 @@ namespace upcxx
   struct global_ptr<void> : public base_ptr<void, rank_t>
   {
   public:
-    inline global_ptr(void *ptr = NULL, rank_t pla = myrank()) :
-    base_ptr<void, rank_t>(ptr, pla) {}
+    inline explicit global_ptr() : base_ptr<void, rank_t>(NULL, 0) {}
+
+    inline explicit global_ptr(void *ptr, rank_t pla = global_myrank()) :
+      base_ptr<void, rank_t>(ptr, pla) {}
 
     inline global_ptr(const base_ptr<void, rank_t> &p)
     : base_ptr<void, rank_t>(p) {}
