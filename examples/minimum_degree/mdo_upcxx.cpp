@@ -96,36 +96,25 @@ void get_reach(upcxx::shared_array<node_t> &nodes,
   //now find path between min_nodes and other nodes
   while (explore_set.size()>0) {
     //pop a node
-    // node_t *cur_node = explore_set.back();
     upcxx::global_ptr<node_t> cur_node_p = explore_set.back();
     explore_set.pop_back();
     assert(cur_node_p.raw_ptr() != NULL);
     node_t cur_node = *cur_node_p;
 
-    // if (cur_node->id == min_node_id) {
     if (cur_node.id == min_node_id) {
       continue;
     }
 
-    // if (cur_node->elim_step == -1) {
     if (cur_node.elim_step == -1) {
       reach_set.push_back(cur_node_p);
     } else {
       int *local_adj = new int[cur_node.adj_sz];
       upcxx::copy(cur_node.adj, upcxx::global_ptr<int>(local_adj), cur_node.adj_sz);
-
-      // int beg = xadj[cur_node->id-1];
-      // int end = xadj[cur_node->id]-1;
-      // fprintf(stdout, "beg %d, end %d\n", beg, end);
-
-      //  for (int i=beg; i<=end; ++i) {
       for(int i = 0; i< cur_node.adj_sz; ++i){
         int curr_adj = local_adj[i];
         if (curr_adj != 0) {
           if (!explored[curr_adj-1]) {
-            // node_t *next_node = &nodes[curr_adj-1];
             upcxx::global_ptr<node_t> next_node = &nodes[curr_adj-1];
-            
             explore_set.push_back(next_node);
             explored[curr_adj-1] = true;
           }
@@ -142,6 +131,7 @@ void get_reach(upcxx::shared_array<node_t> &nodes,
 int main(int argc, char *argv[]) 
 {
   upcxx::init(&argc, &argv);
+  double io_time = mysecond();
 
   /* initialize random seed: */
   int seed =time(NULL); 
@@ -184,6 +174,9 @@ int main(int argc, char *argv[])
   }
 
   infile.close();
+
+  io_time = mysecond() - io_time;
+  double init_time = mysecond();
 
   int n = xadj.size()-1;
   // vector<node_t> nodes(n);
@@ -232,6 +225,9 @@ int main(int argc, char *argv[])
   all_min_degrees.init();
   all_min_ids.init();
   
+  init_time = mysecond() - init_time;
+  double mdo_time = mysecond();
+
   vector<int> schedule;
   // vector< upcxx::global_ptr<node_t> > schedule_shared;
 
@@ -291,8 +287,6 @@ int main(int argc, char *argv[])
     
     schedule.push_back(global_min_id);
 
-    // (*min_node)->elim_step = step;
-    
     //update the degree of its reachable set
     vector< upcxx::global_ptr<node_t> > reach;
     get_reach(nodes, global_min_id, step, reach);
@@ -325,6 +319,8 @@ int main(int argc, char *argv[])
     upcxx::barrier();
   } // close of  for (int step=1; step<=n; ++step)
 
+  mdo_time = mysecond() - mdo_time;
+
   for (int i = 0; i < upcxx::ranks(); i++) {
     if (upcxx::myrank() == i) {
       cout << "\n";
@@ -337,6 +333,15 @@ int main(int argc, char *argv[])
     upcxx::barrier();
   }
 
+  if (upcxx::myrank() == 0) {
+    printf("\nMinimum degree ordering algorithm time breakdown on rank 0:\n");
+    printf("  io time (read graph from file into memory): %g s\n", io_time);
+    printf("  setup time (initialize data structures): %g s\n", init_time);
+    printf("  main algorithm time (compute the minimum degree ordering): %g s\n", mdo_time);
+    printf("\n");
+  }
+
+  upcxx::barrier();
   upcxx::finalize();
 
   return 0;
