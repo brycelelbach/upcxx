@@ -84,7 +84,7 @@ void gen_matrix()
   for (int i = 0; i < A.m_blks(); i++) {
     for (int j = 0; j < A.n_blks(); j++) {
       global_ptr<double> curr_block = A(i, j);
-      if (curr_block.where().islocal()) {
+      if (curr_block.where() == myrank()) {
         std::generate((double *)curr_block.raw_ptr(), // begin
                       (double *)curr_block.raw_ptr() + (A.blk_sz() * A.blk_sz()),
                       random_double);
@@ -98,7 +98,7 @@ void gen_matrix()
   for (int i = 0; i < B.m_blks(); i++) {
     for (int j = 0; j < B.n_blks(); j++) {
       global_ptr<double > curr_block = B(i, j);
-      if (curr_block.where().islocal()) {
+      if (curr_block.where() == myrank()) {
         std::generate((double *)curr_block.raw_ptr(), // begin
                       (double *)curr_block.raw_ptr() + (B.blk_sz() * B.blk_sz()),
                       random_double);
@@ -109,7 +109,7 @@ void gen_matrix()
   for (int i = 0; i < C.m_blks(); i++) {
     for (int j = 0; j < C.n_blks(); j++) {
       global_ptr<double > curr_block = C(i, j);
-      if (curr_block.where().islocal()) {
+      if (curr_block.where() == myrank()) {
         memset(curr_block.raw_ptr(), 0, sizeof(double) * C.blk_sz() * C.blk_sz()); // begin
       }
     }
@@ -136,7 +136,7 @@ void summa(global_matrix<T> &A, global_matrix<T> &B, global_matrix<T> &C)
   int pgrid_ncol = A.pgrid_ncol();
   int myrow, mycol;
 
-  A.node_to_pgrid(my_node, myrow, mycol);
+  A.node_to_pgrid(myrank(), myrow, mycol);
 
   for (int k = 0; k < l_blks; k++) {
     for (int i = 0; i < m_blks; i += pgrid_nrow) {
