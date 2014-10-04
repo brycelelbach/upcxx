@@ -197,16 +197,16 @@ namespace upcxx
     }
 
     // convert a coordinate in the 2-D processor grid to a CPU place
-    node pgrid_to_node(int myrow, int mycol)
+    rank_t pgrid_to_node(int myrow, int mycol)
     {
       assert(myrow < _pgrid_nrow);
       assert(mycol < _pgrid_ncol);
-      return node(myrow * _pgrid_ncol + mycol);
+      return myrow * _pgrid_ncol + mycol;
     }
 
-    void node_to_pgrid(node pla, int &myrow, int &mycol)
+    void node_to_pgrid(rank_t pla, int &myrow, int &mycol)
     {
-      int id = pla.id();
+      int id = pla;
 
       myrow = id / _pgrid_ncol;
       mycol = id % _pgrid_ncol;
@@ -225,7 +225,7 @@ namespace upcxx
       assert(!_allocated); // need to deallocate first
       assert(m_blks > 0 && n_blks > 0 && blk_sz > 0);
       assert(pgrid_nrow > 0 && pgrid_ncol > 0
-             && (pgrid_nrow * pgrid_ncol == upcxx::ranks());
+             && pgrid_nrow * pgrid_ncol == upcxx::ranks());
 
       _m_blks = m_blks;
       _n_blks = n_blks;
