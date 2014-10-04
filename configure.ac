@@ -29,12 +29,15 @@ AC_PROG_CXX
 AC_PROG_CC
 
 AC_ARG_WITH([gasnet],
-  [AS_HELP_STRING([--with-gasnet],
-    [path to gasnet conduit-specific makefile])],
-  [AC_CHECK_FILE(["$withval"],
-    AC_SUBST([GASNET_MAKEFILE], ["$withval"]),
-    AC_MSG_FAILURE([Could not find GASNet Makefile.]))],
-  [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=/opt/gasnet/smp-conduit/smp-seq.mak etc.])]
+  [AS_HELP_STRING([--with-gasnet], [path to gasnet conduit-specific makefile])],
+  [
+    if test -f "$withval" ; then
+      AC_SUBST([GASNET_MAKEFILE], ["$withval"])
+    else    
+      AC_MSG_FAILURE([Could not find GASNet Makefile.])
+    fi
+  ],
+  [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=$gasnet_install_path/mpi-conduit/mpi-seq.mak or $bupc_install_path/opt/include/smp-conduit/mpi-seq.mak])]
 )
 
 AC_LANG(C++)
