@@ -329,12 +329,12 @@ namespace upcxx
     max_out = (max_out >= 0) ? max_out : MAX_DISPATCHED_OUT;
 
     if (max_in > 0) {
-      num_out = advance_out_task_queue(out_task_queue, max_out);
-      assert(num_out >= 0);
-    }
-    if (max_out > 0) {
       num_in = advance_in_task_queue(in_task_queue, max_in);
       assert(num_in >= 0);
+    }
+    if (max_out > 0) {
+      num_out = advance_out_task_queue(out_task_queue, max_out);
+      assert(num_out >= 0);
     }
 
     // check outstanding events

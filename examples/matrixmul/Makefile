@@ -8,11 +8,12 @@ all: clean
 clean:
 	-rm -f *.o $(EXES)
 
-UPCXX_INSTALL_DIR ?= /tmp/upcxx_install
+#UPCXX_INSTALL_DIR ?= $(HOME)/upcxx_install
+UPCXX_INSTALL_DIR ?= $(HOME)/install/upcxx_clang/
 include $(UPCXX_INSTALL_DIR)/include/upcxx.mak
 
 VPATH=$(UPCXX_INSTALL_DIR)/include
- 
+
 #LIBS += -L $(UPCXX_INSTALL_DIR)/lib -lupcxx 
 
 CXX=mpicxx # -mkl
@@ -34,6 +35,7 @@ ESSL = -L/soft/apps/ESSL-4.4.1-1/lib -lesslsmpbg -L/soft/apps/ibmcmp/xlmass/bg/4
 #BLAS = $(ESSL)
 #BLAS = $(MKL)
 
+## For MAC OS
 LDFLAGS +=  -framework Accelerate 
 
 #CXXFLAGS += -I$(MKL_INC)
