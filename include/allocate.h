@@ -65,6 +65,6 @@ namespace upcxx
   template<typename T>
   void deallocate(global_ptr<T> ptr)
   {
-    void deallocate(global_ptr<void>(ptr));
+    deallocate(global_ptr<void>(ptr));
   }
 } // namespace upcxx
