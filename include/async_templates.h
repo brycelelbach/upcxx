@@ -24,6 +24,15 @@ namespace upcxx
   /*************************************/
 
 
+  template <typename Function>
+  struct generic_arg0 {
+    Function kernel;
+
+
+    generic_arg0(Function k) :
+      kernel(k) { }
+  };
+
   template <typename Function, typename T1>
   struct generic_arg1 {
     Function kernel;
@@ -341,13 +350,22 @@ namespace upcxx
   /************************************/
 
 
+  template<typename Function>
+  void async_wrapper0(void *args)
+  {
+    generic_arg0<Function> *a =
+      (generic_arg0<Function> *)args;
+
+    a->kernel();
+  }
+
   template<typename Function, typename T1>
   void async_wrapper1(void *args)
   {
     generic_arg1<Function, T1> *a =
       (generic_arg1<Function, T1> *)args;
 
-    (*a->kernel)(a->arg1);
+    a->kernel(a->arg1);
   }
 
   template<typename Function, typename T1, typename T2>
@@ -356,7 +374,7 @@ namespace upcxx
     generic_arg2<Function, T1, T2> *a =
       (generic_arg2<Function, T1, T2> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2);
+    a->kernel(a->arg1, a->arg2);
   }
 
   template<typename Function, typename T1, typename T2, typename T3>
@@ -365,7 +383,7 @@ namespace upcxx
     generic_arg3<Function, T1, T2, T3> *a =
       (generic_arg3<Function, T1, T2, T3> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3);
+    a->kernel(a->arg1, a->arg2, a->arg3);
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
@@ -375,7 +393,7 @@ namespace upcxx
     generic_arg4<Function, T1, T2, T3, T4> *a =
       (generic_arg4<Function, T1, T2, T3, T4> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4);
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4);
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
@@ -385,7 +403,7 @@ namespace upcxx
     generic_arg5<Function, T1, T2, T3, T4, T5> *a =
       (generic_arg5<Function, T1, T2, T3, T4, T5> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5);
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5);
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
@@ -395,7 +413,7 @@ namespace upcxx
     generic_arg6<Function, T1, T2, T3, T4, T5, T6> *a =
       (generic_arg6<Function, T1, T2, T3, T4, T5, T6> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6);
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6);
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
@@ -405,7 +423,7 @@ namespace upcxx
     generic_arg7<Function, T1, T2, T3, T4, T5, T6, T7> *a =
       (generic_arg7<Function, T1, T2, T3, T4, T5, T6, T7> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7);
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7);
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
@@ -415,7 +433,7 @@ namespace upcxx
     generic_arg8<Function, T1, T2, T3, T4, T5, T6, T7, T8> *a =
       (generic_arg8<Function, T1, T2, T3, T4, T5, T6, T7, T8> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8);
   }
 
@@ -427,7 +445,7 @@ namespace upcxx
     generic_arg9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9> *a =
       (generic_arg9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9);
   }
 
@@ -439,7 +457,7 @@ namespace upcxx
     generic_arg10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> *a =
       (generic_arg10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10);
   }
 
@@ -452,7 +470,7 @@ namespace upcxx
       (generic_arg11<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11);
   }
 
@@ -466,7 +484,7 @@ namespace upcxx
       (generic_arg12<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12);
   }
 
@@ -480,7 +498,7 @@ namespace upcxx
       (generic_arg13<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13);
   }
 
@@ -495,7 +513,7 @@ namespace upcxx
       (generic_arg14<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14);
   }
 
@@ -510,7 +528,7 @@ namespace upcxx
       (generic_arg15<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14, T15> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14,
         a->arg15);
   }
@@ -526,7 +544,7 @@ namespace upcxx
       (generic_arg16<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14, T15, T16> *)args;
 
-    (*a->kernel)(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
+    a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14,
         a->arg15, a->arg16);
   }

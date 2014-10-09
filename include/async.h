@@ -63,8 +63,11 @@ namespace upcxx
     inline async_task(rank_t caller, rank_t callee, event *ack,
                       Function kernel)
     {
+      generic_arg0<Function> args(kernel);
       init_async_task(caller, callee, ack,
-                      (generic_fp)kernel, 0, (void *)NULL);
+                      async_wrapper0<Function>,
+                      (size_t)sizeof(args),
+                      (void *)&args);
     }
 
     template<typename Function, typename T1>

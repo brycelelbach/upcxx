@@ -20,18 +20,18 @@ namespace upcxx
   /* Active Message argument templates */
   /*************************************/
 
-  $range i 1..maxargs
+  $range i 0..maxargs
   $for i [[
   $range j 1..i
 
-  template <typename Function, $for j, [[typename T$j]]>
+  template <typename Function$for j [[, typename T$j]]>
   struct generic_arg$i {
     Function kernel;
     $for j 
     [[T$j arg$j;]] 
    
-    generic_arg$i(Function k, $for j, [[T$j a$j]]) :
-      kernel(k), $for j, [[arg$j(a$j)]] { }
+    generic_arg$i(Function k$for j [[, T$j a$j]]) :
+      kernel(k)$for j [[, arg$j(a$j)]] { }
   };
   ]] $$ end of for i
                
@@ -39,17 +39,17 @@ namespace upcxx
   /* Active Message wrapper functions */
   /************************************/
 
-  $range i 1..maxargs 
+  $range i 0..maxargs 
   $for i [[
   $range j 1..i
   
-  template<typename Function, $for j, [[typename T$j]]>
+  template<typename Function$for j [[, typename T$j]]>
   void async_wrapper$i(void *args)
   {
-    generic_arg$i<Function, $for j, [[T$j]]> *a = 
-      (generic_arg$i<Function, $for j, [[T$j]]> *)args;
+    generic_arg$i<Function$for j [[, T$j]]> *a = 
+      (generic_arg$i<Function$for j [[, T$j]]> *)args;
 
-    (*a->kernel)($for j, [[a->arg$j]]);
+    a->kernel($for j, [[a->arg$j]]);
   }
   ]] $$ end of for i
 
