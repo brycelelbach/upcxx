@@ -308,7 +308,10 @@ namespace upcxx
     template<typename Function>
     inline void operator()(Function kernel)
     {
-      launch((generic_fp)kernel, (void *)NULL, (size_t)0);
+      async_task task(myrank(), _there, _ack, kernel);
+      submit_task(&task, _after);
+
+      //launch((generic_fp)kernel, (void *)NULL, (size_t)0);
     }
 
     typedef void (*K1s)(group);

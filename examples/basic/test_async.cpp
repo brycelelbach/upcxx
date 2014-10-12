@@ -33,8 +33,7 @@ int main(int argc, char **argv)
     async(i)(print_task, 1000+i);
 #else
     printf("Rank %d calls a lambda function on rank %d\n", myrank(), i);
-    async(i)([] (int n) { printf("Rank %d n %d\n", myrank(), n); },
-             1000+i);
+    async(i)([=] () { printf("Rank %d n %d\n", myrank(), 1000+i); });
 #endif
   }
 
