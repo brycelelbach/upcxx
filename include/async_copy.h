@@ -37,6 +37,18 @@ namespace upcxx
     return copy((global_ptr<void>)src, (global_ptr<void>)dst, nbytes);
   }
 
+  template<typename T>
+  inline int copy(global_ptr<T> src, T* dst, size_t count)
+  {
+      return copy(src, global_ptr<T>(dst), count);
+  }
+
+  template<typename T>
+  inline int copy(T* src, global_ptr<T> dst, size_t count)
+  {
+    return copy(global_ptr<T>(src), dst, count);
+  }
+
   int async_copy(global_ptr<void> src,
                  global_ptr<void> dst,
                  size_t bytes,
@@ -70,13 +82,17 @@ namespace upcxx
                       e);
   }
 
-  // YZ: Deprecated, should use async_wait() instead
+  /**
+   * async_copy_fence is deprecated. Please use async_wait() instead.
+   */
   inline void async_copy_fence()
   {
     gasnet_wait_syncnbi_all();
   }
 
-  // YZ: Deprecated, should async_try() instead
+  /**
+   * async_copy_try is deprecated. Please async_try() instead.
+   */
   inline int async_copy_try()
   {
     return gasnet_try_syncnbi_all();
