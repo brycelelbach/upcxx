@@ -178,7 +178,7 @@ namespace upcxx
   };
 
   template<typename T>
-  inline std::ostream& operator<<(std::ostream& out, global_ptr<T> ptr)
+  std::ostream& operator<<(std::ostream& out, global_ptr<T> ptr)
   {
     return out << "{ " << ptr.where() << " addr: " << ptr.raw_ptr() << " }";
   }

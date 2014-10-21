@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
   async(all)(print_task, 123, 456);
 
-  upcxx::wait();
+  upcxx::async_wait();
 
   printf("Node %d spawns %d tasks sequentially...\n",
          MYTHREAD, THREADS);
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     async(i)(print_task, 1000+i, 456);
   }
 
-  upcxx::wait();
+  upcxx::async_wait();
 
   return 0;
 }

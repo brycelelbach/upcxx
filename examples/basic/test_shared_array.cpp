@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     async(i)(update);
   }
 
-  upcxx::wait();
+  upcxx::async_wait();
 
   for (size_t i=0; i<ARRAY_SIZE; i++) {
     // printf("A[%lu]=%lu ", i, (unsigned long)A[i]);

@@ -130,35 +130,15 @@ namespace upcxx
   void pop_event();
   event *peek_event();
 
-  inline void wait(event *e)
+  inline void async_wait(event *e)
   {
     if (e != NULL) {
       e->wait();
     }
   }
 
-  inline void async_wait()
-  {
-    while (!outstanding_events.empty()) {
-      upcxx::advance(1,10);
-    }
-    system_event.wait();
-    gasnet_wait_syncnbi_all();
-  }
+  void async_wait();
 
-  inline void wait() { async_wait(); } // for backward compatibility
-
-  inline int async_try(event *e = peek_event())
-  {
-    // There is at least the default event.
-    assert (e != NULL);
-
-    int rv = e->async_try();
-
-    if (e == &system_event) {
-      rv = rv && gasnet_try_syncnbi_all();
-    }
-    return rv;
-  }
+  int async_try(event *e = peek_event());
 
 } // namespace upcxx
