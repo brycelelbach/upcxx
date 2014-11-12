@@ -39,6 +39,13 @@ extern "C"
 // In gasnet_team_coll.h
 void gasnete_coll_team_free(gasnet_team_handle_t team);
 
+// Return true if process n is in the same supernode as the calling process
+bool upcxx_gasnet_pshm_in_supernode(gasnet_node_t n);
+
+// Return local version of remote in-supernode address if the data
+// pointed to is on the same supernode (shared-memory node)
+void *upcxx_gasnet_pshm_addr2local(gasnet_node_t n, void *addr);
+
 /* GASNET AM functions */
 enum am_index_t {
   // 128 is the beginning AM number for GASNet client

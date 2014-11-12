@@ -20,6 +20,7 @@ bin_PROGRAMS = \
   test_event2 \
   test_finish \
   test_global_ptr \
+  test_process_shared_mem \
   test_remote_inc \
   test_shared_array \
   test_shared_array2 \
@@ -37,6 +38,7 @@ test_event_SOURCES = test_event.cpp
 test_event2_SOURCES = test_event2.cpp
 test_finish_SOURCES = test_finish.cpp
 test_global_ptr_SOURCES = test_global_ptr.cpp
+test_process_shared_mem_SOURCES = test_process_shared_mem.cpp
 test_remote_inc_SOURCES = test_remote_inc.cpp
 test_shared_array_SOURCES = test_shared_array.cpp
 test_shared_array2_SOURCES = test_shared_array2.cpp

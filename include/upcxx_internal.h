@@ -97,7 +97,9 @@ namespace upcxx
   extern gasnet_seginfo_t *all_gasnet_seginfo;
   extern gasnet_seginfo_t *my_gasnet_seginfo;
   extern mspace _gasnet_mspace;
-
+  extern gasnet_nodeinfo_t *all_gasnet_nodeinfo;
+  extern gasnet_nodeinfo_t *my_gasnet_nodeinfo;
+  extern gasnet_node_t my_gasnet_supernode;
   static inline void init_gasnet_seg_mspace()
   {
     all_gasnet_seginfo =
@@ -121,4 +123,19 @@ namespace upcxx
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment);
   void *gasnet_seg_alloc(size_t nbytes);
 
+  // Return the supernode of node n in GASNet
+  static inline gasnet_node_t gasnet_supernode_of(gasnet_node_t n)
+  {
+    assert(all_gasnet_seginfo != NULL);
+    return all_gasnet_nodeinfo[n].supernode;
+  }
+
+#if GASNET_PSHM
+  static inline uintptr_t gasnet_pshm_offset(gasnet_node_t n)
+  {
+    assert(all_gasnet_nodeinfo != NULL);
+    return all_gasnet_nodeinfo[n].offset;
+  }
+#endif
+  
 } // namespace upcxx

@@ -15,6 +15,10 @@ using namespace std;
 
 namespace upcxx
 {
+  bool is_memory_shared_with(rank_t r);
+
+  void *pshm_remote_addr2local(rank_t r, void *addr);
+
   /// \cond SHOW_INTERNAL
   // base_ptr is the base class of global pointer types.
   template<typename T, typename place_t>
@@ -105,7 +109,18 @@ namespace upcxx
     // type casting operator for local pointers
     operator T*() const
     {
-      return this->raw_ptr();
+      if (this->where() == global_myrank()) {
+        // return raw_ptr if the data pointed to is on the same rank
+        return this->raw_ptr();
+      }
+
+#if GASNET_PSHM
+      return (T*)pshm_remote_addr2local(this->where(), this->raw_ptr());
+#endif
+      
+      // return NULL if this global address can't casted to a valid
+      // local address
+      return NULL;
     }
 
     template <typename T2>
@@ -157,8 +172,20 @@ namespace upcxx
       : base_ptr<void, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
-    operator void*() {
-      return this->raw_ptr();
+    operator void*()
+    {
+      if (this->where() == global_myrank()) {
+        // return raw_ptr if the data pointed to is on the same rank
+        return this->raw_ptr();
+      }
+      
+#if GASNET_PSHM
+      return pshm_remote_addr2local(this->where(), this->raw_ptr());
+#endif
+         
+      // return NULL if this global address can't casted to a valid
+      // local address
+      return NULL;
     }
 
     // type casting operator for placed pointers

@@ -73,7 +73,10 @@ namespace upcxx
   gasnet_seginfo_t *all_gasnet_seginfo;
   gasnet_seginfo_t *my_gasnet_seginfo;
   mspace _gasnet_mspace = 0;
-
+  gasnet_nodeinfo_t *all_gasnet_nodeinfo;
+  gasnet_nodeinfo_t *my_gasnet_nodeinfo;
+  gasnet_node_t my_gasnet_supernode;
+  
   gasnet_hsl_t async_lock;
   // queue_t *async_task_queue = NULL;
   gasnet_hsl_t in_task_queue_lock;
@@ -126,6 +129,17 @@ namespace upcxx
     _global_ranks = gasnet_nodes();
     _global_myrank = gasnet_mynode();
 
+    // Get gasnet_nodeinfo for PSHM support
+    all_gasnet_nodeinfo
+      = (gasnet_nodeinfo_t *)malloc(sizeof(gasnet_nodeinfo_t) * _global_ranks);
+    assert(all_gasnet_nodeinfo != NULL);
+    if (gasnet_getNodeInfo(all_gasnet_nodeinfo, _global_ranks) != GASNET_OK) {
+      cerr << "Unable to get GASNet nodeinfo: aborting\n";
+      gasnet_exit(1);
+    }
+    my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
+    my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
+    
     // Allocate gasnet segment space for shared_var
     if (total_shared_var_sz != 0) {
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -421,4 +435,28 @@ namespace upcxx
   {
     return gasnet_seg_memalign(nbytes, 64);
   }
+
+  // Return true if they physical memory of rank r can be shared and
+  // directly accessed by the calling process (usually via some kind
+  // of process-shared memory mechanism)
+  bool is_memory_shared_with(rank_t r)
+  {
+    assert(all_gasnet_nodeinfo != NULL);
+    return all_gasnet_nodeinfo[r].supernode == my_gasnet_supernode;
+  }
+
+  // Return local version of remote in-supernode address if the data
+  // pointed to is on the same supernode (shared-memory node)
+  void *pshm_remote_addr2local(rank_t r, void *addr)
+  {
+#if GASNET_PSHM
+    if (is_memory_shared_with(r) == false)
+      return NULL;
+    
+    return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
+#else
+    return NULL; // always return NULL if no PSHM support
+#endif
+  }
 } // namespace upcxx
+
