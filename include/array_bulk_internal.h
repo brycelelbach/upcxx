@@ -62,8 +62,8 @@ namespace upcxx {
   MEDIUM_HANDLER_DECL(strided_pack_request, 3, 6);
   MEDIUM_HANDLER_DECL(strided_pack_reply, 4, 8);
   MEDIUM_HANDLER_DECL(strided_unpackAll_request, 4, 7);
-  SHORT_HANDLER_DECL(strided_unpack_reply, 2, 3);
-  LONG_HANDLER_DECL(strided_unpackData_request, 4, 7);
+  SHORT_HANDLER_DECL(strided_unpack_reply, 3, 5);
+  LONG_HANDLER_DECL(strided_unpackData_request, 5, 9);
   MEDIUM_HANDLER_DECL(strided_unpackOnly_request, 4, 7);
 
   MEDIUM_HANDLER_DECL(sparse_simpleScatter_request, 3, 6);
