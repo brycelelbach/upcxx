@@ -1235,6 +1235,11 @@ extern void array_bulk_init(){
   }
   else{
     upcxxa_new_array_am = atoi(new_array_amstr);
+    if (upcxx::myrank() == 0) {
+      std::cout << "Manually "
+                << (upcxxa_new_array_am ? "enabling" : "disabling")
+                << " new array copy AM implementation" << std::endl;
+    }
   }
 }
 
