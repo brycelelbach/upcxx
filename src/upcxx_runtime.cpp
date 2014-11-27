@@ -161,6 +161,9 @@ namespace upcxx
     // Initialize Team All
     team_all.init_global_team();
 
+    // Initialize PSHM teams
+    init_pshm_teams(all_gasnet_nodeinfo, _global_ranks);
+
     // Because we assume the data and text segments of processes are
     // aligned (offset is always 0).  We are not using the offsets arrays for
     // now.

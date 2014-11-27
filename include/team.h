@@ -260,9 +260,10 @@ namespace upcxx
   }
   */
 
-} // namespace upcxx
+extern team team_all;
+extern std::vector< std::vector<rank_t> > pshm_teams;
 
-extern upcxx::team team_all;
+} // namespace upcxx
 
 // Dynamically scoped hierarchical team construct
 #define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)

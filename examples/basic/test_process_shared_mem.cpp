@@ -36,7 +36,20 @@ int main(int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
 
-  dom.num_boxes = 4*4*4;
+  // print out pshm_teams
+  // std::vector< std::vector<rank_t> > pshm_teams;
+  if (upcxx::myrank() == 0) {
+    for (uint32_t i=0; i<upcxx::pshm_teams.size(); i++) {
+      std::cout << "PSHM team " << i << ": ( ";
+      for (uint32_t j=0; j<upcxx::pshm_teams[i].size(); j++) {
+        std::cout << upcxx::pshm_teams[i][j] << " ";
+      }
+      std::cout << ")\n";
+    }
+  }
+  upcxx::barrier();
+
+  dom.num_boxes = 3*3*3;
 
   dom.boxes.init(dom.num_boxes, 1); // cyclic distribution
 
@@ -50,10 +63,10 @@ int main(int argc, char **argv)
 
   // If I'm the first guy in the shared-memory node, I do the setup.
   if (MYTHREAD == 0) {
-    for (int i=0; i<4; i++) {
-      for (int j=0; j<4; j++) {
-        for (int k=0; k<4; k++) {
-          int idx = i*4*4 + j*4 + k;
+    for (int i=0; i<3; i++) {
+      for (int j=0; j<3; j++) {
+        for (int k=0; k<3; k++) {
+          int idx = i*3*3 + j*3 + k;
           upcxx::global_ptr<Box> global_box = dom.boxes[idx];
           Box *box = (Box *)global_box;
           if (box != NULL) {
@@ -62,7 +75,7 @@ int main(int argc, char **argv)
             box->i = i;
             box->j = j;
             box->k = k;
-            box->data = upcxx::allocate<double>(idx%upcxx::ranks(), 4);
+            box->data = upcxx::allocate<double>(idx%upcxx::ranks(), 3);
           }
         }
       }
@@ -73,10 +86,10 @@ int main(int argc, char **argv)
 
   // If I'm the last guy in the shared-memory node, I print out data to verify
   if (MYTHREAD == 1) {
-    for (int i=0; i<4; i += 1) {
-      for (int j=0; j<4; j += 1) {
-        for (int k=0; k<4; k += 1) {
-          int idx = i*4*4 + j*4 + k;
+    for (int i=0; i<3; i += 1) {
+      for (int j=0; j<3; j += 1) {
+        for (int k=0; k<3; k += 1) {
+          int idx = i*3*3 + j*3 + k;
           Box *box = (Box *)dom.boxes[idx].get();
           if (box != NULL) {
             std::cout << "Rank " << upcxx::myrank() << " is reading box " << idx
@@ -85,6 +98,13 @@ int main(int argc, char **argv)
           }
         }
       }
+    }
+    for (uint32_t i=0; i<upcxx::pshm_teams.size(); i++) {
+      std::cout << "PSHM team " << i << ": ( ";
+      for (uint32_t j=0; j<upcxx::pshm_teams[i].size(); j++) {
+        std::cout << upcxx::pshm_teams[i][j] << " ";
+      }
+      std::cout << ")\n";
     }
   }
 

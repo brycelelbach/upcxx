@@ -138,4 +138,6 @@ namespace upcxx
   }
 #endif
   
+  void init_pshm_teams(const gasnet_nodeinfo_t *nodeinfo_from_gasnet,
+                       uint32_t num_nodes);
 } // namespace upcxx

@@ -1,11 +1,13 @@
 #include "upcxx.h"
 
+// #define DEBUG
+
 // AK: should this be using bulk puts/gets?
 int upcxx::copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes)
 {
 #ifdef DEBUG
   fprintf(stderr, "src id %d, src ptr %p, nbytes %llu, dst id %d, dst ptr %p\n",
-          src.where().id(), src.raw_ptr(), nbytes, dst.where().id(), dst.raw_ptr());
+          src.where(), src.raw_ptr(), nbytes, dst.where(), dst.raw_ptr());
 #endif
   if (dst.where() == myrank()) {
     gasnet_get(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
