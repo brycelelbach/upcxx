@@ -99,6 +99,82 @@ namespace upcxx
       return *this;
     }
 
+    shared_var<T>& operator -=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val -= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator *=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val *= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator /=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val /= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator %=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val %= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator >>=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val >>= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator <<=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val <<= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator |=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val |= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator &=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val |= a;
+      put(_val);
+      return *this;
+    }
+
+    shared_var<T>& operator ^=(const T &a)
+    {
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      _val ^= a;
+      put(_val);
+      return *this;
+    }
+
+
+
+    //////
+
     // copy assignment 
     shared_var<T>& operator =(shared_var<T> &g)
     {
