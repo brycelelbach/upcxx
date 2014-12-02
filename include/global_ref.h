@@ -17,7 +17,7 @@ namespace upcxx
 
   // obj is a global_ref or a global_ptr of the object.
   // m is a field/member of the global object.
-  #define memberof(obj, m)                                      \
+  #define memberof(obj, m) \
     upcxx::make_memberof((obj).where(), (obj).raw_ptr()->m)
 
   /// \cond SHOW_INTERNAL
@@ -60,33 +60,39 @@ namespace upcxx
       return (get() + rhs);
     }
 
-    global_ref<T>& operator ^= (const T &rhs)
-    {
-      if (_pla == myrank()) {
-        *_ptr ^= rhs;
-      } else {
-        // if not local
-        T tmp;
-        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
-        tmp ^= rhs;
-        gasnet_put(_pla, _ptr, (void *)&tmp, sizeof(T));
-      }
-      return *this;
+#define UPCXX_GLOBAL_REF_ASSIGN_OP(OP) \
+    global_ref<T>& operator OP (const T &rhs) \
+    { \
+      if (_pla == myrank()) { \
+        *_ptr OP rhs; \
+      } else { \
+       T tmp; \
+       gasnet_get(&tmp, _pla, _ptr, sizeof(T)); \
+       tmp OP rhs; \
+       gasnet_put(_pla, _ptr, (void *)&tmp, sizeof(T)); \
+      } \
+      return *this; \
     }
 
-    global_ref<T>& operator += (const T &rhs)
-    {
-      if (_pla == myrank()) {
-        *_ptr += rhs;
-      } else {
-        // if not local
-        T tmp;
-        gasnet_get(&tmp, _pla, _ptr, sizeof(T));
-        tmp += rhs;
-        gasnet_put(_pla, _ptr, (void *)&tmp, sizeof(T));
-      }
-      return *this;
-    }
+    UPCXX_GLOBAL_REF_ASSIGN_OP(+=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(-=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(*=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(/=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(%=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(^=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(|=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(&=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(<<=)
+
+    UPCXX_GLOBAL_REF_ASSIGN_OP(>>=)
 
     template <typename T2>
     bool operator == (const T2 &rhs)
