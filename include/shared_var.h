@@ -91,87 +91,34 @@ namespace upcxx
       return *this;
     }
 
-    shared_var<T>& operator +=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val += a;
-      put(_val);
-      return *this;
+#define UPCXX_SHARED_VAR_ASSIGN_OP(OP) \
+    shared_var<T>& operator OP(const T &a) \
+    { \
+      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T)); \
+      _val OP a; \
+      put(_val); \
+      return *this; \
     }
 
-    shared_var<T>& operator -=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val -= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(+=)
 
-    shared_var<T>& operator *=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val *= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(-=)
 
-    shared_var<T>& operator /=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val /= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(*=)
 
-    shared_var<T>& operator %=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val %= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(/=)
 
-    shared_var<T>& operator >>=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val >>= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(%=)
 
-    shared_var<T>& operator <<=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val <<= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(^=)
 
-    shared_var<T>& operator |=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val |= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(|=)
 
-    shared_var<T>& operator &=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val |= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(&=)
 
-    shared_var<T>& operator ^=(const T &a)
-    {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
-      _val ^= a;
-      put(_val);
-      return *this;
-    }
+    UPCXX_SHARED_VAR_ASSIGN_OP(<<=)
 
-
+    UPCXX_SHARED_VAR_ASSIGN_OP(>>=)
 
     //////
 
