@@ -51,7 +51,7 @@ namespace upcxx
 
   static inline void deallocate(void *ptr) 
   {
-    deallocate(global_ptr<void>(ptr));
+    deallocate(global_ptr<void>(ptr, global_myrank()));
   }
 
   /**

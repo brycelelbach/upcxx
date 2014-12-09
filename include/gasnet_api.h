@@ -59,7 +59,7 @@ enum am_index_t {
   UNLOCK_AM,        // inter-node unlock
   AM_BCAST,         // active broadcast
   AM_BCAST_REPLY,   // active broadcast reply
-  INC_AM,   // active broadcast reply
+  INC_AM,           // remote increment
 
   /* array_bulk.c */
   ARRAY_MISC_DELETE_REQUEST,

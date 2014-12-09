@@ -66,17 +66,20 @@ namespace upcxx
      */
     inline size_t get_blk_sz() { return _blk_sz; }
 
-
     /**
      * Set the current block size (a.k.a. blocking factor in UPC)
      */
     inline void set_blk_sz(size_t blk_sz) { _blk_sz = blk_sz; }
 
     /**
-     * Initialize the shared array
+     * Initialize the shared array, which should be done after upcxx::init().
+     * This is a collective function and all ranks should agree on the same
+     * shared array size (sz) and the blocking factor (blk_sz) or the shared
+     * array allocated would have undefined behavior (e.g., segmentation fault
+     * due to insufficient memory allocated on some ranks).
      *
-     * \param sz total size of the shared array
-     * \param blk_sz the blocking factor (block size) of
+     * \param sz total size (# of elements) of the shared array
+     * \param blk_sz the blocking factor (# of elements per block)
      */
     void init(size_t sz=0, size_t blk_sz=BLK_SZ)
     {
@@ -92,10 +95,6 @@ namespace upcxx
       assert(_data != NULL);
       _alldata = (T **)malloc(nplaces * sizeof(T*));
       assert(_alldata != NULL);
-
-      // for (size_t i=0; i<_local_size; i++) {
-      //   _data[i] = val;
-      // }
 
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_gather_all(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
@@ -113,12 +112,26 @@ namespace upcxx
     {
       if (_alldata) free(_alldata);
       if (_data != NULL)
-        deallocate<T>(global_ptr<T>(_data));
+        deallocate(_data); // _data is from the global address space
     }
 
-    // Collectively allocate a shared array of nblocks with count elements per block
+    /**
+     * Collectively allocate a shared array of nblocks with blk_sz elements
+     * per block.  This is similar to init() except that init takes the total
+     * number of elements as argument whereas all_alloc takes the total number
+     * of blocks as argument (similar to upc_all_alloc).
+     *
+     * \param nblocks total number of blocks
+     * \param blk_sz the blocking factor (# of elements per block)
+     */
+    void all_alloc(size_t nblocks, size_t blk_sz=BLK_SZ)
+    {
+      if (_alldata != NULL || _data != NULL) {
+        // fatal error!
+      }
 
-    // void all_alloc(size_t nblocks, size_t count);
+      this->init(nblocks*blk_sz, blk_sz);
+    }
 
     global_ref<T> operator [] (size_t global_index)
     {

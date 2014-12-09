@@ -65,8 +65,6 @@ namespace upcxx
   }; // close of base_ptr
   /// \endcond SHOW_INTERNAL
 
-
-
   /**
    * \defgroup gasgroup Global Address Space primitives
    * This group of API defines basic elements of a global address
@@ -88,11 +86,10 @@ namespace upcxx
     typedef T value_type;
 
   public:
-    explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
+    inline explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
 
-    explicit global_ptr(T *ptr) : base_ptr<T, rank_t>(ptr, global_myrank()) {}
-
-     // explicit global_ptr(const long ptr) : base_ptr<T, rank_t>((T *)ptr, global_myrank()) { }
+    inline explicit global_ptr(T *ptr)
+      : base_ptr<T, rank_t>(ptr, global_myrank()) {}
 
     inline
     global_ptr(T *ptr, rank_t pla) :
@@ -149,7 +146,7 @@ namespace upcxx
     }
   };
 
-  // global_ptr<T, rank_t>
+  // Special case for global_ptr<void> - a void global pointer
   template<>
   struct global_ptr<void> : public base_ptr<void, rank_t>
   {

@@ -42,6 +42,11 @@ struct node_t {
 
 void dump_local_nodes(node_t *local_nodes, int n);
 
+/**
+ * Compare the degrees of two nodes
+ * \return true if (a->degree < b->agree)
+ *         or ((a->degree == b->degree) && (a->id < b->id))
+ */
 bool node_comp(node_t * & a, node_t * & b)
 {
   if (a->degree < b->degree) {
@@ -59,6 +64,15 @@ bool node_comp(node_t * & a, node_t * & b)
     }
   }
 }
+
+/**
+ * Compute the reachable set of node with min_node_id
+ *
+ * \param nodes the reference to all nodes
+ * \param min_node_id the id of the node of which the reachable set will be computed
+ * \param elim_step the current elimination step
+ * \param[out] the output of the reachable set
+ */
 
 void get_reach(upcxx::shared_array<node_t> &nodes,
                const int min_node_id,
