@@ -113,11 +113,12 @@ namespace upcxx
 
 #if GASNET_PSHM
       return (T*)pshm_remote_addr2local(this->where(), this->raw_ptr());
-#endif
-      
+#else
       // return NULL if this global address can't casted to a valid
       // local address
       return NULL;
+#endif
+      
     }
 
     template <typename T2>
@@ -178,11 +179,11 @@ namespace upcxx
       
 #if GASNET_PSHM
       return pshm_remote_addr2local(this->where(), this->raw_ptr());
-#endif
-         
+#else
       // return NULL if this global address can't casted to a valid
       // local address
       return NULL;
+#endif
     }
 
     // type casting operator for placed pointers
