@@ -10,15 +10,15 @@ int upcxx::copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes)
           src.where(), src.raw_ptr(), nbytes, dst.where(), dst.raw_ptr());
 #endif
   if (dst.where() == myrank()) {
-    gasnet_get(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
+    gasnet_get_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
   } else if (src.where() == myrank()) {
-    gasnet_put(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
+    gasnet_put_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
   } else {
     void *buf;
     buf = malloc(nbytes);
     assert(buf != NULL);
-    gasnet_get(buf, src.where(), src.raw_ptr(), nbytes);
-    gasnet_put(dst.where(), dst.raw_ptr(), buf, nbytes);
+    gasnet_get_bulk(buf, src.where(), src.raw_ptr(), nbytes);
+    gasnet_put_bulk(dst.where(), dst.raw_ptr(), buf, nbytes);
     ::free(buf);
   }
 
@@ -57,4 +57,13 @@ int upcxx::async_copy(global_ptr<void> src,
   return UPCXX_SUCCESS;
 }
 
+void upcxx::async_copy_fence()
+{
+  upcxx::async_wait();
+}
+
+int upcxx::async_copy_try()
+{
+  return upcxx::async_try();
+}
 

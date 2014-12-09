@@ -136,7 +136,7 @@ void redistribute(uint64_t key_count)
   uint64_t *hist;
   ELEMENT_T *my_splitters = (ELEMENT_T *)&splitters[0];
   ELEMENT_T *my_keys = (ELEMENT_T *)&keys[MYTHREAD];
-  ELEMENT_T my_new_key_count;
+  // ELEMENT_T my_new_key_count;
 
   hist = (uint64_t *)malloc(sizeof(uint64_t) * THREADS);
   assert(hist != NULL);

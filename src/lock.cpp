@@ -89,8 +89,6 @@ namespace upcxx
     // local lock
       
     // gasneti_assert(locked == 0);
-    int replied;
-
     if (myrank() == 0) {
       upcxx_mutex_lock(&_mutex);
       if (_locked == 0) {

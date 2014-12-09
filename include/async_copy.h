@@ -85,16 +85,11 @@ namespace upcxx
   /**
    * async_copy_fence is deprecated. Please use async_wait() instead.
    */
-  inline void async_copy_fence()
-  {
-    gasnet_wait_syncnbi_all();
-  }
+  void async_copy_fence();
 
   /**
    * async_copy_try is deprecated. Please async_try() instead.
    */
-  inline int async_copy_try()
-  {
-    return gasnet_try_syncnbi_all();
-  }
+  int async_copy_try();
+
 } // namespace upcxx
