@@ -88,20 +88,13 @@ namespace upcxx
    *
    */
   inline gasnet_launcher<rank_t> async(uint32_t rank,
-                                       void *src,
+                                       void *am_dst,
+                                       void *am_src,
                                        size_t nbytes,
                                        event *ack)
   {
     return gasnet_launcher<rank_t>(rank, ack, NULL);
   }
-  
-  // inline gasnet_launcher<rank_t> async(global_ptr<void> dst,
-  //                                      void *src,
-  //                                      size_t nbytes,
-  //                                      event *ack)
-  // {
-  //   return gasnet_launcher<rank_t>(dst.where(), ack, NULL);
-  // }
 
   template<>
   void gasnet_launcher<rank_t>::launch(generic_fp fp,

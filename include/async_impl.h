@@ -64,8 +64,7 @@ namespace upcxx
             
     inline size_t nbytes(void)
     {
-      return (sizeof(_caller) + sizeof(_caller) + sizeof(_ack)
-              + sizeof(_fp) + sizeof(_arg_sz) + _arg_sz);
+      return (sizeof(async_task) - MAX_ASYNC_ARG_SIZE + _arg_sz);
     }
 
     #include "async_impl_templates1.h"
