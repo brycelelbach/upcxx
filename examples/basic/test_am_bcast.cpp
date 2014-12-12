@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
   cerr << "all nodes: " << all << "\n";
 
-  async(all)(print_task, 123, 456);
+  // async(all)(print_task, 123, 456);
 
   upcxx::async_wait();
 

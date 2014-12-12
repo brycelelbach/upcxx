@@ -1,0 +1,21 @@
+$var maxargs = 16  $$ Maximum length of Values arguments we want to support.
+
+    /*************************************/
+    /* async_task constructors           */
+    /*************************************/
+    $range i 0..maxargs
+    $for i [[
+    $range j 1..i
+    
+    template<typename Function$for j [[, typename T$j]]>
+    inline async_task(rank_t caller, rank_t callee, event *ack,
+                      Function k$for j [[, const T$j& a$j]])
+    {
+      generic_arg$i<Function$for j [[, T$j]]>
+        args(k$for j [[, a$j]]);
+      init_async_task(caller, callee, ack,
+                      async_wrapper$i<Function$for j [[, T$j]]>,
+                      (size_t)sizeof(args),
+                      (void *)&args);
+    }
+    ]] $$ end of for i

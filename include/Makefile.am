@@ -17,6 +17,9 @@ include_HEADERS =  \
   allocate.h \
   async.h \
   async_copy.h \
+  async_impl.h \
+  async_impl_templates1.h \
+  async_impl_templates2.h \
   async_templates.h \
   coll_flags.h \
   collective.h \

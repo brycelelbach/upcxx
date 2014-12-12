@@ -1,0 +1,26 @@
+$var maxargs = 16  $$ Maximum length of Values arguments we want to support.
+
+    /*************************************/
+    /* launcher operator()               */
+    /*************************************/
+    $range i 0..maxargs
+    $for i [[
+    $range j 1..i
+
+    //   async_task task(myrank(), _there, _ack, kernel);
+    //   submit_task(&task, _after);
+
+    template<typename Function$for j [[, typename T$j]]>
+    inline void operator()(Function k$for j [[, const T$j& a$j]])
+    {
+      async_task task(myrank(), _there, _ack, k$for j [[, a$j]]);
+      submit_task(&task, _after);
+      /*
+      generic_arg$i<Function$for j [[, T$j]]>
+        args(k$for j [[, a$j]]);
+      launch(async_wrapper$i<Function$for j [[, T$j]]>,
+             (void *)&args, (size_t)sizeof(args));
+      */
+    }
+    ]] $$ end of for i
+
