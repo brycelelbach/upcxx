@@ -7,144 +7,109 @@
     /* launcher operator()               */
     /*************************************/
 
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
-
     template<typename Function>
     inline void operator()(Function k)
     {
-      async_task task(myrank(), _there, _ack, k);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k);
+      // submit_task(&task, _after);
+
       generic_arg0<Function>
         args(k);
       launch(async_wrapper0<Function>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1>
     inline void operator()(Function k, const T1& a1)
     {
-      async_task task(myrank(), _there, _ack, k, a1);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1);
+      // submit_task(&task, _after);
+
       generic_arg1<Function, T1>
         args(k, a1);
       launch(async_wrapper1<Function, T1>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2>
     inline void operator()(Function k, const T1& a1, const T2& a2)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2);
+      // submit_task(&task, _after);
+
       generic_arg2<Function, T1, T2>
         args(k, a1, a2);
       launch(async_wrapper2<Function, T1, T2>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3>
     inline void operator()(Function k, const T1& a1, const T2& a2, const T3& a3)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3);
+      // submit_task(&task, _after);
+
       generic_arg3<Function, T1, T2, T3>
         args(k, a1, a2, a3);
       launch(async_wrapper3<Function, T1, T2, T3>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4>
     inline void operator()(Function k, const T1& a1, const T2& a2,
         const T3& a3, const T4& a4)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4);
+      // submit_task(&task, _after);
+
       generic_arg4<Function, T1, T2, T3, T4>
         args(k, a1, a2, a3, a4);
       launch(async_wrapper4<Function, T1, T2, T3, T4>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5>
     inline void operator()(Function k, const T1& a1, const T2& a2,
         const T3& a3, const T4& a4, const T5& a5)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5);
+      // submit_task(&task, _after);
+
       generic_arg5<Function, T1, T2, T3, T4, T5>
         args(k, a1, a2, a3, a4, a5);
       launch(async_wrapper5<Function, T1, T2, T3, T4, T5>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6>
     inline void operator()(Function k, const T1& a1, const T2& a2,
         const T3& a3, const T4& a4, const T5& a5, const T6& a6)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6);
+      // submit_task(&task, _after);
+
       generic_arg6<Function, T1, T2, T3, T4, T5, T6>
         args(k, a1, a2, a3, a4, a5, a6);
       launch(async_wrapper6<Function, T1, T2, T3, T4, T5, T6>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7>
     inline void operator()(Function k, const T1& a1, const T2& a2,
         const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7);
+      // submit_task(&task, _after);
+
       generic_arg7<Function, T1, T2, T3, T4, T5, T6, T7>
         args(k, a1, a2, a3, a4, a5, a6, a7);
       launch(async_wrapper7<Function, T1, T2, T3, T4, T5, T6, T7>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8>
@@ -152,19 +117,15 @@
         const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7,
         const T8& a8)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8);
+      // submit_task(&task, _after);
+
       generic_arg8<Function, T1, T2, T3, T4, T5, T6, T7, T8>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8);
       launch(async_wrapper8<Function, T1, T2, T3, T4, T5, T6, T7, T8>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -173,19 +134,15 @@
         const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7,
         const T8& a8, const T9& a9)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9);
+      // submit_task(&task, _after);
+
       generic_arg9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9);
       launch(async_wrapper9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -194,19 +151,15 @@
         const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7,
         const T8& a8, const T9& a9, const T10& a10)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10);
+      // submit_task(&task, _after);
+
       generic_arg10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
       launch(async_wrapper10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -215,20 +168,16 @@
         const T3& a3, const T4& a4, const T5& a5, const T6& a6, const T7& a7,
         const T8& a8, const T9& a9, const T10& a10, const T11& a11)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11);
+      // submit_task(&task, _after);
+
       generic_arg11<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
       launch(async_wrapper11<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -238,20 +187,16 @@
         const T8& a8, const T9& a9, const T10& a10, const T11& a11,
         const T12& a12)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11, a12);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11, a12);
+      // submit_task(&task, _after);
+
       generic_arg12<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12);
       launch(async_wrapper12<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11, T12>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -261,21 +206,17 @@
         const T8& a8, const T9& a9, const T10& a10, const T11& a11,
         const T12& a12, const T13& a13)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11, a12, a13);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11, a12, a13);
+      // submit_task(&task, _after);
+
       generic_arg13<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13);
       launch(async_wrapper13<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11, T12, T13>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -286,21 +227,17 @@
         const T8& a8, const T9& a9, const T10& a10, const T11& a11,
         const T12& a12, const T13& a13, const T14& a14)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11, a12, a13, a14);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11, a12, a13, a14);
+      // submit_task(&task, _after);
+
       generic_arg14<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14);
       launch(async_wrapper14<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11, T12, T13, T14>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -311,10 +248,10 @@
         const T8& a8, const T9& a9, const T10& a10, const T11& a11,
         const T12& a12, const T13& a13, const T14& a14, const T15& a15)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11, a12, a13, a14, a15);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11, a12, a13, a14, a15);
+      // submit_task(&task, _after);
+
       generic_arg15<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14, T15>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
@@ -322,11 +259,7 @@
       launch(async_wrapper15<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11, T12, T13, T14, T15>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
-
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
 
     template<typename Function, typename T1, typename T2, typename T3,
         typename T4, typename T5, typename T6, typename T7, typename T8,
@@ -338,10 +271,10 @@
         const T12& a12, const T13& a13, const T14& a14, const T15& a15,
         const T16& a16)
     {
-      async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
-          a8, a9, a10, a11, a12, a13, a14, a15, a16);
-      submit_task(&task, _after);
-      /*
+      // async_task task(myrank(), _there, _ack, k, a1, a2, a3, a4, a5, a6, a7,
+      // a8, a9, a10, a11, a12, a13, a14, a15, a16);
+      // submit_task(&task, _after);
+
       generic_arg16<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
           T12, T13, T14, T15, T16>
         args(k, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14,
@@ -349,6 +282,5 @@
       launch(async_wrapper16<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
           T11, T12, T13, T14, T15, T16>,
              (void *)&args, (size_t)sizeof(args));
-      */
     }
 

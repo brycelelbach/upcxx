@@ -251,9 +251,20 @@ namespace upcxx
 
     assert(nbytes == sizeof(async_done_am_t));
 
+#ifdef UPCXX_DEBUG
+    gasnet_node_t src;
+    gasnet_AMGetMsgSource(token, &src);
+    fprintf(stderr, "Rank %u receives async done from %u",
+            myrank(), src);
+#endif
+    
     if (am->ack_event != NULL) {
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "Rank %u receives async done from %u. event count %d\n",
+              myrank(), src, am->ack_event->_count);
+#endif
     }
   }
 
@@ -288,6 +299,10 @@ namespace upcxx
           if (task->_caller == myrank()) {
             // local event acknowledgment
             task->_ack->decref(); // need to enqueue callback tasks
+#ifdef UPCXX_DEBUG
+            fprintf(stderr, "Rank %u completes a local task. event count %d\n",
+                    myrank(), task->_ack->_count);
+#endif
           } else {
             // send an ack message back to the caller of the async task
             async_done_am_t am;

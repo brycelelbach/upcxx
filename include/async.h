@@ -29,13 +29,6 @@ namespace upcxx
     return gasnet_launcher<rank_t>(rank, e);
   }
 
-  /*
-  inline gasnet_launcher<rank_t> async(rank_t there,
-                                       event *e = peek_event())
-  {
-    return gasnet_launcher<rank_t>(there, e);
-  }
-  */
   /**
    * \ingroup asyncgroup
    *

@@ -46,7 +46,7 @@ namespace upcxx
     
     inline int count() const
     {
-      return (_end - _begin) / _step;
+      return (_end - _begin + (_step -1)) / _step;
     }
     
     inline int size() const
@@ -90,6 +90,15 @@ namespace upcxx
     range operator / (int i)
     {
       return range(_begin, _begin + count() / i * _step, _step);
+    }
+    
+    bool contains(int i)
+    {
+      if ((i >= _begin) && (i < _end) &&
+          ((i-_begin)%_step == 0))
+        return true;
+    
+      return false;
     }
   }; // struct range
   

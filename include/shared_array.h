@@ -1,7 +1,7 @@
 /**
  * Multi-node 1-D shared arrays 
  *
- * See test_global_array.cpp and gups.cpp for usage examples
+ * See test_shared_array.cpp and gups.cpp for usage examples
  */
 
 #pragma once

@@ -10,46 +10,68 @@
  */
 
 #include <upcxx.h>
-#include <forkjoin.h> // for single-thread execution model emulation
+// #include <forkjoin.h> // for single-thread execution model emulation
 
 #include <iostream>
+#include <string.h>
 
 using namespace upcxx;
 
 shared_lock sl;
 
-void print_task(int task_id, int arg2)
+struct my_string {
+  char s[32];
+  // copy-by-vaule constrcutor is necessary for remote async!
+  my_string(const char *src) { strncpy (s, src, 32); }
+};
+
+void print_task(int task_id, my_string arg2)
 {
   sl.lock();
-  cerr << "MYTHREAD " << MYTHREAD <<  ": task_id:" << task_id
-       << " arg2: " << arg2 << endl;
+  cout << "myrank() " << myrank() <<  ": task_id:" << task_id
+       << " arg2: " << arg2.s << endl;
+  cout.flush();
   sl.unlock();
 }
 
 int main(int argc, char **argv)
 {
-  printf("Node %d spawns %d tasks with AM bcast...\n",
-         MYTHREAD, THREADS);
-
-  range all(0, THREADS);
-
-  cerr << "all nodes: " << all << "\n";
-
-  // async(all)(print_task, 123, 456);
-
-  upcxx::async_wait();
-
-  printf("Node %d spawns %d tasks sequentially...\n",
-         MYTHREAD, THREADS);
-
-  for (uint32_t i = 0; i < THREADS; i++) {
-    printf("Node %d spawns a task at place %d\n",
-           MYTHREAD, i);
-
-    async(i)(print_task, 1000+i, 456);
+  init(&argc, &argv);
+  for (int i = 0; i < ranks(); i++) {
+    if (myrank() == i) {
+      printf("Node %d spawns %d tasks with AM bcast...\n",
+             myrank(), ranks());
+      
+      range all(0, ranks());
+      
+      cout << "all nodes: " << all << "\n";
+      
+      async(all)(print_task, 123, my_string("all nodes"));
+      
+      upcxx::async_wait();
+      
+      
+      range odd(1, ranks(), 2);
+      
+      cout << "Odd nodes: " << odd << "\n";
+      
+      async(odd)(print_task, 456, my_string("odd nodes"));
+      
+      upcxx::async_wait();
+      
+      range even(0, ranks(), 2);
+      
+      cout << "Even nodes: " << even << "\n";
+      
+      async(even)(print_task, 789, my_string("even nodes"));
+      
+      upcxx::async_wait();
+    }
+    barrier();
   }
-
-  upcxx::async_wait();
-
+  if (myrank() == 0) {
+    cout << "test_am_bcast done.\n";
+  }
+  finalize();
   return 0;
 }

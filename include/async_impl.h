@@ -30,8 +30,8 @@ namespace upcxx
     rank_t _callee; // the place where the task should be executed
     event *_ack; // Acknowledgment event pointer on caller node
     generic_fp _fp;
-    void *dst; // active message dst buffer
-    void *src; // active message src buffer
+    void *am_src; // active message src buffer
+    void *am_dst; // active message dst buffer
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
     
@@ -96,7 +96,7 @@ namespace upcxx
     memcpy(tmp, task, task->nbytes());
     
     // Increase the reference of the ack event of the task
-    if (tmp->_ack != NULL) {
+    if (tmp->_caller == myrank() && tmp->_ack != NULL) {
       tmp->_ack->incref();
     }
     
@@ -191,13 +191,13 @@ namespace upcxx
     
     /// \TODO: add implicit async launch
         
-    typedef void (*K1s)(group);
-    inline void operator()(K1s kernel)
-    {
-      group g(_g.size(), _g.index());
-      generic_arg1<K1s, group> args(kernel, g);
-      launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));
-    }
+    // typedef void (*K1s)(group);
+    // inline void operator()(K1s kernel)
+    // {
+    //   group g(_g.size(), _g.index());
+    //   generic_arg1<K1s, group> args(kernel, g);
+    //   launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));
+    // }
         
     // template<typename Function>
     // inline future operator()(Function kernel)
