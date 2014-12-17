@@ -49,8 +49,7 @@ int main(int argc, char **argv)
       async(all)(print_task, 123, my_string("all nodes"));
       
       upcxx::async_wait();
-      
-      
+            
       range odd(1, ranks(), 2);
       
       cout << "Odd nodes: " << odd << "\n";

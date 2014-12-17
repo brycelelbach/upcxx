@@ -26,7 +26,7 @@ namespace upcxx
     global_ptr<void> ptr(addr, rank);
 
 #ifdef DEBUG
-    fprintf(stderr, "allocated %llu bytes at cpu %d\n", addr, pla);
+    fprintf(stderr, "allocated %llu bytes at %p on node %d\n", nbytes, addr, rank);
 #endif
 
     return ptr;

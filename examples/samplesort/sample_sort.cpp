@@ -239,9 +239,9 @@ void redistribute(uint64_t key_count)
 #ifdef DEBUG
       printf("Thread %d, copy %llu bytes from (%d, %p) to (%d, %p)\n",
              MYTHREAD, all_buffers_dst[i].nbytes,
-             (int)(all_buffers_dst[i].ptr.tid()),
+             (int)(all_buffers_dst[i].ptr.where()),
              all_buffers_dst[i].ptr.raw_ptr(),
-             (sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)).tid(),
+             (sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)).where(),
              (sorted[MYTHREAD] + offset / sizeof(ELEMENT_T)).raw_ptr());
 #endif               
       upcxx::async_copy((global_ptr<void>)all_buffers_dst[i].ptr,

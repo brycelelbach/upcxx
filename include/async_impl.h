@@ -17,7 +17,7 @@
 
 using namespace std;
 
-// #define DEBUG
+// #define UPCXX_DEBUG
 
 namespace upcxx
 {

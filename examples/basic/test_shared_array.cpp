@@ -17,11 +17,13 @@ shared_array<unsigned long> A(ARRAY_SIZE);
 
 void update()
 {
-  int np = THREADS;
-  int myid = MYTHREAD;
+  int np = upcxx::ranks();
+  int myid = upcxx::myrank();
 
+  printf("Rank %d in update\n", myid);
   A.init();
-
+  printf("Rank %d after shared array A.init\n", myid);
+  barrier();
   printf("myid %d is updating...\n", myid);
 
   for (size_t i=myid; i<ARRAY_SIZE; i+=np) {
@@ -33,10 +35,13 @@ void update()
 
 int main(int argc, char **argv)
 {
+  printf("I'm in main\n");
+  // upcxx::init(&argc, &argv);
   for (int i = THREADS-1; i>=0; i--) {
+    printf("async to %d for array updates.\n", i);
     async(i)(update);
   }
-
+  printf("After async, before async_wait\n");
   upcxx::async_wait();
 
   for (size_t i=0; i<ARRAY_SIZE; i++) {
@@ -49,5 +54,6 @@ int main(int argc, char **argv)
   int a = A[3] + 1;
   printf("A[3] + 1 = %d\n", a);
 
+  // finalize();
   return 0;
 }

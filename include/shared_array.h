@@ -97,8 +97,12 @@ namespace upcxx
       assert(_alldata != NULL);
 
       // \Todo _data allocated in this way is not aligned!!
-      gasnet_coll_gather_all(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
-                             GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL);
+      gasnet_coll_handle_t h;
+      h = gasnet_coll_gather_all_nb(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
+                                    GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL);
+      while(gasnet_coll_try_sync(h) != GASNET_OK) {
+        advance(); // neeed to keep polling the task queue whlie waiting
+      }
 #ifdef UPCXX_DEBUG
       printf("my rank %d, _data %p\n", myrank(), _data);
       for (int i=0; i<nplaces; i++) {

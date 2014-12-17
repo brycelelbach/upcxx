@@ -106,6 +106,9 @@ namespace upcxx
     // type casting operator for local pointers
     operator T*() const
     {
+      return this->raw_ptr();
+
+#if 0
       if (this->where() == global_myrank()) {
         // return raw_ptr if the data pointed to is on the same rank
         return this->raw_ptr();
@@ -118,7 +121,7 @@ namespace upcxx
       // local address
       return NULL;
 #endif
-      
+#endif      
     }
 
     template <typename T2>
@@ -172,6 +175,8 @@ namespace upcxx
     // type casting operator for local pointers
     operator void*()
     {
+      return this->raw_ptr();
+#if 0
       if (this->where() == global_myrank()) {
         // return raw_ptr if the data pointed to is on the same rank
         return this->raw_ptr();
@@ -183,6 +188,7 @@ namespace upcxx
       // return NULL if this global address can't casted to a valid
       // local address
       return NULL;
+#endif
 #endif
     }
 
