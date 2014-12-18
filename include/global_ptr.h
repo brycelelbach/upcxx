@@ -59,6 +59,23 @@ namespace upcxx
       return (where() != rhs.where() || raw_ptr() != rhs.raw_ptr());
     }
 
+#ifdef UPCXX_HAVE_CXX11
+    bool operator != (decltype(nullptr)) const
+    {
+      return (raw_ptr() != nullptr);
+    }
+
+    bool operator == (decltype(nullptr)) const
+    {
+      return (raw_ptr() == nullptr);
+    }
+#endif
+
+    bool isnull() const
+    {
+      return (raw_ptr() == NULL);
+    }
+
   protected:
     T *_ptr;
     place_t _pla;
@@ -104,11 +121,11 @@ namespace upcxx
     : base_ptr<T, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
+#ifdef UPCXX_HAVE_CXX11
+    explicit
+#endif
     operator T*() const
     {
-      return this->raw_ptr();
-
-#if 0
       if (this->where() == global_myrank()) {
         // return raw_ptr if the data pointed to is on the same rank
         return this->raw_ptr();
@@ -121,7 +138,6 @@ namespace upcxx
       // local address
       return NULL;
 #endif
-#endif      
     }
 
     template <typename T2>
@@ -173,10 +189,11 @@ namespace upcxx
       : base_ptr<void, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
+#ifdef UPCXX_HAVE_CXX11
+    explicit
+#endif
     operator void*()
     {
-      return this->raw_ptr();
-#if 0
       if (this->where() == global_myrank()) {
         // return raw_ptr if the data pointed to is on the same rank
         return this->raw_ptr();
@@ -188,7 +205,6 @@ namespace upcxx
       // return NULL if this global address can't casted to a valid
       // local address
       return NULL;
-#endif
 #endif
     }
 
