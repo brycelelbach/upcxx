@@ -5,5 +5,4 @@ UPCXX_LDFLAGS = $(GASNET_LDFLAGS)  -L@prefix@/lib
 
 UPCXX_CXXFLAGS = \
   $(GASNET_CPPFLAGS) -I@prefix@/include \
-  $(GASNET_CFLAGS) \
 	@CXXFLAGS@
