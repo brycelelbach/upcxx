@@ -7,7 +7,7 @@ stencil_SOURCES = stencil.cpp
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/include \
-  $(GASNET_CPPFLAGS) $(GASNET_CFLAGS)
+  $(GASNET_CPPFLAGS) 
 
 AM_LDFLAGS = \
   $(top_builddir)/src/.libs/libupcxx.a \
