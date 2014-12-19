@@ -107,8 +107,7 @@ namespace upcxx
                 size_t arg_sz,
                 void * args,
                 event *after,
-                int root_index,
-                int use_domain)
+                int root_index)
   {
     assert(ack != NULL);
 
@@ -117,7 +116,6 @@ namespace upcxx
     /* prepare bcast_arg */
     bcast_arg.target = target;
     bcast_arg.root_index = root_index;
-    bcast_arg.use_domain = use_domain;
     bcast_arg.task.init_async_task(myrank(),
                                    myrank(),
                                    ack,

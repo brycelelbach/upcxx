@@ -42,8 +42,7 @@ void gasnet_launcher<range>::launch(generic_fp fp,
     else
       _ack->incref(_there.count());
   }
-  am_bcast(_there, _ack, fp, arg_sz, async_args, _after,
-           myrank(), (_g.index() == -1 ? 0 : 1));
+  am_bcast(_there, _ack, fp, arg_sz, async_args, _after, myrank());
 #endif
 }
 

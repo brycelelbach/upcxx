@@ -102,8 +102,7 @@ namespace upcxx
     
     if (after != NULL ) {
       after->lock();
-      // add task to the callback list if the event is inflight
-      //
+      // add task to the callback list if the event is in flight
       if (after->count() > 0) {
         after->add_done_cb(tmp);
         after->unlock();
@@ -131,16 +130,11 @@ namespace upcxx
   struct am_bcast_arg {
     range target; // set of remote nodes
     uint32_t root_index;
-    int use_domain;
     async_task task;
-    //kernel kernel; // function kernel to be executed on remote nodes
-    //size_t arg_sz; // argument size in bytes
-    //char *args[0]; // arguments for the kernel
     
     inline size_t nbytes()
     {
-      return sizeof(target) + sizeof(root_index) +
-      sizeof(use_domain) + task.nbytes() + 4; // plus 4 for padding
+      return sizeof(target) + sizeof(root_index) + task.nbytes();
     }
   };
   
@@ -189,24 +183,6 @@ namespace upcxx
     void launch(generic_fp fp, void *async_args, size_t arg_sz,
                 void *rv, size_t rv_sz);
     
-    /// \TODO: add implicit async launch
-        
-    // typedef void (*K1s)(group);
-    // inline void operator()(K1s kernel)
-    // {
-    //   group g(_g.size(), _g.index());
-    //   generic_arg1<K1s, group> args(kernel, g);
-    //   launch(async_wrapper1<K1s, group>, &args, (size_t)sizeof(args));
-    // }
-        
-    // template<typename Function>
-    // inline future operator()(Function kernel)
-    // {
-    //   async_task task(myrank(), _there, _ack, kernel);
-    //   submit_task(&task, _after);
-    //   //launch((generic_fp)kernel, (void *)NULL, (size_t)0);
-    // }
-
     #include "async_impl_templates2.h"
     
   }; // gasnet_launcher
