@@ -23,6 +23,12 @@
   GASNET_SAFE(MEDIUM_REQ(cnt32, cnt64, args))
 #define MEDIUM_SRP(cnt32, cnt64, args)          \
   GASNET_SAFE(MEDIUM_REP(cnt32, cnt64, args))
+#define LONG_SRQ(cnt32, cnt64, args)            \
+  GASNET_SAFE(LONG_REQ(cnt32, cnt64, args))
+#define LONG_SRP(cnt32, cnt64, args)            \
+  GASNET_SAFE(LONG_REP(cnt32, cnt64, args))
+#define LONGA_SRQ(cnt32, cnt64, args)           \
+  GASNET_SAFE(LONGASYNC_REQ(cnt32, cnt64, args))
 
 #define SUNPACK(a0) ((size_t)UNPACK(a0))
 #define SUNPACK2(a0, a1) ((size_t)UNPACK2(a0, a1))
@@ -54,6 +60,11 @@ static size_t upcxxa_prealloc;
   pipelining is 1 if using pipelining
 */
 static int upcxxa_pipelining;
+
+/*
+  new_array_am is 1 if using long AM for putting array
+*/
+static int upcxxa_new_array_am;
 
 /*
   struct definition to hold information about each remote buffer
@@ -185,6 +196,31 @@ void misc_alloc_reply_inner(gasnet_token_t token, void *buf,
 SHORT_HANDLER(misc_alloc_reply, 2, 4,
               (token, UNPACK(a0),      UNPACK(a1)     ),
               (token, UNPACK2(a0, a1), UNPACK2(a2, a3)));
+/* ---------------------------------------------------------------- */
+/* Size is in bytes. */
+GASNETT_INLINE(array_alloc_request_inner)
+void array_alloc_request_inner(gasnet_token_t token,
+                               void *copyDesc,
+                               size_t copyDescSize,
+                               size_t arraySize,
+                               void *destptr) {
+  size_t copyDescSizePadded = ((copyDescSize-1)/8 + 1) * 8;
+  void *buf = upcxxa_malloc_handlersafe(copyDescSizePadded+arraySize);
+  if (!buf) {
+    fprintf(stderr, "failed to allocate %zu bytes in %s\n",
+            copyDescSizePadded+arraySize, "array alloc AM handler");
+    abort();
+  }
+  memcpy(buf, copyDesc, copyDescSize);
+  SHORT_SRP(2,4,(token, gasneti_handleridx(misc_alloc_reply),
+                 PACK(((uintptr_t)buf)+copyDescSizePadded),
+                 PACK(destptr)));
+}
+MEDIUM_HANDLER(array_alloc_request, 2, 4,
+               (token,addr,nbytes, SUNPACK(a0),
+                UNPACK(a1)),
+               (token,addr,nbytes, SUNPACK2(a0, a1),
+                UNPACK2(a2, a3)));
 /* ----------------------------------------------------------------
  *  Rectangular strided copy
  * ---------------------------------------------------------------- */
@@ -346,8 +382,8 @@ void strided_unpackAll_request_inner(gasnet_token_t token,
 #if 0
     gasnett_local_wmb(); /* ensure data committed before signalling */
 #endif
-    SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
-                   PACK(done_ptr), use_event));
+    SHORT_SRP(3,5,(token, gasneti_handleridx(strided_unpack_reply),
+                   PACK(done_ptr), use_event, PACK((void*)NULL)));
   }
   if (temp) upcxxa_free_handlersafe(temp);
 }
@@ -359,7 +395,7 @@ MEDIUM_HANDLER(strided_unpackAll_request, 4, 7,
 /* ---------------------------------------------------------------- */
 GASNETT_INLINE(strided_unpack_reply_inner)
 void strided_unpack_reply_inner(gasnet_token_t token, void *done_ptr,
-                                uint32_t use_event) {
+                                uint32_t use_event, void *free_ptr) {
   if (use_event) {
     event *done_event = (event *) done_ptr;
     done_event->decref();
@@ -367,10 +403,45 @@ void strided_unpack_reply_inner(gasnet_token_t token, void *done_ptr,
     int *punpack_spin = (int *)done_ptr;
     *(punpack_spin) = 1;
   }
+  if (free_ptr) {
+    upcxxa_free_handlersafe(free_ptr);
+  }
 }
-SHORT_HANDLER(strided_unpack_reply, 2, 3,
-              (token, UNPACK(a0),      a1),
-              (token, UNPACK2(a0, a1), a2));
+SHORT_HANDLER(strided_unpack_reply, 3, 5,
+              (token, UNPACK(a0),      a1, UNPACK(a2)),
+              (token, UNPACK2(a0, a1), a2, UNPACK2(a3, a4)));
+/* ---------------------------------------------------------------- */
+/* Take the data given and unpack it. The copy descriptor was provided
+   by previous calls. */
+GASNETT_INLINE(strided_unpackData_request_inner)
+void strided_unpackData_request_inner(gasnet_token_t token,
+                                      void *packedArrayData,
+                                      size_t nBytes,
+                                      void *_unpackMethod,
+                                      size_t copyDescSize,
+                                      void *done_ptr,
+                                      uint32_t use_event,
+                                      void *free_ptr) {
+  size_t copyDescSizePadded = ((copyDescSize-1)/8 + 1) * 8;
+  unpack_method_t unpackMethod = (unpack_method_t)_unpackMethod;
+  void *copyDesc = (void *)
+    (((uintptr_t)packedArrayData)-copyDescSizePadded);
+  void *arrayData = packedArrayData;
+  assert(((uintptr_t)copyDesc) % 8 == 0 &&
+         ((uintptr_t)arrayData) % 8 == 0);
+  (*unpackMethod)(copyDesc, arrayData);
+  upcxxa_free_handlersafe(copyDesc);
+#if 0
+  gasnett_local_wmb(); /* ensure data committed before signalling */
+#endif
+  SHORT_SRP(3,5,(token, gasneti_handleridx(strided_unpack_reply),
+                 PACK(done_ptr), use_event, PACK(free_ptr)));
+}
+LONG_HANDLER(strided_unpackData_request, 5, 9,
+             (token,addr,nbytes, UNPACK(a0),      SUNPACK(a1),
+              UNPACK(a2),      a3, UNPACK(a4)),
+             (token,addr,nbytes, UNPACK2(a0, a1), SUNPACK2(a2, a3),
+              UNPACK2(a4, a5), a6, UNPACK2(a7, a8)));
 /* ---------------------------------------------------------------- */
 /* The data was provided by previous calls; just unpack it with the
    given descriptor. */
@@ -388,8 +459,8 @@ void strided_unpackOnly_request_inner(gasnet_token_t token,
 #if 0
   gasnett_local_wmb(); /* ensure data committed before signalling */
 #endif
-  SHORT_SRP(2,3,(token, gasneti_handleridx(strided_unpack_reply),
-                 PACK(done_ptr), use_event));
+  SHORT_SRP(3,5,(token, gasneti_handleridx(strided_unpack_reply),
+                 PACK(done_ptr), use_event, PACK((void*)NULL)));
 }
 MEDIUM_HANDLER(strided_unpackOnly_request, 4, 7,
                (token,addr,nbytes, UNPACK(a0),      UNPACK(a1),
@@ -402,13 +473,14 @@ MEDIUM_HANDLER(strided_unpackOnly_request, 4, 7,
 extern void put_array(void *unpack_method, void *copy_desc,
                       size_t copy_desc_size, void *array_data,
                       size_t array_data_size, uint32_t tgt_box,
-                      event *done_event) {
+                      event *done_event, bool free_array_data) {
   void *data;
   /* ensure double-word alignment for array data */
   size_t copy_desc_size_padded = ((copy_desc_size-1)/8 + 1) * 8;
   size_t data_size = copy_desc_size_padded + array_data_size;
   volatile int unpack_spin = 0;
   uint32_t use_event = (done_event != UPCXXA_EVENT_NONE);
+  void *free_ptr = free_array_data ? array_data : NULL;
   void *done_ptr;
   if (use_event) {
     done_ptr = (void *) done_event;
@@ -443,9 +515,33 @@ extern void put_array(void *unpack_method, void *copy_desc,
                     use_event));
     if (!use_event)
       GASNET_BLOCKUNTIL(unpack_spin);
+    if (free_array_data) {
+      upcxxa_free(array_data);
+    }
     upcxxa_free(data);
   }
-  else { /* Slow case. */
+  else if (array_data_size <= gasnet_AMMaxLongRequest() &&
+           upcxxa_new_array_am) { /* Slower case. */
+    /* Allocate a buffer to hold the array data on the remote side. */
+    void * volatile remoteAllocBuf = NULL;
+    assert(copy_desc_size <= gasnet_AMMaxMedium());
+    MEDIUM_SRQ(2,4,(tgt_box,
+                    gasneti_handleridx(array_alloc_request),
+                    copy_desc, copy_desc_size,
+                    PACK(array_data_size), PACK(&remoteAllocBuf)));
+    GASNET_BLOCKUNTIL(remoteAllocBuf);
+    /* Transfer the data to the buffer with a long AM. */
+    LONGA_SRQ(5,9,(tgt_box,
+                   gasneti_handleridx(strided_unpackData_request),
+                   array_data, array_data_size, remoteAllocBuf,
+                   PACK(UPCXXA_TRANSLATE_FUNCTION_ADDR(unpack_method,
+                                                       tgt_box)),
+                   PACK(copy_desc_size), PACK(done_ptr), use_event,
+                   PACK(free_ptr)));
+    if (!use_event)
+      GASNET_BLOCKUNTIL(unpack_spin);
+  }
+  else { /* Slowest case. */
     /* Allocate a buffer to hold the array data on the remote side. */
     void * volatile remoteAllocBuf = NULL;
     SHORT_SRQ(2,4,(tgt_box, gasneti_handleridx(misc_alloc_request),
@@ -464,6 +560,9 @@ extern void put_array(void *unpack_method, void *copy_desc,
                     PACK(done_ptr), use_event));
     if (!use_event)
       GASNET_BLOCKUNTIL(unpack_spin);
+    if (free_array_data) {
+      upcxxa_free(array_data);
+    }
   }
 }
 /* ----------------------------------------------------------------
@@ -1108,6 +1207,7 @@ SHORT_HANDLER(sparse_generalGather_request, 4, 8,
 extern void array_bulk_init(){
   char *preallocstr;
   char *pipeliningstr;
+  char *new_array_amstr;
 
   preallocstr = (char *) gasnet_getenv("UPCXXA_PREALLOC");
   if (preallocstr == NULL){
@@ -1128,6 +1228,18 @@ extern void array_bulk_init(){
   }
   else{
     upcxxa_pipelining = atoi(pipeliningstr);
+  }
+  new_array_amstr = (char *) gasnet_getenv("UPCXXA_NEW_ARRAY_AM");
+  if (new_array_amstr == NULL){
+    upcxxa_new_array_am = 1;
+  }
+  else{
+    upcxxa_new_array_am = atoi(new_array_amstr);
+    if (upcxx::myrank() == 0) {
+      std::cout << "Manually "
+                << (upcxxa_new_array_am ? "enabling" : "disabling")
+                << " new array copy AM implementation" << std::endl;
+    }
   }
 }
 
