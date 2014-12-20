@@ -187,6 +187,10 @@ namespace upcxx
     gasnet_hsl_init(&async_lock);
     gasnet_hsl_init(&outstanding_events_lock);
 
+#ifdef UPCXX_USE_DMAPP_CHANNEL
+    upcxx_init_dmapp();
+#endif
+
 #ifdef UPCXX_HAVE_MD_ARRAY
     // Initialize array bulk operations
     array_bulk_init();
