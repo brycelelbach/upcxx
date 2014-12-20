@@ -11,6 +11,10 @@
 #include "upcxx_internal.h"
 #include "array_bulk_internal.h"
 
+#ifdef UPCXX_USE_DMAPP
+#include "dmapp_channel/dmapp_helper.h"
+#endif
+
 // #define UPCXX_DEBUG
 
 using namespace std;
@@ -187,7 +191,7 @@ namespace upcxx
     gasnet_hsl_init(&async_lock);
     gasnet_hsl_init(&outstanding_events_lock);
 
-#ifdef UPCXX_USE_DMAPP_CHANNEL
+#ifdef UPCXX_USE_DMAPP
     upcxx_init_dmapp();
 #endif
 

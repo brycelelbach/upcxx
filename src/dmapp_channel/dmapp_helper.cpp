@@ -9,7 +9,7 @@ dmapp_rma_attrs_ext_t upcxx_dmapp_rma_args = {0};
 
 // Init Cray DMAPP for UPC++ w. GASNet
 // Should be called after gasnet_attach but before using any DMAPP features
-void upcxx::upcxx_init_dmapp()
+void upcxx::init_dmapp()
 {
   dmapp_rma_attrs_ext_t rma_args = {0};
 

@@ -99,10 +99,23 @@ AC_ARG_ENABLE([md-array],
 
 AS_IF([test x$enableval = xyes], [
   dnl Do the stuff needed for enabling md-array
-  AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if the md-array feature is enabled])
+  AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if md-array feature is enabled])
   AC_SUBST(UPCXX_HAVE_MD_ARRAY)
 ])
 
 AM_CONDITIONAL([UPCXX_MD_ARRAY], [test x$enableval = xyes])
+
+dnl Option to enable using the Cray DMAPP API on Aries network (default is disable)
+AC_ARG_ENABLE([dmapp],
+    AS_HELP_STRING([--enable-dmapp], [Enable using DMAPP on Cray Aries network]))
+
+AS_IF([test x$enableval = xyes], [
+  dnl Do the stuff needed for enabling dmapp
+  AC_DEFINE(UPCXX_USE_DMAPP, 1, [define if dmapp feature is enabled])
+  AC_SUBST(UPCXX_USE_DMAPP)
+])
+
+AM_CONDITIONAL([UPCXX_USE_DMAPP], [test x$enableval = xyes])
+
 
 AC_OUTPUT

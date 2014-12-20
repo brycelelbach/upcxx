@@ -83,6 +83,61 @@ namespace upcxx
   }
 
   /**
+   * \ingroup gasgroup
+   * \brief Non-blocking copy-and-set, which first performs an async copy
+   * and after the data transfer completes it sets a flag on remote rank
+   *
+   * The remote rank can wait on the flag to check if the corresponding
+   * async_copy data have arrived.
+   *
+   * \param src the pointer of src data
+   * \param dst the pointer of dst data
+   * \param nbytes the number of bytes to be copied
+   * \param flag_addr the pointer to the remote flag
+   * \param flag_val the value to set in the remote flag
+   * \param e the local event which should be notified after the completion of the copy
+   */
+  int async_copy_and_set(global_ptr<void> src,
+                         global_ptr<void> dst,
+                         size_t nbytes,
+                         global_ptr<uint64_t> flag_addr,
+                         uint64_t flag_val,
+                         event *e = peek_event());
+
+  /**
+    * \ingroup gasgroup
+    * \brief Non-blocking copy-and-set, which first performs an async copy
+    * and after the data transfer completes it sets a flag on remote rank
+    *
+    * The remote rank can wait on the flag to check if the corresponding
+    * async_copy data have arrived.
+    *
+    * \tparam T type of the element
+    * \param src the pointer of src data
+    * \param dst the pointer of dst data
+    * \param count the number of element to be copied
+    * \param flag_addr the pointer to the remote flag
+    * \param flag_val the value to set in the remote flag
+    * \param e the event which should be notified after the completion of the copy
+    */
+   template<typename T>
+   int async_copy_and_set(global_ptr<T> src,
+                          global_ptr<T> dst,
+                          size_t count,
+                          global_ptr<uint64_t> flag_addr,
+                          uint64_t flag_val,
+                          event *e = peek_event())
+   {
+     size_t nbytes = count * sizeof(T);
+     return async_copy_and_set((global_ptr<void>)src,
+                               (global_ptr<void>)dst,
+                               nbytes,
+                               flag_addr,
+                               flag_val,
+                               e);
+   }
+
+  /**
    * async_copy_fence is deprecated. Please use async_wait() instead.
    */
   void async_copy_fence();

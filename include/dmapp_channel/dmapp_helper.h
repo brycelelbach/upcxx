@@ -14,8 +14,8 @@ namespace upcxx
 
   /* convert data size in bytes to nelems of dmapp_type_t */
   inline
-  void upcxx_bytes_to_dmapp_type(void *dst, void *src, size_t nbytes,
-                                 uint64_t *nelems, dmapp_type_t *type)
+  void bytes_to_dmapp_type(void *dst, void *src, size_t nbytes,
+                           uint64_t *nelems, dmapp_type_t *type)
   {
     size_t d = (size_t)dst;
     size_t s = (size_t)src;
@@ -48,6 +48,6 @@ namespace upcxx
 
   // Init Cray DMAPP for UPC++ w. GASNet
   // Should be called after gasnet_attach but before using any DMAPP features
-  void upcxx_init_dmapp();
+  void init_dmapp();
 
 } // end of upcxx name space
