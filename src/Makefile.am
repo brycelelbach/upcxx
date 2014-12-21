@@ -13,6 +13,13 @@ else
 UPCXX_MD_ARRAY_CPP_FILES =   
 endif
 
+if UPCXX_USE_DMAPP
+UPCXX_DMAPP_CPP_FILES = \
+  dmapp_channel/dmapp_helper.cpp    
+else
+UPCXX_DMAPP_CPP_FILES =   
+endif
+
 libupcxx_la_SOURCES = \
   dl_malloc.c        \
   active_coll.cpp    \
@@ -24,4 +31,4 @@ libupcxx_la_SOURCES = \
   event.cpp          \
   lock.cpp           \
   team.cpp           \
-  upcxx_runtime.cpp $(UPCXX_MD_ARRAY_CPP_FILES)
+  upcxx_runtime.cpp $(UPCXX_DMAPP_CPP_FILES) $(UPCXX_MD_ARRAY_CPP_FILES)

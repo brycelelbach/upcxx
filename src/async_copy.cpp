@@ -99,15 +99,17 @@ namespace upcxx
         dmapp_put_flag_nb(dst.raw_ptr(), // target_addr,
                           get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
                           dst.where(), // target_pe,
-                          src.raw_ptr(), // source_addr,
+                          src.raw_ptr(), // source_addr
                           nelems, // # of DMAPP type elements
                           dtype, // IN  dmapp_type_t     type,
                           flag_addr.raw_ptr(), //  target_flag
                           flag_val,
                           &h);
+      }
     } else {
       // for get
-      gasnet_exit("async_copy_and_set for get (src pointer is remote) is not supported yet\n");
+      fprintf(stderr, "async_copy_and_set for get (src pointer is remote) is not supported yet\n");
+      gasnet_exit(1);
     }
 #endif
   }

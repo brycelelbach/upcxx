@@ -192,7 +192,7 @@ namespace upcxx
     gasnet_hsl_init(&outstanding_events_lock);
 
 #ifdef UPCXX_USE_DMAPP
-    upcxx_init_dmapp();
+    init_dmapp();
 #endif
 
 #ifdef UPCXX_HAVE_MD_ARRAY

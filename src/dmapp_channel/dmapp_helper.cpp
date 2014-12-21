@@ -1,6 +1,6 @@
 #include <upcxx.h>
-
-#include "dmapp_helper.h"
+#include <upcxx_internal.h>
+#include "dmapp_channel/dmapp_helper.h"
 
 dmapp_seg_desc_t upcxx_dmapp_myseg;
 dmapp_seg_desc_t *upcxx_dmapp_segs;

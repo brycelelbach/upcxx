@@ -1,5 +1,10 @@
 #include <dmapp.h>
 
+extern dmapp_seg_desc_t upcxx_dmapp_myseg;
+extern dmapp_seg_desc_t *upcxx_dmapp_segs;
+extern dmapp_rma_attrs_ext_t upcxx_dmapp_rma_args;
+// dmapp_queue_handle_t upcxx_dmapp_queue;
+
 namespace upcxx
 {
   #define DMAPP_SAFE(FUNCALL)                 \
@@ -34,16 +39,11 @@ namespace upcxx
     }
   }
 
-  extern dmapp_seg_desc_t upcxx_dmapp_myseg;
-  extern dmapp_seg_desc_t *upcxx_dmapp_segs;
-  extern dmapp_rma_attrs_ext_t upcxx_dmapp_rma_args = {0};
-  // dmapp_queue_handle_t upcxx_dmapp_queue;
-
   inline
   dmapp_seg_desc_t *get_dmapp_seg(uint32_t rank)
   {
     assert(rank < upcxx::ranks());
-    return upcxx_dmapp_segs[rank];
+    return &upcxx_dmapp_segs[rank];
   }
 
   // Init Cray DMAPP for UPC++ w. GASNet

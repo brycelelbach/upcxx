@@ -47,6 +47,11 @@ include_HEADERS =  \
 noinst_HEADERS = \
   upcxx_internal.h 
 
+if UPCXX_USE_DMAPP
+dmapp_includedir = $(includedir)/dmapp_channel
+dmapp_include_HEADERS = dmapp_channel/dmapp_helper.h
+endif
+
 if UPCXX_MD_ARRAY
 arrayincludedir = $(includedir)/upcxx-arrays
 arrayinclude_HEADERS =  \

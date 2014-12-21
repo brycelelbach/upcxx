@@ -1,6 +1,9 @@
 
-/* define if the multidimensional array feature is enabled */
+/* define if UPC++ multidimensional array is enabled */
 #undef UPCXX_HAVE_MD_ARRAY
 
-/* define if the C++11 features are enabled */
+/* define if C++11 features are enabled */
 #undef UPCXX_HAVE_CXX11
+
+/* define if Cray DMAPP features are enabled */
+#undef UPCXX_USE_DMAPP
