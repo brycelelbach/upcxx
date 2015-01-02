@@ -31,6 +31,9 @@ namespace upcxx
     base_ptr(T *ptr, const place_t &pla) : _ptr(ptr), _pla(pla)
     {}
 
+    base_ptr(const place_t &pla, T *ptr) : _ptr(ptr), _pla(pla)
+    {}
+
     place_t where() const
     {
       return _pla;
@@ -103,13 +106,17 @@ namespace upcxx
     typedef T value_type;
 
   public:
-    inline explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
+    inline explicit global_ptr() : base_ptr<T, rank_t>((T *)NULL, 0) {}
 
     inline explicit global_ptr(T *ptr)
       : base_ptr<T, rank_t>(ptr, global_myrank()) {}
 
     inline
     global_ptr(T *ptr, rank_t pla) :
+      base_ptr<T, rank_t>(ptr, pla) {}
+
+    inline
+    global_ptr(rank_t pla, T *ptr) :
       base_ptr<T, rank_t>(ptr, pla) {}
 
     inline
@@ -171,7 +178,7 @@ namespace upcxx
   struct global_ptr<void> : public base_ptr<void, rank_t>
   {
   public:
-    inline explicit global_ptr() : base_ptr<void, rank_t>(NULL, 0) {}
+    inline explicit global_ptr() : base_ptr<void, rank_t>((void *)NULL, 0) {}
 
     inline explicit global_ptr(void *ptr, rank_t pla = global_myrank()) :
       base_ptr<void, rank_t>(ptr, pla) {}

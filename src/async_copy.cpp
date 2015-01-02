@@ -54,16 +54,90 @@ namespace upcxx
       } else { // src.where() == myrank()
         h = gasnet_put_nb_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
       }
-      e->add_handle(h);
+      e->add_gasnet_handle(h);
     }
     return UPCXX_SUCCESS;
   }
 
+  void set_flag(flag_t *flag_addr)
+  {
+    (*flag_addr) = UPCXX_FLAG_VAL_SET;
+  }
+
+  void unset_flag(flag_t *flag_addr)
+  {
+    (*flag_addr) = UPCXX_FLAG_VAL_UNSET;
+  }
+
+  event **allocate_events(uint32_t num_events)
+  {
+    event **temp_events = (event **)malloc(sizeof(event *) * num_events);
+    assert(temp_events != NULL);
+
+    for (uint32_t i = 0; i < num_events; i++) {
+      temp_events[i] = new event;
+      assert(temp_events[i] != NULL);
+    }
+
+    return temp_events;
+  }
+
+  void deallocate_events(uint32_t num_events, event **events)
+  {
+    assert(events != NULL);
+    for (uint32_t i = 0; i < num_events; i++) {
+      assert(events[i] != NULL);
+      delete events[i];
+    }
+    free(events);
+  }
+
+#ifdef UPCXX_USE_DMAPP
+  int async_put_and_set_w_dmapp(global_ptr<void> src,
+                                global_ptr<void> dst,
+                                size_t nbytes,
+                                global_ptr<flag_t> flag_addr,
+                                event *e)
+  {
+    uint64_t nelems;
+    dmapp_type_t dtype;
+    bytes_to_dmapp_type(dst.raw_ptr(), src.raw_ptr(), nbytes,
+                           &nelems, &dtype);
+
+    // Implicit-handle NB
+    if (e == &system_event) {
+      dmapp_put_flag_nbi(dst.raw_ptr(), // target_addr,
+                         get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
+                         dst.where(), // target_pe,
+                         src.raw_ptr(), // source_addr,
+                         nelems, // # of DMAPP type elements
+                         dtype, // IN  dmapp_type_t     type,
+                         flag_addr.raw_ptr(), //  target_flag
+                         UPCXX_FLAG_VAL_SET);
+    } else {
+      // Explicit-handle NB
+      dmapp_syncid_handle_t h;
+      dmapp_put_flag_nb(dst.raw_ptr(), // target_addr,
+                        get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
+                        dst.where(), // target_pe,
+                        src.raw_ptr(), // source_addr
+                        nelems, // # of DMAPP type elements
+                        dtype, // IN  dmapp_type_t     type,
+                        flag_addr.raw_ptr(), //  target_flag
+                        UPCXX_FLAG_VAL_SET,
+                        &h);
+      e->add_dmapp_handle(h);
+    }
+
+    return UPCXX_SUCCESS;
+    // fprintf(stderr, "async_copy_and_set for get (src pointer is remote) is not supported yet\n");
+  }
+#endif
+
   int async_copy_and_set(global_ptr<void> src,
                          global_ptr<void> dst,
                          size_t nbytes,
-                         global_ptr<uint64_t> flag_addr,
-                         uint64_t flag_val,
+                         global_ptr<flag_t> flag_addr,
                          event *e)
   {
     // Either src or dst must be local
@@ -72,46 +146,24 @@ namespace upcxx
       gasnet_exit(1);
     }
 
-    //dmapp_return_t rv;
+    // Use the the Cray DMAPP specialized version of put-and-set if available,
+    // otherwise use the generic implementation
 #ifdef UPCXX_USE_DMAPP
     if (src.where() == myrank()) {
       assert(dst.where() == flag_addr.where());
-      // dmapp_return_t rv;
-
-      uint64_t nelems;
-      dmapp_type_t dtype;
-      bytes_to_dmapp_type(dst.raw_ptr(), src.raw_ptr(), nbytes,
-                          &nelems, &dtype);
-
-      // Implicit-handle NB
-      if (e == &system_event) {
-        dmapp_put_flag_nbi(dst.raw_ptr(), // target_addr,
-                           get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
-                           dst.where(), // target_pe,
-                           src.raw_ptr(), // source_addr,
-                           nelems, // # of DMAPP type elements
-                           dtype, // IN  dmapp_type_t     type,
-                           flag_addr.raw_ptr(), //  target_flag
-                           flag_val);
-      } else {
-        // Explicit-handle NB
-        dmapp_syncid_handle_t h;
-        dmapp_put_flag_nb(dst.raw_ptr(), // target_addr,
-                          get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
-                          dst.where(), // target_pe,
-                          src.raw_ptr(), // source_addr
-                          nelems, // # of DMAPP type elements
-                          dtype, // IN  dmapp_type_t     type,
-                          flag_addr.raw_ptr(), //  target_flag
-                          flag_val,
-                          &h);
-      }
-    } else {
-      // for get
-      fprintf(stderr, "async_copy_and_set for get (src pointer is remote) is not supported yet\n");
-      gasnet_exit(1);
+      return async_put_and_set_w_dmapp(src, dst, nbytes, flag_addr, e);
     }
 #endif
+
+    event **temp_events = allocate_events(2);
+    async_copy(src, dst, nbytes, temp_events[0]);
+    async_after(dst.where(), temp_events[0], temp_events[1])(set_flag, flag_addr.raw_ptr());
+    async_after(myrank(), temp_events[1], e)(deallocate_events, 2, temp_events);
+    //dmapp_return_t rv;
+
+
+
+    return UPCXX_SUCCESS;
   }
 
   void upcxx::async_copy_fence()

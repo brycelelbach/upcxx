@@ -44,7 +44,10 @@ namespace upcxx
 #ifdef UPCXX_THREAD_SAFE
     pthread_mutex_t _mutex;
 #endif
-    list<gasnet_handle_t> _h;
+    vector<gasnet_handle_t> _gasnet_handles;
+#ifdef UPCXX_USE_DMAPP
+    vector<dmapp_syncid_handle_t> _dmapp_handles;
+#endif
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // vector<async_task &> _cont_tasks;
@@ -79,9 +82,11 @@ namespace upcxx
     // Decrement the reference counter for the event
     void decref();
 
-    void add_handle(gasnet_handle_t h);
+    void add_gasnet_handle(gasnet_handle_t h);
 
-    void remove_handle(gasnet_handle_t h);
+#ifdef UPCXX_USE_DMAPP
+    void add_dmapp_handle(dmapp_syncid_handle_t h);
+#endif
 
     inline void lock() { upcxx_mutex_lock(&_mutex); }
 

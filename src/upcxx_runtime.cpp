@@ -387,7 +387,7 @@ namespace upcxx
         event *e = (*it);
         assert(e != NULL);
         // fprintf(stderr, "P %u Advance event: %p\n", myrank(), e);
-        e->test();
+        e->async_try();
         break;
       }
     }

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <type_traits> // for remove reference
+
 #include "gasnet_api.h"
 #include "async.h"
 
@@ -15,22 +17,26 @@ namespace upcxx
 {
   template<typename T> struct global_ptr;
 
-  // obj is a global_ref or a global_ptr of the object.
+  // obj is a global_ref_base or a global_ptr of the object.
   // m is a field/member of the global object.
   #define memberof(obj, m) \
     upcxx::make_memberof((obj).where(), (obj).raw_ptr()->m)
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = rank_t>
-  struct global_ref
+  struct global_ref_base
   {
-    global_ref(place_t pla, T *ptr)
+    global_ref_base(place_t pla, T *ptr)
     {
       _pla = pla;
       _ptr = ptr;
     }
 
-    global_ref<T>& operator = (const T &rhs)
+    global_ref_base(const global_ref_base &r)
+    : global_ref_base(r.where(), r.raw_ptr())
+    {};
+
+    global_ref_base& operator = (const T &rhs)
     {
       if (_pla == myrank()) {
         *_ptr = rhs;
@@ -41,7 +47,7 @@ namespace upcxx
       return *this;
     }
 
-    global_ref<T>& operator = (const global_ref<T> &rhs)
+    global_ref_base& operator = (const global_ref_base<T> &rhs)
     {
       T val = rhs.get();
       if (_pla == myrank()) {
@@ -61,7 +67,7 @@ namespace upcxx
     }
 
 #define UPCXX_GLOBAL_REF_ASSIGN_OP(OP) \
-    global_ref<T>& operator OP (const T &rhs) \
+    global_ref_base<T>& operator OP (const T &rhs) \
     { \
       if (_pla == myrank()) { \
         *_ptr OP rhs; \
@@ -150,14 +156,22 @@ namespace upcxx
 
     // YZ: Needs C++11 auto, decltype
 #ifdef UPCXX_HAVE_CXX11
+
+    // YZ: this works for global_ref_base< global_ptr<T> >
+    // Need somthing to work with global_ref_base<T*>
+    /*
     template <typename T2>
     auto operator [](T2 i) -> decltype(this->get()[i])
     {
       T tmp = get();
       return tmp[i];
     }
+    */
+    
+    // YZ: need to specialize for global_ptr<T> and local pointers (T*)
+    // operator []
 #endif
-
+    
     T* raw_ptr() const
     {
       return _ptr;
@@ -168,15 +182,78 @@ namespace upcxx
       return _pla;
     }
 
-  private:
+  protected:
     T *_ptr;
     place_t _pla;
-  }; // struct global_ref
+  }; // struct global_ref_base
   /// \endcond
+
+  template<typename T, typename place_t = rank_t>
+  struct global_ref : public global_ref_base<T, place_t>
+  {
+    global_ref(place_t pla, T *ptr) : global_ref_base<T, place_t>(pla, ptr)
+    { }
+
+    global_ref(const global_ref_base<T, place_t> &r) :
+      global_ref_base<T, place_t>(br)
+    { }
+
+    inline global_ref operator=(const T& rhs)
+    {
+      return global_ref_base<T, place_t>::operator=(rhs);
+    }
+  };
+
+  template<typename T>
+  struct global_ref<T*> : public global_ref_base<T*>
+  {
+    global_ref(rank_t pla, T **ptr) : global_ref_base<T*>(pla, ptr)
+    { }
+
+    global_ref(const global_ref_base<T*> &r) :
+      global_ref_base<T*>(r)
+    { }
+
+    inline global_ref operator=(const T*& rhs)
+    {
+      return global_ref_base<T*>::operator=(rhs);
+    }
+
+
+    template<typename T2>
+    global_ref<T> operator [](T2 i)
+    {
+      return global_ref<T>((*_ptr)+i); // _ptr has type T**, *_ptr has type T*
+    }
+  };
+
+  template<typename T>
+  struct global_ref<global_ptr<T> > : public global_ref_base<global_ptr<T> >
+  {
+    global_ref(rank_t pla, global_ptr<T> *ptr) : global_ref_base<global_ptr<T> >(pla, ptr)
+    { }
+
+    global_ref(const global_ref_base<global_ptr<T> > &r) :
+      global_ref_base<global_ptr<T> >(r)
+    { }
+
+    inline global_ref operator=(const global_ptr<T>& rhs)
+    {
+      return global_ref_base<global_ptr<T> >::operator=(rhs);
+    }
+
+#ifdef UPCXX_HAVE_CXX11
+    template <typename T2>
+    auto operator [](T2 i) -> decltype(this->get()[i])
+    {
+      global_ptr<T> tmp = this->get();
+      return tmp[i];
+    }
+#endif
+  };
 
   template<typename T, typename place_t>
   global_ref<T, place_t> make_memberof(place_t where, T &member) {
     return global_ref<T, place_t>(where, &member);
   }
-
 } // namespace upcxx

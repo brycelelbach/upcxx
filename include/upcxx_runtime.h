@@ -13,9 +13,11 @@
 #ifdef UPCXX_THREAD_SAFE
 #include <pthread.h>
 #define upcxx_mutex_lock      pthread_mutex_lock
+#define upcxx_mutex_trylock   pthread_mutex_trylock
 #define upcxx_mutex_unlock    pthread_mutex_unlock
 #else
 #define upcxx_mutex_lock(X)
+#define upcxx_mutex_trylock(X) 0
 #define upcxx_mutex_unlock(X)
 #endif
 

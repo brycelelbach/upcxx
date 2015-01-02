@@ -16,18 +16,45 @@ namespace upcxx
 {
   int event::async_try()
   {
-    if (!_h.empty()) {
-#if UPCXX_HAVE_CXX11
-      for (auto it = _h.begin(); it != _h.end(); ++it) {
-#else
-      for (std::list<gasnet_handle_t>::iterator it = _h.begin(); it != _h.end(); ++it) {
-#endif
+    if (upcxx_mutex_trylock(&_mutex) != 0) {
+      return 0; // somebody else is holding the lock, so return not done yet
+    }
+
+    // Acquired the lock
+
+    // check outstanding gasnet handles
+    if (!_gasnet_handles.empty()) {
+     // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
+     for (std::vector<gasnet_handle_t>::iterator it = _gasnet_handles.begin();
+           it != _gasnet_handles.end();) {
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
-          remove_handle(*it);
-          break;
+          _gasnet_handles.erase(it); // erase increase it automatically
+          decref();
+        } else {
+          ++it;
         }
       }
     }
+
+#ifdef UPCXX_USE_DMAPP
+    // check outstanding dmapp handles
+    if (!_dmapp_handles.empty()) {
+     // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
+     for (std::vector<dmapp_syncid_handle_t>::iterator it = _dmapp_handles.begin();
+           it != _dmapp_handles.end();) {
+       int flag;
+       DMAPP_SAFE(dmapp_syncid_test(*it, &flag);
+       if (flag) {
+          _dmapp_handles.erase(it); // erase increase it automatically
+          decref();
+        } else {
+          ++it;
+        }
+      }
+    }
+#endif
+
+    upcxx_mutex_unlock(&_mutex); // trylock must be successful to get here
     return isdone();
   }
 
@@ -117,22 +144,24 @@ namespace upcxx
     }
   };
 
-  void event::add_handle(gasnet_handle_t h)
+  void event::add_gasnet_handle(gasnet_handle_t h)
   {
     upcxx_mutex_lock(&_mutex);
-    _h.push_back(h);
+    _gasnet_handles.push_back(h);
     upcxx_mutex_unlock(&_mutex);
     incref();
   }
 
-  void event::remove_handle(gasnet_handle_t h)
+#ifdef UPCXX_USE_DMAPP
+  void event::add_dmapp_handle(dmapp_syncid_handle_t h)
   {
     upcxx_mutex_lock(&_mutex);
-    _h.remove(h);
+    _dmapp_handles.push_back(h);
     upcxx_mutex_unlock(&_mutex);
-    decref();
+    incref();
   }
 
+#endif
   static event_stack events;
 
   void push_event(event *e)

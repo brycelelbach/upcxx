@@ -45,4 +45,11 @@ typedef enum
   UPCXX_DATATYPE_COUNT
 } upcxx_datatype_t;
 
+namespace upcxx {
+  typedef uint64_t flag_t;
+}
+
+#define UPCXX_FLAG_VAL_SET    1
+#define UPCXX_FLAG_VAL_UNSET  0
+
 #endif // UPCXX_TYPES_H_

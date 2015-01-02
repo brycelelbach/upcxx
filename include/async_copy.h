@@ -100,8 +100,7 @@ namespace upcxx
   int async_copy_and_set(global_ptr<void> src,
                          global_ptr<void> dst,
                          size_t nbytes,
-                         global_ptr<uint64_t> flag_addr,
-                         uint64_t flag_val,
+                         global_ptr<flag_t> flag_addr,
                          event *e = peek_event());
 
   /**
@@ -117,7 +116,6 @@ namespace upcxx
     * \param dst the pointer of dst data
     * \param count the number of element to be copied
     * \param flag_addr the pointer to the remote flag
-    * \param flag_val the value to set in the remote flag
     * \param e the event which should be notified after the completion of the copy
     */
    template<typename T>
@@ -125,7 +123,6 @@ namespace upcxx
                           global_ptr<T> dst,
                           size_t count,
                           global_ptr<uint64_t> flag_addr,
-                          uint64_t flag_val,
                           event *e = peek_event())
    {
      size_t nbytes = count * sizeof(T);
@@ -133,7 +130,6 @@ namespace upcxx
                                (global_ptr<void>)dst,
                                nbytes,
                                flag_addr,
-                               flag_val,
                                e);
    }
 
