@@ -136,14 +136,6 @@ namespace upcxx
       }
     }
 
-#if 0 // UPCXX_HAVE_CXX11 YZ: this is not yet supported by icpc 13.1
-    template<typename T2>
-    explicit operator T2*() const
-    {
-      return (T2*)get();
-    }
-#endif
-
     global_ptr<T> operator &()
     {
       return global_ptr<T>(_ptr, _pla);
@@ -154,24 +146,6 @@ namespace upcxx
       return global_ptr<T>(_ptr, _pla);
     }
 
-    // YZ: Needs C++11 auto, decltype
-#ifdef UPCXX_HAVE_CXX11
-
-    // YZ: this works for global_ref_base< global_ptr<T> >
-    // Need somthing to work with global_ref_base<T*>
-    /*
-    template <typename T2>
-    auto operator [](T2 i) -> decltype(this->get()[i])
-    {
-      T tmp = get();
-      return tmp[i];
-    }
-    */
-    
-    // YZ: need to specialize for global_ptr<T> and local pointers (T*)
-    // operator []
-#endif
-    
     T* raw_ptr() const
     {
       return _ptr;
@@ -195,7 +169,7 @@ namespace upcxx
     { }
 
     global_ref(const global_ref_base<T, place_t> &r) :
-      global_ref_base<T, place_t>(br)
+      global_ref_base<T, place_t>(r)
     { }
 
     inline global_ref operator=(const T& rhs)
