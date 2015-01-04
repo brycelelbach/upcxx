@@ -1,4 +1,5 @@
 #include "upcxx.h"
+#include "upcxx_internal.h"
 
 // #define DEBUG
 
@@ -59,14 +60,24 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-  void set_flag(flag_t *flag_addr)
+  void set_flag(global_ptr<flag_t> flag_addr)
   {
     (*flag_addr) = UPCXX_FLAG_VAL_SET;
   }
 
-  void unset_flag(flag_t *flag_addr)
+  void unset_flag(global_ptr<flag_t> flag_addr)
   {
     (*flag_addr) = UPCXX_FLAG_VAL_UNSET;
+  }
+
+  void async_set_flag(global_ptr<flag_t> flag_addr, event *e)
+  {
+    async_copy(global_ptr<const flag_t>(&UPCXX_FLAG_VAL_SET), flag_addr, sizeof(flag_t), e);
+  }
+
+  void async_unset_flag(global_ptr<flag_t> flag_addr, event *e)
+  {
+    async_copy(global_ptr<const flag_t>(&UPCXX_FLAG_VAL_UNSET), flag_addr, sizeof(flag_t), e);
   }
 
   event **allocate_events(uint32_t num_events)
@@ -91,6 +102,22 @@ namespace upcxx
     }
     free(events);
   }
+
+  GASNETT_INLINE(copy_and_set_request_inner)
+  void copy_and_set_request_inner(gasnet_token_t token,
+                                  void *addr,
+                                  size_t nbytes,
+                                  void *target_addr,
+                                  void *flag_addr)
+  {
+    assert(target_addr != NULL);
+    assert(flag_addr != NULL);
+    memcpy(target_addr, addr, nbytes);
+    *(flag_t*)flag_addr = UPCXX_FLAG_VAL_SET;
+  }
+  MEDIUM_HANDLER(copy_and_set_request, 2, 4,
+                 (token, addr, nbytes, UNPACK(a0),      UNPACK(a1)),
+                 (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3)));
 
 #ifdef UPCXX_USE_DMAPP
   int async_put_and_set_w_dmapp(global_ptr<void> src,
@@ -149,19 +176,30 @@ namespace upcxx
     // Use the the Cray DMAPP specialized version of put-and-set if available,
     // otherwise use the generic implementation
 #ifdef UPCXX_USE_DMAPP
-    if (src.where() == myrank()) {
-      assert(dst.where() == flag_addr.where());
-      return async_put_and_set_w_dmapp(src, dst, nbytes, flag_addr, e);
+    if (env_use_dmapp) {
+      if (src.where() == myrank()) {
+        assert(dst.where() == flag_addr.where());
+        return async_put_and_set_w_dmapp(src, dst, nbytes, flag_addr, e);
+      }
     }
 #endif
 
-    event **temp_events = allocate_events(2);
-    async_copy(src, dst, nbytes, temp_events[0]);
-    async_after(dst.where(), temp_events[0], temp_events[1])(set_flag, flag_addr.raw_ptr());
-    async_after(myrank(), temp_events[1], e)(deallocate_events, 2, temp_events);
-    //dmapp_return_t rv;
-
-
+    // implementation based on GASNet medium AM
+    if (env_use_am_for_copy_and_set && nbytes < gasnet_AMMaxMedium()) {
+      GASNET_SAFE(MEDIUM_REQ(2, 4, (dst.where(), COPY_AND_SET_AM,
+                                    src.raw_ptr(), nbytes,
+                                    PACK(dst.raw_ptr()),
+                                    PACK(flag_addr.raw_ptr()))));
+    } else {
+      // async_copy_and_set implementation based on RDMA put and local async tasks
+      event **temp_events = allocate_events(1);
+      // start the async copy of the payload
+      async_copy(src, dst, nbytes, temp_events[0]);
+      // enqueue a local async task that will asynchronously set the remote flag via RMDA put
+      async_after(myrank(), temp_events[0], e)(async_set_flag, flag_addr, e);
+      // enqueue another local task that will clean up the temp_events after e is done
+      async_after(myrank(), e)(deallocate_events, 1, temp_events);
+    }
 
     return UPCXX_SUCCESS;
   }

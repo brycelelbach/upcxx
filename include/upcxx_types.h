@@ -47,9 +47,9 @@ typedef enum
 
 namespace upcxx {
   typedef uint64_t flag_t;
-}
 
-#define UPCXX_FLAG_VAL_SET    1
-#define UPCXX_FLAG_VAL_UNSET  0
+  const flag_t UPCXX_FLAG_VAL_SET   = 1;
+  const flag_t UPCXX_FLAG_VAL_UNSET = 0;
+}
 
 #endif // UPCXX_TYPES_H_

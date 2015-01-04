@@ -12,6 +12,7 @@ extern "C"
 #include <gasnet.h>
 #include <gasnet_tools.h>
 #include <gasnet_coll.h>
+#include <gasnet_handler.h> // for GASNET macros
 
 #define GASNET_SAFE(fncall) do {                                      \
     int _retval;                                                      \
@@ -60,6 +61,7 @@ enum am_index_t {
   AM_BCAST,         // active broadcast
   AM_BCAST_REPLY,   // active broadcast reply
   INC_AM,           // remote increment
+  COPY_AND_SET_AM,  // copy data and set a remote flag
 
   /* array_bulk.c */
   ARRAY_MISC_DELETE_REQUEST,

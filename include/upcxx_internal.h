@@ -86,6 +86,10 @@ namespace upcxx
   void free_gpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
   void inc_am_handler(gasnet_token_t token, void *am, size_t nbytes);
 
+  MEDIUM_HANDLER_DECL(copy_and_set_request, 2, 4);
+
+  enum { gasneti_handleridx(copy_and_set_request) = COPY_AND_SET_AM };
+
   //typedef struct {
   //  void *addr;
   //  uintptr_t size;
@@ -100,6 +104,12 @@ namespace upcxx
   extern gasnet_nodeinfo_t *all_gasnet_nodeinfo;
   extern gasnet_nodeinfo_t *my_gasnet_nodeinfo;
   extern gasnet_node_t my_gasnet_supernode;
+
+
+  extern int env_use_am_for_copy_and_set; // defined in upcxx_runtime.cpp
+  extern int env_use_dmapp; // defined in upcxx_runtime.cpp
+
+
   static inline void init_gasnet_seg_mspace()
   {
     all_gasnet_seginfo =

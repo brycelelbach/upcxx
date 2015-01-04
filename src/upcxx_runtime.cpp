@@ -54,6 +54,8 @@ namespace upcxx
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
     {INC_AM,                  (void (*)())inc_am_handler},
 
+    gasneti_handler_tableentry_with_bits(copy_and_set_request),
+
 #ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */
     gasneti_handler_tableentry_with_bits(misc_delete_request),
@@ -100,6 +102,9 @@ namespace upcxx
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
+
+  int env_use_am_for_copy_and_set;
+  int env_use_dmapp;
 
   int init(int *pargc, char ***pargv)
   {
@@ -193,12 +198,17 @@ namespace upcxx
 
 #ifdef UPCXX_USE_DMAPP
     init_dmapp();
+    env_use_dmapp = gasnett_getenv_yesno_withdefault("UPCXX_USE_DMAPP", 1);
+#else
+    env_use_dmapp = 0;
 #endif
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     // Initialize array bulk operations
     array_bulk_init();
 #endif
+
+    env_use_am_for_copy_and_set = gasnett_getenv_yesno_withdefault("UPCXX_USE_AM_FOR_COPY_AND_SET", 0);
 
     init_flag = 1;
     barrier();
