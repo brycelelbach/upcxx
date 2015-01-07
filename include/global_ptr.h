@@ -153,6 +153,20 @@ namespace upcxx
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
     }
 
+    // Support -> operator when pointing to a local object
+    T* operator->() const
+    {
+      if (this->where() == myrank()) {
+        return this->raw_ptr();
+      } else {
+        cerr << "global_ptr " << *this << " is pointing to a remote object "
+              << "but the '->' operator is supported only when pointing to "
+              << "a local object.  Please use 'memberof(global_ptr, filed)'\n";
+        gasnet_exit(1);
+      }
+      return NULL; // should never get here
+    }
+
     global_ref<T> operator *() const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr());

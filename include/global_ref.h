@@ -193,11 +193,27 @@ namespace upcxx
       return global_ref_base<T*>::operator=(rhs);
     }
 
+    template<typename T2>
+    global_ref<T> operator [](T2 i)
+    {
+      T* tmp = this->get();
+      return global_ref<T>(where(), tmp+i); // _ptr has type T**, *_ptr has type T*
+    }
+  };
+
+  // Specialization for constant-size array types
+  // Note that some operations are Invalid for array types (e.g., +, =, get()),
+  // thus we use global_ref_base<T> as the base type
+  template<typename T, size_t N>
+  struct global_ref<T[N]> : public global_ref_base<T>
+  {
+    global_ref(rank_t pla, T (*ptr)[N]) : global_ref_base<T>(pla, (T*)ptr)
+    { }
 
     template<typename T2>
     global_ref<T> operator [](T2 i)
     {
-      return global_ref<T>((*_ptr)+i); // _ptr has type T**, *_ptr has type T*
+      return global_ref<T>(this->where(), (T*)this->raw_ptr() + i);
     }
   };
 

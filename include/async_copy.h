@@ -122,7 +122,7 @@ namespace upcxx
    int async_copy_and_set(global_ptr<T> src,
                           global_ptr<T> dst,
                           size_t count,
-                          global_ptr<uint64_t> flag_addr,
+                          global_ptr<flag_t> flag_addr,
                           event *e = peek_event())
    {
      size_t nbytes = count * sizeof(T);
