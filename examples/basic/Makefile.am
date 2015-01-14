@@ -16,6 +16,7 @@ bin_PROGRAMS = \
   test_async \
   test_dynamic_finish \
 	test_copy_closure \
+	test_copy_and_set \
   test_event \
   test_event2 \
   test_finish \
@@ -48,6 +49,7 @@ test_memberof_SOURCES = test_memberof.cpp
 test_memberof2_SOURCES = test_memberof2.cpp
 test_memberof3_SOURCES = test_memberof3.cpp
 test_copy_closure_SOURCES = test_copy_closure.cpp
+test_copy_and_set_SOURCES = test_copy_and_set.cpp
 
 if UPCXX_MD_ARRAY
 test_array_SOURCES = test_array.cpp

@@ -133,6 +133,10 @@ namespace upcxx
                                e);
    }
 
+   void async_set_flag(global_ptr<flag_t> flag_addr, event *e = NULL);
+
+   void async_unset_flag(global_ptr<flag_t> flag_addr, event *e = NULL);
+
   /**
    * async_copy_fence is deprecated. Please use async_wait() instead.
    */

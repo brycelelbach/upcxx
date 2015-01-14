@@ -120,7 +120,7 @@ namespace upcxx
                  (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3)));
 
 #ifdef UPCXX_USE_DMAPP
-  int async_put_and_set_w_dmapp(global_ptr<void> src,
+  int async_put_and_set_dmapp(global_ptr<void> src,
                                 global_ptr<void> dst,
                                 size_t nbytes,
                                 global_ptr<flag_t> flag_addr,
@@ -134,23 +134,23 @@ namespace upcxx
     // Implicit-handle NB
     if (e == &system_event) {
       dmapp_put_flag_nbi(dst.raw_ptr(), // target_addr,
-                         get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
+                         get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg
                          dst.where(), // target_pe,
                          src.raw_ptr(), // source_addr,
                          nelems, // # of DMAPP type elements
-                         dtype, // IN  dmapp_type_t     type,
-                         flag_addr.raw_ptr(), //  target_flag
+                         dtype, // dmapp_type_t type,
+                         flag_addr.raw_ptr(), // target_flag
                          UPCXX_FLAG_VAL_SET);
     } else {
       // Explicit-handle NB
       dmapp_syncid_handle_t h;
       dmapp_put_flag_nb(dst.raw_ptr(), // target_addr,
-                        get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg,
-                        dst.where(), // target_pe,
+                        get_dmapp_seg(dst.where()), // dmapp_seg_desc_t *target_seg
+                        dst.where(), // target_pe
                         src.raw_ptr(), // source_addr
                         nelems, // # of DMAPP type elements
-                        dtype, // IN  dmapp_type_t     type,
-                        flag_addr.raw_ptr(), //  target_flag
+                        dtype, // dmapp_type_t type,
+                        flag_addr.raw_ptr(), // target_flag
                         UPCXX_FLAG_VAL_SET,
                         &h);
       e->add_dmapp_handle(h);
@@ -179,7 +179,7 @@ namespace upcxx
     if (env_use_dmapp) {
       if (src.where() == myrank()) {
         assert(dst.where() == flag_addr.where());
-        return async_put_and_set_w_dmapp(src, dst, nbytes, flag_addr, e);
+        return async_put_and_set_dmapp(src, dst, nbytes, flag_addr, e);
       }
     }
 #endif
