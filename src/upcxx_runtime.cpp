@@ -49,6 +49,8 @@ namespace upcxx
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
     {INC_AM,                  (void (*)())inc_am_handler},
+    {FETCH_ADD_U64_AM,        (void (*)())fetch_add_am_handler<uint64_t>},
+    {FETCH_ADD_U64_REPLY,     (void (*)())fetch_add_reply_handler<uint64_t>},
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */

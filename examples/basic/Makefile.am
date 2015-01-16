@@ -18,8 +18,10 @@ bin_PROGRAMS = \
 	test_copy_closure \
   test_event \
   test_event2 \
+  test_fetch_add \
   test_finish \
   test_global_ptr \
+  test_lock \
   test_process_shared_mem \
   test_remote_inc \
   test_shared_array \
@@ -36,8 +38,10 @@ test_async_SOURCES = test_async.cpp
 test_dynamic_finish_SOURCES = test_dynamic_finish.cpp
 test_event_SOURCES = test_event.cpp
 test_event2_SOURCES = test_event2.cpp
+test_fetch_add_SOURCES = test_fetch_add.cpp
 test_finish_SOURCES = test_finish.cpp
 test_global_ptr_SOURCES = test_global_ptr.cpp
+test_lock_SOURCES = test_lock.cpp
 test_process_shared_mem_SOURCES = test_process_shared_mem.cpp
 test_remote_inc_SOURCES = test_remote_inc.cpp
 test_shared_array_SOURCES = test_shared_array.cpp

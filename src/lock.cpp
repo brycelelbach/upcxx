@@ -55,7 +55,6 @@ namespace upcxx
     gasnet_node_t srcnode;
     GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
     assert(srcnode == 0);
-    assert(myrank() != 0);
 
     reply->lock->_owner = reply->lock_owner;
     reply->cb_event->decref();
@@ -89,18 +88,7 @@ namespace upcxx
     // local lock
       
     // gasneti_assert(locked == 0);
-    if (myrank() == 0) {
-      upcxx_mutex_lock(&_mutex);
-      if (_locked == 0) {
-        _locked = 1;
-        _owner = 0;
-        upcxx_mutex_unlock(&_mutex);
-        return 1;
-      } else {
-        upcxx_mutex_unlock(&_mutex);
-        return 0;
-      }
-    } else {
+    {
       upcxx_mutex_lock(&_mutex);
       event e;
       lock_am_t am;
@@ -132,7 +120,7 @@ namespace upcxx
   {
     assert(_locked);
 
-    if (myrank() != 0) {
+    {
       unlock_am_t am;
       am.id = myrank();
       am.lock = this;
