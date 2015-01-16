@@ -35,5 +35,6 @@
 #include "group.h"
 #include "collective.h"
 #include "shared_array.h"
+#include "atomic.h"
 
 #endif /* UPCXX_H_ */

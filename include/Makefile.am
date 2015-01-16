@@ -21,6 +21,7 @@ include_HEADERS =  \
   async_impl_templates1.h \
   async_impl_templates2.h \
   async_templates.h \
+  atomic.h \
   coll_flags.h \
   collective.h \
   dl_malloc.h \
