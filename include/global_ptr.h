@@ -11,7 +11,7 @@
 #include "event.h"
 #include "global_ref.h"
 
-using namespace std;
+// using namespace std;
 
 namespace upcxx
 {
@@ -159,9 +159,9 @@ namespace upcxx
       if (this->where() == myrank()) {
         return this->raw_ptr();
       } else {
-        cerr << "global_ptr " << *this << " is pointing to a remote object "
-              << "but the '->' operator is supported only when pointing to "
-              << "a local object.  Please use 'memberof(global_ptr, filed)'\n";
+        std::cerr << "global_ptr " << *this << " is pointing to a remote object "
+                  << "but the '->' operator is supported only when pointing to "
+                  << "a local object.  Please use 'memberof(global_ptr, filed)'\n";
         gasnet_exit(1);
       }
       return NULL; // should never get here
