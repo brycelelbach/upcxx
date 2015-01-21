@@ -57,6 +57,8 @@ namespace upcxx
    */
   int finalize();
 
+  bool is_inited();
+
   rank_t global_ranks();
 
   rank_t global_myrank();

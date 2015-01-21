@@ -94,7 +94,7 @@ namespace upcxx
   queue_t *in_task_queue = NULL;
   queue_t *out_task_queue = NULL;
   event system_event;
-  int init_flag = 0;  //  equals 1 if the backend is initialized
+  bool init_flag = false;  //  equals 1 if the backend is initialized
   std::list<event*> outstanding_events;
   gasnet_hsl_t outstanding_events_lock;
 
@@ -212,7 +212,7 @@ namespace upcxx
 
     env_use_am_for_copy_and_set = gasnett_getenv_yesno_withdefault("UPCXX_USE_AM_FOR_COPY_AND_SET", 0);
 
-    init_flag = 1;
+    init_flag = true;
     barrier();
     return UPCXX_SUCCESS;
   }
@@ -225,6 +225,8 @@ namespace upcxx
     // gasnet_exit(0);
     return UPCXX_SUCCESS;
   }
+
+  bool is_inited() { return init_flag; }
 
   uint32_t global_ranks()
   {
