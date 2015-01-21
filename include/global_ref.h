@@ -197,7 +197,7 @@ namespace upcxx
     global_ref<T> operator [](T2 i)
     {
       T* tmp = this->get();
-      return global_ref<T>(where(), tmp+i); // _ptr has type T**, *_ptr has type T*
+      return global_ref<T>(this->where(), tmp+i); // _ptr has type T**, *_ptr has type T*
     }
   };
 

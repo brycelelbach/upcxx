@@ -204,12 +204,12 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-  void upcxx::async_copy_fence()
+  void async_copy_fence()
   {
     upcxx::async_wait();
   }
 
-  int upcxx::async_copy_try()
+  int async_copy_try()
   {
     return upcxx::async_try();
   }
