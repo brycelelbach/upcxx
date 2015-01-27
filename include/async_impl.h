@@ -8,7 +8,9 @@
 
 #include "gasnet_api.h"
 #include "event.h"
-#include "async_templates.h"
+#ifndef UPCXX_HAVE_CXX11
+# include "async_templates.h"
+#endif
 #include "active_coll.h"
 #include "group.h"
 #include "range.h"
@@ -21,6 +23,52 @@ using namespace std;
 
 namespace upcxx
 {
+#ifdef UPCXX_HAVE_CXX11
+  template <typename... Ts>
+  struct generic_arg;
+
+  template <typename Function, typename T, typename... Ts>
+  struct generic_arg<Function, T, Ts...> {
+    T arg;
+    generic_arg<Function, Ts...> base;
+
+    generic_arg(T a, generic_arg<Function, Ts...> b) :
+      arg(a), base(b) {}
+    generic_arg(Function k, T a, Ts... as) :
+      arg(a), base(k, as...) {}
+
+    template<typename... Ts2>
+    void apply(Ts2... as) {
+      base.apply(as..., arg);
+    }
+  };
+
+  template <typename Function>
+  struct generic_arg<Function> {
+    Function kernel;
+
+    generic_arg(Function k) :
+      kernel(k) {}
+
+    template<typename... Ts2>
+    void apply(Ts2... as) {
+      kernel(as...);
+    }
+  };
+
+  /************************************/
+  /* Active Message wrapper functions */
+  /************************************/
+
+  template <typename Function, typename... Ts>
+  void async_wrapper(void *args) {
+    generic_arg<Function, Ts...> *a =
+      (generic_arg<Function, Ts...> *) args;
+
+    a->apply();
+  }
+#endif
+
 #define MAX_ASYNC_ARG_COUNT 16 // max number of arguments
 #define MAX_ASYNC_ARG_SIZE 512 // max size of all arguments (in nbytes)
   
@@ -67,8 +115,17 @@ namespace upcxx
       return (sizeof(async_task) - MAX_ASYNC_ARG_SIZE + _arg_sz);
     }
 
-    #include "async_impl_templates1.h"
-    
+#ifndef UPCXX_HAVE_CXX11
+# include "async_impl_templates1.h"
+#else
+    template<typename Function, typename... Ts>
+    inline async_task(rank_t caller, rank_t callee, event *ack,
+                      Function k, const Ts &... as) {
+      generic_arg<Function, Ts...> args(k, as...);
+      init_async_task(caller, callee, ack, async_wrapper<Function, Ts...>,
+                      (size_t) sizeof(args), (void *) &args);
+    }
+#endif
   }; // close of async_task
   
   inline std::ostream& operator<<(std::ostream& out, const async_task& task)
@@ -182,9 +239,17 @@ namespace upcxx
     /* launch a general kernel */
     void launch(generic_fp fp, void *async_args, size_t arg_sz,
                 void *rv, size_t rv_sz);
-    
-    #include "async_impl_templates2.h"
-    
+
+#ifndef UPCXX_HAVE_CXX11
+# include "async_impl_templates2.h"
+#else
+    template<typename Function, typename... Ts>
+    inline void operator()(Function k, const Ts &... as) {
+      generic_arg<Function, Ts...> args(k, as...);
+      launch(async_wrapper<Function, Ts...>, (void *) &args,
+             (size_t) sizeof(args));
+    }
+#endif
   }; // gasnet_launcher
   
   /// \endcond
