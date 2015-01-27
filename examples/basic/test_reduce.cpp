@@ -29,7 +29,7 @@ void test(upcxx_datatype_t dt, size_t count)
   barrier();
   
   uint32_t root = 0;
-  upcxx_reduce<T>(src, dst, count, root, UPCXX_MAX, dt);
+  upcxx_reduce<T>((T *) src, (T *) dst, count, root, UPCXX_MAX, dt);
   
   if (MYTHREAD == 0) {
     cout << myrank() << " dst: ";
@@ -40,7 +40,7 @@ void test(upcxx_datatype_t dt, size_t count)
     cout << endl;
   }
   
-  upcxx_reduce<T>(src, dst, count, root, UPCXX_SUM, dt);
+  upcxx_reduce<T>((T *) src, (T *) dst, count, root, UPCXX_SUM, dt);
   
   if (MYTHREAD == 0) {
     cout << myrank() << " dst: ";

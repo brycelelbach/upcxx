@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   
   for (int i = 0; i < 100; i++) {
     for (int t = 0; t < ranks(); t++) {
-      global_ptr<atomic<uint64_t> > obj = &counters[t];
+      global_ptr<upcxx::atomic<uint64_t> > obj = &counters[t];
       old_val = fetch_add(obj, 10);
       if (old_val % 1000 == 0) {
         printf("Rank %u, t = %d fetch_add old value =  %lu\n",
