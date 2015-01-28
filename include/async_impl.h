@@ -24,35 +24,32 @@ using namespace std;
 namespace upcxx
 {
 #ifdef UPCXX_HAVE_CXX11
-  template <typename... Ts>
-  struct generic_arg;
-
-  template <typename Function, typename T, typename... Ts>
-  struct generic_arg<Function, T, Ts...> {
-    T arg;
-    generic_arg<Function, Ts...> base;
-
-    generic_arg(T a, generic_arg<Function, Ts...> b) :
-      arg(a), base(b) {}
-    generic_arg(Function k, T a, Ts... as) :
-      arg(a), base(k, as...) {}
-
-    template<typename... Ts2>
-    void apply(Ts2... as) {
-      base.apply(as..., arg);
+  template<size_t N>
+  struct apply_args {
+    template<typename Function, typename... Ts, typename... Ts2>
+    static void apply(Function k, std::tuple<Ts...> t, Ts2... as) {
+      apply_args<N-1>::apply(k, t, std::get<N-1>(t), as...);
     }
   };
 
-  template <typename Function>
-  struct generic_arg<Function> {
+  template<>
+  struct apply_args<0> {
+    template<typename Function, typename... Ts, typename... Ts2>
+    static void apply(Function k, std::tuple<Ts...> t, Ts2... as) {
+      k(as...);
+    }
+  };
+
+  template<typename Function, typename... Ts>
+  struct generic_arg {
     Function kernel;
+    std::tuple<Ts...> args;
 
-    generic_arg(Function k) :
-      kernel(k) {}
+    generic_arg(Function k, Ts... as) :
+      kernel(k), args{as...} {}
 
-    template<typename... Ts2>
-    void apply(Ts2... as) {
-      kernel(as...);
+    void apply() {
+      apply_args<sizeof...(Ts)>::apply(kernel, args);
     }
   };
 
