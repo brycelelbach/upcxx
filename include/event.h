@@ -16,8 +16,6 @@
 #include "queue.h"
 #include "upcxx_runtime.h"
 
-using namespace std;
-
 namespace upcxx
 {
   struct async_task; // defined in async_gasnet.h
@@ -44,13 +42,13 @@ namespace upcxx
 #ifdef UPCXX_THREAD_SAFE
     pthread_mutex_t _mutex;
 #endif
-    vector<gasnet_handle_t> _gasnet_handles;
+    std::vector<gasnet_handle_t> _gasnet_handles;
 #ifdef UPCXX_USE_DMAPP
-    vector<dmapp_syncid_handle_t> _dmapp_handles;
+    std::vector<dmapp_syncid_handle_t> _dmapp_handles;
 #endif
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
-    // vector<async_task &> _cont_tasks;
+    // std::vector<async_task &> _cont_tasks;
 
     inline event()
     {

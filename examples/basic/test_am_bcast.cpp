@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string.h>
 
+using namespace std;
 using namespace upcxx;
 
 shared_lock sl;

@@ -6,8 +6,6 @@
 
 #include "async_impl.h"
 
-using namespace std;
-
 namespace upcxx
 {
 

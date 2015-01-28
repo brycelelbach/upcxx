@@ -17,8 +17,6 @@
 #include "team.h"
 #include "global_ptr.h"
 
-using namespace std;
-
 // #define UPCXX_DEBUG
 
 namespace upcxx

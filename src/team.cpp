@@ -9,6 +9,8 @@
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
 #endif
 
+using namespace std;
+
 namespace upcxx
 {
   team team_all;

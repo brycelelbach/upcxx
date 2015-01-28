@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdio.h>
 
+using namespace std;
 using namespace upcxx;
 
 void callback()

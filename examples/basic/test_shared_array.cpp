@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+using namespace std;
 using namespace upcxx;
 
 const size_t ARRAY_SIZE = 16;

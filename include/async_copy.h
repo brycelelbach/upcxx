@@ -8,8 +8,6 @@
 
 #include "global_ptr.h"
 
-using namespace std;
-
 namespace upcxx
 {
 

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <unistd.h> // for sleep, usleep
 
+using namespace std;
 using namespace upcxx;
 
 shared_lock sl;

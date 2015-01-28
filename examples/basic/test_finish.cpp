@@ -11,6 +11,7 @@
 
 #include <iostream>
 
+using namespace std;
 using namespace upcxx;
 
 void print_task(int task_id)

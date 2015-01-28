@@ -11,8 +11,6 @@
 #include "event.h"
 #include "global_ref.h"
 
-// using namespace std;
-
 namespace upcxx
 {
   bool is_memory_shared_with(rank_t r);

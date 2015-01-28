@@ -4,6 +4,7 @@
 
 #include <upcxx.h>
 
+using namespace std;
 using namespace upcxx;
 
 template<class T>
