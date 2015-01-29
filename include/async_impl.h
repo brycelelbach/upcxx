@@ -16,28 +16,13 @@
 #include "range.h"
 #include "team.h"
 #include "global_ptr.h"
+#include "utils.h"
 
 // #define UPCXX_DEBUG
 
 namespace upcxx
 {
 #ifdef UPCXX_HAVE_CXX11
-  template<size_t N>
-  struct apply_args {
-    template<typename Function, typename... Ts, typename... Ts2>
-    static void apply(Function k, std::tuple<Ts...> t, Ts2... as) {
-      apply_args<N-1>::apply(k, t, std::get<N-1>(t), as...);
-    }
-  };
-
-  template<>
-  struct apply_args<0> {
-    template<typename Function, typename... Ts, typename... Ts2>
-    static void apply(Function k, std::tuple<Ts...> t, Ts2... as) {
-      k(as...);
-    }
-  };
-
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
@@ -47,14 +32,11 @@ namespace upcxx
       kernel(k), args{as...} {}
 
     void apply() {
-      apply_args<sizeof...(Ts)>::apply(kernel, args);
+      upcxx::apply<sizeof...(Ts)>::call(kernel, args);
     }
   };
 
-  /************************************/
-  /* Active Message wrapper functions */
-  /************************************/
-
+  /* Active Message wrapper function */
   template <typename Function, typename... Ts>
   void async_wrapper(void *args) {
     generic_arg<Function, Ts...> *a =
