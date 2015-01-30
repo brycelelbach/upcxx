@@ -24,19 +24,27 @@ namespace upcxx {
 #ifdef UPCXX_HAVE_CXX11
   // Apply a function to a list of arguments stored in a std::tuple
   template<size_t N>
-  struct apply {
+  struct applier {
     template<typename Function, typename... Ts, typename... Ts2>
-    static void call(Function k, std::tuple<Ts...> t, Ts2... as) {
-      upcxx::apply<N-1>::call(k, t, std::get<N-1>(t), as...);
+    static auto call(Function k, std::tuple<Ts...> t, Ts2... as) ->
+      decltype(applier<N-1>::call(k, t, std::get<N-1>(t), as...)) {
+      return applier<N-1>::call(k, t, std::get<N-1>(t), as...);
     }
   };
 
   template<>
-  struct apply<0> {
+  struct applier<0> {
     template<typename Function, typename... Ts, typename... Ts2>
-    static void call(Function k, std::tuple<Ts...> t, Ts2... as) {
-      k(as...);
+    static auto call(Function k, std::tuple<Ts...> t, Ts2... as) ->
+      decltype(k(as...)) {
+      return k(as...);
     }
   };
+
+  template<typename Function, typename... Ts>
+  auto apply(Function k, std::tuple<Ts...> t) ->
+    decltype(applier<sizeof...(Ts)>::call(k, t)) {
+    return applier<sizeof...(Ts)>::call(k, t);
+  }
 #endif
 } // namespace upcxx

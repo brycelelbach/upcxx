@@ -32,7 +32,7 @@ namespace upcxx
       kernel(k), args{as...} {}
 
     void apply() {
-      upcxx::apply<sizeof...(Ts)>::call(kernel, args);
+      upcxx::apply(kernel, args);
     }
   };
 
