@@ -71,7 +71,7 @@ void initGrid(ndarray<double, 3> grid) {
 #ifdef RANDOM_VALUES
   foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
-  }
+  };
 #else
   grid.set(CONSTANT_VALUE);
 #endif

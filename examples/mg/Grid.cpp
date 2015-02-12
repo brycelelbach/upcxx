@@ -59,7 +59,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
   points = ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
   foreach (p, points.domain()) {
     points[p] = tempPoints[procForBlockPosition(p)];
-  }
+  };
 
   // create "myPointsOnProc0" and "bufferForProc0" if needed
   if (proc0BuffersNeeded) {
@@ -73,7 +73,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
         // includes necessary ghost cells
         RectDomain<3> buf_rd(startCell - POINT(1, 1, 1), endCell + POINT(2, 2, 2));
         localBuffersOnProc0[p] = ndarray<double, 3 UNSTRIDED>(buf_rd);
-      }
+      };
     }
 
     ndarray<ndarray<double, 3, global GUNSTRIDED>,
@@ -125,7 +125,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
           myInBuffer[dir] = ndarray<double, 3>(myInBufferRD);
         }
       }
-    }
+    };
 
     // create the distributed arrays "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
@@ -144,7 +144,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     foreach (p, blocks_rd) {
       outBuffers[p] = tempOutBuffer[procForBlockPosition(p)];
       inBuffers[p] = tempInBuffer[procForBlockPosition(p)];
-    }
+    };
 
 #elif UPDATE_BORDER_DIRECTIONS == 26
     // this RectDomain indicates the direction of the buffer
@@ -187,7 +187,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
           myInBuffer[dir] = myPoints.constrict(myInBufferRD);
         }
       }
-    }
+    };
 
     // create the distributed array buffers "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
@@ -206,7 +206,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     foreach (p, blocks_rd) {
       outBuffers[p] = tempOutBuffer[procForBlockPosition(p)];
       inBuffers[p] = tempInBuffer[procForBlockPosition(p)];
-    }
+    };
 #endif
   }
 #endif

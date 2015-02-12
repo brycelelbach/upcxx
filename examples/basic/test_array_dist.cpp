@@ -19,7 +19,7 @@ void test_copy() {
 
   foreach (p, rd1) {
     arrA1[p] = 100 * MYTHREAD + p[1];
-  }
+  };
 
   allArrA1s.exchange(arrA1);
   arrB1 = allArrA1s[THREADS-1];
@@ -35,7 +35,7 @@ void test_copy() {
         println("error: mismatch at " << p << ", " << arrA2[p] <<
                 " != " << arrB1[p]);
       }
-    }
+    };
   }
   barrier();
   {
@@ -46,7 +46,7 @@ void test_copy() {
         println("error: mismatch at " << p << ", " << arrA2[p] <<
                 " != " << arrB1[p]);
       }
-    }
+    };
   }
   barrier();
   {
@@ -61,7 +61,7 @@ void test_copy() {
         println("error: unexpected match at " << p << ", " <<
                 arrA2[p] << " == " << arrB1[p]);
       }
-    }
+    };
   }
   barrier();
   {
@@ -76,7 +76,7 @@ void test_copy() {
         println("error: unexpected match at " << p << ", " <<
                 arrA2[p] << " == " << arrB1[p]);
       }
-    }
+    };
   }
   barrier();
   {
@@ -85,7 +85,7 @@ void test_copy() {
     int idx = 0;
     foreach (p, d) {
       parr[idx++] = p;
-    }
+    };
     arrA2.copy(arrB1, parr);
     foreach (p, rd1) {
       if (d.contains(p) && arrA2[p] != arrB1[p]) {
@@ -96,7 +96,7 @@ void test_copy() {
         println("error: unexpected match at " << p << ", " <<
                 arrA2[p] << " == " << arrB1[p]);
       }
-    }
+    };
   }
 }
 

@@ -103,7 +103,7 @@ void FT::FFT_3D(int direction, int iter) {
       pencilToPencilStrideBackwardY(myArray3.slice(1, i[1]),
                                     myArray4.slice(1, i[1]));
     }
-  }
+  };
 
   if (direction == 1) {
     TIMER_STOP_READ(myTimer, myTimes[T_Y_FOR_FFT][iter]);
@@ -169,10 +169,10 @@ void FT::FFT_3D(int direction, int iter) {
           // send off the completed slab to a staggered processor
           array5[actualProc].COPY(myArray4.constrict(rd));
         }
-      }
+      };
 #endif
     }
-  }
+  };
 
 #ifdef TIMERS_ENABLED
   myTimer2.stop();
@@ -209,7 +209,7 @@ void FT::FFT_3D(int direction, int iter) {
       slabToUnitStrideBackwardX(myArray5.slice(2, j[1]),
                                 myArray6.slice(1, j[1]));
     }
-  }
+  };
 #else
   foreach (j, yDimLocalSlabRD) {
     if (direction == 1) {
@@ -220,7 +220,7 @@ void FT::FFT_3D(int direction, int iter) {
       pencilToUnitStrideBackwardX(myArray5.slice(1, j[1]),
                                   myArray6.slice(1, j[1]));
     }
-  }
+  };
 #endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_X_FFT][iter]);
@@ -274,7 +274,7 @@ void FT::printSummary() {
     double totalComponentTime = 0.0;
     foreach (timing, myTimes[timerIdx].domain()) {
       totalComponentTime += myTimes[timerIdx][timing];
-    }
+    };
 
     double minTotalComponentTime = reduce::min(totalComponentTime);
     double sumTotalComponentTime = reduce::add(totalComponentTime);
@@ -350,7 +350,7 @@ void FT::printProfile() {
       }
       lsumTime += value;
       numReadingsPerProc++;
-    }
+    };
 	    
     double gminTime = reduce::min(lminTime);
     double gmaxTime = reduce::max(lmaxTime);

@@ -20,11 +20,11 @@ LocalSparseMat::LocalSparseMat(ndarray<double, 1 UNSTRIDED> la,
   // populate the "rowptr", "colidx", and "a" arrays
   FOREACH (p, rowptr.domain()) {
     rowptr[p] = lrow.translate(POINT(rowStart-1))[p]-1;
-  }
+  };
   foreach (p, colidx.domain()) {
     colidx[p] = lcidx[p[1]+1]-1;
     a[p] = la[p[1]+1];
-  }
+  };
 
   // populate the "rowRectDomains" array
   rowRectDomains =
@@ -32,7 +32,7 @@ LocalSparseMat::LocalSparseMat(ndarray<double, 1 UNSTRIDED> la,
                                                       rowptr.domain().max()));
   FOREACH (i, rowRectDomains.domain()) {
     rowRectDomains[i] = RECTDOMAIN((rowptr[i]), (rowptr[i+1]));
-  }
+  };
 }
 
 void LocalSparseMat::multiply(ndarray<double, 1 UNSTRIDED> output,
@@ -49,7 +49,7 @@ void LocalSparseMat::multiply(ndarray<double, 1 UNSTRIDED> output,
     sum = 0;
     FOREACH (j, lrowRectDomains[i]) {
       sum += la[j] * input[lcolidx[j]];
-    }
+    };
     output[i] = sum;
-  }
+  };
 }

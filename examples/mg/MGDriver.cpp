@@ -72,7 +72,7 @@ MGDriver::MGDriver(char paramClassType) : epsilon(1e-8) {
       residualGrids[level] = new Grid(level[1], true, true);
       correctionGrids[level] = new Grid(level[1], true, true);
     }
-  }
+  };
 
   // populate rhsGrid with initial values
   Test::populateRHSGrid(*rhsGrid, startLevel);
