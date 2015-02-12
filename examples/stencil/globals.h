@@ -130,10 +130,24 @@ struct timer {
 # define TIMER_RESET(t)
 #endif
 
-#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(SPLIT_LOOP) || defined(OMP_SPLIT_LOOP) || defined(VAR_LOOP) || defined(UNPACKED_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
-# define ALT_LOOP
-#elif !defined(STANDARD_LOOP)
-# define SPEC_LOOP
+#ifndef foreach3
+# define foreach1(i, dom)                       \
+  foreachd(i, dom, 1)
+# define foreach2(i, j, dom)                    \
+  foreach1(i, dom) foreachd(j, dom, 2)
+# define foreach3(i, j, k, dom)                 \
+  foreach2(i, j, dom) foreachd(k, dom, 3)
+# define foreachd(var, dom, dim)                        \
+  foreachd_(var, (dom), dim, UPCXXA_CONCAT_(var, _upb), \
+            UPCXXA_CONCAT_(var, _stride),               \
+            UPCXXA_CONCAT_(var, _done))
+# define foreachd_(var, dom, dim, u_, s_, d_)           \
+  for (upcxx::cint_t u_ = (dom).upb()[dim],             \
+	 s_ = (dom).raw_stride()[dim],                  \
+	 var = (dom).lwb()[dim]; var < u_; var += s_)
+#endif
+
+#if defined(OPT_LOOP) || defined(SPEC_LOOP) || defined(OMP_LOOP) || defined(VAR_LOOP) || defined(RAW_LOOP) || defined(RAW_FOR_LOOP)
 # define ALT_LOOP
 #endif
 
@@ -182,12 +196,10 @@ struct timer {
 # endif
 #endif
 
-#if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# ifdef USE_CMAJOR
-#  define STRIDEDNESS simple_column
-# else
-#  define STRIDEDNESS simple
-# endif
+#if defined(USE_CMAJOR) && !defined(STRIDEDNESS)
+# define STRIDEDNESS column
+#elif defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
+# define STRIDEDNESS row
 #endif
 
 #ifdef USE_CMAJOR

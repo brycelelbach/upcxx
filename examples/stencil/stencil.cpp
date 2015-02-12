@@ -12,12 +12,12 @@ ndarray<rectdomain<3>, 1> allDomains;
 rectdomain<3> myDomain;
 ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
 #ifdef SHARED_DIR
-shared_array<ndarray<double, 3, global> > allGridsA, allGridsB;
+shared_array<ndarray<double, 3, global UNSTRIDED> > allGridsA, allGridsB;
 #else
-ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
+ndarray<ndarray<double, 3, global UNSTRIDED>, 1> allGridsA, allGridsB;
 #endif
-ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
-ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
+ndarray<ndarray<double, 3, global UNSTRIDED>, 1> targetsA, targetsB;
+ndarray<ndarray<double, 3 UNSTRIDED>, 1> sourcesA, sourcesB;
 #ifdef MPI_STYLE
 int nx, ny, nz;
 int nx_interior, ny_interior, nz_interior;
@@ -91,7 +91,7 @@ point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
   int ypos = (i % (parts[2] * parts[3])) / parts[3];
   int zpos = i % parts[3];
-  return POINT(xpos, ypos, zpos);
+  return PT(xpos, ypos, zpos);
 }
 
 int posToThread(point<3> parts, int threads, point<3> pos) {
@@ -143,7 +143,7 @@ ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
   return neighbors;
 }
 
-void initGrid(ndarray<double, 3> grid) {
+void initGrid(ndarray<double, 3 UNSTRIDED> grid) {
 #if DEBUG
   cout << MYTHREAD << ": initializing grid with domain "
        << grid.domain() << endl;
@@ -374,17 +374,6 @@ void probe(int steps) {
         myGridA[PT(i-1, j, k)] +
         WEIGHT * myGridA[PT(i, j, k)];
     }
-#elif defined(SPLIT_LOOP)
-    cforeach3 (i, j, k, myDomain) {
-      myGridB[i][j][k] =
-        myGridA[i][j][k+1] +
-        myGridA[i][j][k-1] +
-        myGridA[i][j+1][k] +
-        myGridA[i][j-1][k] +
-        myGridA[i+1][j][k] +
-        myGridA[i-1][j][k] +
-        WEIGHT * myGridA[i][j][k];
-    }
 #elif defined(VAR_LOOP)
     cforeach3 (i, j, k, myDomain) {
       myGridB(i, j, k) =
@@ -395,36 +384,6 @@ void probe(int steps) {
         myGridA(i+1, j, k) +
         myGridA(i-1, j, k) +
         WEIGHT * myGridA(i, j, k);
-    }
-#elif defined (UNPACKED_LOOP)
-# ifdef UNPACK_SPEC
-#  ifndef CONCAT_
-#   define CONCAT_(a, b) CONCAT__(a, b)
-#   define CONCAT__(a, b) a ## b
-#  endif
-#  define AINDEX3_SPEC CONCAT_(AINDEX3_, UNPACK_SPEC)
-# else
-#  define AINDEX3_SPEC AINDEX3
-# endif
-# if defined(USE_RESTRICT) && defined(__GNUC__)
-    AINDEX3_SETUP_QUAL(myGridA, __restrict__);
-    AINDEX3_SETUP_QUAL(myGridB, __restrict__);
-# elif defined(USE_RESTRICT)
-    AINDEX3_SETUP_QUAL(myGridA, __restrict);
-    AINDEX3_SETUP_QUAL(myGridB, __restrict);
-# else
-    AINDEX3_SETUP(myGridA);
-    AINDEX3_SETUP(myGridB);
-# endif
-    cforeach3(i, j, k, myDomain) {
-      AINDEX3_SPEC(myGridB, i, j, k) =
-	AINDEX3_SPEC(myGridA, i, j, k+1) +
-	AINDEX3_SPEC(myGridA, i, j, k-1) +
-	AINDEX3_SPEC(myGridA, i, j+1, k) +
-	AINDEX3_SPEC(myGridA, i, j-1, k) +
-	AINDEX3_SPEC(myGridA, i+1, j, k) +
-	AINDEX3_SPEC(myGridA, i-1, j, k) +
-	WEIGHT * AINDEX3_SPEC(myGridA, i, j, k);
     }
 #elif defined(RAW_LOOP)
 # define Index3D(i,j,k)                                                 \
@@ -474,65 +433,50 @@ void probe(int steps) {
         }
       }
     }
-#elif defined(OMP_SPLIT_LOOP) && defined(USE_FOREACHH)
+#elif defined(OMP_LOOP)
     foreachh (3, myDomain, lwb, upb, stride, done) {
       foreachhd (i, 0, lwb, upb, stride) {
 # pragma omp parallel for
         foreachhd (j, 1, lwb, upb, stride) {
 # pragma ivdep
           foreachhd (k, 2, lwb, upb, stride) {
-            myGridB[i][j][k] =
-              myGridA[i][j][k+1] +
-              myGridA[i][j][k-1] +
-              myGridA[i][j+1][k] +
-              myGridA[i][j-1][k] +
-              myGridA[i+1][j][k] +
-              myGridA[i-1][j][k] +
-              WEIGHT * myGridA[i][j][k];
+            myGridB[PT(i, j, k)] =
+              myGridA[PT(i, j, k+1)] +
+              myGridA[PT(i, j, k-1)] +
+              myGridA[PT(i, j+1, k)] +
+              myGridA[PT(i, j-1, k)] +
+              myGridA[PT(i+1, j, k)] +
+              myGridA[PT(i-1, j, k)] +
+              WEIGHT * myGridA[PT(i, j, k)];
           }
         }
       }
     }
-#elif defined(OMP_SPLIT_LOOP)
-    foreachd (i, myDomain, 1) {
-      foreachd_pragma (omp parallel for, j, myDomain, 2) {
-	foreachd_pragma (ivdep, k, myDomain, 3) {
-	  myGridB[i][j][k] =
-	    myGridA[i][j][k+1] +
-	    myGridA[i][j][k-1] +
-	    myGridA[i][j+1][k] +
-	    myGridA[i][j-1][k] +
-	    myGridA[i+1][j][k] +
-	    myGridA[i-1][j][k] +
-	    WEIGHT * myGridA[i][j][k];
-	}
-      }
-    }
 #else
-    foreach (p, myDomain) {
+    upcxx_foreach (p, myDomain) {
 # ifdef SECOND_ORDER
       myGridB[p] =
-        myGridA[p + POINT( 0,  0,  2)] +
-        myGridA[p + POINT( 0,  0,  1)] +
-        myGridA[p + POINT( 0,  0, -1)] +
-        myGridA[p + POINT( 0,  0, -2)] +
-        myGridA[p + POINT( 0,  2,  0)] +
-        myGridA[p + POINT( 0,  1,  0)] +
-        myGridA[p + POINT( 0, -1,  0)] +
-        myGridA[p + POINT( 0, -2,  0)] +
-        myGridA[p + POINT( 2,  0,  0)] +
-        myGridA[p + POINT( 1,  0,  0)] +
-        myGridA[p + POINT(-1,  0,  0)] +
-        myGridA[p + POINT(-2,  0,  0)] +
+        myGridA[p + PT( 0,  0,  2)] +
+        myGridA[p + PT( 0,  0,  1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0,  0, -2)] +
+        myGridA[p + PT( 0,  2,  0)] +
+        myGridA[p + PT( 0,  1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT( 0, -2,  0)] +
+        myGridA[p + PT( 2,  0,  0)] +
+        myGridA[p + PT( 1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
+        myGridA[p + PT(-2,  0,  0)] +
         WEIGHT * myGridA[p];
 # else
       myGridB[p] =
-        myGridA[p + POINT( 0,  0,  1)] +
-        myGridA[p + POINT( 0,  0, -1)] +
-        myGridA[p + POINT( 0,  1,  0)] +
-        myGridA[p + POINT( 0, -1,  0)] +
-        myGridA[p + POINT( 1,  0,  0)] +
-        myGridA[p + POINT(-1,  0,  0)] +
+        myGridA[p + PT( 0,  0,  1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0,  1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT( 1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
         WEIGHT * myGridA[p];
 # endif
     };
@@ -604,12 +548,12 @@ int main(int argc, char **args) {
   if (MYTHREAD == 0) {
     for (int i = 0; i < THREADS; i++) {
       point<3> pos =
-        threadToPos(POINT(xparts,yparts,zparts), THREADS, i);
+        threadToPos(PT(xparts,yparts,zparts), THREADS, i);
       cout << i << " -> " << pos << ", " << pos << " -> "
-           << posToThread(POINT(xparts,yparts,zparts), THREADS, pos)
+           << posToThread(PT(xparts,yparts,zparts), THREADS, pos)
            << endl;
       ndarray<int, 1> nb =
-        computeNeighbors(POINT(xparts,yparts,zparts), THREADS, i);
+        computeNeighbors(PT(xparts,yparts,zparts), THREADS, i);
       for (int j = 0; j < nb.size(); j++) {
         cout << "  " << nb[j];
       }
@@ -618,8 +562,8 @@ int main(int argc, char **args) {
   }
 #endif
 
-  allDomains = computeDomains(POINT(xdim,ydim,zdim),
-                              POINT(xparts,yparts,zparts),
+  allDomains = computeDomains(PT(xdim,ydim,zdim),
+                              PT(xparts,yparts,zparts),
                               THREADS);
   myDomain = allDomains[MYTHREAD];
 #if DEBUG
@@ -636,22 +580,20 @@ int main(int argc, char **args) {
   allGridsA[MYTHREAD] = myGridA;
   allGridsB[MYTHREAD] = myGridB;
 #else
-  allGridsA =
-    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
-  allGridsB =
-    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
+  allGridsA.create(RD((int)THREADS));
+  allGridsB.create(RD((int)THREADS));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 #endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
-  ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts),
+  ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
                                         (int)THREADS, (int)MYTHREAD);
   rectdomain<3> targetDomain = myDomain;
-  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(6));
-  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(6));
+  targetsA.create(RD(6));
+  targetsB.create(RD(6));
+  sourcesA.create(RD(6));
+  sourcesB.create(RD(6));
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
 #if DEBUG
