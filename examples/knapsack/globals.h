@@ -96,7 +96,7 @@ struct timer {
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS simple
+# define STRIDEDNESS row
 #endif
 
 #ifdef STRIDEDNESS
@@ -107,12 +107,12 @@ struct timer {
 # define GUNSTRIDED
 #endif
 
-#ifdef POINT_INDEXING
-# define getTotal(total, i, j) total[POINT(i,j)]
-# define writeTotal(total, i, j, value) total[POINT(i,j)] = value
+#ifdef VAR_INDEXING
+# define getTotal(total, i, j) total(i,j)
+# define writeTotal(total, i, j, value) total(i,j) = value
 #else
-# define getTotal(total, i, j) total[i][j]
-# define writeTotal(total, i, j, value) total[i][j] = value
+# define getTotal(total, i, j) total[PT(i,j)]
+# define writeTotal(total, i, j, value) total[PT(i,j)] = value
 #endif
 
 using namespace std;

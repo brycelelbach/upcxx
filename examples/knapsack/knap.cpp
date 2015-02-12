@@ -63,9 +63,9 @@ int main(int argc, char **argv) {
   int total_profit, total_weight, book_i, n_sold;
   timer solve_timer, backtrack_timer;
   ndarray<ndarray<int, 2, global GUNSTRIDED>,
-          1 UNSTRIDED> all_totals(RECTDOMAIN((0), ((int)THREADS)));
+          1 UNSTRIDED> all_totals(RD(0, (int)THREADS));
   ndarray<ndarray<bool, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> all_use_book(RECTDOMAIN((0), ((int)THREADS)));
+          1 UNSTRIDED> all_use_book(RD(0, (int)THREADS));
   ndarray<int, 1, global GUNSTRIDED> weight0, profit0;
   int my_books, my_start_book, my_end_book;
   n_blocks = THREADS;
@@ -83,15 +83,14 @@ int main(int argc, char **argv) {
   if (MYTHREAD == 0)
     println("cap per block: " << cap_per_block);
 
-  weight = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (n_books)));
-  profit = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (n_books)));
+  weight = ndarray<int, 1 UNSTRIDED>(RD(0, n_books));
+  profit = ndarray<int, 1 UNSTRIDED>(RD(0, n_books));
   if (MYTHREAD != 0) {
     use_book =
-      ndarray<bool, 1 UNSTRIDED>(RECTDOMAIN((my_start_book),
-                                            (my_end_book+1)));
+      ndarray<bool, 1 UNSTRIDED>(RD(my_start_book, my_end_book+1));
   } else {
     use_book =
-      ndarray<bool, 1 UNSTRIDED>(RECTDOMAIN((0), (n_books)));
+      ndarray<bool, 1 UNSTRIDED>(RD(0, n_books));
   }
 
   if (MYTHREAD == 0) {
@@ -101,9 +100,8 @@ int main(int argc, char **argv) {
   }
 
   total =
-    ndarray<int, 2 UNSTRIDED>(RECTDOMAIN((my_start_book-1, 0),
-                                         (my_end_book+1,
-                                          bag_cap+1)));
+    ndarray<int, 2 UNSTRIDED>(RD(PT(my_start_book-1, 0),
+                                 PT(my_end_book+1, bag_cap+1)));
 
   // Send data out to all processors.
   all_totals.exchange(total);
@@ -187,7 +185,7 @@ static inline void copyTotal(ndarray<ndarray<int, 2,
                              int book, int start_cap, int end_cap) {
   int proc = book / books_per_proc;
   mytotals.copy(totals[proc],
-                RECTDOMAIN((book,start_cap), (book+1,end_cap+1)));
+                RD(PT(book,start_cap), PT(book+1,end_cap+1)));
 }
 
 static int solve(int n_books, int bag_cap,
@@ -268,9 +266,9 @@ static void backtrack(int n_books, int bag_cap,
                       ndarray<bool, 1 UNSTRIDED> use_book,
                       int my_start_book, int my_end_book) {
   int book_i;
-  ndarray<int, 1 UNSTRIDED> off(RECTDOMAIN((0), (1)));
+  ndarray<int, 1 UNSTRIDED> off(RD(0, 1));
   ndarray<ndarray<int, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> offs(RECTDOMAIN((0), ((int)THREADS)));
+          1 UNSTRIDED> offs(RD(0, (int)THREADS));
   int my_start_book2 = my_start_book;
   if (MYTHREAD == 0)
     my_start_book2++;
