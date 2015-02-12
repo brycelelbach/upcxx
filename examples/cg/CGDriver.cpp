@@ -126,8 +126,8 @@ void CGDriver::main(int argc, char **argv) {
 
   CGDriver Driver(classArg);
   CG cg;
-  ndarray<double, 1 UNSTRIDED> rNorm(RECTDOMAIN((1), (Driver.niter+1)));
-  ndarray<double, 1 UNSTRIDED> zeta(RECTDOMAIN((1), (Driver.niter+1)));
+  ndarray<double, 1 UNSTRIDED> rNorm(RD(1, Driver.niter+1));
+  ndarray<double, 1 UNSTRIDED> zeta(RD(1, Driver.niter+1));
 
   if (MYTHREAD == 0) {
     println("UPC++ NAS CG Benchmark- Parallel\n");

@@ -25,22 +25,22 @@ Vector::Vector() {
   assert(initialized); // ensure Vector class is initialized
 
   // form "localVectors" distributed array
-  allArrays = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
-  ndarray<double, 1 UNSTRIDED> myArray(RECTDOMAIN((iStart), (iEnd+1)));
+  allArrays = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)THREADS));
+  ndarray<double, 1 UNSTRIDED> myArray(RD(iStart, iEnd+1));
   allArrays.exchange(myArray);
 
 #if !defined(VTEAMS)
   // form the allResults array
-  allResults = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
+  allResults = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)THREADS));
   // for myResult's first index, [0:log2numProcCols] are actual sums,
   // while [-log2numProcCols:-1] are data gathered from other procs
-  ndarray<double, 1 UNSTRIDED> myResults(RECTDOMAIN((-log2numProcCols), (log2numProcCols+1)));
+  ndarray<double, 1 UNSTRIDED> myResults(RD(-log2numProcCols, log2numProcCols+1));
   allResults.exchange(myResults);
 #endif
 
 #ifdef FORCE_VREDUCE
-  src = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (1)));
-  dst = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (1)));
+  src = ndarray<double, 1 UNSTRIDED>(RD(0, 1));
+  dst = ndarray<double, 1 UNSTRIDED>(RD(0, 1));
 #endif
 }
 
@@ -61,7 +61,7 @@ void Vector::initialize(int paramN) {
 
   // set up the reduce phase schedule (for dot products)
   int divFactor = numProcCols;
-  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (log2numProcCols)));
+  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RD(0, log2numProcCols));
   for (int i = 0; i < log2numProcCols; i++) {
     int procColPos = MYTHREAD % numProcCols;
     int procRowPos = MYTHREAD / numProcCols;
@@ -104,7 +104,8 @@ double Vector::dot(const Vector &a) {
   return myResult;
 #else // VTEAMS
   TIMER_START(reduceTimer);
-  ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> myResults =
+    (ndarray<double, 1 UNSTRIDED>) allResults[(int) MYTHREAD];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {
@@ -149,7 +150,8 @@ double Vector::L2Norm() {
   return sqrt(myResult);
 #else // VTEAMS
   TIMER_START(reduceTimer);
-  ndarray<double, 1 UNSTRIDED> myResults = (ndarray<double, 1 UNSTRIDED>) allResults[MYTHREAD];
+  ndarray<double, 1 UNSTRIDED> myResults =
+    (ndarray<double, 1 UNSTRIDED>) allResults[(int) MYTHREAD];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {
