@@ -24,40 +24,40 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
   if (level >= THRESHOLD_LEVEL) {
     startCell = myBlockPos * numCellsPerBlockSide;
-    endCell = startCell + (numCellsPerBlockSide - POINT(1,1,1));
+    endCell = startCell + (numCellsPerBlockSide - PT(1,1,1));
   }
   else {
     // only block with position (0,0,0) has cells in it
-    if (myBlockPos == POINT(0,0,0)) {
-      startCell = POINT(0,0,0);
-      endCell = POINT(numCellsInGridSide-1,
-                      numCellsInGridSide-1,
-                      numCellsInGridSide-1);
+    if (myBlockPos == PT(0,0,0)) {
+      startCell = PT(0,0,0);
+      endCell = PT(numCellsInGridSide-1,
+                   numCellsInGridSide-1,
+                   numCellsInGridSide-1);
     }
     // otherwise, produce invalid domain (THIS COULD BE CLEANER)
     else {
-      startCell = POINT(2,2,2);
-      endCell = POINT(-1,-1,-1);
+      startCell = PT(2,2,2);
+      endCell = PT(-1,-1,-1);
     }
   }
 
   // create "points" distributed array
   if (ghostCellsNeeded) {
-    RectDomain<3> rd(startCell - POINT(1, 1, 1), endCell + POINT(2, 2, 2));
+    RectDomain<3> rd(startCell - PT(1, 1, 1), endCell + PT(2, 2, 2));
     myPoints = ndarray<double, 3, global GUNSTRIDED>(rd);
   }
   else {
-    RectDomain<3> rd(startCell, endCell + POINT(1, 1, 1));
+    RectDomain<3> rd(startCell, endCell + PT(1, 1, 1));
     myPoints = ndarray<double, 3, global GUNSTRIDED>(rd);
   }
 
   ndarray<ndarray<double, 3, global GUNSTRIDED>,
-          1 UNSTRIDED> tempPoints(RECTDOMAIN((0), ((int)THREADS)));
+          1 UNSTRIDED> tempPoints(RD(0, (int)THREADS));
   tempPoints.exchange(myPoints);
 
-  RectDomain<3> blocks_rd(POINT(0, 0, 0), numBlocksInGridSide);
+  RectDomain<3> blocks_rd(PT(0, 0, 0), numBlocksInGridSide);
   points = ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
-  foreach (p, points.domain()) {
+  upcxx_foreach (p, points.domain()) {
     points[p] = tempPoints[procForBlockPosition(p)];
   };
 
@@ -66,12 +66,12 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     if (MYTHREAD == 0) {
       localBuffersOnProc0 =
         ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
-      foreach (p, localBuffersOnProc0.domain()) {
+      upcxx_foreach (p, localBuffersOnProc0.domain()) {
         startCell = p * numCellsPerBlockSide;
-        endCell = startCell + (numCellsPerBlockSide - POINT(1,1,1));
+        endCell = startCell + (numCellsPerBlockSide - PT(1,1,1));
 
         // includes necessary ghost cells
-        RectDomain<3> buf_rd(startCell - POINT(1, 1, 1), endCell + POINT(2, 2, 2));
+        RectDomain<3> buf_rd(startCell - PT(1, 1, 1), endCell + PT(2, 2, 2));
         localBuffersOnProc0[p] = ndarray<double, 3 UNSTRIDED>(buf_rd);
       };
     }
@@ -82,10 +82,10 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     myRemoteBufferOnProc0 = buffersOnProc0[myBlockPos];
 
     startCell = myBlockPos * numCellsPerBlockSide;
-    endCell = startCell + (numCellsPerBlockSide - POINT(1,1,1));
+    endCell = startCell + (numCellsPerBlockSide - PT(1,1,1));
 
     // includes necessary ghost cells
-    RectDomain<3> mybuf_rd(startCell - POINT(1, 1, 1), endCell + POINT(2, 2, 2));
+    RectDomain<3> mybuf_rd(startCell - PT(1, 1, 1), endCell + PT(2, 2, 2));
     myBufferForProc0 = ndarray<double, 3 UNSTRIDED>(mybuf_rd);
   }
 
@@ -97,13 +97,13 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 #if UPDATE_BORDER_DIRECTIONS == 6
     // this RectDomain indicates the direction of the buffer
     // e.g. -3= -z dir (neg. xy-plane), +2= +y dir (pos. xz-plane)
-    RectDomain<1> allDirections(POINT(-3), POINT(4));
+    RectDomain<1> allDirections(PT(-3), PT(4));
 
     ndarray<ndarray<double, 3, global>, 1 UNSTRIDED> myOutBuffer(allDirections);
     ndarray<ndarray<double, 3, global>, 1 UNSTRIDED> myInBuffer(allDirections);
 
-    foreach (dir, allDirections) {
-      if (dir != POINT(0)) {
+    upcxx_foreach (dir, allDirections) {
+      if (dir != PT(0)) {
         RectDomain<3> myOutBufferRD = myPointsRD.border(1, dir[1], -1);
         RectDomain<3> myInBufferRD = myPointsRD.border(1, dir[1], 0);
 
@@ -129,9 +129,9 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
     // create the distributed arrays "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
-            1 UNSTRIDED> tempOutBuffer(RECTDOMAIN((0), ((int)THREADS)));
+            1 UNSTRIDED> tempOutBuffer(RD(0, (int)THREADS));
     ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
-            1 UNSTRIDED> tempInBuffer(RECTDOMAIN((0), ((int)THREADS)));
+            1 UNSTRIDED> tempInBuffer(RD(0, (int)THREADS));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);
@@ -141,7 +141,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     inBuffers = ndarray<ndarray<ndarray<double, 3, global>,
                                 1, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
 
-    foreach (p, blocks_rd) {
+    upcxx_foreach (p, blocks_rd) {
       outBuffers[p] = tempOutBuffer[procForBlockPosition(p)];
       inBuffers[p] = tempInBuffer[procForBlockPosition(p)];
     };
@@ -149,12 +149,12 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 #elif UPDATE_BORDER_DIRECTIONS == 26
     // this RectDomain indicates the direction of the buffer
     // e.g. [-1, -1, -1] is a corner point, while [0, -1, 0] is a plane
-    RectDomain<3> allDirections((Point(-1, -1, -1), POINT(2, 2, 2)));
+    RectDomain<3> allDirections((Point(-1, -1, -1), PT(2, 2, 2)));
 
     ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myOutBuffer(allDirections);
     ndarray<ndarray<double, 3, global>, 3 UNSTRIDED> myInBuffer(allDirections);
 
-    foreach (dir, allDirections) {
+    upcxx_foreach (dir, allDirections) {
       RectDomain<3> myOutBufferRD = myPointsRD;
       RectDomain<3> myInBufferRD = myPointsRD;
 
@@ -191,9 +191,9 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
     // create the distributed array buffers "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
-            1 UNSTRIDED> tempOutBuffer(RECTDOMAIN((0), ((int)THREADS)));
+            1 UNSTRIDED> tempOutBuffer(RD(0, (int)THREADS));
     ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
-            1 UNSTRIDED> tempInBuffer(RECTDOMAIN((0), ((int)THREADS)));
+            1 UNSTRIDED> tempInBuffer(RD(0, (int)THREADS));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);
@@ -203,7 +203,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
     inBuffers = ndarray<ndarray<ndarray<double, 3, global>,
                                 3, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
 
-    foreach (p, blocks_rd) {
+    upcxx_foreach (p, blocks_rd) {
       outBuffers[p] = tempOutBuffer[procForBlockPosition(p)];
       inBuffers[p] = tempInBuffer[procForBlockPosition(p)];
     };
@@ -236,9 +236,9 @@ void Grid::init() {
   }
 
   // numBlocksInGridSide = broadcast [numBlocksInGridSide_x, numBlocksInGridSide_y, numBlocksInGridSide_z] from 0;
-  numBlocksInGridSide = POINT(numBlocksInGridSide_x,
-                              numBlocksInGridSide_y,
-                              numBlocksInGridSide_z);
+  numBlocksInGridSide = PT(numBlocksInGridSide_x,
+                           numBlocksInGridSide_y,
+                           numBlocksInGridSide_z);
 
   // initialize myBlockPos (this does the reverse of procForBlockPosition)
   int temp = MYTHREAD;
@@ -247,5 +247,5 @@ void Grid::init() {
   int blockPos_y = temp / numBlocksInGridSide[3];
   temp -= blockPos_y * numBlocksInGridSide[3];
   int blockPos_z = temp;
-  myBlockPos = POINT(blockPos_x, blockPos_y, blockPos_z);
+  myBlockPos = PT(blockPos_x, blockPos_y, blockPos_z);
 }

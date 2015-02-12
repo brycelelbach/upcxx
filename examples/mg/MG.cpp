@@ -20,120 +20,119 @@ MG::MG() {
 
   myTimes =
     ndarray<ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
+            1 UNSTRIDED>(RD(1, numTimers+1));
 
   // set up arrays for storing times
   myTimes[T_L2NORM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
+            1 UNSTRIDED>(RD(startLevel, startLevel+1));
   myTimes[T_APPLY_SMOOTHER] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
+            1 UNSTRIDED>(RD(1, startLevel+1));
   myTimes[T_EVALUATE_RESIDUAL] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_COARSEN] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_PROLONGATE] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_GLOBAL_COMM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
   myTimes[T_THRESHOLD_COMM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL),
-                                    (THRESHOLD_LEVEL+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, THRESHOLD_LEVEL+1));
   myTimes[T_BARRIER] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
   myTimes[T_PACKING] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
   myTimes[T_UNPACKING] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #endif
 #ifdef NONBLOCKING_ARRAYCOPY
   myTimes[T_SYNC] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #endif
 
   myTimes[T_L2NORM][startLevel] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 3));
 
-  foreach (level, RECTDOMAIN((1), (startLevel+1))) {
+  foreach (level, RD(1, startLevel+1)) {
     myTimes[T_APPLY_SMOOTHER][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
   };
 
-  foreach (level, RECTDOMAIN((2), (startLevel+1))) {
+  foreach (level, RD(2, startLevel+1)) {
     if (level[1] != startLevel) {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
     }
     else {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 2*numIterations+2));
     }
     myTimes[T_COARSEN][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
     myTimes[T_PROLONGATE][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
   };
 
   myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 2*numIterations+1));
 
-  foreach (level, RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1))) {
+  foreach (level, RD(THRESHOLD_LEVEL, startLevel+1)) {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 9*numIterations+1));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 9*numIterations+1));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
-                                                (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2*numIterations+1,
+                                        9*numIterations+1));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 9*numIterations+1));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 9*numIterations+1));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
-                                                (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2*numIterations+1,
+                                        3*numIterations+1));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 3*numIterations+1));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
 #endif
 
@@ -141,28 +140,28 @@ MG::MG() {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 6*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 6*numIterations+1));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-1, 6*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-1, 6*numIterations+1));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
     }
 #endif
 #endif
@@ -173,9 +172,9 @@ MG::MG() {
 #ifndef CONTIGUOUS_ARRAY_BUFFERS
     // make empty domains for this case
     myTimes[T_PACKING] =
-      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(0, 0));
     myTimes[T_UNPACKING] =
-      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(0, 0));
 #endif
   };
 
@@ -183,46 +182,46 @@ MG::MG() {
   myCounter = new PAPICounter(PAPI_MEASURE);
   myCounts =
     ndarray<ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (numCounters+1)));
+            1 UNSTRIDED>(RD(1, numCounters+1));
 	
   // set up arrays for storing counts
   myCounts[T_L2NORM] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
+            1 UNSTRIDED>(RD(startLevel, startLevel+1));
   myCounts[T_APPLY_SMOOTHER] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
+            1 UNSTRIDED>(RD(1, startLevel+1));
   myCounts[T_EVALUATE_RESIDUAL] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myCounts[T_COARSEN] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myCounts[T_PROLONGATE] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
 
   myCounts[T_L2NORM][startLevel] =
-    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
+    ndarray<long, 1 UNSTRIDED>(RD(1, 3));
 
-  foreach (level, RECTDOMAIN((1), (startLevel+1))) {
+  foreach (level, RD(1, startLevel+1)) {
     myCounts[T_APPLY_SMOOTHER][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
   };
 
-  foreach (level, RECTDOMAIN((2), (startLevel+1))) {
+  foreach (level, RD(2, startLevel+1)) {
     if (level[1] != startLevel) {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
     }
     else {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<long, 1 UNSTRIDED>(RD(1, 2*numIterations+2));
     }
     myCounts[T_COARSEN][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
     myCounts[T_PROLONGATE][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
   };
 #endif
 #endif
@@ -243,9 +242,9 @@ double MG::getL2Norm(Grid &gridA, int callNumber) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach3 (i, j, k, myAPoints.domain().shrink(1)) {
-    myASquareSum += sqr(myAPoints[i][j][k]);
+    myASquareSum += sqr(myAPoints(i, j, k));
   };
 #else
   foreach (p, myAPoints.domain().shrink(1)) {
@@ -321,7 +320,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
     foreach (neighborBlockPos,
              (myBuffer.translate(myBlockPos).domain() -
-              RectDomain<3>(myBlockPos, myBlockPos+POINT(1, 1, 1)))) {
+              RectDomain<3>(myBlockPos, myBlockPos+PT(1, 1, 1)))) {
       // "actualBlockPos" is the actual block from which we retrieve data, since
       // we need to factor in periodic boundary conditions
       Point<3> actualBlockPos =
@@ -340,9 +339,9 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 		
       // now copy new info
 #ifdef PUSH_DATA
-      gridA.inBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection].COPY(myTranslatedBlockBuffers);
+      gridA.inBuffers[actualBlockPos][PT(0, 0, 0)-myDirection].COPY(myTranslatedBlockBuffers);
 #else
-      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection]);
+      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][PT(0, 0, 0)-myDirection]);
 #endif
     };
 
@@ -371,7 +370,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 
     // unpacking
-    foreach (dir, (myBuffer.domain() - RECTDOMAIN((0, 0, 0), (1, 1, 1)))) {
+    foreach (dir, (myBuffer.domain() - RD(PT(0, 0, 0), PT(1, 1, 1)))) {
       if (dir[1] == 0 || dir[2] == 0) {
         myPoints.copy(myInBuffer[dir]);
       }
@@ -395,8 +394,8 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 	    
     // "surroundingBlocks" is the 3x3x3 cube of blocks around the current block
-    RectDomain<3> surroundingBlocks(myBlockPos+POINT(-1, -1, -1),
-                                    myBlockPos+POINT(2, 2, 2));
+    RectDomain<3> surroundingBlocks(myBlockPos+PT(-1, -1, -1),
+                                    myBlockPos+PT(2, 2, 2));
 	    
     foreach (neighborBlockPos, surroundingBlocks) {
       if (neighborBlockPos != myBlockPos) {
@@ -456,16 +455,16 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       (ndarray<ndarray<double, 3, global>,
        1 UNSTRIDED>) gridA.inBuffers[myBlockPos];
 
-    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(RECTDOMAIN((1), (4)));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(RD(1, 4));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
-                    POINT(2,0,0));
+      RectDomain<3>(myBlockPos+PT(-1, 0, 0), myBlockPos+PT(2, 1, 1),
+                    PT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
-                    POINT(0,2,0));
+      RectDomain<3>(myBlockPos+PT(0, -1, 0), myBlockPos+PT(1, 2, 1),
+                    PT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
-                    POINT(0,0,2));
+      RectDomain<3>(myBlockPos+PT(0, 0, -1), myBlockPos+PT(1, 1, 2),
+                    PT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
@@ -561,16 +560,16 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
     // "actualBlockPos" is the actual block position of a block w/o periodic boundary conditions
 
-    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(POINT(1), POINT(4));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(PT(1), PT(4));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
-                    POINT(2,0,0));
+      RectDomain<3>(myBlockPos+PT(-1, 0, 0), myBlockPos+PT(2, 1, 1),
+                    PT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
-                    POINT(0,2,0));
+      RectDomain<3>(myBlockPos+PT(0, -1, 0), myBlockPos+PT(1, 2, 1),
+                    PT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
-                    POINT(0,0,2));
+      RectDomain<3>(myBlockPos+PT(0, 0, -1), myBlockPos+PT(1, 1, 2),
+                    PT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "localFromRectDomain" indicates (for a push) which portion of the local block needs to be copied
@@ -649,17 +648,17 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     RectDomain<3> myDomain = myPoints.domain();
 	    
     // negative x direction
-    myPoints.constrict(myDomain.border(1, -1, 0)).translate(POINT(numCellsInGridSide, 0, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -1, 0)).translate(PT(numCellsInGridSide, 0, 0)).copy(myPoints);
     // positive x direction
-    myPoints.constrict(myDomain.border(1, 1, 0)).translate(POINT(-numCellsInGridSide, 0, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 1, 0)).translate(PT(-numCellsInGridSide, 0, 0)).copy(myPoints);
     // negative y direction
-    myPoints.constrict(myDomain.border(1, -2, 0)).translate(POINT(0, numCellsInGridSide, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -2, 0)).translate(PT(0, numCellsInGridSide, 0)).copy(myPoints);
     // positive y direction
-    myPoints.constrict(myDomain.border(1, 2, 0)).translate(POINT(0, -numCellsInGridSide, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 2, 0)).translate(PT(0, -numCellsInGridSide, 0)).copy(myPoints);
     // negative z direction
-    myPoints.constrict(myDomain.border(1, -3, 0)).translate(POINT(0, 0, numCellsInGridSide)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -3, 0)).translate(PT(0, 0, numCellsInGridSide)).copy(myPoints);
     // positive z direction
-    myPoints.constrict(myDomain.border(1, 3, 0)).translate(POINT(0, 0, -numCellsInGridSide)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 3, 0)).translate(PT(0, 0, -numCellsInGridSide)).copy(myPoints);
   }
 }
 
@@ -686,19 +685,19 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
     myAPoints.constrict(myAPoints.domain().shrink(1)).set(0);
   }
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myAPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine) {
       sumEdgesOfXYPlane[k] =
-        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
-        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+        myBPoints(Pmzzs(i, j, k)) + myBPoints(Ppzzs(i, j, k)) +
+        myBPoints(Pzmzs(i, j, k)) + myBPoints(Pzpzs(i, j, k));
       sumCornersOfXYPlane[k] =
-        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
-        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
-      gridBZLine[k] = myBPoints[i][j][k];
+        myBPoints(Pmmzs(i, j, k)) + myBPoints(Pmpzs(i, j, k)) +
+        myBPoints(Ppmzs(i, j, k)) + myBPoints(Pppzs(i, j, k));
+      gridBZLine[k] = myBPoints(i, j, k);
     }
     foreach1 (k, zLine.shrink(1)) {
-      myAPoints[i][j][k] += S0 * myBPoints[i][j][k]
+      myAPoints(i, j, k) += S0 * myBPoints(i, j, k)
         + S1 * (sumEdgesOfXYPlane[k] + gridBZLine[k-1] + gridBZLine[k+1])
         + S2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
                 sumEdgesOfXYPlane[k+1]);
@@ -726,7 +725,7 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
       // + S3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]);
     };
   };
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_APPLY_SMOOTHER][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_APPLY_SMOOTHER][level][iterationNum]);
@@ -749,22 +748,22 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myCPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine) {
       sumEdgesOfXYPlane[k] =
-        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
-        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+        myBPoints(Pmzzs(i, j, k)) + myBPoints(Ppzzs(i, j, k)) +
+        myBPoints(Pzmzs(i, j, k)) + myBPoints(Pzpzs(i, j, k));
       sumCornersOfXYPlane[k] =
-        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
-        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
+        myBPoints(Pmmzs(i, j, k)) + myBPoints(Pmpzs(i, j, k)) +
+        myBPoints(Ppmzs(i, j, k)) + myBPoints(Pppzs(i, j, k));
     }
     foreach1 (k, zLine.shrink(1)) {
-      myCPoints[i][j][k] = myAPoints[i][j][k]
-        - (A0 * myBPoints[i][j][k]
+      myCPoints(i, j, k) = myAPoints(i, j, k)
+        - (A0 * myBPoints(i, j, k)
            // Enable the following if A1 != 0
-           // + A1 * (sumEdgesOfXYPlane[k] + myBPoints[Pzzms(i, j, k)] +
-           //         myBPoints[Pzzps(i, j, k)])
+           // + A1 * (sumEdgesOfXYPlane[k] + myBPoints(Pzzms(i, j, k)) +
+           //         myBPoints(Pzzps(i, j, k)))
            + A2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
                    sumEdgesOfXYPlane[k+1])
            + A3 * (sumCornersOfXYPlane[k-1] + sumCornersOfXYPlane[k+1]));
@@ -791,7 +790,7 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
            + A3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]));
     };
   };
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
 
   if (level != startLevel) {
     TIMER_STOP_READ(myTimer,
@@ -821,12 +820,12 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   }
   // This case is when we go from a distributed array to the entire array on proc 0
   else {
-    RectDomain<3> rd(POINT((myAPoints.domain().min()[1]+1)/2 - 1,
-                           (myAPoints.domain().min()[2]+1)/2 - 1,
-                           (myAPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myAPoints.domain().max()[1]-1)/2 + 2,
-                           (myAPoints.domain().max()[2]-1)/2 + 2,
-                           (myAPoints.domain().max()[3]-1)/2 + 2));
+    RectDomain<3> rd(PT((myAPoints.domain().min()[1]+1)/2 - 1,
+                        (myAPoints.domain().min()[2]+1)/2 - 1,
+                        (myAPoints.domain().min()[3]+1)/2 - 1),
+                     PT((myAPoints.domain().max()[1]-1)/2 + 2,
+                        (myAPoints.domain().max()[2]-1)/2 + 2,
+                        (myAPoints.domain().max()[3]-1)/2 + 2));
     myBPoints = ndarray<double, 3 UNSTRIDED>(rd);
   }
 
@@ -838,27 +837,27 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myBPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine.shrink(1, -1)) {
       int a = 2*i+1, b = 2*j+1, c = 2*k+1;
       sumEdgesOfLowerYZPlane[k] =
-        myAPoints[Pmzms(a, b, c)] + myAPoints[Pzmms(a, b, c)] +
-        myAPoints[Ppzms(a, b, c)] + myAPoints[Pzpms(a, b, c)];
+        myAPoints(Pmzms(a, b, c)) + myAPoints(Pzmms(a, b, c)) +
+        myAPoints(Ppzms(a, b, c)) + myAPoints(Pzpms(a, b, c));
       sumCornersOfLowerYZPlane[k] =
-        myAPoints[Pmmms(a, b, c)] + myAPoints[Ppmms(a, b, c)] +
-        myAPoints[Pmpms(a, b, c)] + myAPoints[Pppms(a, b, c)];
+        myAPoints(Pmmms(a, b, c)) + myAPoints(Ppmms(a, b, c)) +
+        myAPoints(Pmpms(a, b, c)) + myAPoints(Pppms(a, b, c));
     }
     foreach1 (k, zLine.shrink(1)) {
       int a = 2*i+1, b = 2*j+1, c = 2*k+1;
       sumEdgesOfCenterYZPlane =
-        myAPoints[Pmzzs(a, b, c)] + myAPoints[Pzmzs(a, b, c)] +
-        myAPoints[Ppzzs(a, b, c)] + myAPoints[Pzpzs(a, b, c)];
+        myAPoints(Pmzzs(a, b, c)) + myAPoints(Pzmzs(a, b, c)) +
+        myAPoints(Ppzzs(a, b, c)) + myAPoints(Pzpzs(a, b, c));
       sumCornersOfCenterYZPlane =
-        myAPoints[Pmmzs(a, b, c)] + myAPoints[Ppmzs(a, b, c)] +
-        myAPoints[Pmpzs(a, b, c)] + myAPoints[Pppzs(a, b, c)];
-      myBPoints[i][j][k] = P0 * myAPoints[a][b][c]
-        + P1 * (myAPoints[Pzzms(a, b, c)] + myAPoints[Pzzps(a, b, c)] +
+        myAPoints(Pmmzs(a, b, c)) + myAPoints(Ppmzs(a, b, c)) +
+        myAPoints(Pmpzs(a, b, c)) + myAPoints(Pppzs(a, b, c));
+      myBPoints(i, j, k) = P0 * myAPoints(a, b, c)
+        + P1 * (myAPoints(Pzzms(a, b, c)) + myAPoints(Pzzps(a, b, c)) +
                 sumEdgesOfCenterYZPlane)
         + P2 * (sumEdgesOfLowerYZPlane[k] + sumEdgesOfLowerYZPlane[k+1] +
                 sumCornersOfCenterYZPlane)
@@ -888,7 +887,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         + P3 * (sumCornersOfLowerYZPlane[q] + sumCornersOfLowerYZPlane[q+1]);
     };
   };
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_COARSEN][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_COARSEN][level][iterationNum]);
@@ -907,7 +906,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
 
     if (MYTHREAD == 0) {
       foreach (p, gridB.localBuffersOnProc0.domain()) {
-        gridB.points[POINT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
+        gridB.points[PT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
       };
     }
 
@@ -928,19 +927,19 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   }
   // This case is when we go from the entire array on proc 0 to a distributed array
   else {
-    RectDomain<3> rd(POINT((myBPoints.domain().min()[1]+1)/2 - 1,
-                           (myBPoints.domain().min()[2]+1)/2 - 1,
-                           (myBPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myBPoints.domain().max()[1]-1)/2 + 2,
-                           (myBPoints.domain().max()[2]-1)/2 + 2,
-                           (myBPoints.domain().max()[3]-1)/2 + 2));
+    RectDomain<3> rd(PT((myBPoints.domain().min()[1]+1)/2 - 1,
+                        (myBPoints.domain().min()[2]+1)/2 - 1,
+                        (myBPoints.domain().min()[3]+1)/2 - 1),
+                     PT((myBPoints.domain().max()[1]-1)/2 + 2,
+                        (myBPoints.domain().max()[2]-1)/2 + 2,
+                        (myBPoints.domain().max()[3]-1)/2 + 2));
     myAPoints = ndarray<double, 3 UNSTRIDED>(rd);
 
     TIMER_START(myTimer);
 
     if (MYTHREAD == 0) {
       foreach (p, gridA.localBuffersOnProc0.domain()) {
-        gridA.localBuffersOnProc0[p].copy(gridA.points[POINT(0, 0, 0)]);
+        gridA.localBuffersOnProc0[p].copy(gridA.points[PT(0, 0, 0)]);
       };
     }
 
@@ -966,27 +965,27 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   TIMER_START(myTimer);
 
   if (level != startLevel) {
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
     foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach1 (k, zLine) {
-        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
-        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        xSumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Ppzzs(i, j, k));
+        ySumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Pzpzs(i, j, k));
         sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
-          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+          myAPoints(Pzpzs(i, j, k)) + myAPoints(Pppzs(i, j, k));
       }
       foreach1 (k, zLine.shrink(1,1)) {
         int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
-        myBPoints[Pmmms(a, b, c)] = Q0 * myAPoints[i][j][k];
-        myBPoints[Pzmms(a, b, c)] = Q1 * (xSumOfLowerXYPlane[k]);
-        myBPoints[Pmzms(a, b, c)] = Q1 * (ySumOfLowerXYPlane[k]);
-        myBPoints[Pzzms(a, b, c)] = Q2 * (sumOfLowerXYPlane[k]);
-        myBPoints[Pmmzs(a, b, c)] = Q1 * (myAPoints[i][j][k] +
-                                         myAPoints[Pzzps(i, j, k)]);
-        myBPoints[Pzmzs(a, b, c)] = Q2 * (xSumOfLowerXYPlane[k] +
+        myBPoints(Pmmms(a, b, c)) = Q0 * myAPoints(i, j, k);
+        myBPoints(Pzmms(a, b, c)) = Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints(Pmzms(a, b, c)) = Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints(Pzzms(a, b, c)) = Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints(Pmmzs(a, b, c)) = Q1 * (myAPoints(i, j, k) +
+                                          myAPoints(Pzzps(i, j, k)));
+        myBPoints(Pzmzs(a, b, c)) = Q2 * (xSumOfLowerXYPlane[k] +
                                           xSumOfLowerXYPlane[k+1]);
-        myBPoints[Pmzzs(a, b, c)] = Q2 * (ySumOfLowerXYPlane[k] +
+        myBPoints(Pmzzs(a, b, c)) = Q2 * (ySumOfLowerXYPlane[k] +
                                           ySumOfLowerXYPlane[k+1]);
-        myBPoints[a][b][c] = Q3 * (sumOfLowerXYPlane[k] +
+        myBPoints(a, b, c) = Q3 * (sumOfLowerXYPlane[k] +
                                    sumOfLowerXYPlane[k+1]);
       }
     }
@@ -1014,30 +1013,30 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myBPoints[s] = Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
       };
     };
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
   }
   else {
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
     foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach1 (k, zLine) {
-        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
-        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        xSumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Ppzzs(i, j, k));
+        ySumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Pzpzs(i, j, k));
         sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
-          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+          myAPoints(Pzpzs(i, j, k)) + myAPoints(Pppzs(i, j, k));
       }
       foreach1 (k, zLine.shrink(1,1)) {
         int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
-        myBPoints[Pmmms(a, b, c)] += Q0 * myAPoints[i][j][k];
-        myBPoints[Pzmms(a, b, c)] += Q1 * (xSumOfLowerXYPlane[k]);
-        myBPoints[Pmzms(a, b, c)] += Q1 * (ySumOfLowerXYPlane[k]);
-        myBPoints[Pzzms(a, b, c)] += Q2 * (sumOfLowerXYPlane[k]);
-        myBPoints[Pmmzs(a, b, c)] += Q1 * (myAPoints[i][j][k] +
-                                           myAPoints[Pzzps(i, j, k)]);
-        myBPoints[Pzmzs(a, b, c)] += Q2 * (xSumOfLowerXYPlane[k] +
+        myBPoints(Pmmms(a, b, c)) += Q0 * myAPoints(i, j, k);
+        myBPoints(Pzmms(a, b, c)) += Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints(Pmzms(a, b, c)) += Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints(Pzzms(a, b, c)) += Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints(Pmmzs(a, b, c)) += Q1 * (myAPoints(i, j, k) +
+                                           myAPoints(Pzzps(i, j, k)));
+        myBPoints(Pzmzs(a, b, c)) += Q2 * (xSumOfLowerXYPlane[k] +
                                            xSumOfLowerXYPlane[k+1]);
-        myBPoints[Pmzzs(a, b, c)] += Q2 * (ySumOfLowerXYPlane[k] +
+        myBPoints(Pmzzs(a, b, c)) += Q2 * (ySumOfLowerXYPlane[k] +
                                            ySumOfLowerXYPlane[k+1]);
-        myBPoints[a][b][c] += Q3 * (sumOfLowerXYPlane[k] +
+        myBPoints(a, b, c) += Q3 * (sumOfLowerXYPlane[k] +
                                     sumOfLowerXYPlane[k+1]);
       }
     }
@@ -1067,7 +1066,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
       };
     };
   }
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_PROLONGATE][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_PROLONGATE][level][iterationNum]);
@@ -1460,7 +1459,7 @@ void MG::printProfile() {
         if (levelIdx == THRESHOLD_LEVEL) {
           // barriers for changing from 1 to many procs or vice versa
 
-          RectDomain<1> domainRange(POINT(-2*numIterations+1), POINT(1));
+          RectDomain<1> domainRange(PT(-2*numIterations+1), PT(1));
           ndarray<double, 1> minArray(domainRange);
           ndarray<double, 1> sumArray(domainRange);
           ndarray<double, 1> maxArray(domainRange);
@@ -1513,15 +1512,15 @@ void MG::printProfile() {
 		    
         Point<1> domainMin;
         if (levelIdx == startLevel) {
-          domainMin = POINT(-2);//broadcast [-2] from 0;
+          domainMin = PT(-2);//broadcast [-2] from 0;
         }
         else {
-          domainMin = POINT(1);//broadcast [1] from 0;
+          domainMin = PT(1);//broadcast [1] from 0;
         }
         Point<1> domainMax = myTimes[timerIdx][levelIdx].domain().max();
         // = broadcast myTimes[timerIdx][levelIdx].domain().max() from 0;
 
-        RectDomain<1> domainRange(domainMin, domainMax+POINT(1));
+        RectDomain<1> domainRange(domainMin, domainMax+PT(1));
         ndarray<double, 1> minArray(domainRange);
         ndarray<double, 1> sumArray(domainRange);
         ndarray<double, 1> maxArray(domainRange);

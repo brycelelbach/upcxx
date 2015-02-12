@@ -116,16 +116,29 @@ struct timer {
 };
 #endif
 
-#if !defined(STANDARD_LOOP) && !defined(SPLIT_LOOP)
-# define SPLIT_LOOP
+#ifndef foreach
+# define foreach upcxx_foreach
 #endif
 
-#ifdef SPLIT_LOOP
-# define USE_UNSTRIDED
+#ifndef foreach1
+# define foreach1(i, dom)                       \
+  foreachd(i, dom, 1)
+# define foreach2(i, j, dom)                    \
+  foreach1(i, dom) foreachd(j, dom, 2)
+# define foreach3(i, j, k, dom)                 \
+  foreach2(i, j, dom) foreachd(k, dom, 3)
+# define foreachd(var, dom, dim)                        \
+  foreachd_(var, (dom), dim, UPCXXA_CONCAT_(var, _upb), \
+            UPCXXA_CONCAT_(var, _stride),               \
+            UPCXXA_CONCAT_(var, _done))
+# define foreachd_(var, dom, dim, u_, s_, d_)           \
+  for (upcxx::cint_t u_ = (dom).upb()[dim],             \
+	 s_ = (dom).raw_stride()[dim],                  \
+	 var = (dom).lwb()[dim]; var < u_; var += s_)
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS simple
+# define STRIDEDNESS row
 #endif
 
 #ifdef STRIDEDNESS

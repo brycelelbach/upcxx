@@ -58,7 +58,7 @@ MGDriver::MGDriver(char paramClassType) : epsilon(1e-8) {
   }
 
   Grid::init();
-  RectDomain<1> level_rd(POINT(1), POINT(startLevel+1));
+  RectDomain<1> level_rd(PT(1), PT(startLevel+1));
   rhsGrid = new Grid(startLevel, false, false);
   residualGrids = ndarray<Grid *, 1 UNSTRIDED>(level_rd);
   correctionGrids = ndarray<Grid *, 1 UNSTRIDED>(level_rd);
