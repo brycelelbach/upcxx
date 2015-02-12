@@ -13,11 +13,11 @@ int main(int argc, char **argv) {
   init(&argc, &argv);
 
   {
-    ndarray<int, 1> arr(RECTDOMAIN((0), (5)));
+    ndarray<int, 1> arr(RD(0, 5));
     broadcast(arr, 0);
   }
   {
-    ndarray<int, 1, global> arr(RECTDOMAIN((0), (5)));
+    ndarray<int, 1, global> arr(RD(0, 5));
     broadcast(arr, 0);
   }
   {
@@ -34,13 +34,13 @@ int main(int argc, char **argv) {
     broadcast(src, dst, 3, 0);
   }
   {
-    ndarray<int, 1> src(RECTDOMAIN((0), (3)));
-    ndarray<int, 1> dst(RECTDOMAIN((0), (3)));
+    ndarray<int, 1> src(RD(0, 3));
+    ndarray<int, 1> dst(RD(0, 3));
     broadcast(src, dst, 0);
   }
   {
-    ndarray<ndarray<int, 1, global>, 1> src(RECTDOMAIN((0), (3)));
-    ndarray<ndarray<int, 1, global>, 1> dst(RECTDOMAIN((0), (3)));
+    ndarray<ndarray<int, 1, global>, 1> src(RD(0, 3));
+    ndarray<ndarray<int, 1, global>, 1> dst(RD(0, 3));
     broadcast(src, dst, 0);
   }
 #if 0 // these should fail
@@ -55,18 +55,18 @@ int main(int argc, char **argv) {
     broadcast(src, dst, 3, 0);
   }
   {
-    ndarray<int, 1, global> src(RECTDOMAIN((0), (3)));
-    ndarray<int, 1, global> dst(RECTDOMAIN((0), (3)));
+    ndarray<int, 1, global> src(RD(0, 3));
+    ndarray<int, 1, global> dst(RD(0, 3));
     broadcast(src, dst, 0);
   }
   {
-    ndarray<int *, 1> src(RECTDOMAIN((0), (3)));
-    ndarray<int *, 1> dst(RECTDOMAIN((0), (3)));
+    ndarray<int *, 1> src(RD(0, 3));
+    ndarray<int *, 1> dst(RD(0, 3));
     broadcast(src, dst, 0);
   }
   {
-    ndarray<ndarray<int, 1>, 1> src(RECTDOMAIN((0), (3)));
-    ndarray<ndarray<int, 1>, 1> dst(RECTDOMAIN((0), (3)));
+    ndarray<ndarray<int, 1>, 1> src(RD(0, 3));
+    ndarray<ndarray<int, 1>, 1> dst(RD(0, 3));
     broadcast(src, dst, 0);
   }
 #endif
