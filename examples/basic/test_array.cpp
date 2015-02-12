@@ -20,7 +20,8 @@
 using namespace std;
 using namespace upcxx;
 
-int main() {
+int main(int argc, char **argv) {
+  init(&argc, &argv);
   cout << "Running array operations tests.." << endl;
   { /* test some descriptor operations */
     Array<long, 1 Global> x = ARRAY(long, ((0), (100), (1))); // x has domain 0..99
