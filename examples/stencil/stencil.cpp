@@ -149,7 +149,7 @@ void initGrid(ndarray<double, 3 UNSTRIDED> grid) {
        << grid.domain() << endl;
 #endif
 #ifdef RANDOM_VALUES
-  foreach (p, grid.domain()) {
+  upcxx_foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
   };
 #else
