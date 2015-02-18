@@ -134,20 +134,20 @@ int main(int argc, char **args) {
                               (int)THREADS);
   myDomain = allDomains[(int)MYTHREAD];
 
-  myGridA = ndarray<double, 3>(myDomain.accrete(1));
-  myGridB = ndarray<double, 3>(myDomain.accrete(1));
-  allGridsA = ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
-  allGridsB = ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
+  myGridA.create(myDomain.accrete(1));
+  myGridB.create(myDomain.accrete(1));
+  allGridsA.create(RD((int)THREADS));
+  allGridsB.create(RD((int)THREADS));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
                                         (int)THREADS, (int)MYTHREAD);
-  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(6));
-  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(6));
+  targetsA.create(RD(6));
+  targetsB.create(RD(6));
+  sourcesA.create(RD(6));
+  sourcesB.create(RD(6));
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
       targetsA[i] = allGridsA[nb[i]].constrict(myDomain);
