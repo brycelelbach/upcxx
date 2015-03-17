@@ -46,7 +46,7 @@ dnl option to disable using C++11  (default is enable auto detection)
 AC_ARG_ENABLE([cxx11],
     AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
 
-AS_IF([test x$enableval = xno], 
+AS_IF([test "x$enable_cxx11" = "xno"],
       [:], 
       [ dnl Do the stuff needed for enabling C++11
         dnl Check for C++11   
@@ -97,25 +97,25 @@ dnl Option to enable UPC++ multidimensional arrays (default is disable)
 AC_ARG_ENABLE([md-array],
     AS_HELP_STRING([--enable-md-array], [Enable Titanium-style multidimensional arrays]))
 
-AS_IF([test x$enableval = xyes], [
+AS_IF([test "x$enable_md_array" = "xyes"], [
   dnl Do the stuff needed for enabling md-array
   AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if md-array feature is enabled])
   AC_SUBST(UPCXX_HAVE_MD_ARRAY)
 ])
 
-AM_CONDITIONAL([UPCXX_MD_ARRAY], [test x$enableval = xyes])
+AM_CONDITIONAL([UPCXX_MD_ARRAY], [test "x$enable_md_array" = "xyes"])
 
 dnl Option to enable using the Cray DMAPP API on Aries network (default is disable)
 AC_ARG_ENABLE([dmapp],
     AS_HELP_STRING([--enable-dmapp], [Enable using DMAPP on Cray Aries network]))
 
-AS_IF([test x$enableval = xyes], [
+AS_IF([test "x$enable_dmapp" = "xyes"], [
   dnl Do the stuff needed for enabling dmapp
   AC_DEFINE(UPCXX_USE_DMAPP, 1, [define if dmapp feature is enabled])
   AC_SUBST(UPCXX_USE_DMAPP)
 ])
 
-AM_CONDITIONAL([UPCXX_USE_DMAPP], [test x$enableval = xyes])
+AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
 
 
 AC_OUTPUT
