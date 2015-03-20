@@ -167,33 +167,33 @@ void SparseMat::multiply(Vector &output, Vector &input) {
 
 #ifdef CTEAMS
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     myResults0 = (ndarray<double, 1 UNSTRIDED>) myResults;
     reduce::add(mtmp, myResults0, rpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(copyTeam) {
+  upcxx_teamsplit(copyTeam) {
     if (copySync)
       barrier(); // ensure reductions above complete before copy
   }
   if (reduceCopy)
     myOut.copy(allResults[reduceSource]);
-  teamsplit(columnTeam) {
+  upcxx_teamsplit(columnTeam) {
     myOut.vbroadcast(cpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_DIAGONAL_SWAP_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
 #elif defined(VREDUCE)
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     myResults0 = myResults;
     reduce::add(mtmp, myResults0);
   }
   barrier(); // ensure reductions above complete
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(transposeTeam) {
+  upcxx_teamsplit(transposeTeam) {
     // actual diagonal swap
     if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);
@@ -210,7 +210,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
 #elif defined(TEAMS)
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     int start = rowStart;
     int end = rowEnd;
     for (int r = start; r <= end; r++) {
@@ -219,7 +219,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(transposeTeam) {
+  upcxx_teamsplit(transposeTeam) {
     // actual diagonal swap
     if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);

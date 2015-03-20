@@ -41,10 +41,10 @@ int main(int argc, char **argv)
         for (int k=0; k<8; k++) {
           int idx = i*8*8 + j*8 + k;
           global_ptr<Box> box = dom.boxes[idx];
-          memberof(box, i) = i;
-          memberof(box, j) = j;
-          memberof(box, k) = k;
-          global_ptr<global_ptr<double> > arrays = memberof(box, data) = upcxx::allocate< global_ptr<double> >(idx%THREADS, 4);
+          upcxx_memberof(box, i) = i;
+          upcxx_memberof(box, j) = j;
+          upcxx_memberof(box, k) = k;
+          global_ptr<global_ptr<double> > arrays = upcxx_memberof(box, data) = upcxx::allocate< global_ptr<double> >(idx%THREADS, 4);
           for (int l=0; l<4; l++) {
             // allocate the actual data on a different thread (note "idx+1")
             arrays[l] = upcxx::allocate<double>((idx+1)%THREADS, 16);
@@ -70,9 +70,10 @@ int main(int argc, char **argv)
         for (int k=0; k<8; k += 1) {
           int idx = i*8*8 + j*8 + k;
           global_ptr<Box> box = dom.boxes[idx];
-          std::cout << "box(" << memberof(box, i) << ", " << memberof(box, j) << ", " << memberof(box, k) 
-                        << ")->data = " << memberof(box, data).get() << "\n";
-          global_ptr<global_ptr<double> > arrays = memberof(box, data);
+          std::cout << "box(" << upcxx_memberof(box, i) << ", "
+                    << upcxx_memberof(box, j) << ", " << upcxx_memberof(box, k)
+                    << ")->data = " << upcxx_memberof(box, data).get() << "\n";
+          global_ptr<global_ptr<double> > arrays = upcxx_memberof(box, data);
           for (int l=0; l<2; l++) {
             for (int m=0; m<8; m++) {
 #ifdef UPCXX_HAVE_CXX11

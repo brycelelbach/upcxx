@@ -207,17 +207,17 @@ int main(int argc, char *argv[])
   for (int i = upcxx::myrank(); i < n; i += upcxx::ranks()) {
     upcxx::global_ptr<node_t> cur_node = &nodes[i];
     // cur_node.id = i+1;
-    memberof(cur_node, id) = i+1;
+    upcxx_memberof(cur_node, id) = i+1;
     // cur_node.degree = xadj[i+1] - xadj[i];
-    memberof(cur_node, degree) = xadj[i+1] - xadj[i];
+    upcxx_memberof(cur_node, degree) = xadj[i+1] - xadj[i];
     // cur_node.elim_step = -1;
-    memberof(cur_node, elim_step) = -1;
+    upcxx_memberof(cur_node, elim_step) = -1;
 
     int adj_sz = xadj[i+1] - xadj[i];
     upcxx::global_ptr<int> adj = upcxx::allocate<int>(upcxx::myrank(), adj_sz);
     assert(adj != NULL);
-    memberof(cur_node, adj) = adj;
-    memberof(cur_node, adj_sz) = adj_sz;
+    upcxx_memberof(cur_node, adj) = adj;
+    upcxx_memberof(cur_node, adj_sz) = adj_sz;
     for (int j=0; j<adj_sz; j++) {
       adj[j] = local_adj[xadj[i] - 1 + j];
       // printf("adj[%lu] %d ", i+j, (int)adj[j]);
@@ -291,8 +291,8 @@ int main(int argc, char *argv[])
       }
 
       upcxx::global_ptr<node_t> min_node = &nodes[all_min_ids[min_rank]-1];
-      global_min_id = all_min_ids[min_rank]; // memberof(min_node, id);
-      memberof(min_node, elim_step) = step;
+      global_min_id = all_min_ids[min_rank]; // upcxx_memberof(min_node, id);
+      upcxx_memberof(min_node, elim_step) = step;
     }
 
     upcxx::barrier();
@@ -326,9 +326,9 @@ int main(int argc, char *argv[])
       // vector<node_t *> nghb_reach;
       vector<upcxx::global_ptr<node_t> > nghb_reach;
       
-      get_reach(nodes, memberof(cur_neighbor, id).get(), step+1, nghb_reach);
+      get_reach(nodes, upcxx_memberof(cur_neighbor, id).get(), step+1, nghb_reach);
       // cur_neighbor->degree = nghb_reach.size();
-      memberof(cur_neighbor, degree) = nghb_reach.size();
+      upcxx_memberof(cur_neighbor, degree) = nghb_reach.size();
     }
     upcxx::barrier();
   } // close of  for (int step=1; step<=n; ++step)

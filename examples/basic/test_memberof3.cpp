@@ -28,9 +28,9 @@ int main(int argc, char **argv)
   pointerArray[myrank()] = allocate<TaskQueue>(myrank(), 10); 
   barrier();
 
-  memberof(pointerArray[1].get(), tid) = 1;
-  int tid0 = memberof(pointerArray[0].get(), tid);
-  int tid1 = memberof(pointerArray[1].get(), tid);
+  upcxx_memberof(pointerArray[1].get(), tid) = 1;
+  int tid0 = upcxx_memberof(pointerArray[0].get(), tid);
+  int tid1 = upcxx_memberof(pointerArray[1].get(), tid);
 
   std::cout << MYTHREAD << ": results are " << tid0 << ", " << tid1
             << std::endl;

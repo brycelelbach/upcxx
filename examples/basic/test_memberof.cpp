@@ -41,10 +41,10 @@ int main(int argc, char **argv)
         for (int k=0; k<8; k++) {
           int idx = i*8*8 + j*8 + k;
           global_ptr<Box> box = dom.boxes[idx];
-          memberof(box, i) = i;
-          memberof(box, j) = j;
-          memberof(box, k) = k;
-          memberof(box, data) = upcxx::allocate<double>(idx%THREADS, 4);
+          upcxx_memberof(box, i) = i;
+          upcxx_memberof(box, j) = j;
+          upcxx_memberof(box, k) = k;
+          upcxx_memberof(box, data) = upcxx::allocate<double>(idx%THREADS, 4);
         }
       }
     }
@@ -59,9 +59,10 @@ int main(int argc, char **argv)
         for (int k=0; k<8; k += 1) {
           int idx = i*8*8 + j*8 + k;
           global_ptr<Box> box = dom.boxes[idx];
-          //printf("box(%d, %d, %d) \n", memberof(box, i).get(),  memberof(box, j).get(), memberof(box, k).get());
-          std::cout << "box(" << memberof(box, i) << ", " << memberof(box, j) << ", " << memberof(box, k) 
-                    << ")->data = " << memberof(box, data).get() << "\n";
+          //printf("box(%d, %d, %d) \n", upcxx_memberof(box, i).get(),  upcxx_memberof(box, j).get(), upcxx_memberof(box, k).get());
+          std::cout << "box(" << upcxx_memberof(box, i) << ", "
+                    << upcxx_memberof(box, j) << ", " << upcxx_memberof(box, k)
+                    << ")->data = " << upcxx_memberof(box, data).get() << "\n";
         }
       }
     }

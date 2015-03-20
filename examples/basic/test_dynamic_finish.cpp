@@ -29,7 +29,7 @@ int task(int group)
 
 int spawn_tasks()
 {
-  finish {
+  upcxx_finish {
     int spawned = 0;
     for (uint32_t i = 0; i < THREADS; i++) {
       printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   for (int i = 0; i < 3; i++)
     task_count[i] = 0;
 
-  finish {
+  upcxx_finish {
     for (uint32_t i = 0; i < THREADS; i++) {
       printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
       async(i)(task, 0);
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 
     printf("group %d complete? %d\n", 0, task_count[0] == THREADS);
 
-    finish {
+    upcxx_finish {
       for (uint32_t i = 0; i < THREADS; i++) {
         printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
         async(i)(task, 1);

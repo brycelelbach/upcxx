@@ -266,9 +266,13 @@ extern std::vector< std::vector<rank_t> > pshm_teams;
 } // namespace upcxx
 
 // Dynamically scoped hierarchical team construct
-#define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
+#define upcxx_teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
 #define UPCXX_teamsplit_(name, t)                               \
   for (upcxx::ts_scope name(t); name.done == 0; name.done = 1)
+
+#ifdef UPCXX_SHORT_MACROS
+# define teamsplit upcxx_teamsplit
+#endif
 
 #define THREADS upcxx::ranks()
 #define MYTHREAD upcxx::myrank()

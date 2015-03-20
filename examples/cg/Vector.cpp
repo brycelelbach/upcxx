@@ -91,7 +91,7 @@ double Vector::dot(const Vector &a) {
 # ifdef FORCE_VREDUCE
   src[0] = myResult;
 # endif
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     barrier(); // added
 # if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
@@ -137,7 +137,7 @@ double Vector::L2Norm() {
 # ifdef FORCE_VREDUCE
   src[0] = myResult;
 # endif
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     barrier(); // added
 # if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
