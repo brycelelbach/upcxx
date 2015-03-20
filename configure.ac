@@ -93,6 +93,17 @@ if test "x$GCC" = "xyes"; then
   CXXFLAGS+=" -Wno-literal-suffix -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS=1 "
 fi
 
+dnl Option to enable shorter UPC++ macro names (default is disable)
+AC_ARG_ENABLE([short-names],
+    AS_HELP_STRING([--enable-short-names], [Enable shorter names for common UPC++ keywords]))
+
+AS_IF([test "x$enable_short_names" = "xyes"], [
+  dnl Do the stuff needed for enabling md-array
+  AC_DEFINE(UPCXX_SHORT_MACROS, 1, [define if short-names feature is enabled])
+  AC_SUBST(UPCXX_SHORT_MACROS)
+  CXXFLAGS+=" -DUPCXX_SHORT_MACROS "
+])
+
 dnl Option to enable UPC++ multidimensional arrays (default is disable)
 AC_ARG_ENABLE([md-array],
     AS_HELP_STRING([--enable-md-array], [Enable Titanium-style multidimensional arrays]))
