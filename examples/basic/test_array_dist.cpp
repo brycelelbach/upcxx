@@ -7,7 +7,7 @@
 using namespace std;
 using namespace upcxx;
 
-#define println(str) cout << MYTHREAD << ": " << str << endl
+#define println(str) cout << myrank() << ": " << str << endl
 
 void test_copy() {
   rectdomain<1> rd1(0, 10);
@@ -15,17 +15,17 @@ void test_copy() {
   domain<1> d = rd2 + RD(0, 5);
   ndarray<int, 1, global> arrA1(rd1);
   ndarray<int, 1, global> arrB1;
-  ndarray<ndarray<int, 1, global>, 1> allArrA1s(RD((int) THREADS));
+  ndarray<ndarray<int, 1, global>, 1> allArrA1s(RD((int) ranks()));
 
   upcxx_foreach (p, rd1) {
-    arrA1[p] = 100 * MYTHREAD + p[1];
+    arrA1[p] = 100 * myrank() + p[1];
   };
 
   allArrA1s.exchange(arrA1);
-  arrB1 = allArrA1s[(int) THREADS-1];
+  arrB1 = allArrA1s[(int) ranks()-1];
 
   // test copy operations
-  if (MYTHREAD == 0) println("testing copy operations...");
+  if (myrank() == 0) println("testing copy operations...");
   barrier();
   {
     ndarray<int, 1, global> arrA2(rd1);
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
   init(&argc, &argv);
   test_copy();
   barrier();
-  if (MYTHREAD == 0) println("done.");
+  if (myrank() == 0) println("done.");
   finalize();
   return 0;
 }

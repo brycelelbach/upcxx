@@ -145,7 +145,7 @@ ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
 
 void initGrid(ndarray<double, 3 UNSTRIDED> grid) {
 #if DEBUG
-  cout << MYTHREAD << ": initializing grid with domain "
+  cout << myrank() << ": initializing grid with domain "
        << grid.domain() << endl;
 #endif
 #ifdef RANDOM_VALUES
@@ -494,17 +494,17 @@ void probe(int steps) {
 
 #ifdef TIMERS_ENABLED
 # define report(d, s) do { \
-    if (MYTHREAD == 0)      \
+    if (myrank() == 0)      \
       cout << s;            \
     report_value(d);        \
   } while (0)
 
 // Report min, average, max of given value.
 void report_value(double d) {
-  double ave = reduce::add(d, 0) / THREADS;
+  double ave = reduce::add(d, 0) / ranks();
   double max = reduce::max(d, 0);
   double min = reduce::min(d, 0);
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << ": " << min << ", " << ave << ", " << max << endl;
   }
 }
@@ -534,26 +534,26 @@ int main(int argc, char **args) {
     yparts = atoi(args[5]);
     zparts = atoi(args[6]);
     steps = atoi(args[7]);
-    assert(THREADS == xparts * yparts * zparts);
+    assert(ranks() == xparts * yparts * zparts);
     if (argc > 8)
       numTrials = atoi(args[8]);
   } else {
     xdim = ydim = zdim = 64;
-    xparts = THREADS;
+    xparts = ranks();
     yparts = zparts = 1;
     steps = 8;
   }
 
 #if DEBUG
-  if (MYTHREAD == 0) {
-    for (int i = 0; i < THREADS; i++) {
+  if (myrank() == 0) {
+    for (int i = 0; i < ranks(); i++) {
       point<3> pos =
-        threadToPos(PT(xparts,yparts,zparts), THREADS, i);
+        threadToPos(PT(xparts,yparts,zparts), ranks(), i);
       cout << i << " -> " << pos << ", " << pos << " -> "
-           << posToThread(PT(xparts,yparts,zparts), THREADS, pos)
+           << posToThread(PT(xparts,yparts,zparts), ranks(), pos)
            << endl;
       ndarray<int, 1> nb =
-        computeNeighbors(PT(xparts,yparts,zparts), THREADS, i);
+        computeNeighbors(PT(xparts,yparts,zparts), ranks(), i);
       for (int j = 0; j < nb.size(); j++) {
         cout << "  " << nb[j];
       }
@@ -564,10 +564,10 @@ int main(int argc, char **args) {
 
   allDomains = computeDomains(PT(xdim,ydim,zdim),
                               PT(xparts,yparts,zparts),
-                              THREADS);
-  myDomain = allDomains[MYTHREAD];
+                              ranks());
+  myDomain = allDomains[myrank()];
 #if DEBUG
-  cout << MYTHREAD << ": thread domain is " << myDomain << endl;
+  cout << myrank() << ": thread domain is " << myDomain << endl;
 #endif
 
   myGridA =
@@ -575,20 +575,20 @@ int main(int argc, char **args) {
   myGridB =
     ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH) CMAJOR);
 #ifdef SHARED_DIR
-  allGridsA.init(THREADS);
-  allGridsB.init(THREADS);
-  allGridsA[MYTHREAD] = myGridA;
-  allGridsB[MYTHREAD] = myGridB;
+  allGridsA.init(ranks());
+  allGridsB.init(ranks());
+  allGridsA[myrank()] = myGridA;
+  allGridsB[myrank()] = myGridB;
 #else
-  allGridsA.create(RD((int)THREADS));
-  allGridsB.create(RD((int)THREADS));
+  allGridsA.create(RD((int)ranks()));
+  allGridsB.create(RD((int)ranks()));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 #endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
-                                        (int)THREADS, (int)MYTHREAD);
+                                        (int)ranks(), (int)myrank());
   rectdomain<3> targetDomain = myDomain;
   targetsA.create(RD(6));
   targetsB.create(RD(6));
@@ -597,7 +597,7 @@ int main(int argc, char **args) {
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
 #if DEBUG
-      cout << MYTHREAD << ": overlap " << i << " = "
+      cout << myrank() << ": overlap " << i << " = "
            << (((ndarray<double, 3, global>)
                 allGridsA[nb[i]]).domain() * targetDomain) << endl;
 #endif
@@ -626,7 +626,7 @@ int main(int argc, char **args) {
   nx = nx_interior + 2 * GHOST_WIDTH;
   ny = ny_interior + 2 * GHOST_WIDTH;
   nz = nz_interior + 2 * GHOST_WIDTH;
-  setupComm(PT(xparts,yparts,zparts), THREADS, MYTHREAD);
+  setupComm(PT(xparts,yparts,zparts), ranks(), myrank());
 
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
@@ -640,7 +640,7 @@ int main(int argc, char **args) {
 # if DEBUG
     point<3> p = packEnds[i] - packStarts[i];
     point<3> q = unpackEnds[i] - unpackStarts[i];
-    cout << MYTHREAD << ": Ghost size in dir " << i << ": "
+    cout << myrank() << ": Ghost size in dir " << i << ": "
          << (planeSizes[i] * GHOST_WIDTH) << ", "
          << (p[1] * p[2] * p[3]) << ", "
          << (q[1] * q[2] * q[3]) << endl;
@@ -648,14 +648,14 @@ int main(int argc, char **args) {
   }
 
 # if !USE_MPI
-  allInBufs.create(RD(THREADS));
+  allInBufs.create(RD(ranks()));
   allInBufs.exchange(inBufs);
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
       targetBufs.buffers[i] =
         allInBufs[neighbors[i]].buffers[i];
 #  if DEBUG
-      cout << MYTHREAD << ": target " << i << ": "
+      cout << myrank() << ": target " << i << ": "
            << targetBufs.buffers[i] << endl;
 #  endif
     }
@@ -678,7 +678,7 @@ int main(int argc, char **args) {
     double val = myGridA[myDomain.min()];
     report(t.secs(), "Time for trial " << i << " with split " <<
            xparts << "x" << yparts << "x" << zparts << " (s)");
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       cout << "Verification value: " << val << endl;
     }
 #ifdef TIMERS_ENABLED

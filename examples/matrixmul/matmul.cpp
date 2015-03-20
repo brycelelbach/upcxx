@@ -195,11 +195,11 @@ int main(int argc, char **argv)
       pgrid_nrow = atoi(argv[3]);
     }
     // try to fix pgrid_nrow if it is incorrect
-    if (pgrid_nrow < 1 || pgrid_nrow > THREADS) {
+    if (pgrid_nrow < 1 || pgrid_nrow > ranks()) {
       pgrid_nrow = default_pgrid_nrow;
     }
-    pgrid_ncol = THREADS / pgrid_nrow;
-    assert(pgrid_nrow * pgrid_ncol == THREADS);
+    pgrid_ncol = ranks() / pgrid_nrow;
+    assert(pgrid_nrow * pgrid_ncol == ranks());
 
     assert((M % (blk_sz * pgrid_nrow)) == 0);
     assert((M % (blk_sz * pgrid_ncol)) == 0);
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
     // default parameters
     blk_sz = default_blk_sz;
     pgrid_nrow = 1;
-    pgrid_ncol = THREADS;
+    pgrid_ncol = ranks();
     M = blk_sz * pgrid_ncol;  
   }
 
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
   int m_blks = M / blk_sz;
   int n_blks= N / blk_sz;
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     // allocate memory for the global matrices
     A.alloc_blocks(m_blks, n_blks, blk_sz, pgrid_nrow, pgrid_ncol);
     B.alloc_blocks(m_blks, n_blks, blk_sz, pgrid_nrow, pgrid_ncol);
@@ -237,13 +237,13 @@ int main(int argc, char **argv)
   }
 
   barrier();
-  if (MYTHREAD == 0)
+  if (myrank() == 0)
     printf("Generating the matrices...\n");
 
   gen_matrix();
   barrier();
     
-  if (MYTHREAD == 0)
+  if (myrank() == 0)
     printf("Performing SUMMA matrix-matrix multiplication...\n");
   
   barrier();
@@ -252,16 +252,16 @@ int main(int argc, char **argv)
   barrier();
   double elapsedtime = mysecond() - starttime;
   
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     printf("matrix multiplication: M %d, blk_sz %d, np %d, pgrid_nrow %d, time %f sec, Gflops %f\n",
-           M, blk_sz, THREADS, pgrid_nrow, elapsedtime, 
+           M, blk_sz, ranks(), pgrid_nrow, elapsedtime,
            2.0*M*L*N/1024/1024/1024/elapsedtime);           
   }
   barrier();
 
   // debug and verify
 #ifdef VERIFY
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     matrix<double> *A_local, *B_local, *C_local;
     A_local = A.gather();
     cout << "local copy of A:" << *A_local;

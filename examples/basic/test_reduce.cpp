@@ -24,7 +24,7 @@ void test(upcxx_datatype_t dt, size_t count)
   // Initialize data pointed by host_ptr by a local pointer
   T *lsrc = (T *)src;
   for (int i=0; i<count; i++) {
-    lsrc[i] = (T)i + (T)MYTHREAD / THREADS;
+    lsrc[i] = (T)i + (T)myrank() / ranks();
   }
   
   barrier();
@@ -32,7 +32,7 @@ void test(upcxx_datatype_t dt, size_t count)
   uint32_t root = 0;
   upcxx_reduce<T>((T *) src, (T *) dst, count, root, UPCXX_MAX, dt);
   
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << myrank() << " dst: ";
     T *ldst = (T *)dst;
     for (int i=0; i<count; i++) {
@@ -43,7 +43,7 @@ void test(upcxx_datatype_t dt, size_t count)
   
   upcxx_reduce<T>((T *) src, (T *) dst, count, root, UPCXX_SUM, dt);
   
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << myrank() << " dst: ";
     T *ldst = (T *)dst;
     for (int i=0; i<count; i++) {

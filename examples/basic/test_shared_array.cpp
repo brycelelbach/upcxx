@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 {
   printf("I'm in main\n");
   // upcxx::init(&argc, &argv);
-  for (int i = THREADS-1; i>=0; i--) {
+  for (int i = ranks()-1; i>=0; i--) {
     printf("async to %d for array updates.\n", i);
     async(i)(update);
   }

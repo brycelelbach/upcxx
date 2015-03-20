@@ -274,5 +274,6 @@ extern std::vector< std::vector<rank_t> > pshm_teams;
 # define teamsplit upcxx_teamsplit
 #endif
 
-#define THREADS upcxx::ranks()
-#define MYTHREAD upcxx::myrank()
+// These are no longer supported.
+// #define THREADS upcxx::ranks()
+// #define MYTHREAD upcxx::myrank()

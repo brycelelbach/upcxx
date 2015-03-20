@@ -15,10 +15,10 @@
 # include <event.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
-# define barrier()
-# define async_wait()
-# define THREADS 1
-# define MYTHREAD 0
+static void barrier() {}
+static void async_wait() {}
+static int ranks() { return 1; }
+static int myrank() { return 0; }
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 

@@ -27,15 +27,15 @@ int main(int argc, char **argv)
 
   dom.boxes.init(dom.num_boxes, 1); // cyclic distribution
 
-  // dom.boxes.init(dom.num_boxes, dom.num_boxes/THREADS); // blocked distribution
+  // dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
 
-  for (int i=MYTHREAD; i<dom.num_boxes; i += THREADS) {
-    dom.boxes[i] = upcxx::allocate<Box>(i%THREADS, 1);
+  for (int i=myrank(); i<dom.num_boxes; i += ranks()) {
+    dom.boxes[i] = upcxx::allocate<Box>(i%ranks(), 1);
   }
 
   upcxx::barrier();
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     for (int i=0; i<8; i++) {
       for (int j=0; j<8; j++) {
         for (int k=0; k<8; k++) {
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
           upcxx_memberof(box, i) = i;
           upcxx_memberof(box, j) = j;
           upcxx_memberof(box, k) = k;
-          upcxx_memberof(box, data) = upcxx::allocate<double>(idx%THREADS, 4);
+          upcxx_memberof(box, data) = upcxx::allocate<double>(idx%ranks(), 4);
         }
       }
     }
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   // print out box data structures to verify
   upcxx::barrier();
 
-  if (MYTHREAD == 1) {
+  if (myrank() == 1) {
     for (int i=0; i<8; i += 1) {
       for (int j=0; j<8; j += 1) {
         for (int k=0; k<8; k += 1) {

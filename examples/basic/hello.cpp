@@ -11,7 +11,8 @@
 int main (int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
-  std::cout << "I'm thread " << MYTHREAD << " of " << THREADS << " threads \n";
+  std::cout << "I'm thread " << upcxx::myrank() << " of "
+            << upcxx::ranks() << " threads \n";
   upcxx::finalize();
   return 0;
 }

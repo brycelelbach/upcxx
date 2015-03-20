@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 
   global_ptr<double> src, dst;
   size_t sz = 1024*1024;
-  src = allocate<double>((myrank()+1)%THREADS, sz);
+  src = allocate<double>((myrank()+1)%ranks(), sz);
 #ifdef UPCXX_HAVE_CXX11
   assert(src != nullptr); // assert(src != NULL); is OK but not type-safe
 #else  

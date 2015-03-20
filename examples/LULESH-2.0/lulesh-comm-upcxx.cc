@@ -119,7 +119,7 @@ void CommRecv_upcxx(Domain& domain, int msgType, Index_t xferFields,
     return ;
   
   /* post recieve buffers for all incoming messages */
-  int myRank = MYTHREAD;
+  int myRank = upcxx::myrank();
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;
   Index_t maxEdgeComm  = xferFields * domain.maxEdgeSize() ;
   Index_t pmsg = 0 ; /* plane comm msg */
@@ -434,7 +434,7 @@ void CommSend_upcxx(Domain& domain, int msgType,
     return ;
   
   /* post receive buffers for all incoming messages */
-  int myRank = MYTHREAD;
+  int myRank = upcxx::myrank();
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;
   Index_t maxEdgeComm  = xferFields * domain.maxEdgeSize() ;
   Index_t pmsg = 0 ; /* plane comm msg */
@@ -2130,7 +2130,7 @@ void CommMonoQ_upcxx(Domain& domain)
   if (domain.numRanks() == 1)
     return ;
   
-  int myRank = MYTHREAD;
+  int myRank = upcxx::myrank();
   Index_t xferFields = 3 ; /* delv_xi, delv_eta, delv_zeta */
   Real_t *fieldData[3] ;
   Index_t maxPlaneComm = xferFields * domain.maxPlaneSize() ;

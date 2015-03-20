@@ -93,7 +93,7 @@ void alltoall(global_ptr<T> src[],
               int np)
 {
   int i;
-  int myrank = MYTHREAD;
+  int myrank = myrank();
 
   for (i=0; i<np; i++) {
     int j = (myrank+i) % np;
@@ -215,7 +215,7 @@ void transpose(T *in,
   int i;
   size_t msgsz_per_p  = (nx/nprocs) * (ny/nprocs);
   size_t nx_per_p = nx / nprocs;
-  int myrank = MYTHREAD;
+  int myrank = myrank();
   global_ptr<T> tmp_in;
   global_ptr<T> *W = new global_ptr<T> [nprocs];
   assert(W != NULL);
@@ -368,10 +368,10 @@ void fft2d(complex_t *my_A,
            size_t ny, // # of columns
            global_ptr<global_ptr<complex_t> > all_Ws)
 {
-  int nprocs = THREADS;
+  int nprocs = ranks();
   complex_t *tmp;
   fft_plan_t planX, planY;
-  int myrank = MYTHREAD;
+  int myrank = myrank();
   size_t nx_per_p = nx / nprocs;
   size_t ny_per_p = ny / nprocs;
   size_t size_per_p = nx_per_p * ny;
@@ -468,7 +468,7 @@ int main(int argc, char **argv)
 {
   double starttime;
   int i;
-  int nprocs = THREADS;
+  int nprocs = ranks();
   // event_t *e[nprocs];
   Input = new global_ptr<complex_t> [nprocs];
   Output = new global_ptr<complex_t> [nprocs];

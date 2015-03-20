@@ -105,7 +105,7 @@ class FT {
    */
   void create_FFT_plans() {
     createPlans(myArray1, myArray2, myArray3, myArray4, myArray5,
-                myArray6, nx, ny, nz, ny/THREADS, nz/THREADS);
+                myArray6, nx, ny, nz, ny/ranks(), nz/ranks());
   }
 
   /**
