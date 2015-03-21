@@ -54,7 +54,7 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         if test "$HAVE_CXX11" = 1; then
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          CXXFLAGS+=" -DUSE_CXX11 "
+          CXXFLAGS+=" -DUPCXX_USE_CXX11 "
         fi
       ])
 
