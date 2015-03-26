@@ -109,13 +109,13 @@ dnl Option to enable using the Cray DMAPP API on Aries network (default is disab
 AC_ARG_ENABLE([dmapp],
     AS_HELP_STRING([--enable-dmapp], [Enable using DMAPP on Cray Aries network]))
 
-AS_IF([test x$enableval = xyes], [
+AS_IF([test "x$enable_dmapp" = "xyes"], [
   dnl Do the stuff needed for enabling dmapp
   AC_DEFINE(UPCXX_USE_DMAPP, 1, [define if dmapp feature is enabled])
   AC_SUBST(UPCXX_USE_DMAPP)
 ])
 
-AM_CONDITIONAL([UPCXX_USE_DMAPP], [test x$enableval = xyes])
+AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
 
 
 AC_OUTPUT
