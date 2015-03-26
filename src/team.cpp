@@ -19,6 +19,8 @@ namespace upcxx
   gasnet_hsl_t team::_tid_lock = GASNET_HSL_INITIALIZER;
   vector<team *> team::_team_stack;
 
+  bool _threads_deprecated_warned = false;
+
 #define TEAM_ID_BITS 8
 #define TEAM_ID_SEQ_MASK 0xFF
 
