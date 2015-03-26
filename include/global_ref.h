@@ -20,6 +20,9 @@ namespace upcxx
   #define memberof(obj, m) \
     upcxx::make_memberof((obj).where(), (obj).raw_ptr()->m)
 
+  // Added for forwards compatibility
+  #define upcxx_memberof memberof
+
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = rank_t>
   struct global_ref
