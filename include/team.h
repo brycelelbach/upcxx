@@ -270,5 +270,8 @@ extern std::vector< std::vector<rank_t> > pshm_teams;
 #define UPCXX_teamsplit_(name, t)                               \
   for (upcxx::ts_scope name(t); name.done == 0; name.done = 1)
 
+// Added for forwards compatibility
+#define upcxx_teamsplit teamsplit
+
 #define THREADS upcxx::ranks()
 #define MYTHREAD upcxx::myrank()
