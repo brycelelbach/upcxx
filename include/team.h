@@ -250,6 +250,26 @@ namespace upcxx
     return team::current_team()->myrank();
   }
 
+  static inline void _threads_deprecated_warn() {
+    extern bool _threads_deprecated_warned;
+    if (!_threads_deprecated_warned) {
+      _threads_deprecated_warned = true;
+      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+                << "         use upcxx::ranks() and upcxx::myranks() instead"
+                << std::endl;
+    }
+  }
+
+  static inline uint32_t _threads_deprecated() {
+    _threads_deprecated_warn();
+    return team::current_team()->size();
+  }
+
+  static inline uint32_t _mythread_deprecated() {
+    _threads_deprecated_warn();
+    return team::current_team()->myrank();
+  }
+
   /*
   static inline uint32_t global_ranks() {
     return team::global_team()->size();
@@ -260,8 +280,8 @@ namespace upcxx
   }
   */
 
-extern team team_all;
-extern std::vector< std::vector<rank_t> > pshm_teams;
+  extern team team_all;
+  extern std::vector< std::vector<rank_t> > pshm_teams;
 
 } // namespace upcxx
 
@@ -270,5 +290,8 @@ extern std::vector< std::vector<rank_t> > pshm_teams;
 #define UPCXX_teamsplit_(name, t)                               \
   for (upcxx::ts_scope name(t); name.done == 0; name.done = 1)
 
-#define THREADS upcxx::ranks()
-#define MYTHREAD upcxx::myrank()
+// Added for forwards compatibility
+#define upcxx_teamsplit teamsplit
+
+#define THREADS upcxx::_threads_deprecated()
+#define MYTHREAD upcxx::_mythread_deprecated()

@@ -24,6 +24,9 @@ namespace upcxx {
 #define UPCXX_finish_(name)                                     \
   for (upcxx::f_scope name; name.done == 0; name.done = 1)
 
+// Added for forwards compatibility
+#define upcxx_finish finish
+
 /* #define new_async(x) async(x, &_fs.e) */
 
 }
