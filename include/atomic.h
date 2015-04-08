@@ -52,7 +52,11 @@ namespace upcxx
     event* cb_event;
   };
 
+  #ifdef UPCXX_HAVE_CXX11
   template<typename T = uint64_t>
+  #else
+  template<typename T>
+  #endif
   static void fetch_add_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
     fetch_add_am_t<T> *am = (fetch_add_am_t<T> *)buf;
@@ -67,7 +71,11 @@ namespace upcxx
                                       &reply, sizeof(reply)));
   }
 
+  #ifdef UPCXX_HAVE_CXX11
   template<typename T = uint64_t>
+  #else
+  template<typename T>
+  #endif
   static void fetch_add_reply_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
     fetch_add_reply_t<T> *reply = (fetch_add_reply_t<T> *)buf;
