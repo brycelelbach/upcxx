@@ -30,14 +30,13 @@ namespace upcxx
   struct global_ref_base
   {
     global_ref_base(place_t pla, T *ptr)
-    {
-      _pla = pla;
-      _ptr = ptr;
-    }
+      : _pla(pla), _ptr(ptr)
+    {}
+
 
     global_ref_base(const global_ref_base &r)
-    : global_ref_base(r.where(), r.raw_ptr())
-    {};
+      : _pla(r.where()), _ptr(r.raw_ptr())
+    {}
 
     global_ref_base& operator = (const T &rhs)
     {
