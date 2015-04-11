@@ -16,6 +16,7 @@ bin_PROGRAMS = \
   test_async \
   test_dynamic_finish \
 	test_copy_closure \
+  test_copy_and_set \
   test_event \
   test_event2 \
   test_fetch_add \
