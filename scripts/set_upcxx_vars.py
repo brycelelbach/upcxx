@@ -20,7 +20,7 @@ def process_line(line):
         line = line.replace('(', '{')
         line = line.replace(')', '}')
         line = re.sub('\s+', ' ', line)
-        print line[0:assign_pos-1].replace(' ','') + '="' + line[assign_pos+1:-1] + '"'
+        print line[0:assign_pos-1].replace(' ','') + '="' + line[assign_pos+1:-1].lstrip() + '"'
 
 def process_gasnet_mak(fn):
     if (VERBOSE):
