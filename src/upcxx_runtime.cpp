@@ -223,6 +223,13 @@ namespace upcxx
     while (advance() > 0);
     barrier();
     // gasnet_exit(0);
+    extern bool _threads_deprecated_warned;
+    if (global_myrank() == 0 && _threads_deprecated_warned) {
+      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+                << "         use upcxx::ranks() and upcxx::myranks() instead!"
+                << "\n";
+    }
+    
     return UPCXX_SUCCESS;
   }
 

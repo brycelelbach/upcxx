@@ -252,12 +252,15 @@ namespace upcxx
 
   static inline void _threads_deprecated_warn() {
     extern bool _threads_deprecated_warned;
-    if (!_threads_deprecated_warned) {
-      _threads_deprecated_warned = true;
-      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
-                << "         use upcxx::ranks() and upcxx::myranks() instead"
-                << std::endl;
-    }
+    _threads_deprecated_warned = true;
+    /* Postpone the warning to the end in finalize() so it wouldn't
+       get into the program output */
+    // if (!_threads_deprecated_warned) {
+    //   _threads_deprecated_warned = true;
+    //   std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+    //             << "         use upcxx::ranks() and upcxx::myranks() instead"
+    //             << std::endl;
+    // }
   }
 
   static inline uint32_t _threads_deprecated() {
