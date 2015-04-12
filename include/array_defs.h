@@ -1,9 +1,9 @@
 #pragma once
 
-#define UPCXXA_PROCS THREADS
-#define UPCXXA_MYPROC MYTHREAD
-#define UPCXXA_GLOBAL_PROCS GLOBAL_THREADS
-#define UPCXXA_GLOBAL_MYPROC GLOBAL_MYTHREAD
+#define UPCXXA_PROCS upcxx::ranks()
+#define UPCXXA_MYPROC upcxx::myrank()
+#define UPCXXA_GLOBAL_PROCS upcxx::global_ranks()
+#define UPCXXA_GLOBAL_MYPROC upcxx::global_myrank()
 
 #define UPCXXA_DEREF                            UPCXXA_DEREF_LOCAL
 #define UPCXXA_ASSIGN                           UPCXXA_ASSIGN_LOCAL

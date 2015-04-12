@@ -159,7 +159,7 @@ namespace upcxx
       } else {
         std::cerr << "global_ptr " << *this << " is pointing to a remote object "
                   << "but the '->' operator is supported only when pointing to "
-                  << "a local object.  Please use 'memberof(global_ptr, filed)'\n";
+                  << "a local object.  Please use 'upcxx_memberof(global_ptr, filed)'\n";
         gasnet_exit(1);
       }
       return NULL; // should never get here

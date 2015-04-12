@@ -262,13 +262,13 @@ void probe(int steps) {
 }
 
 # define report(d, s) do { \
-    if (MYTHREAD == 0)      \
+    if (myrank() == 0)      \
       cout << s;            \
     report_value(d);        \
   } while (0)
 
 void report_value(double d) {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << ": " << d << endl;
   }
 }
@@ -282,8 +282,8 @@ void printTimingStats() {
 int main(int argc, char **args) {
   MPI_Init(&argc, &args);
 
-  MPI_Comm_size(MPI_COMM_WORLD, &THREADS);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYTHREAD);
+  MPI_Comm_size(MPI_COMM_WORLD, &ranks());
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank());
 
   if (argc > 1 && (argc < 8 || !strncmp(args[1], "-h", 2))) {
     cout << "Usage: stencil <xdim> <ydim> <zdim> "
@@ -297,17 +297,17 @@ int main(int argc, char **args) {
     yparts = atoi(args[5]);
     zparts = atoi(args[6]);
     steps = atoi(args[7]);
-    assert(THREADS == xparts * yparts * zparts);
+    assert(ranks() == xparts * yparts * zparts);
   } else {
     xdim = ydim = zdim = 64;
-    xparts = THREADS;
+    xparts = ranks();
     yparts = zparts = 1;
     steps = 8;
   }
 
   position size = computeSize(POS(xdim,ydim,zdim),
                               POS(xparts,yparts,zparts),
-                              THREADS, MYTHREAD);
+                              ranks(), myrank());
   nx_interior = size.x;
   ny_interior = size.y;
   nz_interior = size.z;
@@ -328,7 +328,7 @@ int main(int argc, char **args) {
 #endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
-  setupComm(POS(xparts,yparts,zparts), THREADS, MYTHREAD);
+  setupComm(POS(xparts,yparts,zparts), ranks(), myrank());
   
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
@@ -342,7 +342,7 @@ int main(int argc, char **args) {
 #if DEBUG
     position p = packEnds[i] - packStarts[i];
     position q = unpackEnds[i] - unpackStarts[i];
-    cout << MYTHREAD << ": Ghost size in dir " << i << ": "
+    cout << myrank() << ": Ghost size in dir " << i << ": "
          << (planeSizes[i] * GHOST_WIDTH) << ", "
          << (p.x * p.y * p.z) << ", "
          << (q.x * q.y * q.z) << endl;
@@ -359,7 +359,7 @@ int main(int argc, char **args) {
 
   double val =
     myGridAPtr[Index3D(GHOST_WIDTH, GHOST_WIDTH, GHOST_WIDTH)];
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << "Time for stencil with split " << xparts << "x" << yparts
          << "x" << zparts << " (s): " << t.secs() << endl;
     cout << "Verification value: " << val << endl;

@@ -25,7 +25,7 @@
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS simple
+# define STRIDEDNESS row
 #endif
 
 #ifdef STRIDEDNESS
@@ -37,9 +37,17 @@
 #endif
 
 #ifdef USE_FOREACH
-# define FOREACH foreach
+# define FOREACH upcxx_foreach
 #elif !defined(FOREACH)
 # define FOREACH foreach1
+# define foreach1(var, dom)                             \
+  foreach1_(var, (dom), UPCXXA_CONCAT_(var, _upb),      \
+            UPCXXA_CONCAT_(var, _stride),               \
+            UPCXXA_CONCAT_(var, _done))
+# define foreach1_(var, dom, u_, s_, d_)                \
+  for (upcxx::cint_t u_ = (dom).upb()[1],               \
+	 s_ = (dom).raw_stride()[1],                    \
+	 var = (dom).lwb()[1]; var < u_; var += s_)
 #endif
 
 #if defined(CTEAMS) && !defined(VREDUCE)
@@ -150,9 +158,9 @@ struct timer {
 using namespace upcxx;
 
 #if !USE_UPCXX
-# define barrier()
-# define THREADS 1
-# define MYTHREAD 0
+static void barrier() {}
+static int ranks() { return 1; }
+static int myrank() { return 0; }
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 

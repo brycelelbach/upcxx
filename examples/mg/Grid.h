@@ -80,7 +80,7 @@ class Grid {
       (ndarray<double, 3 UNSTRIDED>) points[myBlockPos];
     // foreach (p, myPoints.domain()) {
     //   myPoints[p] = 0.0;
-    // }
+    // };
     myPoints.set(0.0);
   }
 };

@@ -68,9 +68,7 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
   upcxx-arrays/domain_undefs.h \
-  upcxx-arrays/domains.h \
   upcxx-arrays/foreach.h \
-  upcxx-arrays/foreach_aux.h \
   upcxx-arrays/iter.h \
   upcxx-arrays/point.h \
   upcxx-arrays/point.tpp \

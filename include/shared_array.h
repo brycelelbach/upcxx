@@ -85,7 +85,7 @@ namespace upcxx
     {
       if (_data != NULL) return;
 
-      int nplaces = THREADS;
+      int nplaces = ranks();
       if (sz != 0) _size = sz;
       if (blk_sz != 0) _blk_sz = blk_sz;
       _local_size = (_size + nplaces - 1) / nplaces;

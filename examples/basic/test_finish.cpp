@@ -16,17 +16,17 @@ using namespace upcxx;
 
 void print_task(int task_id)
 {
-  cout << "MYTHREAD " << MYTHREAD <<  ": task_id " << task_id << "\n";
+  cout << "myrank() " << myrank() <<  ": task_id " << task_id << "\n";
 }
 
 int main(int argc, char **argv)
 {
-  printf("MYTHREAD %d will spawn %d tasks...\n",
-         MYTHREAD, THREADS);
+  printf("myrank() %d will spawn %d tasks...\n",
+         myrank(), ranks());
 
-  finish {
-    for (uint32_t i = 0; i < THREADS; i++) {
-      printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
+  upcxx_finish {
+    for (uint32_t i = 0; i < ranks(); i++) {
+      printf("thread %d spawns a task at node %d\n", myrank(), i);
       async(i)(print_task, 1000+i);
     }
   }

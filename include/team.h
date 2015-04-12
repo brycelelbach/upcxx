@@ -289,12 +289,18 @@ namespace upcxx
 } // namespace upcxx
 
 // Dynamically scoped hierarchical team construct
-#define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
+#define upcxx_teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
 #define UPCXX_teamsplit_(name, t)                               \
   for (upcxx::ts_scope name(t); name.done == 0; name.done = 1)
 
-// Added for forwards compatibility
-#define upcxx_teamsplit teamsplit
+#ifdef UPCXX_SHORT_MACROS
+# define teamsplit upcxx_teamsplit
+#endif
 
+// These are no longer supported.
+// #define THREADS upcxx::ranks()
+// #define MYTHREAD upcxx::myrank()
+
+// Keep the warned version for a while for user code migration
 #define THREADS upcxx::_threads_deprecated()
 #define MYTHREAD upcxx::_mythread_deprecated()

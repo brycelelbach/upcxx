@@ -15,10 +15,10 @@
 # include <event.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
-# define barrier()
-# define async_wait()
-# define THREADS 1
-# define MYTHREAD 0
+static void barrier() {}
+static void async_wait() {}
+static int ranks() { return 1; }
+static int myrank() { return 0; }
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
@@ -96,7 +96,7 @@ struct timer {
 #endif
 
 #if defined(USE_UNSTRIDED) && !defined(STRIDEDNESS)
-# define STRIDEDNESS simple
+# define STRIDEDNESS row
 #endif
 
 #ifdef STRIDEDNESS
@@ -107,12 +107,12 @@ struct timer {
 # define GUNSTRIDED
 #endif
 
-#ifdef POINT_INDEXING
-# define getTotal(total, i, j) total[POINT(i,j)]
-# define writeTotal(total, i, j, value) total[POINT(i,j)] = value
+#ifdef VAR_INDEXING
+# define getTotal(total, i, j) total(i,j)
+# define writeTotal(total, i, j, value) total(i,j) = value
 #else
-# define getTotal(total, i, j) total[i][j]
-# define writeTotal(total, i, j, value) total[i][j] = value
+# define getTotal(total, i, j) total[PT(i,j)]
+# define writeTotal(total, i, j, value) total[PT(i,j)] = value
 #endif
 
 using namespace std;

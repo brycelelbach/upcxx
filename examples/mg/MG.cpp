@@ -20,120 +20,119 @@ MG::MG() {
 
   myTimes =
     ndarray<ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
+            1 UNSTRIDED>(RD(1, numTimers+1));
 
   // set up arrays for storing times
   myTimes[T_L2NORM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
+            1 UNSTRIDED>(RD(startLevel, startLevel+1));
   myTimes[T_APPLY_SMOOTHER] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
+            1 UNSTRIDED>(RD(1, startLevel+1));
   myTimes[T_EVALUATE_RESIDUAL] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_COARSEN] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_PROLONGATE] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myTimes[T_GLOBAL_COMM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
   myTimes[T_THRESHOLD_COMM] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL),
-                                    (THRESHOLD_LEVEL+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, THRESHOLD_LEVEL+1));
   myTimes[T_BARRIER] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #ifdef CONTIGUOUS_ARRAY_BUFFERS
   myTimes[T_PACKING] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
   myTimes[T_UNPACKING] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #endif
 #ifdef NONBLOCKING_ARRAYCOPY
   myTimes[T_SYNC] =
     ndarray<ndarray<double, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1)));
+            1 UNSTRIDED>(RD(THRESHOLD_LEVEL, startLevel+1));
 #endif
 
   myTimes[T_L2NORM][startLevel] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 3));
 
-  foreach (level, RECTDOMAIN((1), (startLevel+1))) {
+  foreach (level, RD(1, startLevel+1)) {
     myTimes[T_APPLY_SMOOTHER][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
+  };
 
-  foreach (level, RECTDOMAIN((2), (startLevel+1))) {
+  foreach (level, RD(2, startLevel+1)) {
     if (level[1] != startLevel) {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
     }
     else {
       myTimes[T_EVALUATE_RESIDUAL][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 2*numIterations+2));
     }
     myTimes[T_COARSEN][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
     myTimes[T_PROLONGATE][level] =
-      ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+      ndarray<double, 1 UNSTRIDED>(RD(1, numIterations+1));
+  };
 
   myTimes[T_THRESHOLD_COMM][THRESHOLD_LEVEL] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 2*numIterations+1));
 
-  foreach (level, RECTDOMAIN((THRESHOLD_LEVEL), (startLevel+1))) {
+  foreach (level, RD(THRESHOLD_LEVEL, startLevel+1)) {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 9*numIterations+1));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 9*numIterations+1));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
-                                                (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2*numIterations+1,
+                                        9*numIterations+1));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 9*numIterations+1));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (9*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 9*numIterations+1));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
     else {
       myTimes[T_GLOBAL_COMM][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
     }
 
     if (level[1] == THRESHOLD_LEVEL) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2*numIterations+1),
-                                                (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2*numIterations+1,
+                                        3*numIterations+1));
     }
     else if (level[1] == startLevel) {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-2), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-2, 3*numIterations+1));
     }
     else {
       myTimes[T_BARRIER][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
 #endif
 
@@ -141,28 +140,28 @@ MG::MG() {
 #if UPDATE_BORDER_DIRECTIONS == 6
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 6*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 6*numIterations+1));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-1, 6*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((-1), (6*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(-1, 6*numIterations+1));
     }
 #elif UPDATE_BORDER_DIRECTIONS == 26
     if (level[1] != startLevel) {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(1, 3*numIterations+1));
     }
     else {
       myTimes[T_PACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
       myTimes[T_UNPACKING][level] =
-        ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((0), (3*numIterations+1)));
+        ndarray<double, 1 UNSTRIDED>(RD(0, 3*numIterations+1));
     }
 #endif
 #endif
@@ -173,57 +172,57 @@ MG::MG() {
 #ifndef CONTIGUOUS_ARRAY_BUFFERS
     // make empty domains for this case
     myTimes[T_PACKING] =
-      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(0, 0));
     myTimes[T_UNPACKING] =
-      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), (0)));
+      ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(0, 0));
 #endif
-  }
+  };
 
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
   myCounts =
     ndarray<ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (numCounters+1)));
+            1 UNSTRIDED>(RD(1, numCounters+1));
 	
   // set up arrays for storing counts
   myCounts[T_L2NORM] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((startLevel), (startLevel+1)));
+            1 UNSTRIDED>(RD(startLevel, startLevel+1));
   myCounts[T_APPLY_SMOOTHER] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((1), (startLevel+1)));
+            1 UNSTRIDED>(RD(1, startLevel+1));
   myCounts[T_EVALUATE_RESIDUAL] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myCounts[T_COARSEN] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
   myCounts[T_PROLONGATE] =
     ndarray<ndarray<long, 1 UNSTRIDED>,
-            1 UNSTRIDED>(RECTDOMAIN((2), (startLevel+1)));
+            1 UNSTRIDED>(RD(2, startLevel+1));
 
   myCounts[T_L2NORM][startLevel] =
-    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (3)));
+    ndarray<long, 1 UNSTRIDED>(RD(1, 3));
 
-  foreach (level, RECTDOMAIN((1), (startLevel+1))) {
+  foreach (level, RD(1, startLevel+1)) {
     myCounts[T_APPLY_SMOOTHER][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
+  };
 
-  foreach (level, RECTDOMAIN((2), (startLevel+1))) {
+  foreach (level, RD(2, startLevel+1)) {
     if (level[1] != startLevel) {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+        ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
     }
     else {
       myCounts[T_EVALUATE_RESIDUAL][level] =
-        ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (2*numIterations+2)));
+        ndarray<long, 1 UNSTRIDED>(RD(1, 2*numIterations+2));
     }
     myCounts[T_COARSEN][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
     myCounts[T_PROLONGATE][level] =
-      ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
-  }
+      ndarray<long, 1 UNSTRIDED>(RD(1, numIterations+1));
+  };
 #endif
 #endif
 }
@@ -243,14 +242,14 @@ double MG::getL2Norm(Grid &gridA, int callNumber) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach3 (i, j, k, myAPoints.domain().shrink(1)) {
-    myASquareSum += sqr(myAPoints[i][j][k]);
-  }
+    myASquareSum += sqr(myAPoints(i, j, k));
+  };
 #else
   foreach (p, myAPoints.domain().shrink(1)) {
     myASquareSum += sqr(myAPoints[p]);
-  }
+  };
 #endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_L2NORM][startLevel][callNumber]);
@@ -296,7 +295,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       if (dir[1] == 0 || dir[2] == 0) {
         myOutBuffer[dir].copy(myPoints);
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_PACKING][level][3*(iterationNum-1) +
                                                        callNumber]);
@@ -321,7 +320,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 
     foreach (neighborBlockPos,
              (myBuffer.translate(myBlockPos).domain() -
-              RectDomain<3>(myBlockPos, myBlockPos+POINT(1, 1, 1)))) {
+              RectDomain<3>(myBlockPos, myBlockPos+PT(1, 1, 1)))) {
       // "actualBlockPos" is the actual block from which we retrieve data, since
       // we need to factor in periodic boundary conditions
       Point<3> actualBlockPos =
@@ -340,11 +339,11 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
 		
       // now copy new info
 #ifdef PUSH_DATA
-      gridA.inBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection].COPY(myTranslatedBlockBuffers);
+      gridA.inBuffers[actualBlockPos][PT(0, 0, 0)-myDirection].COPY(myTranslatedBlockBuffers);
 #else
-      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][POINT(0, 0, 0)-myDirection]);
+      myTranslatedBlockBuffers.COPY(gridA.outBuffers[actualBlockPos][PT(0, 0, 0)-myDirection]);
 #endif
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) +
                                                            callNumber]);
@@ -371,11 +370,11 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 
     // unpacking
-    foreach (dir, (myBuffer.domain() - RECTDOMAIN((0, 0, 0), (1, 1, 1)))) {
+    foreach (dir, (myBuffer.domain() - RD(PT(0, 0, 0), PT(1, 1, 1)))) {
       if (dir[1] == 0 || dir[2] == 0) {
         myPoints.copy(myInBuffer[dir]);
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_UNPACKING][level][3*(iterationNum-1) +
                                                          callNumber]);
@@ -395,8 +394,8 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     TIMER_START(myTimer);
 	    
     // "surroundingBlocks" is the 3x3x3 cube of blocks around the current block
-    RectDomain<3> surroundingBlocks(myBlockPos+POINT(-1, -1, -1),
-                                    myBlockPos+POINT(2, 2, 2));
+    RectDomain<3> surroundingBlocks(myBlockPos+PT(-1, -1, -1),
+                                    myBlockPos+PT(2, 2, 2));
 	    
     foreach (neighborBlockPos, surroundingBlocks) {
       if (neighborBlockPos != myBlockPos) {
@@ -422,7 +421,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         myTranslatedBlockPoints.COPY(gridA.blocks[actualBlockPos].points.constrict(gridA.blocks[actualBlockPos].points.domain().shrink(1)));
 #endif
       }
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_GLOBAL_COMM][level][3*(iterationNum-1) + callNumber]);
 
@@ -456,16 +455,16 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
       (ndarray<ndarray<double, 3, global>,
        1 UNSTRIDED>) gridA.inBuffers[myBlockPos];
 
-    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(RECTDOMAIN((1), (4)));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(RD(1, 4));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
-                    POINT(2,0,0));
+      RectDomain<3>(myBlockPos+PT(-1, 0, 0), myBlockPos+PT(2, 1, 1),
+                    PT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
-                    POINT(0,2,0));
+      RectDomain<3>(myBlockPos+PT(0, -1, 0), myBlockPos+PT(1, 2, 1),
+                    PT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
-                    POINT(0,0,2));
+      RectDomain<3>(myBlockPos+PT(0, 0, -1), myBlockPos+PT(1, 1, 2),
+                    PT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
@@ -514,7 +513,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
         buf = gridA.outBuffers[actualBlockPos][-dimDir];
         myInBuffer[dimDir].COPY(buf.translate(actualToNeighborVector));
 #endif
-      }
+      };
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
@@ -561,16 +560,16 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // "neighborBlockPos" is the location of a block with periodic boundary conditions (can be outside of grid)
     // "actualBlockPos" is the actual block position of a block w/o periodic boundary conditions
 
-    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(POINT(1), POINT(4));
+    ndarray<RectDomain<3>, 1 UNSTRIDED> surroundingBlocks(PT(1), PT(4));
     surroundingBlocks[1] =
-      RectDomain<3>(myBlockPos+POINT(-1, 0, 0), myBlockPos+POINT(2, 1, 1),
-                    POINT(2,0,0));
+      RectDomain<3>(myBlockPos+PT(-1, 0, 0), myBlockPos+PT(2, 1, 1),
+                    PT(2,0,0));
     surroundingBlocks[2] =
-      RectDomain<3>(myBlockPos+POINT(0, -1, 0), myBlockPos+POINT(1, 2, 1),
-                    POINT(0,2,0));
+      RectDomain<3>(myBlockPos+PT(0, -1, 0), myBlockPos+PT(1, 2, 1),
+                    PT(0,2,0));
     surroundingBlocks[3] =
-      RectDomain<3>(myBlockPos+POINT(0, 0, -1), myBlockPos+POINT(1, 1, 2),
-                    POINT(0,0,2));
+      RectDomain<3>(myBlockPos+PT(0, 0, -1), myBlockPos+PT(1, 1, 2),
+                    PT(0,0,2));
     Point<3> numCellsPerBlock = numCellsInGridSide / numBlocksInGridSide;
 
     // "localFromRectDomain" indicates (for a push) which portion of the local block needs to be copied
@@ -608,7 +607,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
           ((neighborBlockPos - myBlockPos) * numCellsPerBlock);
         myPoints.COPY(gridA.points[actualBlockPos].translate(actualToNeighborVector).constrict(remoteFromRectDomain));
 #endif		    
-      }
+      };
 
       TIMER_STOP_READ(myTimer,
                       myTimes[T_GLOBAL_COMM][level][9*(iterationNum-1) +
@@ -645,21 +644,21 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // end of the 6 directions update border case
   }
   // case where we are below THRESHOLD_LEVEL
-  else if (MYTHREAD == 0) {
+  else if (myrank() == 0) {
     RectDomain<3> myDomain = myPoints.domain();
 	    
     // negative x direction
-    myPoints.constrict(myDomain.border(1, -1, 0)).translate(POINT(numCellsInGridSide, 0, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -1, 0)).translate(PT(numCellsInGridSide, 0, 0)).copy(myPoints);
     // positive x direction
-    myPoints.constrict(myDomain.border(1, 1, 0)).translate(POINT(-numCellsInGridSide, 0, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 1, 0)).translate(PT(-numCellsInGridSide, 0, 0)).copy(myPoints);
     // negative y direction
-    myPoints.constrict(myDomain.border(1, -2, 0)).translate(POINT(0, numCellsInGridSide, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -2, 0)).translate(PT(0, numCellsInGridSide, 0)).copy(myPoints);
     // positive y direction
-    myPoints.constrict(myDomain.border(1, 2, 0)).translate(POINT(0, -numCellsInGridSide, 0)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 2, 0)).translate(PT(0, -numCellsInGridSide, 0)).copy(myPoints);
     // negative z direction
-    myPoints.constrict(myDomain.border(1, -3, 0)).translate(POINT(0, 0, numCellsInGridSide)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, -3, 0)).translate(PT(0, 0, numCellsInGridSide)).copy(myPoints);
     // positive z direction
-    myPoints.constrict(myDomain.border(1, 3, 0)).translate(POINT(0, 0, -numCellsInGridSide)).copy(myPoints);
+    myPoints.constrict(myDomain.border(1, 3, 0)).translate(PT(0, 0, -numCellsInGridSide)).copy(myPoints);
   }
 }
 
@@ -682,23 +681,23 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   if (level == 1) {
     // foreach (p, myAPoints.domain().shrink(1)) {
     //   myAPoints[p] = 0;
-    // }
+    // };
     myAPoints.constrict(myAPoints.domain().shrink(1)).set(0);
   }
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myAPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine) {
       sumEdgesOfXYPlane[k] =
-        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
-        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+        myBPoints(Pmzzs(i, j, k)) + myBPoints(Ppzzs(i, j, k)) +
+        myBPoints(Pzmzs(i, j, k)) + myBPoints(Pzpzs(i, j, k));
       sumCornersOfXYPlane[k] =
-        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
-        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
-      gridBZLine[k] = myBPoints[i][j][k];
+        myBPoints(Pmmzs(i, j, k)) + myBPoints(Pmpzs(i, j, k)) +
+        myBPoints(Ppmzs(i, j, k)) + myBPoints(Pppzs(i, j, k));
+      gridBZLine[k] = myBPoints(i, j, k);
     }
     foreach1 (k, zLine.shrink(1)) {
-      myAPoints[i][j][k] += S0 * myBPoints[i][j][k]
+      myAPoints(i, j, k) += S0 * myBPoints(i, j, k)
         + S1 * (sumEdgesOfXYPlane[k] + gridBZLine[k-1] + gridBZLine[k+1])
         + S2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
                 sumEdgesOfXYPlane[k+1]);
@@ -715,7 +714,7 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
       sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
         myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
       gridBZLine[q] = myBPoints[r];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       myAPoints[r] += S0 * myBPoints[r]
@@ -724,9 +723,9 @@ void MG::applySmoother(Grid &gridA, Grid &gridB, int level, int iterationNum) {
                 sumEdgesOfXYPlane[q[1]+1]);
       // Enable the following if S3 != 0
       // + S3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]);
-    }
-  }
-#endif // SPLIT_LOOP
+    };
+  };
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_APPLY_SMOOTHER][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_APPLY_SMOOTHER][level][iterationNum]);
@@ -749,22 +748,22 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myCPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine) {
       sumEdgesOfXYPlane[k] =
-        myBPoints[Pmzzs(i, j, k)] + myBPoints[Ppzzs(i, j, k)] +
-        myBPoints[Pzmzs(i, j, k)] + myBPoints[Pzpzs(i, j, k)];
+        myBPoints(Pmzzs(i, j, k)) + myBPoints(Ppzzs(i, j, k)) +
+        myBPoints(Pzmzs(i, j, k)) + myBPoints(Pzpzs(i, j, k));
       sumCornersOfXYPlane[k] =
-        myBPoints[Pmmzs(i, j, k)] + myBPoints[Pmpzs(i, j, k)] +
-        myBPoints[Ppmzs(i, j, k)] + myBPoints[Pppzs(i, j, k)];
+        myBPoints(Pmmzs(i, j, k)) + myBPoints(Pmpzs(i, j, k)) +
+        myBPoints(Ppmzs(i, j, k)) + myBPoints(Pppzs(i, j, k));
     }
     foreach1 (k, zLine.shrink(1)) {
-      myCPoints[i][j][k] = myAPoints[i][j][k]
-        - (A0 * myBPoints[i][j][k]
+      myCPoints(i, j, k) = myAPoints(i, j, k)
+        - (A0 * myBPoints(i, j, k)
            // Enable the following if A1 != 0
-           // + A1 * (sumEdgesOfXYPlane[k] + myBPoints[Pzzms(i, j, k)] +
-           //         myBPoints[Pzzps(i, j, k)])
+           // + A1 * (sumEdgesOfXYPlane[k] + myBPoints(Pzzms(i, j, k)) +
+           //         myBPoints(Pzzps(i, j, k)))
            + A2 * (sumCornersOfXYPlane[k] + sumEdgesOfXYPlane[k-1] +
                    sumEdgesOfXYPlane[k+1])
            + A3 * (sumCornersOfXYPlane[k-1] + sumCornersOfXYPlane[k+1]));
@@ -778,7 +777,7 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
         myBPoints[Pzmz(r)] + myBPoints[Pzpz(r)];
       sumCornersOfXYPlane[q] = myBPoints[Pmmz(r)] + myBPoints[Pmpz(r)] +
         myBPoints[Ppmz(r)] + myBPoints[Pppz(r)];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       myCPoints[r] = myAPoints[r]
@@ -789,9 +788,9 @@ void MG::evaluateResidual(Grid &gridA, Grid &gridB, Grid &gridC, int level,
            + A2 * (sumCornersOfXYPlane[q] + sumEdgesOfXYPlane[q[1]-1] +
                    sumEdgesOfXYPlane[q[1]+1])
            + A3 * (sumCornersOfXYPlane[q[1]-1] + sumCornersOfXYPlane[q[1]+1]));
-    }
-  }
-#endif // SPLIT_LOOP
+    };
+  };
+#endif // VAR_LOOP
 
   if (level != startLevel) {
     TIMER_STOP_READ(myTimer,
@@ -821,12 +820,12 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   }
   // This case is when we go from a distributed array to the entire array on proc 0
   else {
-    RectDomain<3> rd(POINT((myAPoints.domain().min()[1]+1)/2 - 1,
-                           (myAPoints.domain().min()[2]+1)/2 - 1,
-                           (myAPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myAPoints.domain().max()[1]-1)/2 + 2,
-                           (myAPoints.domain().max()[2]-1)/2 + 2,
-                           (myAPoints.domain().max()[3]-1)/2 + 2));
+    RectDomain<3> rd(PT((myAPoints.domain().min()[1]+1)/2 - 1,
+                        (myAPoints.domain().min()[2]+1)/2 - 1,
+                        (myAPoints.domain().min()[3]+1)/2 - 1),
+                     PT((myAPoints.domain().max()[1]-1)/2 + 2,
+                        (myAPoints.domain().max()[2]-1)/2 + 2,
+                        (myAPoints.domain().max()[3]-1)/2 + 2));
     myBPoints = ndarray<double, 3 UNSTRIDED>(rd);
   }
 
@@ -838,27 +837,27 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   COUNTER_START(myCounter);
   TIMER_START(myTimer);
 
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
   foreach2 (i, j, myBPoints.domain().slice(3).shrink(1)) {
     foreach1 (k, zLine.shrink(1, -1)) {
       int a = 2*i+1, b = 2*j+1, c = 2*k+1;
       sumEdgesOfLowerYZPlane[k] =
-        myAPoints[Pmzms(a, b, c)] + myAPoints[Pzmms(a, b, c)] +
-        myAPoints[Ppzms(a, b, c)] + myAPoints[Pzpms(a, b, c)];
+        myAPoints(Pmzms(a, b, c)) + myAPoints(Pzmms(a, b, c)) +
+        myAPoints(Ppzms(a, b, c)) + myAPoints(Pzpms(a, b, c));
       sumCornersOfLowerYZPlane[k] =
-        myAPoints[Pmmms(a, b, c)] + myAPoints[Ppmms(a, b, c)] +
-        myAPoints[Pmpms(a, b, c)] + myAPoints[Pppms(a, b, c)];
+        myAPoints(Pmmms(a, b, c)) + myAPoints(Ppmms(a, b, c)) +
+        myAPoints(Pmpms(a, b, c)) + myAPoints(Pppms(a, b, c));
     }
     foreach1 (k, zLine.shrink(1)) {
       int a = 2*i+1, b = 2*j+1, c = 2*k+1;
       sumEdgesOfCenterYZPlane =
-        myAPoints[Pmzzs(a, b, c)] + myAPoints[Pzmzs(a, b, c)] +
-        myAPoints[Ppzzs(a, b, c)] + myAPoints[Pzpzs(a, b, c)];
+        myAPoints(Pmzzs(a, b, c)) + myAPoints(Pzmzs(a, b, c)) +
+        myAPoints(Ppzzs(a, b, c)) + myAPoints(Pzpzs(a, b, c));
       sumCornersOfCenterYZPlane =
-        myAPoints[Pmmzs(a, b, c)] + myAPoints[Ppmzs(a, b, c)] +
-        myAPoints[Pmpzs(a, b, c)] + myAPoints[Pppzs(a, b, c)];
-      myBPoints[i][j][k] = P0 * myAPoints[a][b][c]
-        + P1 * (myAPoints[Pzzms(a, b, c)] + myAPoints[Pzzps(a, b, c)] +
+        myAPoints(Pmmzs(a, b, c)) + myAPoints(Ppmzs(a, b, c)) +
+        myAPoints(Pmpzs(a, b, c)) + myAPoints(Pppzs(a, b, c));
+      myBPoints(i, j, k) = P0 * myAPoints(a, b, c)
+        + P1 * (myAPoints(Pzzms(a, b, c)) + myAPoints(Pzzps(a, b, c)) +
                 sumEdgesOfCenterYZPlane)
         + P2 * (sumEdgesOfLowerYZPlane[k] + sumEdgesOfLowerYZPlane[k+1] +
                 sumCornersOfCenterYZPlane)
@@ -873,7 +872,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myAPoints[Ppzm(s)] + myAPoints[Pzpm(s)];
       sumCornersOfLowerYZPlane[q] = myAPoints[Pmmm(s)] + myAPoints[Ppmm(s)] +
         myAPoints[Pmpm(s)] + myAPoints[Pppm(s)];
-    }
+    };
     foreach (q, zLine.shrink(1)) {
       Point<3> r = {{p[1], p[2], q[1]}};
       Point<3> s = {{2*r[1]+1, 2*r[2]+1, 2*r[3]+1}};
@@ -886,9 +885,9 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         + P2 * (sumEdgesOfLowerYZPlane[q] + sumEdgesOfLowerYZPlane[q+1] +
                 sumCornersOfCenterYZPlane)
         + P3 * (sumCornersOfLowerYZPlane[q] + sumCornersOfLowerYZPlane[q+1]);
-    }
-  }
-#endif // SPLIT_LOOP
+    };
+  };
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_COARSEN][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_COARSEN][level][iterationNum]);
@@ -905,10 +904,10 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
 
     barrier();
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       foreach (p, gridB.localBuffersOnProc0.domain()) {
-        gridB.points[POINT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
-      }
+        gridB.points[PT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
+      };
     }
 
     TIMER_STOP_READ(myTimer,
@@ -928,20 +927,20 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   }
   // This case is when we go from the entire array on proc 0 to a distributed array
   else {
-    RectDomain<3> rd(POINT((myBPoints.domain().min()[1]+1)/2 - 1,
-                           (myBPoints.domain().min()[2]+1)/2 - 1,
-                           (myBPoints.domain().min()[3]+1)/2 - 1),
-                     POINT((myBPoints.domain().max()[1]-1)/2 + 2,
-                           (myBPoints.domain().max()[2]-1)/2 + 2,
-                           (myBPoints.domain().max()[3]-1)/2 + 2));
+    RectDomain<3> rd(PT((myBPoints.domain().min()[1]+1)/2 - 1,
+                        (myBPoints.domain().min()[2]+1)/2 - 1,
+                        (myBPoints.domain().min()[3]+1)/2 - 1),
+                     PT((myBPoints.domain().max()[1]-1)/2 + 2,
+                        (myBPoints.domain().max()[2]-1)/2 + 2,
+                        (myBPoints.domain().max()[3]-1)/2 + 2));
     myAPoints = ndarray<double, 3 UNSTRIDED>(rd);
 
     TIMER_START(myTimer);
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       foreach (p, gridA.localBuffersOnProc0.domain()) {
-        gridA.localBuffersOnProc0[p].copy(gridA.points[POINT(0, 0, 0)]);
-      }
+        gridA.localBuffersOnProc0[p].copy(gridA.points[PT(0, 0, 0)]);
+      };
     }
 
     barrier();
@@ -966,27 +965,27 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
   TIMER_START(myTimer);
 
   if (level != startLevel) {
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
     foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach1 (k, zLine) {
-        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
-        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        xSumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Ppzzs(i, j, k));
+        ySumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Pzpzs(i, j, k));
         sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
-          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+          myAPoints(Pzpzs(i, j, k)) + myAPoints(Pppzs(i, j, k));
       }
       foreach1 (k, zLine.shrink(1,1)) {
         int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
-        myBPoints[Pmmms(a, b, c)] = Q0 * myAPoints[i][j][k];
-        myBPoints[Pzmms(a, b, c)] = Q1 * (xSumOfLowerXYPlane[k]);
-        myBPoints[Pmzms(a, b, c)] = Q1 * (ySumOfLowerXYPlane[k]);
-        myBPoints[Pzzms(a, b, c)] = Q2 * (sumOfLowerXYPlane[k]);
-        myBPoints[Pmmzs(a, b, c)] = Q1 * (myAPoints[i][j][k] +
-                                         myAPoints[Pzzps(i, j, k)]);
-        myBPoints[Pzmzs(a, b, c)] = Q2 * (xSumOfLowerXYPlane[k] +
+        myBPoints(Pmmms(a, b, c)) = Q0 * myAPoints(i, j, k);
+        myBPoints(Pzmms(a, b, c)) = Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints(Pmzms(a, b, c)) = Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints(Pzzms(a, b, c)) = Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints(Pmmzs(a, b, c)) = Q1 * (myAPoints(i, j, k) +
+                                          myAPoints(Pzzps(i, j, k)));
+        myBPoints(Pzmzs(a, b, c)) = Q2 * (xSumOfLowerXYPlane[k] +
                                           xSumOfLowerXYPlane[k+1]);
-        myBPoints[Pmzzs(a, b, c)] = Q2 * (ySumOfLowerXYPlane[k] +
+        myBPoints(Pmzzs(a, b, c)) = Q2 * (ySumOfLowerXYPlane[k] +
                                           ySumOfLowerXYPlane[k+1]);
-        myBPoints[a][b][c] = Q3 * (sumOfLowerXYPlane[k] +
+        myBPoints(a, b, c) = Q3 * (sumOfLowerXYPlane[k] +
                                    sumOfLowerXYPlane[k+1]);
       }
     }
@@ -998,7 +997,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
         sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
           myAPoints[Pppz(r)];
-      }
+      };
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
@@ -1012,32 +1011,32 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myBPoints[Pmzz(s)] = Q2 * (ySumOfLowerXYPlane[q] +
                                   ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] = Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
-      }
-    }
-#endif // SPLIT_LOOP
+      };
+    };
+#endif // VAR_LOOP
   }
   else {
-#ifdef SPLIT_LOOP
+#ifdef VAR_LOOP
     foreach2 (i, j, myAPoints.domain().slice(3).shrink(1,1).shrink(1,2)) {
       foreach1 (k, zLine) {
-        xSumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Ppzzs(i, j, k)];
-        ySumOfLowerXYPlane[k] = myAPoints[i][j][k] + myAPoints[Pzpzs(i, j, k)];
+        xSumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Ppzzs(i, j, k));
+        ySumOfLowerXYPlane[k] = myAPoints(i, j, k) + myAPoints(Pzpzs(i, j, k));
         sumOfLowerXYPlane[k] = xSumOfLowerXYPlane[k] +
-          myAPoints[Pzpzs(i, j, k)] + myAPoints[Pppzs(i, j, k)];
+          myAPoints(Pzpzs(i, j, k)) + myAPoints(Pppzs(i, j, k));
       }
       foreach1 (k, zLine.shrink(1,1)) {
         int a = 2*(i+1), b = 2*(j+1), c = 2*(k+1);
-        myBPoints[Pmmms(a, b, c)] += Q0 * myAPoints[i][j][k];
-        myBPoints[Pzmms(a, b, c)] += Q1 * (xSumOfLowerXYPlane[k]);
-        myBPoints[Pmzms(a, b, c)] += Q1 * (ySumOfLowerXYPlane[k]);
-        myBPoints[Pzzms(a, b, c)] += Q2 * (sumOfLowerXYPlane[k]);
-        myBPoints[Pmmzs(a, b, c)] += Q1 * (myAPoints[i][j][k] +
-                                           myAPoints[Pzzps(i, j, k)]);
-        myBPoints[Pzmzs(a, b, c)] += Q2 * (xSumOfLowerXYPlane[k] +
+        myBPoints(Pmmms(a, b, c)) += Q0 * myAPoints(i, j, k);
+        myBPoints(Pzmms(a, b, c)) += Q1 * (xSumOfLowerXYPlane[k]);
+        myBPoints(Pmzms(a, b, c)) += Q1 * (ySumOfLowerXYPlane[k]);
+        myBPoints(Pzzms(a, b, c)) += Q2 * (sumOfLowerXYPlane[k]);
+        myBPoints(Pmmzs(a, b, c)) += Q1 * (myAPoints(i, j, k) +
+                                           myAPoints(Pzzps(i, j, k)));
+        myBPoints(Pzmzs(a, b, c)) += Q2 * (xSumOfLowerXYPlane[k] +
                                            xSumOfLowerXYPlane[k+1]);
-        myBPoints[Pmzzs(a, b, c)] += Q2 * (ySumOfLowerXYPlane[k] +
+        myBPoints(Pmzzs(a, b, c)) += Q2 * (ySumOfLowerXYPlane[k] +
                                            ySumOfLowerXYPlane[k+1]);
-        myBPoints[a][b][c] += Q3 * (sumOfLowerXYPlane[k] +
+        myBPoints(a, b, c) += Q3 * (sumOfLowerXYPlane[k] +
                                     sumOfLowerXYPlane[k+1]);
       }
     }
@@ -1050,7 +1049,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         ySumOfLowerXYPlane[q] = myAPoints[r] + myAPoints[Pzpz(r)];
         sumOfLowerXYPlane[q] = xSumOfLowerXYPlane[q] + myAPoints[Pzpz(r)] +
           myAPoints[Pppz(r)];
-      }
+      };
       foreach (q, zLine.shrink(1,1)) {
         Point<3> r = {{p[1], p[2], q[1]}};
         Point<3> s = {{2*(r[1]+1), 2*(r[2]+1), 2*(r[3]+1)}};
@@ -1064,10 +1063,10 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
         myBPoints[Pmzz(s)] += Q2 * (ySumOfLowerXYPlane[q] +
                                    ySumOfLowerXYPlane[q[1]+1]);
         myBPoints[s] += Q3 * (sumOfLowerXYPlane[q] + sumOfLowerXYPlane[q[1]+1]);
-      }
-    }
+      };
+    };
   }
-#endif // SPLIT_LOOP
+#endif // VAR_LOOP
 
   TIMER_STOP_READ(myTimer, myTimes[T_PROLONGATE][level][iterationNum]);
   COUNTER_STOP_READ(myCounter, myCounts[T_PROLONGATE][level][iterationNum]);
@@ -1118,9 +1117,9 @@ void MG::resetProfile() {
     foreach (level, myTimes[timer].domain()) {
       foreach (reading, myTimes[timer][level].domain()) {
         myTimes[timer][level][reading] = 0;
-      }
-    }
-  }
+      };
+    };
+  };
 #ifdef COUNTERS_ENABLED
   myCounter.clear();
 
@@ -1128,21 +1127,21 @@ void MG::resetProfile() {
     foreach (level, myCounts[timer].domain()) {
       foreach (reading, myCounts[timer][level].domain()) {
         myCounts[timer][level][reading] = 0;
-      }
-    }
-  }
+      };
+    };
+  };
 #endif
 #endif
 }
 
 void MG::printSummary() {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\nSUMMARY- min, mean, max for each component");
     println("All times in seconds.\n");
   }
 
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_L2NORM:
         println("L2 NORM:");
@@ -1189,16 +1188,16 @@ void MG::printSummary() {
     foreach (level, myTimes[timerIdx].domain()) {
       foreach (timing, myTimes[timerIdx][level].domain()) {
         totalComponentTime += myTimes[timerIdx][level][timing];
-      }
-    }
+      };
+    };
 
     double minTotalComponentTime = reduce::min(totalComponentTime);
     double sumTotalComponentTime = reduce::add(totalComponentTime);
     double maxTotalComponentTime = reduce::max(totalComponentTime);
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Time: " << minTotalComponentTime << ", " <<
-              (sumTotalComponentTime/THREADS) << ", " <<
+              (sumTotalComponentTime/ranks()) << ", " <<
               maxTotalComponentTime);
     }
 #endif
@@ -1208,16 +1207,16 @@ void MG::printSummary() {
       foreach (level, myCounts[timerIdx].domain()) {
         foreach (count, myCounts[timerIdx][level].domain()) {
           totalComponentCount += myCounts[timerIdx][level][count];
-        }
-      }
+        };
+      };
 		
       long minTotalComponentCount = reduce::min(totalComponentCount);
       long sumTotalComponentCount = reduce::add(totalComponentCount);
       long maxTotalComponentCount = reduce::max(totalComponentCount);
 
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("Count: " << minTotalComponentCount << ", " <<
-                (sumTotalComponentCount/THREADS) << ", " <<
+                (sumTotalComponentCount/ranks()) << ", " <<
                 maxTotalComponentCount);
       }
     }
@@ -1226,13 +1225,13 @@ void MG::printSummary() {
 }
 
 void MG::printProfile() {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\n\nFULL PROFILE");
     println("All times in seconds.\n");
   }
 
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_L2NORM:
         println("L2 NORM:");
@@ -1278,14 +1277,14 @@ void MG::printProfile() {
     int levelIdxMin = myTimes[timerIdx].domain().min()[1];
     int levelIdxMax = myTimes[timerIdx].domain().max()[1];
     for (int levelIdx=levelIdxMax; levelIdx<=levelIdxMax; levelIdx++) {
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("LEVEL " << levelIdx << ": ");
       }
 
 #ifdef TIMERS_ENABLED
       if ((timerIdx <= numCounters) && (levelIdx < THRESHOLD_LEVEL)) {
         // computation code on proc 0 only
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           double lmin =
             myTimes[timerIdx][levelIdx][myTimes[timerIdx][levelIdx].domain().min()];
           double lmax = lmin;
@@ -1302,7 +1301,7 @@ void MG::printProfile() {
             }
             lsum += value;
             numReadingsPerProc++;
-          }
+          };
 
           println("Num Readings On Proc 0:\t" << numReadingsPerProc);
           println("Min Time On Proc 0:\t" << lmin);
@@ -1364,7 +1363,7 @@ void MG::printProfile() {
             lsum3 += value;
             numReadingsPerProc3++;
           }
-        }
+        };
 		    
         double gmin1 = reduce::min(lmin1);
         double gmax1 = reduce::max(lmax1);
@@ -1376,20 +1375,20 @@ void MG::printProfile() {
         double gmax3 = reduce::max(lmax3);
         double gsum3 = reduce::add(lsum3);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("YZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
           println("Min Time Across Procs:\t" << gmin1);
-          double gmean1 = gsum1/(numReadingsPerProc1*THREADS);
+          double gmean1 = gsum1/(numReadingsPerProc1*ranks());
           println("Mean Time Across Procs:\t" << gmean1);
           println("Max Time Across Procs:\t" << gmax1);
           println("XZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc2);
           println("Min Time Across Procs:\t" << gmin2);
-          double gmean2 = gsum2/(numReadingsPerProc2*THREADS);
+          double gmean2 = gsum2/(numReadingsPerProc2*ranks());
           println("Mean Time Across Procs:\t" << gmean2);
           println("Max Time Across Procs:\t" << gmax2);
           println("XY-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc3);
           println("Min Time Across Procs:\t" << gmin3);
-          double gmean3 = gsum3/(numReadingsPerProc3*THREADS);
+          double gmean3 = gsum3/(numReadingsPerProc3*ranks());
           println("Mean Time Across Procs:\t" << gmean3);
           println("Max Time Across Procs:\t" << gmax3 << "\n");
         }		
@@ -1431,7 +1430,7 @@ void MG::printProfile() {
             lsum2 += value;
             numReadingsPerProc2++;
           }
-        }
+        };
 		    
         double gmin1 = reduce::min(lmin1);
         double gmax1 = reduce::max(lmax1);
@@ -1440,15 +1439,15 @@ void MG::printProfile() {
         double gmax2 = reduce::max(lmax2);
         double gsum2 = reduce::add(lsum2);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("XZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
           println("Min Time Across Procs:\t" << gmin1);
-          double gmean1 = gsum1/(numReadingsPerProc1*THREADS);
+          double gmean1 = gsum1/(numReadingsPerProc1*ranks());
           println("Mean Time Across Procs:\t" << gmean1);
           println("Max Time Across Procs:\t" << gmax1);
           println("XY-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc2);
           println("Min Time Across Procs:\t" << gmin2);
-          double gmean2 = gsum2/(numReadingsPerProc2*THREADS);
+          double gmean2 = gsum2/(numReadingsPerProc2*ranks());
           println("Mean Time Across Procs:\t" << gmean2);
           println("Max Time Across Procs:\t" << gmax2 << "\n");
         }
@@ -1460,7 +1459,7 @@ void MG::printProfile() {
         if (levelIdx == THRESHOLD_LEVEL) {
           // barriers for changing from 1 to many procs or vice versa
 
-          RectDomain<1> domainRange(POINT(-2*numIterations+1), POINT(1));
+          RectDomain<1> domainRange(PT(-2*numIterations+1), PT(1));
           ndarray<double, 1> minArray(domainRange);
           ndarray<double, 1> sumArray(domainRange);
           ndarray<double, 1> maxArray(domainRange);
@@ -1469,7 +1468,7 @@ void MG::printProfile() {
             minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
             sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
             maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
-          }
+          };
 			
           double sumMins1 = 0;
           double sumSums1 = 0;
@@ -1488,16 +1487,16 @@ void MG::printProfile() {
               sumSums2 += sumArray[p];
               sumMaxs2 += maxArray[p];
             }
-          }
+          };
 			
           double meanMins1 = sumMins1/(domainRange.size()/2);
-          double meanMeans1 = (sumSums1/((domainRange.size()/2)*THREADS));
+          double meanMeans1 = (sumSums1/((domainRange.size()/2)*ranks()));
           double meanMaxs1 = sumMaxs1/(domainRange.size()/2);
           double meanMins2 = sumMins2/(domainRange.size()/2);
-          double meanMeans2 = (sumSums2/((domainRange.size()/2)*THREADS));
+          double meanMeans2 = (sumSums2/((domainRange.size()/2)*ranks()));
           double meanMaxs2 = sumMaxs2/(domainRange.size()/2);
 
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             println("Threshold Barrier for Prolongate (one proc -> many procs):");
             println("Num Readings Per Proc:\t" << (domainRange.size()/2));
             println("Mean Min Wait Time:\t" << meanMins1);
@@ -1513,15 +1512,15 @@ void MG::printProfile() {
 		    
         Point<1> domainMin;
         if (levelIdx == startLevel) {
-          domainMin = POINT(-2);//broadcast [-2] from 0;
+          domainMin = PT(-2);//broadcast [-2] from 0;
         }
         else {
-          domainMin = POINT(1);//broadcast [1] from 0;
+          domainMin = PT(1);//broadcast [1] from 0;
         }
         Point<1> domainMax = myTimes[timerIdx][levelIdx].domain().max();
         // = broadcast myTimes[timerIdx][levelIdx].domain().max() from 0;
 
-        RectDomain<1> domainRange(domainMin, domainMax+POINT(1));
+        RectDomain<1> domainRange(domainMin, domainMax+PT(1));
         ndarray<double, 1> minArray(domainRange);
         ndarray<double, 1> sumArray(domainRange);
         ndarray<double, 1> maxArray(domainRange);
@@ -1530,7 +1529,7 @@ void MG::printProfile() {
           minArray[p] = reduce::min(myTimes[timerIdx][levelIdx][p]);
           sumArray[p] = reduce::add(myTimes[timerIdx][levelIdx][p]);
           maxArray[p] = reduce::max(myTimes[timerIdx][levelIdx][p]);
-        }
+        };
 
         double sumMins = 0;
         double sumSums = 0;
@@ -1539,13 +1538,13 @@ void MG::printProfile() {
           sumMins += minArray[p];
           sumSums += sumArray[p];
           sumMaxs += maxArray[p];
-        }
+        };
 
         double meanMins = sumMins/domainRange.size();
-        double meanMeans = (sumSums/(domainRange.size()*THREADS));
+        double meanMeans = (sumSums/(domainRange.size()*ranks()));
         double meanMaxs = sumMaxs/domainRange.size();
 
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t" << domainRange.size());
           println("Mean Min Wait Time:\t" << meanMins);
           println("Mean Mean Wait Time:\t" << meanMeans);
@@ -1569,16 +1568,16 @@ void MG::printProfile() {
           }
           lsum += value;
           numReadingsPerProc++;
-        }
+        };
 		    
         double gmin = reduce::min(lmin);
         double gmax = reduce::max(lmax);
         double gsum = reduce::add(lsum);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);
           println("Min Time Across Procs:\t" << gmin);
-          double gmean = gsum/(numReadingsPerProc*THREADS);
+          double gmean = gsum/(numReadingsPerProc*ranks());
           println("Mean Time Across Procs:\t" << gmean);
           println("Max Time Across Procs:\t" << gmax << "\n");
         }
@@ -1589,7 +1588,7 @@ void MG::printProfile() {
       if (timerIdx <= numCounters) {
         if (levelIdx < THRESHOLD_LEVEL) {
           // computation only on proc 0
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             long lmin =
               myCounts[timerIdx][levelIdx][myCounts[timerIdx][levelIdx].domain().min()];
             long lmax = lmin;
@@ -1606,7 +1605,7 @@ void MG::printProfile() {
               }
               lsum += value;
               numReadingsPerProc++;
-            }
+            };
 
             println("Num Readings On Proc 0:\t" << numReadingsPerProc);
             println("Min Count On Proc 0:\t" << lmin);
@@ -1633,16 +1632,16 @@ void MG::printProfile() {
             }
             lsum += value;
             numReadingsPerProc++;
-          }
+          };
 			
           long gmin = reduce::min(lmin);
           long gmax = reduce::max(lmax);
           long gsum = reduce::add(lsum);
 		    
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             println("Num Readings Per Proc:\t" << numReadingsPerProc);
             println("Min Count Across Procs:\t" << gmin);
-            long gmean = gsum/(numReadingsPerProc*THREADS);
+            long gmean = gsum/(numReadingsPerProc*ranks());
             println("Mean Count Across Proc:\t" << gmean);
             println("Max Count Across Procs:\t" << gmax << "\n");
           }

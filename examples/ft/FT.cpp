@@ -23,12 +23,12 @@ FT::FT(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> p_array1,
   array6 = p_array6;
 
   // myArray[num] is the portion of FTDriver.array[num] on this processor
-  myArray1 = (ndarray<Complex, 3 UNSTRIDED>) array1[MYTHREAD];
-  myArray2 = (ndarray<Complex, 3 UNSTRIDED>) array2[MYTHREAD];
-  myArray3 = (ndarray<Complex, 3 UNSTRIDED>) array3[MYTHREAD];
-  myArray4 = (ndarray<Complex, 3 UNSTRIDED>) array4[MYTHREAD];
-  myArray5 = (ndarray<Complex, 3 UNSTRIDED>) array5[MYTHREAD];
-  myArray6 = (ndarray<Complex, 3 UNSTRIDED>) array6[MYTHREAD];
+  myArray1 = (ndarray<Complex, 3 UNSTRIDED>) array1[myrank()];
+  myArray2 = (ndarray<Complex, 3 UNSTRIDED>) array2[myrank()];
+  myArray3 = (ndarray<Complex, 3 UNSTRIDED>) array3[myrank()];
+  myArray4 = (ndarray<Complex, 3 UNSTRIDED>) array4[myrank()];
+  myArray5 = (ndarray<Complex, 3 UNSTRIDED>) array5[myrank()];
+  myArray6 = (ndarray<Complex, 3 UNSTRIDED>) array6[myrank()];
 
   // temp is used to store one row in the last dimension of array[1,2,3] for in-place FFTW
   temp = ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((0), (maxdim)));
@@ -85,12 +85,12 @@ void FT::FFT_3D(int direction, int iter) {
     new_nz = nx;
   }
 
-  int xDimSlabSize = new_nx/THREADS;
-  int yDimSlabSize = new_ny/THREADS;
-  RectDomain<1> xDimLocalSlabRD(POINT(MYTHREAD * xDimSlabSize),
-                                POINT((MYTHREAD+1) * xDimSlabSize));
-  RectDomain<1> yDimLocalSlabRD(POINT(MYTHREAD * yDimSlabSize),
-                                POINT((MYTHREAD+1) * yDimSlabSize));
+  int xDimSlabSize = new_nx/ranks();
+  int yDimSlabSize = new_ny/ranks();
+  RectDomain<1> xDimLocalSlabRD(POINT(myrank() * xDimSlabSize),
+                                POINT((myrank()+1) * xDimSlabSize));
+  RectDomain<1> yDimLocalSlabRD(POINT(myrank() * yDimSlabSize),
+                                POINT((myrank()+1) * yDimSlabSize));
 
   // Y-TRANSFORM (FORWARD IS IN-PLACE, BACKWARD IS OUT-OF-PLACE)
   TIMER_START(myTimer);
@@ -103,7 +103,7 @@ void FT::FFT_3D(int direction, int iter) {
       pencilToPencilStrideBackwardY(myArray3.slice(1, i[1]),
                                     myArray4.slice(1, i[1]));
     }
-  }
+  };
 
   if (direction == 1) {
     TIMER_STOP_READ(myTimer, myTimes[T_Y_FOR_FFT][iter]);
@@ -116,8 +116,8 @@ void FT::FFT_3D(int direction, int iter) {
 
   // IN-PLACE Z-TRANSFORM AND GLOBAL ARRAYCOPY
   foreach (i, xDimLocalSlabRD) {
-    for (int relProc=0; relProc<THREADS; relProc++) {
-      int actualProc = (MYTHREAD+relProc)%THREADS;
+    for (int relProc=0; relProc<ranks(); relProc++) {
+      int actualProc = (myrank()+relProc)%ranks();
       int jSlab = actualProc * yDimSlabSize;
 #ifdef SLABS
       RectDomain<3> rd(POINT(i[1], jSlab, 0),
@@ -169,10 +169,10 @@ void FT::FFT_3D(int direction, int iter) {
           // send off the completed slab to a staggered processor
           array5[actualProc].COPY(myArray4.constrict(rd));
         }
-      }
+      };
 #endif
     }
-  }
+  };
 
 #ifdef TIMERS_ENABLED
   myTimer2.stop();
@@ -209,7 +209,7 @@ void FT::FFT_3D(int direction, int iter) {
       slabToUnitStrideBackwardX(myArray5.slice(2, j[1]),
                                 myArray6.slice(1, j[1]));
     }
-  }
+  };
 #else
   foreach (j, yDimLocalSlabRD) {
     if (direction == 1) {
@@ -220,7 +220,7 @@ void FT::FFT_3D(int direction, int iter) {
       pencilToUnitStrideBackwardX(myArray5.slice(1, j[1]),
                                   myArray6.slice(1, j[1]));
     }
-  }
+  };
 #endif
 
   TIMER_STOP_READ(myTimer, myTimes[T_X_FFT][iter]);
@@ -231,7 +231,7 @@ void FT::printSummary() {
   int timerMinIdx = broadcast(myTimes.domain().min()[1], 0);
   int timerMaxIdx = broadcast(myTimes.domain().max()[1], 0);
   for (int timerIdx=timerMinIdx; timerIdx<=timerMaxIdx; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_X_FFT:
 #ifdef SLABS
@@ -274,15 +274,15 @@ void FT::printSummary() {
     double totalComponentTime = 0.0;
     foreach (timing, myTimes[timerIdx].domain()) {
       totalComponentTime += myTimes[timerIdx][timing];
-    }
+    };
 
     double minTotalComponentTime = reduce::min(totalComponentTime);
     double sumTotalComponentTime = reduce::add(totalComponentTime);
     double maxTotalComponentTime = reduce::max(totalComponentTime);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Time: " << minTotalComponentTime << ", " <<
-              (sumTotalComponentTime/THREADS) << ", " <<
+              (sumTotalComponentTime/ranks()) << ", " <<
               maxTotalComponentTime);
     }
   }
@@ -294,7 +294,7 @@ void FT::printProfile() {
   int timerMinIdx = broadcast(myTimes.domain().min()[1], 0);
   int timerMaxIdx = broadcast(myTimes.domain().max()[1], 0);
   for (int timerIdx=timerMinIdx; timerIdx<=timerMaxIdx; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_X_FFT:
 #ifdef SLABS
@@ -350,16 +350,16 @@ void FT::printProfile() {
       }
       lsumTime += value;
       numReadingsPerProc++;
-    }
+    };
 	    
     double gminTime = reduce::min(lminTime);
     double gmaxTime = reduce::max(lmaxTime);
     double gsumTime = reduce::add(lsumTime);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Num Readings Per Proc:\t" << numReadingsPerProc);
       println("Min Time Over Procs:\t" << gminTime);
-      double gmeanTime = gsumTime/(numReadingsPerProc*THREADS);
+      double gmeanTime = gsumTime/(numReadingsPerProc*ranks());
       println("Mean Time Over Procs:\t" << gmeanTime);
       println("Max Time Over Procs:\t" << gmaxTime << "\n");
     }
