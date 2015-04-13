@@ -1,7 +1,7 @@
 AC_INIT([upcxx], [0.1], [yzheng@lbl.gov], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
-AM_INIT_AUTOMAKE([1.10 no-define foreign])
+AM_INIT_AUTOMAKE([1.10 no-define foreign subdir-objects])
 
 LT_INIT([disable-shared])
 dnl LT_INIT()
