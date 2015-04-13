@@ -196,7 +196,7 @@ void CGDriver::main(int argc, char **argv) {
   // verify final zeta value
   if (myrank() == 0) {
     double final_zeta = zeta[Driver.niter];
-    double error = abs(final_zeta - Driver.zeta_verify_value);
+    double error = std::abs(final_zeta - Driver.zeta_verify_value);
     if (error <= Driver.epsilon) {
       println("VERIFICATION SUCCESSFUL");
       println("Zeta = " << final_zeta);
