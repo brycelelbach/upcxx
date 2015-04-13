@@ -191,7 +191,7 @@ void MGDriver::main(int argc, char **argv) {
     println("Number of iterations = " << Driver.numIterations);
 
     // verify final L2 residual value
-    double error = abs(L2ResFinal - Driver.verifyValue);
+    double error = std::abs(L2ResFinal - Driver.verifyValue);
     if (error <= Driver.epsilon) {
       println("\nVERIFICATION SUCCESSFUL");
       println("Initial L2 Residual = " << L2ResInitial);

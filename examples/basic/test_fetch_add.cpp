@@ -34,7 +34,7 @@ int main(int argc, char **argv)
       old_val = fetch_add(obj, 10);
       if (old_val % 1000 == 0) {
         printf("Rank %u, t = %d fetch_add old value =  %lu\n",
-               myrank(), t, old_val);
+               myrank(), t, (unsigned long) old_val);
       }
       for (int j = 0; j < 1000; j++) dummy ^= old_val + j;
     }
@@ -46,12 +46,13 @@ int main(int argc, char **argv)
     for (int t = 0; t < ranks(); t++) {
       if (counters[t].get().load() != 1000 * ranks()) {
         printf("Verification error, counters[%d]=%lu, but expected %lu\n",
-               t, counters[t].get().load(), 1000 *ranks());
+               t, (unsigned long) counters[t].get().load(),
+               (unsigned long) (1000 *ranks()));
       }
     }
   }
 
-  printf("Rank %u passed test_fetch_add!\n", myrank());
+  printf("Rank %u passed test_fetch_add!\n", (unsigned int) myrank());
   upcxx::finalize();
 
   return 0;
