@@ -14,11 +14,11 @@ CXX='CC' # vanilla target C++ compiler
 
 # Default optimization on ICC is an irritation:
 # -wd10120 suppresses "command line warning #10120: overriding '-O0' with '-O3'"
-if test x"$PE_ENV" = xINTEL &&
-    ( $CC -dM -E /dev/null | grep __OPTIMIZE__ ) >& /dev/null; then
-  CC="$CC -O0 -wd10120"
-  CXX="$CXX -O0 -wd10120"
-fi
+# if test x"$PE_ENV" = xINTEL &&
+#     ( $CC -dM -E /dev/null | grep __OPTIMIZE__ ) >& /dev/null; then
+#   CC="$CC -O0 -wd10120"
+#   CXX="$CXX -O0 -wd10120"
+# fi
 
 export CC
 export CXX
@@ -92,7 +92,6 @@ CROSS_SIGKILL='9' ; export CROSS_SIGKILL
 CROSS_SIGTERM='15' ; export CROSS_SIGTERM
 CROSS_SIGUSR1='10' ; export CROSS_SIGUSR1
 
-
 SRCDIR=`dirname $0`
 if test ! -f "$SRCDIR/configure" ; then
   echo "ERROR: The $0 script should be placed in the same directory as the configure script before execution"
@@ -122,4 +121,4 @@ if test "$HOST_ARG" = ""; then
   CC="$oldCC"
 fi
 # Now that everything is setup, run the actual configure script
-$SRCDIR/configure $HOST_APPEND --build=$TARGET_ID --target=$TARGET_ID --program-prefix='' $EXTRA_CONFIGURE_ARGS "$@"
+$SRCDIR/configure $HOST_APPEND --build=$TARGET_ID --target=$TARGET_ID --program-prefix='' "$@"
