@@ -54,7 +54,27 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         if test "$HAVE_CXX11" = 1; then
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          CXXFLAGS+=" -DUPCXX_USE_CXX11 "
+          CXXFLAGS+=" -DUPCXX_USE_CXX11"
+          AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <type_traits>
+bool test = std::is_trivially_destructible<double>::value;
+])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
+          AC_MSG_RESULT([$TRIVIALDESTRUCT])
+          if test "x$TRIVIALDESTRUCT" = "xyes"; then
+            AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
+            CXXFLAGS+=" -DUPCXX_USE_TRIVIALLY_DESTRUCTIBLE"
+          fi
+          AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <initializer_list>
+void test(std::initializer_list<double> &ilist) {}
+])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
+          AC_MSG_RESULT([$INITIALIZERLIST])
+          if test "x$INITIALIZERLIST" = "xyes"; then
+            AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
+            CXXFLAGS+=" -DUPCXX_USE_INITIALIZER_LIST"
+          fi
         fi
       ])
 
