@@ -26,7 +26,7 @@ namespace upcxx {
     typedef T type;
   };
 
-#ifdef UPCXX_USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
   template<class T> struct assertion_trigger {
     enum { fail = 0 };
   };
@@ -34,14 +34,14 @@ namespace upcxx {
 #endif
 
   template<class T, int N> struct non_globalize_result<T *, N> {
-#ifdef UPCXX_USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
     static_assert(UPCXXI_FAIL,
                   "Cannot communicate non-global pointer");
 #endif
   };
 
   template<class T> struct non_globalize_result<T, sizeof(char)> {
-#ifdef UPCXX_USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
     static_assert(UPCXXI_FAIL,
                   "Type requires globalization before communication");
 #endif

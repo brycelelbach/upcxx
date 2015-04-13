@@ -54,7 +54,7 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         if test "$HAVE_CXX11" = 1; then
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          CXXFLAGS+=" -DUPCXX_USE_CXX11"
+          dnl Check for support for is_trivially_destructible
           AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <type_traits>
@@ -63,8 +63,8 @@ bool test = std::is_trivially_destructible<double>::value;
           AC_MSG_RESULT([$TRIVIALDESTRUCT])
           if test "x$TRIVIALDESTRUCT" = "xyes"; then
             AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
-            CXXFLAGS+=" -DUPCXX_USE_TRIVIALLY_DESTRUCTIBLE"
           fi
+          dnl Check for support for initializer lists
           AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #include <initializer_list>
@@ -73,7 +73,6 @@ void test(std::initializer_list<double> &ilist) {}
           AC_MSG_RESULT([$INITIALIZERLIST])
           if test "x$INITIALIZERLIST" = "xyes"; then
             AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
-            CXXFLAGS+=" -DUPCXX_USE_INITIALIZER_LIST"
           fi
         fi
       ])
@@ -121,7 +120,6 @@ AS_IF([test "x$enable_short_names" = "xyes"], [
   dnl Do the stuff needed for enabling md-array
   AC_DEFINE(UPCXX_SHORT_MACROS, 1, [define if short-names feature is enabled])
   AC_SUBST(UPCXX_SHORT_MACROS)
-  CXXFLAGS+=" -DUPCXX_SHORT_MACROS "
 ])
 
 dnl Option to enable UPC++ multidimensional arrays (default is disable)
