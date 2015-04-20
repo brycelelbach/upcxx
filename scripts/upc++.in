@@ -48,14 +48,14 @@ for arg in "$@" ; do
     addarg=yes
     case "$arg" in 
     # ----------------------------------------------------------------
-	  # Compiler options that affect whether we are linking or no
+    # Compiler options that affect whether we are linking or no
     -c|-S|-E|-M|-MM)
     # The compiler links by default
     complieonly=yes
     ;;
-	  # ----------------------------------------------------------------
-	  # Options that control how we use mpicxx (e.g., -show, 
-	  # -cxx=* -config=*
+    # ----------------------------------------------------------------
+    # Options that control how we use mpicxx (e.g., -show, 
+    # -cxx=* -config=*
     -echo)
     addarg=no
     set -x
@@ -89,7 +89,7 @@ for arg in "$@" ; do
     esac
 
     if [ $addarg = no ] ; then
-       	unset allargs[$argno]
+        unset allargs[$argno]
     fi
     # Some versions of bash do not accept ((argno++))
     argno=`expr $argno + 1`
