@@ -15,6 +15,7 @@ AC_CONFIG_FILES([
   include/Makefile
   include/upcxx.mak
   src/Makefile
+  scripts/upc++
   examples/Makefile
   examples/basic/Makefile
   examples/cg/Makefile
@@ -78,7 +79,7 @@ AS_IF([test "x$enable_cxx11" = "xno"],
       ])
 
 dnl Add flags for building UPC++
-UPCXX_FLAGS=" -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES -DGASNET_ALLOW_OPTIMIZED_DEBUG "
+UPCXX_FLAGS=" -DGASNET_ALLOW_OPTIMIZED_DEBUG "
 CFLAGS+=${UPCXX_FLAGS}
 CXXFLAGS+=${UPCXX_FLAGS}
 

@@ -1,0 +1,109 @@
+#!/bin/bash
+#
+# shell script driver for compiling and/or linking UPC++ programs
+#
+
+UPCXX_VERSION=20150420
+
+UPCXX_INSTALL=@prefix@
+CXX=@CXX@
+
+## import environment variables
+. ${UPCXX_INSTALL}/bin/upcxx_vars.sh
+
+## Use UPCXX_CXX as the C++ complier if the user has set it
+if [ -n "$UPCXX_CXX" ] ; then
+    CXX="$UPCXX_CXX"
+fi
+
+print_usage() {
+    echo "  upc++ usage: "
+    echo "    upc++ is a C++ compiler wrapper for compiling and linking"
+    echo "    UPC++ programs.  upc++ accepts complier options that the"
+    echo "    actual backend C++ compiler supports."                 
+    echo "    upc++ adds UPC++-specific compling and linking flags to" 
+    echo "    those supplied by the user and then pass them to the actual"
+    echo "    C++ compiler.  You can use upc++ in the same way as you would"
+    echo "    for the C++ compiler."
+    echo ""
+    echo "  For example,"
+    echo "    upc++ -c hello.cpp  ## compile hello.cpp to hello.o"
+    echo "    upc++ hello.cpp  ## compile hello.cpp and link it to a.out"
+    echo ""
+    echo "  UPC++ specific options:"
+    echo "    -help print this help message"
+    echo "    -show print the command line that upc++ would execute"
+    echo "    -cxx=C++ COMPILER, overwrite the default C++ complier"
+    echo ""
+}
+
+# ------------------------------------------------------------------------
+# Argument processing modeled after mpicxx in MPICH
+
+complieonly=no
+allargs=("$@")
+argno=0
+for arg in "$@" ; do
+    # Set addarg to no if this arg should be ignored by the C compiler
+    addarg=yes
+    case "$arg" in 
+    # ----------------------------------------------------------------
+	  # Compiler options that affect whether we are linking or no
+    -c|-S|-E|-M|-MM)
+    # The compiler links by default
+    complieonly=yes
+    ;;
+	  # ----------------------------------------------------------------
+	  # Options that control how we use mpicxx (e.g., -show, 
+	  # -cxx=* -config=*
+    -echo)
+    addarg=no
+    set -x
+    ;;
+    -cxx=*)
+    CXX=`echo A$arg | sed -e 's/A-cxx=//g'`
+    addarg=no
+    ;;
+    # Backwards compatibility for MPICH1 - scripts
+    -CC=*)
+    CXX=`echo A$arg | sed -e 's/A-CC=//g'`
+    addarg=no
+    ;;
+    -help)
+    print_usage
+    exit 0
+    ;;
+    -show)
+    addarg=no
+    ECHO=echo
+    ;;
+    -v)
+    # Pass this argument to the compiler as well.
+    echo "UPC++ version $UPCXX_VERSION"
+    echo "Backend C++ compiler: $CXX"
+    echo 'Please run "'${CXX}' -v" to see the info from the C++ compiler'
+    exit 0
+    ;;
+    *)
+    ;;
+    esac
+
+    if [ $addarg = no ] ; then
+       	unset allargs[$argno]
+    fi
+    # Some versions of bash do not accept ((argno++))
+    argno=`expr $argno + 1`
+done
+
+if [ $# -eq 0 ] ; then
+    "$0" -help
+    exit 1
+fi
+
+if [ "$complieonly" = yes ] ; then
+   $ECHO ${CXX} ${UPCXX_CXXFLAGS}  "${allargs[@]}" 
+else
+   $ECHO ${CXX} ${UPCXX_CXXFLAGS} "${allargs[@]}" ${UPCXX_LDLIBS}
+fi
+
+exit $?

@@ -4,7 +4,7 @@ lib_LTLIBRARIES = libupcxx.la
 
 libupcxx_la_CPPFLAGS = \
   -I$(top_srcdir)/include \
-  $(GASNET_CPPFLAGS) 
+  $(GASNET_CPPFLAGS)  -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES 
 
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_CPP_FILES = \
