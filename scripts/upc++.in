@@ -31,7 +31,7 @@ print_usage() {
     echo "    upc++ hello.cpp  ## compile hello.cpp and link it to a.out"
     echo ""
     echo "  UPC++ specific options:"
-    echo "    -help print this help message"
+    echo "    -h print this help message"
     echo "    -show print the command line that upc++ would execute"
     echo "    -cxx=C++ COMPILER, overwrite the default C++ complier"
     echo ""
@@ -69,7 +69,7 @@ for arg in "$@" ; do
     CXX=`echo A$arg | sed -e 's/A-CC=//g'`
     addarg=no
     ;;
-    -help)
+    -h)
     print_usage
     exit 0
     ;;
@@ -96,7 +96,7 @@ for arg in "$@" ; do
 done
 
 if [ $# -eq 0 ] ; then
-    "$0" -help
+    "$0" -h
     exit 1
 fi
 
