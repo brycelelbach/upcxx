@@ -11,7 +11,7 @@ CXX=@CXX@
 ## import environment variables
 . ${UPCXX_INSTALL}/bin/upcxx_vars.sh
 
-## Use UPCXX_CXX as the C++ complier if the user has set it
+## Use UPCXX_CXX as the C++ compiler if the user has set it
 if [ -n "$UPCXX_CXX" ] ; then
     CXX="$UPCXX_CXX"
 fi
@@ -19,9 +19,9 @@ fi
 print_usage() {
     echo "  upc++ usage: "
     echo "    upc++ is a C++ compiler wrapper for compiling and linking"
-    echo "    UPC++ programs.  upc++ accepts complier options that the"
+    echo "    UPC++ programs.  upc++ accepts compiler options that the"
     echo "    actual backend C++ compiler supports."                 
-    echo "    upc++ adds UPC++-specific compling and linking flags to" 
+    echo "    upc++ adds UPC++-specific compiler and linker flags to" 
     echo "    those supplied by the user and then pass them to the actual"
     echo "    C++ compiler.  You can use upc++ in the same way as you would"
     echo "    for the C++ compiler."
