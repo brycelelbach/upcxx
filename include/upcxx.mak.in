@@ -3,4 +3,4 @@ include @GASNET_MAKEFILE@
 UPCXX_LDLIBS  = -L@prefix@/lib @prefix@/lib/libupcxx.a $(GASNET_LIBS)
 UPCXX_LDFLAGS = $(GASNET_LDFLAGS)
 
-UPCXX_CXXFLAGS = $(GASNET_CPPFLAGS) -I@prefix@/include @CXXFLAGS@
+UPCXX_CXXFLAGS = $(GASNET_CPPFLAGS) -I@prefix@/include @UPCXX_FLAGS@ @CXX11FLAG@

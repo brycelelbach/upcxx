@@ -55,6 +55,7 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         if test "$HAVE_CXX11" = 1; then
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
+          AC_SUBST(CXX11FLAG)
           dnl Check for support for is_trivially_destructible
           AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
           AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
@@ -80,6 +81,8 @@ AS_IF([test "x$enable_cxx11" = "xno"],
 
 dnl Add flags for building UPC++
 UPCXX_FLAGS=" -DGASNET_ALLOW_OPTIMIZED_DEBUG "
+AC_SUBST(UPCXX_FLAGS)
+
 CFLAGS+=${UPCXX_FLAGS}
 CXXFLAGS+=${UPCXX_FLAGS}
 
