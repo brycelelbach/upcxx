@@ -55,11 +55,15 @@ namespace upcxx
     rank_t _callee; // the place where the task should be executed
     event *_ack; // Acknowledgment event pointer on caller node
     generic_fp _fp;
-    void *am_src; // active message src buffer
-    void *am_dst; // active message dst buffer
+    void *_am_src; // active message src buffer
+    void *_am_dst; // active message dst buffer
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
     
+    inline async_task()
+        : _caller(0), _callee(0), _ack(NULL), _fp(NULL),
+          _am_src(NULL), _am_dst(NULL), _arg_sz(0) { };
+
     inline void init_async_task(rank_t caller,
                                 rank_t callee,
                                 event *ack,
@@ -85,8 +89,6 @@ namespace upcxx
       }
     }
     
-    inline async_task() : _arg_sz(0) { };
-            
     inline size_t nbytes(void)
     {
       return (sizeof(async_task) - MAX_ASYNC_ARG_SIZE + _arg_sz);

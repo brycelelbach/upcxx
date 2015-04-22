@@ -129,7 +129,7 @@ namespace upcxx
 
     operator T() const
     {
-      if (_pla == myrank()) {
+      if (_pla == upcxx::myrank()) {
         return (*_ptr);
       } else {
         // if not local

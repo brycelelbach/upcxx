@@ -50,10 +50,8 @@ namespace upcxx
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // std::vector<async_task &> _cont_tasks;
 
-    inline event()
+    inline event() : _count(0), _num_done_cb(0), owner(0)
     {
-      _count = 0;
-      _num_done_cb = 0;
 #ifdef UPCXX_THREAD_SAFE
       pthread_mutex_init(&_mutex, NULL);
 #endif
