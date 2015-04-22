@@ -58,7 +58,7 @@ namespace upcxx
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
-      kernel(k), args{as...} {}
+      kernel(k), args(as...) {}
 
     template<int ...S>
     void callFunc(seq<S...>)
