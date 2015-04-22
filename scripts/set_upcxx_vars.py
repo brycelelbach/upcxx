@@ -93,16 +93,12 @@ def main():
         print 'setenv UPCXX_LDLIBS "${UPCXX_LDLIBS}"'
         print 'setenv UPCXX_LDFLAGS "${UPCXX_LDFLAGS}"'
         print 'setenv UPCXX_CXXFLAGS "${UPCXX_CXXFLAGS}"'
-        print 'set sourced=($_)'
-        print 'set script_name=$sourced[2]'
-        print 'set BASEDIR="`readlink -f $script_name | xargs dirname`"'
-        print 'set path = ($path $BASEDIR)'
+        print 'set path = ($path $UPCXX_DIR/bin)'
     else:
         print 'export UPCXX_LDLIBS'
         print 'export UPCXX_LDFLAGS'
         print 'export UPCXX_CXXFLAGS'
-        print 'BASEDIR=$(readlink -f $BASH_SOURCE | xargs dirname)'
-        print 'export PATH=$PATH:$BASEDIR'
+        print 'export PATH=$PATH:$UPCXX_DIR/bin'
 
 if __name__ == '__main__':
         main()
