@@ -19,10 +19,13 @@
 #include "utils.h"
 
 // #define UPCXX_DEBUG
+#define UPCXX_APPLY_IMPL2
 
 namespace upcxx
 {
 #ifdef UPCXX_HAVE_CXX11
+
+#ifdef UPCXX_APPLY_IMPL1
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
@@ -35,6 +38,41 @@ namespace upcxx
       upcxx::apply(kernel, args);
     }
   };
+#endif // UPCXX_APPLY_IMPL1
+
+#ifdef UPCXX_APPLY_IMPL2
+  template<int ...>
+  struct seq { };
+
+  template<int N, int ...S>
+  struct gens : gens<N-1, N-1, S...> { };
+
+  template<int ...S>
+  struct gens<0, S...> {
+    typedef seq<S...> type;
+  };
+
+  template<typename Function, typename... Ts>
+  struct generic_arg {
+    Function kernel;
+    std::tuple<Ts...> args;
+
+    generic_arg(Function k, Ts... as) :
+      kernel(k), args{as...} {}
+
+    template<int ...S>
+    void callFunc(seq<S...>)
+    {
+      kernel(std::get<S>(args) ...);
+    }
+
+    void apply()
+    {
+      // upcxx::apply(kernel, args);
+      callFunc(typename gens<sizeof...(Ts)>::type());
+    }
+  }; // close of struct generic_arg
+#endif // UPCXX_APPLY_IMPL2
 
   /* Active Message wrapper function */
   template <typename Function, typename... Ts>
