@@ -40,7 +40,7 @@ int test_barrier(const team &t)
     t.barrier();
     
     if (sa[slow_global_rank] != expected) {
-      std::cerr << myrank() << ": team barrier error: I exited the barrier before the slow rank enters it. Team " << t << "\n";
+      std::cerr << global_myrank() << ": team barrier error: I exited the barrier before the slow rank enters it. Team " << t << "\n";
       exit(1);
     }
     t.barrier();
@@ -49,7 +49,7 @@ int test_barrier(const team &t)
 }
 
 template<typename T>
-int test_bcast(team t, size_t count, int root = 0)
+int test_bcast(team t, size_t count)
 {
   global_ptr<T> src;
   global_ptr<T> dst;
@@ -58,33 +58,34 @@ int test_bcast(team t, size_t count, int root = 0)
   dst = allocate<T>(myrank(), count);
     
 #ifdef DEBUG
-  cerr << myrank() << " scr: " << src << "\n";
-  cerr << myrank() << " dst: " << dst << "\n";
+  cerr << global_myrank() << " scr: " << src << "\n";
+  cerr << global_myrank() << " dst: " << dst << "\n";
 #endif
-    
-  // Initialize data pointed by host_ptr by a local pointer
-  T *lsrc = (T *)src;
-  for (int i=0; i<count; i++) {
-    lsrc[i] = (T)i + (T)myrank() / ranks();
-  }
-  
+
   t.barrier();
   
   for (uint32_t root = 0; root < t.size(); root++) {
-    t.bcast((T *)src, (T *)dst, sizeof(T)*count, root);
-    
-    if (myrank() == 0) {
-      std::cout << myrank() << " dst: ";
-      T *ldst = (T *)dst;
-      for (size_t i=0; i<count; i++) {
-        std::cout << ldst[i] << " ";
-      }
-      std::cout << "\n";
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<count; i++) {
+      lsrc[i] = (T)(t.color()*10000 + root*100 + i);
+      ldst[i] = (T)0;
     }
-  
-    // Need to add verification of the reduce
+
+    t.bcast(lsrc, ldst, sizeof(T)*count, root);
+
+    // Verify the received data
+    for (size_t i=0; i<count; i++) {
+      T expected = (T)(t.color()*10000 + root*100 + i);
+      if (ldst[i] != expected) {
+        std::cout << global_myrank() << ": test_bcast error!  Expected to receive "
+                  << expected << " at " << i << "th element, but received " << ldst[i]
+                  << " instead.\n";
+        exit(1);
+      }
+    }
   }
-  
   t.barrier();
 }
 
@@ -93,7 +94,7 @@ int main(int argc, char **argv)
   init(&argc, &argv);
   sa.init(ranks());
  
-  team *row_t, *col_t;
+  team *row_team, *col_team;
   uint32_t nrows, ncols, row_id, col_id;
 
   if (argc > 1) {
@@ -109,25 +110,30 @@ int main(int argc, char **argv)
   std::cout << "team_all: " << team_all << "\n";
 
   if (myrank() == 0)
-    std::cout << "Testing collectives on team_all...\n";
+    std::cout << "Testing team barrier on team_all...\n";
   
-  team_all.barrier();
-    //test_bcast();
+  test_barrier(team_all);
+
   team_all.barrier();
 
   if (myrank() == 0)
-    std::cout << "Finished testing team_all\n";
-  
-  std::cout << "ncols " << ncols << "\n";
-  row_id = myrank() / ncols;
-  col_id = myrank() % ncols;
+     std::cout << "Testing team bcast on team_all...\n";
+
+  test_bcast<size_t>(team_all, 1024);
+
+  if (myrank() == 0)
+    std::cout << "Passed testing team_all!\n";
   
   if (myrank() == 0)
-    std::cout << "Spliting team_all into row and column teams...\n";
+    printf("Splitting team_all into %u row teams and %u column teams...\n",
+           nrows, ncols);
  
-  printf("Rank %u, row_id %u, col_id %u\n", myrank(), row_id, col_id);
-  team_all.split(row_id, col_id, row_t); // Row teams
-  team_all.split(col_id, row_id, col_t); // Col teams
+  row_id = myrank() / ncols;
+  col_id = myrank() % ncols;
+
+  printf("Global rank %u: row_id %u, col_id %u\n", myrank(), row_id, col_id);
+  team_all.split(row_id, col_id, row_team); // Row teams
+  team_all.split(col_id, row_id, col_team); // Col teams
 
   barrier();
   
@@ -137,18 +143,20 @@ int main(int argc, char **argv)
   if (myrank() == 0)
     std::cout << "Testing collectives on row teams...\n";
 
-  test_barrier(*row_t);
+  test_barrier(*row_team);
+  test_bcast<uint32_t>(*row_team, 4096);
   
   if (myrank() == 0)
-    std::cout << "Finished testing collectives on row teams...\n";
+    std::cout << "Passed testing collectives on row teams...\n";
 
   if (myrank() == 0)
     std::cout << "Testing collectives on column teams...\n";
 
-  test_barrier(*col_t);
+  test_barrier(*col_team);
+  test_bcast<double>(*col_team, 4096);
 
   if (myrank() == 0)
-    std::cout << "Finished testing collectives on column teams...\n";
+    std::cout << "Passed testing collectives on column teams...\n";
 
   finalize();
   return 0;
