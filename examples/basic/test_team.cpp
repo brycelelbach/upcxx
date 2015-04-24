@@ -148,19 +148,154 @@ int test_gather(const team &t, size_t count)
 template<typename T>
 int test_scatter(const team &t, size_t count)
 {
+  global_ptr<T> src;
+  global_ptr<T> dst;
 
+  // The total number of elements that the root expects to receive
+  size_t allcounts = count * t.size();
+
+  src = allocate<T>(myrank(), allcounts);
+  dst = allocate<T>(myrank(), count);
+
+  assert(src != NULL);
+  assert(dst != NULL);
+
+  t.barrier();
+
+  for (uint32_t root = 0; root < t.size(); root++) {
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<allcounts; i++) {
+      lsrc[i] = (T)(t.color()*10000 + root * 100 + i);
+    }
+    for (size_t i=0; i<count; i++) {
+      ldst[i] = (T)0;
+    }
+
+    t.scatter(lsrc, ldst, sizeof(T)*count, root);
+
+    // Verify the received data
+    {
+      for (size_t i=0; i<count; i++) {
+        T expected = (T)(t.color()*10000 + root*100 + t.myrank()*count + i);
+        if (ldst[i] != expected) {
+          std::cout << global_myrank() << ": test_scatter error!  Expected to receive "
+                    << expected << " at " << i << "th element, but received " << ldst[i]
+                    << " instead.\n";
+          exit(1);
+        }
+      }
+    }
+  }
+  t.barrier();
+
+  deallocate(src);
+  deallocate(dst);
+
+  return UPCXX_SUCCESS;
 }
 
 template<typename T>
 int test_allgather(const team &t, size_t count)
 {
+  global_ptr<T> src;
+  global_ptr<T> dst;
 
+  // The total number of elements that the root expects to receive
+  size_t allcounts = count * t.size();
+
+  src = allocate<T>(myrank(), count);
+  dst = allocate<T>(myrank(), allcounts);
+
+  assert(src != NULL);
+  assert(dst != NULL);
+
+  t.barrier();
+
+  // Not really using root in allgather, just iterating the loop a few times
+  for (uint32_t root = 0; root < t.size(); root++) {
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<count; i++) {
+      lsrc[i] = (T)(t.color()*10000 + root * 100 + t.myrank()*count + i);
+    }
+    for (size_t i=0; i<allcounts; i++) {
+      ldst[i] = (T)0;
+    }
+
+    t.allgather(lsrc, ldst, sizeof(T)*count);
+
+    // Verify the received data
+    {
+      for (size_t i=0; i<allcounts; i++) {
+        T expected = (T)(t.color()*10000 + root*100 + i);
+        if (ldst[i] != expected) {
+          std::cout << global_myrank() << ": test_allgather error!  Expected to receive "
+                    << expected << " at " << i << "th element, but received " << ldst[i]
+                    << " instead.\n";
+          exit(1);
+        }
+      }
+    }
+  }
+  t.barrier();
+
+  deallocate(src);
+  deallocate(dst);
+
+  return UPCXX_SUCCESS;
 }
 
 template<typename T>
 int test_alltoall(const team &t, size_t count)
 {
+  global_ptr<T> src;
+  global_ptr<T> dst;
 
+  // The total number of elements that the root expects to receive
+  size_t allcounts = count * t.size();
+
+  src = allocate<T>(myrank(), allcounts);
+  dst = allocate<T>(myrank(), allcounts);
+
+  assert(src != NULL);
+  assert(dst != NULL);
+
+  t.barrier();
+
+  // Not really using root in alltoall, just iterating the loop a few times
+  for (uint32_t root = 0; root < t.size(); root++) {
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<allcounts; i++) {
+      lsrc[i] = (T)(t.color()*10000 + root * 100 + t.myrank()*10 + i);
+    }
+    for (size_t i=0; i<allcounts; i++) {
+      ldst[i] = (T)0;
+    }
+
+    t.alltoall(lsrc, ldst, sizeof(T)*count);
+
+    // Verify the received data
+    {
+      for (size_t i=0; i<allcounts; i++) {
+        T expected = (T)(t.color()*10000 + root*100 + i/count*10 + t.myrank()*count + i%count);
+        if (ldst[i] != expected) {
+          std::cout << global_myrank() << ": test_alltoall error!  Expected to receive "
+                    << expected << " at " << i << "th element, but received " << ldst[i]
+                    << " instead.\n";
+          exit(1);
+        }
+      }
+    }
+  }
+  t.barrier();
+
+  deallocate(src);
+  deallocate(dst);
 }
 
 int main(int argc, char **argv)
@@ -200,6 +335,20 @@ int main(int argc, char **argv)
 
   test_gather<size_t>(team_all, 128);
 
+  if (myrank() == 0)
+    std::cout << "Testing team scatter on team_all...\n";
+
+  test_scatter<size_t>(team_all, 8);
+
+  if (myrank() == 0)
+    std::cout << "Testing team allgather on team_all...\n";
+
+  test_allgather<size_t>(team_all, 32);
+
+  if (myrank() == 0)
+    std::cout << "Testing team alltoall on team_all...\n";
+
+  test_alltoall<size_t>(team_all, 64);
 
   if (myrank() == 0)
     std::cout << "Passed testing team_all!\n";
@@ -221,21 +370,67 @@ int main(int argc, char **argv)
     std::cout << "Finish team split\n";
 
   if (myrank() == 0)
-    std::cout << "Testing collectives on row teams...\n";
+    std::cout << "Testing team barrier on row teams...\n";
 
   test_barrier(*row_team);
+
+  if (myrank() == 0)
+      std::cout << "Testing team bcast on row teams...\n";
+
   test_bcast<uint32_t>(*row_team, 4096);
+
+  if (myrank() == 0)
+      std::cout << "Testing team gather on row teams...\n";
+
   test_gather<uint32_t>(*row_team, 100);
+
+  if (myrank() == 0)
+      std::cout << "Testing team scatter on row teams...\n";
+
+  test_scatter<uint32_t>(*row_team, 99);
+
+  if (myrank() == 0)
+      std::cout << "Testing team allgather on row teams...\n";
+
+  test_allgather<uint32_t>(*row_team, 101);
   
+  if (myrank() == 0)
+    std::cout << "Testing team alltoall on row teams...\n";
+
+  test_alltoall<uint32_t>(*row_team, 600);
+
   if (myrank() == 0)
     std::cout << "Passed testing collectives on row teams...\n";
 
   if (myrank() == 0)
-    std::cout << "Testing collectives on column teams...\n";
+    std::cout << "Testing team barrier on column teams...\n";
 
   test_barrier(*col_team);
+
+  if (myrank() == 0)
+      std::cout << "Testing team bcast on column teams...\n";
+
   test_bcast<double>(*col_team, 4096);
+
+  if (myrank() == 0)
+      std::cout << "Testing team gather on column teams...\n";
+
   test_gather<double>(*col_team, 1);
+
+  if (myrank() == 0)
+      std::cout << "Testing team scatter on column teams...\n";
+
+  test_scatter<double>(*col_team, 1024);
+
+  if (myrank() == 0)
+    std::cout << "Testing team allgather on column teams...\n";
+
+  test_allgather<double>(*col_team, 512);
+
+  if (myrank() == 0)
+    std::cout << "Testing team alltoall on column teams...\n";
+
+  test_alltoall<double>(*col_team, 311);
 
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";

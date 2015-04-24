@@ -113,12 +113,26 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
 
+    inline int scatter(void *src, void *dst, size_t nbytes, uint32_t root) const
+    {
+      assert(_gasnet_team != NULL);
+      gasnet_coll_scatter(_gasnet_team, dst, root, src, nbytes,
+                          UPCXX_GASNET_COLL_FLAG);
+      return UPCXX_SUCCESS;
+    }
+
     inline int allgather(void *src, void *dst, size_t nbytes) const
     {
       assert(_gasnet_team != NULL);
       gasnet_coll_gather_all(_gasnet_team, dst, src, nbytes, 
                              UPCXX_GASNET_COLL_FLAG);
       return UPCXX_SUCCESS;
+    }
+
+    inline void alltoall(void *src, void *dst, size_t nbytes) const
+    {
+      gasnet_coll_exchange(_gasnet_team, dst, src, nbytes,
+                           UPCXX_GASNET_COLL_FLAG);
     }
 
     template<class T>
