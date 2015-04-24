@@ -49,7 +49,7 @@ int test_barrier(const team &t)
 }
 
 template<typename T>
-int test_bcast(team t, size_t count)
+int test_bcast(const team &t, size_t count)
 {
   global_ptr<T> src;
   global_ptr<T> dst;
@@ -65,7 +65,7 @@ int test_bcast(team t, size_t count)
   t.barrier();
   
   for (uint32_t root = 0; root < t.size(); root++) {
-    // Initialize data pointed by host_ptr by a local pointer
+    // Initialize data pointed by host_ptr by a local pointer
     T *lsrc = (T *)src;
     T *ldst = (T *)dst;
     for (size_t i=0; i<count; i++) {
@@ -87,6 +87,80 @@ int test_bcast(team t, size_t count)
     }
   }
   t.barrier();
+
+  deallocate(src);
+  deallocate(dst);
+
+  return UPCXX_SUCCESS;
+}
+
+template<typename T>
+int test_gather(const team &t, size_t count)
+{
+  global_ptr<T> src;
+  global_ptr<T> dst;
+
+  // The total number of elements that the root expects to receive
+  size_t allcounts = count * t.size();
+
+  src = allocate<T>(myrank(), count);
+  dst = allocate<T>(myrank(), allcounts);
+
+  assert(src != NULL);
+  assert(dst != NULL);
+
+  t.barrier();
+
+  for (uint32_t root = 0; root < t.size(); root++) {
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<count; i++) {
+      lsrc[i] = (T)(t.color()*10000 + root * 100 + t.myrank()*count + i);
+    }
+    for (size_t i=0; i<allcounts; i++) {
+      ldst[i] = (T)0;
+    }
+
+    t.gather(lsrc, ldst, sizeof(T)*count, root);
+
+    // Verify the received data on the root
+    if (t.myrank() == root) {
+      for (size_t i=0; i<allcounts; i++) {
+        T expected = (T)(t.color()*10000 + root*100 + i);
+        if (ldst[i] != expected) {
+          std::cout << global_myrank() << ": test_gather error!  Expected to receive "
+                    << expected << " at " << i << "th element, but received " << ldst[i]
+                    << " instead.\n";
+          exit(1);
+        }
+      }
+    }
+  }
+  t.barrier();
+
+  deallocate(src);
+  deallocate(dst);
+
+  return UPCXX_SUCCESS;
+}
+
+template<typename T>
+int test_scatter(const team &t, size_t count)
+{
+
+}
+
+template<typename T>
+int test_allgather(const team &t, size_t count)
+{
+
+}
+
+template<typename T>
+int test_alltoall(const team &t, size_t count)
+{
+
 }
 
 int main(int argc, char **argv)
@@ -95,7 +169,7 @@ int main(int argc, char **argv)
   sa.init(ranks());
  
   team *row_team, *col_team;
-  uint32_t nrows, ncols, row_id, col_id;
+  uint32_t nrows, ncols = 1, row_id, col_id;
 
   if (argc > 1) {
     ncols = atoi(argv[1]);
@@ -117,9 +191,15 @@ int main(int argc, char **argv)
   team_all.barrier();
 
   if (myrank() == 0)
-     std::cout << "Testing team bcast on team_all...\n";
+    std::cout << "Testing team bcast on team_all...\n";
 
   test_bcast<size_t>(team_all, 1024);
+
+  if (myrank() == 0)
+    std::cout << "Testing team gather on team_all...\n";
+
+  test_gather<size_t>(team_all, 128);
+
 
   if (myrank() == 0)
     std::cout << "Passed testing team_all!\n";
@@ -145,6 +225,7 @@ int main(int argc, char **argv)
 
   test_barrier(*row_team);
   test_bcast<uint32_t>(*row_team, 4096);
+  test_gather<uint32_t>(*row_team, 100);
   
   if (myrank() == 0)
     std::cout << "Passed testing collectives on row teams...\n";
@@ -154,6 +235,7 @@ int main(int argc, char **argv)
 
   test_barrier(*col_team);
   test_bcast<double>(*col_team, 4096);
+  test_gather<double>(*col_team, 1);
 
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";
