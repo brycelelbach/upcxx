@@ -46,28 +46,13 @@ namespace upcxx
       _gasnet_team = other->_gasnet_team;
     }
     
-    /* team(uint32_t team_id, uint32_t size, uint32_t myrank, range &mbr, */
-    /*      gasnet_team_handle_t gasnet_team = NULL) */
-    /*   : _team_id(team_id), _size(size), _myrank(myrank), _mbr(mbr), */
-    /*     _gasnet_team(gasnet_team) */
-    /* {} */
-
     ~team()
     {
+      // YZ: free the underlying gasnet team?
       //      if (_gasnet_team != NULL) {
       //        gasnete_coll_team_free(_gasnet_team);
       //      }
     }
-
-    /* inline void init(uint32_t team_id, uint32_t size, uint32_t myrank, */
-    /*                  range &mbr, gasnet_team_handle_t gasnet_team = NULL) */
-    /* { */
-    /*   _team_id = team_id; */
-    /*   _size = size; */
-    /*   _myrank = myrank; */
-    /*   _mbr = mbr; */
-    /*   _gasnet_team = gasnet_team; */
-    /* } */
 
     inline uint32_t myrank() const { return _myrank; }
     
@@ -85,34 +70,11 @@ namespace upcxx
       return _gasnet_team;
     }
 
-    // YZ: We can use a compact format to represent team members and only store
-    // log2 number of neighbors on each node
-    /* inline uint32_t member(uint32_t i) const */
-    /* { */
-    /*   assert(i < _size); */
-    /*   return _mbr[i]; */
-    /* } */
-
     inline bool is_team_all() const
     {
       return (_team_id == 0); // team_all has team_id 0
     }
 
-    /* inline int team_get_global_rank(upcxx::team t, */
-    /*                                 uint32_t team_rank, */
-    /*                                 uint32_t *global_rank) */
-    /* { */
-    /*   if (team_rank < _mbr.count()) { */
-    /*     *global_rank = _mbr[team_rank]; */
-    /*     return UPCXX_SUCCESS; */
-    /*   } */
-
-    /*   return UPCXX_ERROR; */
-    /* } */
-    
-    // Initialize the underlying gasnet team if necessary
-    /* int init_gasnet_team(); */
-    
     // void create_gasnet_team();
     int split(uint32_t color, uint32_t relrank, team *&new_team);
     int split(uint32_t color, uint32_t relrank);
@@ -170,6 +132,19 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
     
+    /**
+     * Translate a rank in a team to its global rank
+     */
+    inline uint32_t team_rank_to_global(uint32_t team_rank) const
+    {
+      return gasnete_coll_team_rank2node(_gasnet_team, team_rank);
+    }
+    
+    inline uint32_t global_rank_to_team(uint32_t global_rank) const
+    {
+      return gasnete_coll_team_node2rank(_gasnet_team, global_rank);
+    }
+
     static uint32_t new_team_id();
 
     static team *current_team() { return _team_stack.back(); }
@@ -221,7 +196,7 @@ namespace upcxx
   inline
   std::ostream& operator<<(std::ostream& out, const team& t)
   {
-    return out << "team: id " << t.team_id()
+    return out << "team: id " << t.team_id() << ", color " << t.color()
                << ", size " << t.size() << ", myrank " << t.myrank();
   }
   
