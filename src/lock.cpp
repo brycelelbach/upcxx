@@ -24,7 +24,7 @@ namespace upcxx
       upcxx_mutex_lock(&lock->_mutex);
 #ifdef UPCXX_DEBUG
       printf("lock_am_handler() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
-             myrank(), lock, lock->_locked, lock->_holder, lock->_owner);
+             global_myrank(), lock, lock->_locked, lock->_holder, lock->_owner);
 #endif
 
       if (lock->_locked == 0) {
@@ -97,13 +97,13 @@ namespace upcxx
 
 #ifdef UPCXX_DEBUG
     printf("trylock() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
-            myrank(), this, _locked, _holder, _owner);
+            global_myrank(), this, _locked, _holder, _owner);
 #endif
 
     GASNET_SAFE(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
     e.wait();
 
-    if (rv.holder == myrank() && rv.islocked) {
+    if (rv.holder == global_myrank() && rv.islocked) {
       return 1;
     }
 

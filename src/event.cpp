@@ -77,7 +77,7 @@ namespace upcxx
       for (int i=0; i<_num_done_cb; i++) {
         if (_done_cb[i] != NULL) {
           async_task *task = _done_cb[i];
-          if (task->_callee == myrank()) {
+          if (task->_callee == global_myrank()) {
             // local task
             assert(in_task_queue != NULL);
             gasnet_hsl_lock(&in_task_queue_lock);
@@ -105,7 +105,7 @@ namespace upcxx
     _count += c;
     if (this != &system_event && old == 0) {
       gasnet_hsl_lock(&outstanding_events_lock);
-      // fprintf(stderr, "P %u   Add outstanding_event %p\n", myrank(), this);
+      // fprintf(stderr, "P %u   Add outstanding_event %p\n", global_myrank(), this);
       outstanding_events.push_back(this);
       gasnet_hsl_unlock(&outstanding_events_lock);
     }
@@ -130,7 +130,7 @@ namespace upcxx
       enqueue_cb();
       if (this != &system_event) {
         gasnet_hsl_lock(&outstanding_events_lock);
-        // fprintf(stderr, "P %u Erase outstanding_event %p\n", myrank(), this);
+        // fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
         outstanding_events.remove(this);
         gasnet_hsl_unlock(&outstanding_events_lock);
       }

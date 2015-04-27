@@ -9,7 +9,7 @@
 #include <coll_flags.h>
 #include <collective.h>
 #include <interfaces_internal.h>
-#include <team.h>
+//#include <team.h>
 
 #define UPCXXR_WRAPPER_DECL(T, num_class, type_code)    \
   template<> struct datatype_wrapper<T> {               \

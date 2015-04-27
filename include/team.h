@@ -16,6 +16,7 @@
 #include "range.h"
 #include "coll_flags.h"
 #include "utils.h"
+#include "reduce.h"
 
 /// \cond SHOW_INTERNAL
 
@@ -124,8 +125,16 @@ namespace upcxx
     inline int allgather(void *src, void *dst, size_t nbytes) const
     {
       assert(_gasnet_team != NULL);
+      // YZ: gasnet_coll_gather_all is broken with Intel compiler on Linux!
+      /*
       gasnet_coll_gather_all(_gasnet_team, dst, src, nbytes, 
                              UPCXX_GASNET_COLL_FLAG);
+      */
+      void *temp = allocate(nbytes * size());
+      assert(temp != NULL);
+      gather(src, temp, nbytes, 0);
+      bcast(temp, dst, nbytes * size(), 0);
+      deallocate(temp);
       return UPCXX_SUCCESS;
     }
 
@@ -137,12 +146,13 @@ namespace upcxx
 
     template<class T>
     int reduce(T *src, T *dst, size_t count, uint32_t root,
-               upcxx_op_t op, upcxx_datatype_t dt) const
+               upcxx_op_t op) const
     {
-      // YZ: check consistency of T and dt
+      // We infer the data type from T by datatype_wrapper
       assert(_gasnet_team != NULL);
       gasnet_coll_reduce(_gasnet_team, root, dst, src, 0, 0, sizeof(T),
-                         count, dt, op, UPCXX_GASNET_COLL_FLAG);
+                         count, datatype_wrapper<T>::value, op,
+                         UPCXX_GASNET_COLL_FLAG);
       return UPCXX_SUCCESS;
     }
     
@@ -227,9 +237,7 @@ namespace upcxx
     }
   };
 
-  static inline gasnet_team_handle_t current_gasnet_team() {
-    return team::current_team()->gasnet_team();
-  }
+  extern gasnet_team_handle_t current_gasnet_team();
 
   static inline uint32_t ranks() {
     return team::current_team()->size();

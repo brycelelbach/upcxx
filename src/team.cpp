@@ -21,6 +21,11 @@ namespace upcxx
 
   bool _threads_deprecated_warned = false;
 
+  gasnet_team_handle_t current_gasnet_team()
+  {
+    return team::current_team()->gasnet_team();
+  }
+
 #define TEAM_ID_BITS 8
 #define TEAM_ID_SEQ_MASK 0xFF
 

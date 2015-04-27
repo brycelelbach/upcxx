@@ -296,6 +296,69 @@ int test_alltoall(const team &t, size_t count)
 
   deallocate(src);
   deallocate(dst);
+  return UPCXX_SUCCESS;
+}
+
+// Note: we are assuming the floating-point number operations are
+// commutative and associative in the reduce
+template<typename T>
+int test_reduce(const team &t, size_t count)
+{
+  global_ptr<T> src;
+  global_ptr<T> dst;
+
+  src = allocate<T>(myrank(), count);
+  dst = allocate<T>(myrank(), count);
+
+  assert(src != NULL);
+  assert(dst != NULL);
+
+  t.barrier();
+
+  // Test reduce sum
+  for (uint32_t root = 0; root < t.size(); root++) {
+    // Initialize data pointed by host_ptr by a local pointer
+    T *lsrc = (T *)src;
+    T *ldst = (T *)dst;
+    for (size_t i=0; i<count; i++) {
+      lsrc[i] = (T)t.myrank() * i;
+    }
+    for (size_t i=0; i<count; i++) {
+      ldst[i] = (T)0;
+    }
+
+    // YZ: Need a find a way to translate T to UPCXX_ data type
+    t.reduce(lsrc, ldst, count, root, UPCXX_SUM);
+
+    // Verify the received data on the root
+    if (t.myrank() == root) {
+      for (size_t i=0; i<count; i++) {
+        T expected = (T)(i * (t.size()-1) * (t.size() / 2.0));
+        if (ldst[i] != expected) {
+          std::cout << global_myrank() << ": test_reduction error!  Expected to receive "
+                    << expected << " at " << i << "th element, but received " << ldst[i]
+                    << " instead.\n";
+          exit(1);
+        }
+      }
+    }
+  }
+  t.barrier();
+
+  // Test reduce max
+
+  // Test reduce
+
+  deallocate(src);
+  deallocate(dst);
+
+  return UPCXX_SUCCESS;
+}
+
+template<typename T>
+int test_allreduce(const team &t, size_t count)
+{
+  return UPCXX_SUCCESS;
 }
 
 int main(int argc, char **argv)
@@ -351,6 +414,12 @@ int main(int argc, char **argv)
   test_alltoall<size_t>(team_all, 64);
 
   if (myrank() == 0)
+    std::cout << "Testing team reduce on team_all...\n";
+
+  test_reduce<unsigned long long>(team_all, 1024);
+  test_reduce<double>(team_all, 1024);
+
+  if (myrank() == 0)
     std::cout << "Passed testing team_all!\n";
   
   if (myrank() == 0)
@@ -400,6 +469,11 @@ int main(int argc, char **argv)
   test_alltoall<uint32_t>(*row_team, 600);
 
   if (myrank() == 0)
+    std::cout << "Testing team reduce on row teams...\n";
+
+  test_reduce<int>(*row_team, 123);
+
+  if (myrank() == 0)
     std::cout << "Passed testing collectives on row teams...\n";
 
   if (myrank() == 0)
@@ -431,6 +505,11 @@ int main(int argc, char **argv)
     std::cout << "Testing team alltoall on column teams...\n";
 
   test_alltoall<double>(*col_team, 311);
+
+  if (myrank() == 0)
+    std::cout << "Testing team reduce on column teams...\n";
+
+  test_reduce<double>(*col_team, 4096);
 
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";

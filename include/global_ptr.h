@@ -154,7 +154,7 @@ namespace upcxx
     // Support -> operator when pointing to a local object
     T* operator->() const
     {
-      if (this->where() == upcxx::myrank()) {
+      if (this->where() == upcxx::global_myrank()) {
         return this->raw_ptr();
       } else {
         std::cerr << "global_ptr " << *this << " is pointing to a remote object "

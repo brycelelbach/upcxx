@@ -170,7 +170,7 @@ namespace upcxx
     memcpy(tmp, task, task->nbytes());
     
     // Increase the reference of the ack event of the task
-    if (tmp->_caller == myrank() && tmp->_ack != NULL) {
+    if (tmp->_caller == global_myrank() && tmp->_ack != NULL) {
       tmp->_ack->incref();
     }
     
@@ -186,7 +186,7 @@ namespace upcxx
     }
     
     // enqueue the async task
-    if (task->_callee == myrank()) {
+    if (task->_callee == global_myrank()) {
       // local task
       assert(in_task_queue != NULL);
       gasnet_hsl_lock(&in_task_queue_lock);

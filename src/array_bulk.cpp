@@ -5,6 +5,7 @@
 #include "array_bulk.h"
 #include "array_bulk_internal.h"
 #include "array_defs.h"
+#include "team.h" // for upcxx::myrank()
 #include "upcxx_internal.h" // for gasnet_seg_alloc
 
 /* No multithreading support for now */

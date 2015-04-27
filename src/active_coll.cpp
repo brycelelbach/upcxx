@@ -42,16 +42,16 @@ namespace upcxx
     upcxx::range new_target = bcast_arg->target;
     async_task &task = bcast_arg->task;
     upcxx::range original_target = new_target;
-    bool islocal = bcast_arg->target.contains(myrank());
+    bool islocal = bcast_arg->target.contains(global_myrank());
 
 #ifdef DEBUG0
-    std::cerr << myrank() << " in am_bcast_launch, target "
+    std::cerr << global_myrank() << " in am_bcast_launch, target "
               << bcast_arg->target << " task " << task << "\n";
 #endif
 
-    if (original_target[0] != myrank()) {
+    if (original_target[0] != global_myrank()) {
       async_task bcast_task;
-      bcast_task.init_async_task(myrank(),
+      bcast_task.init_async_task(global_myrank(),
                                  bcast_arg->target[0],  // the first node
                                  NULL,
                                  am_bcast_launch,  // bcast kernel
@@ -75,7 +75,7 @@ namespace upcxx
       bcast_arg->target = range(new_target.begin() + new_target.count() / 2 * new_target.step(),
                                 new_target.end(),
                                 new_target.step());
-      bcast_task.init_async_task(myrank(),
+      bcast_task.init_async_task(global_myrank(),
                                  bcast_arg->target[0],  // the first node
                                  NULL,
                                  am_bcast_launch,  // bcast kernel
@@ -90,13 +90,13 @@ namespace upcxx
     // Do this after sending the AM bcast packets to maximize parallelism
 #ifdef DEBUG
     output_lock.lock();
-    std::cerr << "\nRank " << myrank() << " is in " << original_target << " "
-    << original_target.contains(myrank()) << endl;
+    std::cerr << "\nRank " << global_myrank() << " is in " << original_target << " "
+    << original_target.contains(global_myrank()) << endl;
     output_lock.unlock();
 #endif
     
     if (islocal) {
-      task._callee = myrank();
+      task._callee = global_myrank();
       submit_task(&task);
     }
   }  // am_bcast_launch
@@ -116,8 +116,8 @@ namespace upcxx
     /* prepare bcast_arg */
     bcast_arg.target = target;
     bcast_arg.root_index = root_index;
-    bcast_arg.task.init_async_task(myrank(),
-                                   myrank(),
+    bcast_arg.task.init_async_task(global_myrank(),
+                                   global_myrank(),
                                    ack,
                                    fp,
                                    arg_sz,
