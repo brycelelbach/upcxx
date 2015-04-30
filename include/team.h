@@ -299,5 +299,10 @@ namespace upcxx
 // #define MYTHREAD upcxx::myrank()
 
 // Keep the warned version for a while for user code migration
+#ifndef THREADS
 #define THREADS upcxx::_threads_deprecated()
+#endif
+
+#ifndef MYTHREAD
 #define MYTHREAD upcxx::_mythread_deprecated()
+#endif
