@@ -158,9 +158,9 @@ struct timer {
 using namespace upcxx;
 
 #if !USE_UPCXX
-# define barrier()
-# define THREADS 1
-# define MYTHREAD 0
+static void barrier() {}
+static int ranks() { return 1; }
+static int myrank() { return 0; }
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 

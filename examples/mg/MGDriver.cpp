@@ -100,7 +100,7 @@ void MGDriver::main(int argc, char **argv) {
   }
 
   if (invalidInput) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Allowed problem classes are A, B, C, D, S, and W.");
     }
     exit(1);
@@ -108,14 +108,14 @@ void MGDriver::main(int argc, char **argv) {
 
   // check that there are a power of two number of processors
   bool powerOfTwoProcs = true;
-  int tempNumOfProcs = THREADS;
+  int tempNumOfProcs = ranks();
   while (tempNumOfProcs > 1) {
     if (tempNumOfProcs % 2 == 1) powerOfTwoProcs = false;
     tempNumOfProcs /= 2;
   }
 
   if (!powerOfTwoProcs) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("The number of processors must be a power of two.");
     }
     exit(1);
@@ -178,10 +178,10 @@ void MGDriver::main(int argc, char **argv) {
   COUNTER_STOP(Driver.myTotalCounter);
   // end timed iterations
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("Titanium NAS MG Benchmark- Parallel\n");
     println("Problem class = " << Driver.classType);
-    println("Number of processors = " << THREADS);
+    println("Number of processors = " << ranks());
     println("Start level (log base 2 of the cubic grid side length) = " <<
             Driver.startLevel);
     println("Threshold level (below this level, all the work is done " <<
@@ -191,7 +191,7 @@ void MGDriver::main(int argc, char **argv) {
     println("Number of iterations = " << Driver.numIterations);
 
     // verify final L2 residual value
-    double error = abs(L2ResFinal - Driver.verifyValue);
+    double error = std::abs(L2ResFinal - Driver.verifyValue);
     if (error <= Driver.epsilon) {
       println("\nVERIFICATION SUCCESSFUL");
       println("Initial L2 Residual = " << L2ResInitial);
@@ -218,7 +218,7 @@ void MGDriver::main(int argc, char **argv) {
   long myTotalCount = Driver.myTotalCounter.getCounterValue();
   long allTotalCount = reduce::add(myTotalCount);
 #endif
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\nTOTAL:");
 #ifdef TIMERS_ENABLED
     println("Max Time Across Procs:\t\t" << maxTotalTime);

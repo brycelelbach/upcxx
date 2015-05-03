@@ -20,7 +20,7 @@ namespace upcxx
 
   static inline void* allocate(size_t nbytes) 
   {
-    return allocate(myrank(), nbytes).raw_ptr();
+    return allocate(global_myrank(), nbytes).raw_ptr();
   }
 
   /**

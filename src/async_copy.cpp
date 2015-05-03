@@ -15,9 +15,9 @@ namespace upcxx
     fprintf(stderr, "src id %d, src ptr %p, nbytes %llu, dst id %d, dst ptr %p\n",
             src.where(), src.raw_ptr(), nbytes, dst.where(), dst.raw_ptr());
 #endif
-    if (dst.where() == myrank()) {
+    if (dst.where() == global_myrank()) {
       gasnet_get_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
-    } else if (src.where() == myrank()) {
+    } else if (src.where() == global_myrank()) {
       gasnet_put_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
     } else {
       void *buf;
@@ -34,14 +34,14 @@ namespace upcxx
   int async_copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes,
                  event *e)
   {
-    if (dst.where() != myrank() && src.where() != myrank()) {
+    if (dst.where() != global_myrank() && src.where() != global_myrank()) {
       fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
       gasnet_exit(1);
     }
     if (e == &system_event) {
       // use implicit non-blocking copy for the global scope,
       // need to call gasnet_wait_syncnbi_all() to synchronize later
-      if (dst.where() == myrank()) {
+      if (dst.where() == global_myrank()) {
         gasnet_get_nbi_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
       } else { // src.where().islocal() == true
         gasnet_put_nbi_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
@@ -50,9 +50,9 @@ namespace upcxx
       // explicit non-blocking copy, need event->wait()/test() to
       // synchronize later
       gasnet_handle_t h;
-      if (dst.where() == myrank()) {
+      if (dst.where() == global_myrank()) {
         h = gasnet_get_nb_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
-      } else { // src.where() == myrank()
+      } else { // src.where() == global_myrank()
         h = gasnet_put_nb_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
       }
       e->add_gasnet_handle(h);
@@ -168,7 +168,7 @@ namespace upcxx
                          event *e)
   {
     // Either src or dst must be local
-    if (dst.where() != myrank() && src.where() != myrank()) {
+    if (dst.where() != global_myrank() && src.where() != global_myrank()) {
       fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
       gasnet_exit(1);
     }
@@ -177,7 +177,7 @@ namespace upcxx
     // otherwise use the generic implementation
 #ifdef UPCXX_USE_DMAPP
     if (env_use_dmapp) {
-      if (src.where() == myrank()) {
+      if (src.where() == global_myrank()) {
         assert(dst.where() == flag_addr.where());
         return async_put_and_set_dmapp(src, dst, nbytes, flag_addr, e);
       }
@@ -196,9 +196,9 @@ namespace upcxx
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
       // enqueue a local async task that will asynchronously set the remote flag via RMDA put
-      async_after(myrank(), temp_events[0], e)(async_set_flag, flag_addr, e);
+      async_after(global_myrank(), temp_events[0], e)(async_set_flag, flag_addr, e);
       // enqueue another local task that will clean up the temp_events after e is done
-      async_after(myrank(), e)(deallocate_events, 1, temp_events);
+      async_after(global_myrank(), e)(deallocate_events, 1, temp_events);
     }
 
     return UPCXX_SUCCESS;

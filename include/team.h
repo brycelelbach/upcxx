@@ -16,6 +16,7 @@
 #include "range.h"
 #include "coll_flags.h"
 #include "utils.h"
+#include "reduce.h"
 
 /// \cond SHOW_INTERNAL
 
@@ -46,28 +47,13 @@ namespace upcxx
       _gasnet_team = other->_gasnet_team;
     }
     
-    /* team(uint32_t team_id, uint32_t size, uint32_t myrank, range &mbr, */
-    /*      gasnet_team_handle_t gasnet_team = NULL) */
-    /*   : _team_id(team_id), _size(size), _myrank(myrank), _mbr(mbr), */
-    /*     _gasnet_team(gasnet_team) */
-    /* {} */
-
     ~team()
     {
+      // YZ: free the underlying gasnet team?
       //      if (_gasnet_team != NULL) {
       //        gasnete_coll_team_free(_gasnet_team);
       //      }
     }
-
-    /* inline void init(uint32_t team_id, uint32_t size, uint32_t myrank, */
-    /*                  range &mbr, gasnet_team_handle_t gasnet_team = NULL) */
-    /* { */
-    /*   _team_id = team_id; */
-    /*   _size = size; */
-    /*   _myrank = myrank; */
-    /*   _mbr = mbr; */
-    /*   _gasnet_team = gasnet_team; */
-    /* } */
 
     inline uint32_t myrank() const { return _myrank; }
     
@@ -85,34 +71,11 @@ namespace upcxx
       return _gasnet_team;
     }
 
-    // YZ: We can use a compact format to represent team members and only store
-    // log2 number of neighbors on each node
-    /* inline uint32_t member(uint32_t i) const */
-    /* { */
-    /*   assert(i < _size); */
-    /*   return _mbr[i]; */
-    /* } */
-
     inline bool is_team_all() const
     {
       return (_team_id == 0); // team_all has team_id 0
     }
 
-    /* inline int team_get_global_rank(upcxx::team t, */
-    /*                                 uint32_t team_rank, */
-    /*                                 uint32_t *global_rank) */
-    /* { */
-    /*   if (team_rank < _mbr.count()) { */
-    /*     *global_rank = _mbr[team_rank]; */
-    /*     return UPCXX_SUCCESS; */
-    /*   } */
-
-    /*   return UPCXX_ERROR; */
-    /* } */
-    
-    // Initialize the underlying gasnet team if necessary
-    /* int init_gasnet_team(); */
-    
     // void create_gasnet_team();
     int split(uint32_t color, uint32_t relrank, team *&new_team);
     int split(uint32_t color, uint32_t relrank);
@@ -151,25 +114,61 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
 
+    inline int scatter(void *src, void *dst, size_t nbytes, uint32_t root) const
+    {
+      assert(_gasnet_team != NULL);
+      gasnet_coll_scatter(_gasnet_team, dst, root, src, nbytes,
+                          UPCXX_GASNET_COLL_FLAG);
+      return UPCXX_SUCCESS;
+    }
+
     inline int allgather(void *src, void *dst, size_t nbytes) const
     {
       assert(_gasnet_team != NULL);
+      // YZ: gasnet_coll_gather_all is broken with Intel compiler on Linux!
+      /*
       gasnet_coll_gather_all(_gasnet_team, dst, src, nbytes, 
                              UPCXX_GASNET_COLL_FLAG);
+      */
+      void *temp = allocate(nbytes * size());
+      assert(temp != NULL);
+      gather(src, temp, nbytes, 0);
+      bcast(temp, dst, nbytes * size(), 0);
+      deallocate(temp);
       return UPCXX_SUCCESS;
+    }
+
+    inline void alltoall(void *src, void *dst, size_t nbytes) const
+    {
+      gasnet_coll_exchange(_gasnet_team, dst, src, nbytes,
+                           UPCXX_GASNET_COLL_FLAG);
     }
 
     template<class T>
     int reduce(T *src, T *dst, size_t count, uint32_t root,
-               upcxx_op_t op, upcxx_datatype_t dt) const
+               upcxx_op_t op) const
     {
-      // YZ: check consistency of T and dt
+      // We infer the data type from T by datatype_wrapper
       assert(_gasnet_team != NULL);
       gasnet_coll_reduce(_gasnet_team, root, dst, src, 0, 0, sizeof(T),
-                         count, dt, op, UPCXX_GASNET_COLL_FLAG);
+                         count, datatype_wrapper<T>::value, op,
+                         UPCXX_GASNET_COLL_FLAG);
       return UPCXX_SUCCESS;
     }
     
+    /**
+     * Translate a rank in a team to its global rank
+     */
+    inline uint32_t team_rank_to_global(uint32_t team_rank) const
+    {
+      return gasnete_coll_team_rank2node(_gasnet_team, team_rank);
+    }
+    
+    inline uint32_t global_rank_to_team(uint32_t global_rank) const
+    {
+      return gasnete_coll_team_node2rank(_gasnet_team, global_rank);
+    }
+
     static uint32_t new_team_id();
 
     static team *current_team() { return _team_stack.back(); }
@@ -221,7 +220,7 @@ namespace upcxx
   inline
   std::ostream& operator<<(std::ostream& out, const team& t)
   {
-    return out << "team: id " << t.team_id()
+    return out << "team: id " << t.team_id() << ", color " << t.color()
                << ", size " << t.size() << ", myrank " << t.myrank();
   }
   
@@ -238,9 +237,7 @@ namespace upcxx
     }
   };
 
-  static inline gasnet_team_handle_t current_gasnet_team() {
-    return team::current_team()->gasnet_team();
-  }
+  extern gasnet_team_handle_t current_gasnet_team();
 
   static inline uint32_t ranks() {
     return team::current_team()->size();
@@ -252,12 +249,15 @@ namespace upcxx
 
   static inline void _threads_deprecated_warn() {
     extern bool _threads_deprecated_warned;
-    if (!_threads_deprecated_warned) {
-      _threads_deprecated_warned = true;
-      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
-                << "         use upcxx::ranks() and upcxx::myranks() instead"
-                << std::endl;
-    }
+    _threads_deprecated_warned = true;
+    /* Postpone the warning to the end in finalize() so it wouldn't
+       get into the program output */
+    // if (!_threads_deprecated_warned) {
+    //   _threads_deprecated_warned = true;
+    //   std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+    //             << "         use upcxx::ranks() and upcxx::myranks() instead"
+    //             << std::endl;
+    // }
   }
 
   static inline uint32_t _threads_deprecated() {
@@ -286,12 +286,23 @@ namespace upcxx
 } // namespace upcxx
 
 // Dynamically scoped hierarchical team construct
-#define teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
+#define upcxx_teamsplit(t) UPCXX_teamsplit_(UPCXX_UNIQUIFY(fs_), t)
 #define UPCXX_teamsplit_(name, t)                               \
   for (upcxx::ts_scope name(t); name.done == 0; name.done = 1)
 
-// Added for forwards compatibility
-#define upcxx_teamsplit teamsplit
+#ifdef UPCXX_SHORT_MACROS
+# define teamsplit upcxx_teamsplit
+#endif
 
+// These are no longer supported.
+// #define THREADS upcxx::ranks()
+// #define MYTHREAD upcxx::myrank()
+
+// Keep the warned version for a while for user code migration
+#ifndef THREADS
 #define THREADS upcxx::_threads_deprecated()
+#endif
+
+#ifndef MYTHREAD
 #define MYTHREAD upcxx::_mythread_deprecated()
+#endif

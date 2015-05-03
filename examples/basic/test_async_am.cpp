@@ -67,5 +67,5 @@ int main(int argc, char **argv)
     printf("test_async_am passed.\n")
   }
   
-  upcxx::finish();
+  upcxx::finalize();
 }

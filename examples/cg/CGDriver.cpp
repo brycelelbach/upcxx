@@ -103,7 +103,7 @@ void CGDriver::main(int argc, char **argv) {
   }
 
   if (invalidInput) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Allowed problem classes are A, B, b, C, D, S, and W.");
     }
     exit(1);
@@ -111,14 +111,14 @@ void CGDriver::main(int argc, char **argv) {
 
   // check that there are a power of two number of processors
   bool powerOfTwoProcs = true;
-  int tempNumOfProcs = THREADS;
+  int tempNumOfProcs = ranks();
   while (tempNumOfProcs > 1) {
     if (tempNumOfProcs % 2 == 1) powerOfTwoProcs = false;
     tempNumOfProcs /= 2;
   }
 
   if (!powerOfTwoProcs) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("The number of processors must be a power of two.");
     }
     exit(1);
@@ -129,10 +129,10 @@ void CGDriver::main(int argc, char **argv) {
   ndarray<double, 1 UNSTRIDED> rNorm(RD(1, Driver.niter+1));
   ndarray<double, 1 UNSTRIDED> zeta(RD(1, Driver.niter+1));
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("UPC++ NAS CG Benchmark- Parallel\n");
     println("Problem class = " << classArg);
-    println("Number of processors = " << THREADS);
+    println("Number of processors = " << ranks());
     println("Matrix dimension = " << Driver.na);
     println("Number of iterations = " << Driver.niter);
     println("\nIter \t\t ||r|| \t\t zeta");
@@ -179,7 +179,7 @@ void CGDriver::main(int argc, char **argv) {
     (*Driver.z) /= Driver.z->L2Norm();                           // normalize z's length to 1
     Driver.x->copy(*Driver.z);                                   // copy z into x
     // print values of rNorm and zeta at each outer iteration
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println(iterNum << "\t" << rNorm[iterNum] << "\t" << zeta[iterNum]);
     }
   }
@@ -189,14 +189,14 @@ void CGDriver::main(int argc, char **argv) {
 
   // end of profiling
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("");
   }
 
   // verify final zeta value
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     double final_zeta = zeta[Driver.niter];
-    double error = abs(final_zeta - Driver.zeta_verify_value);
+    double error = std::abs(final_zeta - Driver.zeta_verify_value);
     if (error <= Driver.epsilon) {
       println("VERIFICATION SUCCESSFUL");
       println("Zeta = " << final_zeta);
@@ -218,11 +218,11 @@ void CGDriver::main(int argc, char **argv) {
 
   double redTime = Vector::reduceTimer.secs();
   double minRedTime = reduce::min(redTime);
-  double meanRedTime = reduce::add(redTime) / THREADS;
+  double meanRedTime = reduce::add(redTime) / ranks();
   double maxRedTime = reduce::max(redTime);
   double commTime = redTime + Driver.A->spmvCommTime;
   double minCommTime = reduce::min(commTime);
-  double meanCommTime = reduce::add(commTime) / THREADS;
+  double meanCommTime = reduce::add(commTime) / ranks();
   double maxCommTime = reduce::max(commTime);
 #endif
 #ifdef COUNTERS_ENABLED
@@ -230,7 +230,7 @@ void CGDriver::main(int argc, char **argv) {
   long allTotalCount = reduce::add(myTotalCount);
 #endif
 	
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
 #ifdef TIMERS_ENABLED
     println("\nTotal:");
     println("Max time over all processors:\t\t " << maxTotalTime);

@@ -29,10 +29,10 @@ int task(int group)
 
 int spawn_tasks()
 {
-  finish {
+  upcxx_finish {
     int spawned = 0;
-    for (uint32_t i = 0; i < THREADS; i++) {
-      printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
+    for (uint32_t i = 0; i < ranks(); i++) {
+      printf("thread %d spawns a task at node %d\n", myrank(), i);
       async(i)(task, 2);
       spawned += 1;
     }
@@ -43,38 +43,38 @@ int spawn_tasks()
 
 int main(int argc, char **argv)
 {
-  printf("MYTHREAD %d will spawn %d tasks...\n",
-         MYTHREAD, 3*THREADS);
+  printf("myrank() %d will spawn %d tasks...\n",
+         myrank(), 3*ranks());
 
   int spawned = 0;
   for (int i = 0; i < 3; i++)
     task_count[i] = 0;
 
-  finish {
-    for (uint32_t i = 0; i < THREADS; i++) {
-      printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
+  upcxx_finish {
+    for (uint32_t i = 0; i < ranks(); i++) {
+      printf("thread %d spawns a task at node %d\n", myrank(), i);
       async(i)(task, 0);
       spawned += 1;
     }
 
-    printf("group %d complete? %d\n", 0, task_count[0] == THREADS);
+    printf("group %d complete? %d\n", 0, task_count[0] == ranks());
 
-    finish {
-      for (uint32_t i = 0; i < THREADS; i++) {
-        printf("thread %d spawns a task at node %d\n", MYTHREAD, i);
+    upcxx_finish {
+      for (uint32_t i = 0; i < ranks(); i++) {
+        printf("thread %d spawns a task at node %d\n", myrank(), i);
         async(i)(task, 1);
         spawned += 1;
       }
     }
 
-    printf("group %d complete? %d\n", 1, task_count[1] == THREADS);
+    printf("group %d complete? %d\n", 1, task_count[1] == ranks());
 
     spawned += spawn_tasks();
 
-    printf("group %d complete? %d\n", 2, task_count[2] == THREADS);
+    printf("group %d complete? %d\n", 2, task_count[2] == ranks());
   }
 
-  printf("group %d complete? %d\n", 0, task_count[0] == THREADS);
+  printf("group %d complete? %d\n", 0, task_count[0] == ranks());
 
   printf("All async tasks are done.\n");
 

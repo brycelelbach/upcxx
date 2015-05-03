@@ -93,12 +93,12 @@ void alltoall(global_ptr<T> src[],
               int np)
 {
   int i;
-  int myrank = MYTHREAD;
+  int myid = myrank();
 
   for (i=0; i<np; i++) {
-    int j = (myrank+i) % np;
+    int j = (myid+i) % np;
 #ifdef DEBUG
-    fprintf(stderr, "myrank %d: i %d, j %d ", myrank, i, j);
+    fprintf(stderr, "myid %d: i %d, j %d ", myid, i, j);
     cerr << "src[j] " << src[j] << " dst[j] " << dst[j] 
          << " count[j] " << count[j] << "\n";
 #endif
@@ -149,8 +149,8 @@ void local_transpose2(T *A, T *B, size_t n, size_t m)
   T tmp;
 
 #ifdef DEBUG
-  int myrank = my_cpu_place.id();
-  cerr << "myrank " << myrank  << " A: " << A << " B: " << B << "\n";
+  int myid = my_cpu_place.id();
+  cerr << "myid " << myid  << " A: " << A << " B: " << B << "\n";
 #endif
 
   // assume A anb B are in row-major storage format
@@ -215,7 +215,7 @@ void transpose(T *in,
   int i;
   size_t msgsz_per_p  = (nx/nprocs) * (ny/nprocs);
   size_t nx_per_p = nx / nprocs;
-  int myrank = MYTHREAD;
+  int myid = myrank();
   global_ptr<T> tmp_in;
   global_ptr<T> *W = new global_ptr<T> [nprocs];
   assert(W != NULL);
@@ -229,17 +229,17 @@ void transpose(T *in,
 
 #ifdef DEBUG
   for (int i=0; i<nprocs; i++) {
-    fprintf(stderr, "transpose: myrank %d, W[%d] ", myrank, i); 
+    fprintf(stderr, "transpose: myid %d, W[%d] ", myid, i); 
     cerr << W[i] << "\n";
   }
 #endif 
 
-  tmp_in = allocate<T>(my_node, nx_per_p * ny);
+  tmp_in = allocate<T>(myid, nx_per_p * ny);
   assert(tmp_in.raw_ptr() != NULL);
 
 #ifdef DEBUG
   // print the matrix before transpose
-  printf("P%d transpose: Before local_transpose2 (row-major storage):\n", myrank);
+  printf("P%d transpose: Before local_transpose2 (row-major storage):\n", myid);
   print_matrix<T>(cout, in, nx_per_p, ny);
 #endif
 
@@ -248,7 +248,7 @@ void transpose(T *in,
 #ifdef DEBUG
   // print the matrix before transpose
   printf("P%d transpose: After local_transpose2 (should be column-major):\n", 
-         myrank);
+         myid);
   print_matrix<T>(cout, (T *)tmp_in.raw_ptr(), ny, nx_per_p);
 #endif
 
@@ -259,17 +259,17 @@ void transpose(T *in,
 #ifdef DEBUG
   // print the matrix before transpose
   printf("P%d transpose: After local_transpose1 (should be block-cyclic):\n", 
-         myrank);
+         myid);
   print_matrix<T>(cout, (T *)tmp_in.raw_ptr(), ny, nx_per_p);
 #endif
 
   for (i=0; i<nprocs; i++) {
     src[i] = tmp_in + (i*msgsz_per_p) ;
-    dst[i] = W[i] + (myrank*msgsz_per_p);
+    dst[i] = W[i] + (myid*msgsz_per_p);
     count[i] = msgsz_per_p;
 
 #ifdef DEBUG
-    fprintf(stderr, "transpose: myrank %d, i %d ", myrank, i); 
+    fprintf(stderr, "transpose: myid %d, i %d ", myid, i); 
     cerr << "W[i] " << W[i] << " src[i] "<< src[i] << " dst[i] " << dst[i] 
                                                                         << "\n";
 #endif
@@ -279,24 +279,24 @@ void transpose(T *in,
 
 #ifdef DEBUG
   for (i=0; i<nprocs; i++) {
-    if (myrank == i) {
+    if (myid == i) {
       // print the matrix before transpose
       printf("P%d transpose: After alltoall:\n", 
-             myrank);
-      print_matrix<T>(cout, (T *)W[myrank].raw_ptr(), ny, nx_per_p);
+             myid);
+      print_matrix<T>(cout, (T *)W[myid].raw_ptr(), ny, nx_per_p);
     }
     barrier();
   }
 #endif
 
-  local_transpose2<T>((T *)W[myrank].raw_ptr(), out, ny, nx_per_p);
+  local_transpose2<T>((T *)W[myid].raw_ptr(), out, ny, nx_per_p);
 
 #ifdef DEBUG
   for (i=0; i<nprocs; i++) {
-    if (myrank == i) {
+    if (myid == i) {
       // print the matrix before transpose
       printf("P%d transpose: After the second local_transpose2:\n", 
-             myrank);
+             myid);
       print_matrix<T>(cout, out, nx_per_p, ny);
     }
     barrier();
@@ -368,10 +368,10 @@ void fft2d(complex_t *my_A,
            size_t ny, // # of columns
            global_ptr<global_ptr<complex_t> > all_Ws)
 {
-  int nprocs = THREADS;
+  int nprocs = ranks();
   complex_t *tmp;
   fft_plan_t planX, planY;
-  int myrank = MYTHREAD;
+  int myid = myrank();
   size_t nx_per_p = nx / nprocs;
   size_t ny_per_p = ny / nprocs;
   size_t size_per_p = nx_per_p * ny;
@@ -383,7 +383,7 @@ void fft2d(complex_t *my_A,
 
   // generate random data for the 2-D input array
   std::generate(my_A, &my_A[nx_per_p * ny], random_complex);
-  init_array(my_A, size_per_p, myrank * size_per_p);
+  init_array(my_A, size_per_p, myid * size_per_p);
 
   // Autotune the FFT performance
   complex_t *pIn = my_A;
@@ -433,10 +433,10 @@ void fft2d(complex_t *my_A,
 
 #ifdef DEBUG
   for (int i=0; i<nprocs; i++) {
-    if (myrank == i) {
-      printf("myrank %d: A: \n", myrank);
+    if (myid == i) {
+      printf("myid %d: A: \n", myid);
       print_matrix(cout, (complex_t *)my_A, nx_per_p, ny);
-      printf("myrank %d: Z: \n", myrank);
+      printf("myid %d: Z: \n", myid);
       print_matrix(cout, (complex_t *)my_Z, nx_per_p, ny);
     }
     barrier();
@@ -449,10 +449,10 @@ void fft2d(complex_t *my_A,
    * need to be copied to local for comparison.
    */
 #ifdef VERIFY
-  if (myrank == 0) {
+  if (myid == 0) {
     global_ptr<complex_t> all_in, all_out;
-    all_in = allocate<complex_t>(myrank(), nx * ny);
-    all_out = allocate<complex_t>(myrank(), nx * ny);
+    all_in = allocate<complex_t>(myid, nx * ny);
+    all_out = allocate<complex_t>(myid, nx * ny);
     for (int i = 0; i < nprocs; i++) {
       async_copy(Input[i], all_in + i * size_per_p, size_per_p);
       async_copy(Output[i], all_out + i * size_per_p, size_per_p);
@@ -468,13 +468,13 @@ int main(int argc, char **argv)
 {
   double starttime;
   int i;
-  int nprocs = THREADS;
+  int nprocs = ranks();
   // event_t *e[nprocs];
   Input = new global_ptr<complex_t> [nprocs];
   Output = new global_ptr<complex_t> [nprocs];
   size_t nx, ny;
   global_ptr<global_ptr<complex_t> > all_Ws;
-  all_Ws = allocate< global_ptr<complex_t> > (my_node, nprocs);
+  all_Ws = allocate< global_ptr<complex_t> > (myrank(), nprocs);
   global_ptr<complex_t> *W
   = (global_ptr<complex_t> *)all_Ws.raw_ptr();
 
@@ -490,9 +490,9 @@ int main(int argc, char **argv)
 
   // allocate memory with 1-D data partitioning
   for (i=0; i<nprocs; i++) {
-    Input[i] = allocate<complex_t>(node(i), nx_per_p * ny);
-    Output[i] = allocate<complex_t>(node(i), nx_per_p * ny);
-    W[i] = allocate<complex_t>(node(i), nx_per_p * ny);
+    Input[i] = allocate<complex_t>(i, nx_per_p * ny);
+    Output[i] = allocate<complex_t>(i, nx_per_p * ny);
+    W[i] = allocate<complex_t>(i, nx_per_p * ny);
   }
 
 #ifdef DEBUG
@@ -513,7 +513,7 @@ int main(int argc, char **argv)
         ny,
         all_Ws);
   }
-  upcxx::wait();
+  upcxx::async_wait();
   
   double elapsedtime = mysecond() - starttime;
   printf("fft2d (nx %lu, ny %lu), np %d, time = %f s\n",

@@ -21,14 +21,16 @@
 # ifdef USE_ARRAYS
 #  include "../../include/upcxx-arrays/array.h"
 # endif
-# define barrier() MPI_Barrier(MPI_COMM_WORLD)
-# define async_wait()
-# define allocate malloc
-static int THREADS, MYTHREAD;
+static void barrier() { MPI_Barrier(MPI_COMM_WORLD); }
+static void async_wait() {}
+static void *allocate(size_t s) { return malloc(s); }
+static int num_threads, thread_id;
+static int ranks() { return num_threads; }
+static int myrank() { return thread_id; }
 static void init(int *argc, char ***argv) {
   MPI_Init(argc, argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &THREADS);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYTHREAD);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_threads);
+  MPI_Comm_rank(MPI_COMM_WORLD, &thread_id);
 }
 static void finalize() {
   MPI_Finalize();
@@ -59,11 +61,11 @@ struct reduce {
 };
 #else
 # include "../../include/upcxx-arrays/array.h"
-# define barrier()
-# define async_wait()
-# define THREADS 1
-# define MYTHREAD 0
-# define allocate malloc
+static void barrier() {}
+static void async_wait() {}
+static int ranks() { return 1; }
+static int myrank() { return 0; }
+static void *allocate(size_t s) { return malloc(s); }
 static void init(int *argc, char ***argv) {}
 static void finalize() {}
 

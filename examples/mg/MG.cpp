@@ -644,7 +644,7 @@ void MG::updateBorder(Grid &gridA, int level, int iterationNum, int callNumber) 
     // end of the 6 directions update border case
   }
   // case where we are below THRESHOLD_LEVEL
-  else if (MYTHREAD == 0) {
+  else if (myrank() == 0) {
     RectDomain<3> myDomain = myPoints.domain();
 	    
     // negative x direction
@@ -904,7 +904,7 @@ void MG::coarsen(Grid &gridA, Grid &gridB, int level, int iterationNum) {
 
     barrier();
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       foreach (p, gridB.localBuffersOnProc0.domain()) {
         gridB.points[PT(0, 0, 0)].copy(gridB.localBuffersOnProc0[p].constrict(gridB.localBuffersOnProc0[p].domain().shrink(1)));
       };
@@ -937,7 +937,7 @@ void MG::prolongate(Grid &gridA, Grid &gridB, int level, int iterationNum) {
 
     TIMER_START(myTimer);
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       foreach (p, gridA.localBuffersOnProc0.domain()) {
         gridA.localBuffersOnProc0[p].copy(gridA.points[PT(0, 0, 0)]);
       };
@@ -1135,13 +1135,13 @@ void MG::resetProfile() {
 }
 
 void MG::printSummary() {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\nSUMMARY- min, mean, max for each component");
     println("All times in seconds.\n");
   }
 
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_L2NORM:
         println("L2 NORM:");
@@ -1195,9 +1195,9 @@ void MG::printSummary() {
     double sumTotalComponentTime = reduce::add(totalComponentTime);
     double maxTotalComponentTime = reduce::max(totalComponentTime);
 
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Time: " << minTotalComponentTime << ", " <<
-              (sumTotalComponentTime/THREADS) << ", " <<
+              (sumTotalComponentTime/ranks()) << ", " <<
               maxTotalComponentTime);
     }
 #endif
@@ -1214,9 +1214,9 @@ void MG::printSummary() {
       long sumTotalComponentCount = reduce::add(totalComponentCount);
       long maxTotalComponentCount = reduce::max(totalComponentCount);
 
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("Count: " << minTotalComponentCount << ", " <<
-                (sumTotalComponentCount/THREADS) << ", " <<
+                (sumTotalComponentCount/ranks()) << ", " <<
                 maxTotalComponentCount);
       }
     }
@@ -1225,13 +1225,13 @@ void MG::printSummary() {
 }
 
 void MG::printProfile() {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\n\nFULL PROFILE");
     println("All times in seconds.\n");
   }
 
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_L2NORM:
         println("L2 NORM:");
@@ -1277,14 +1277,14 @@ void MG::printProfile() {
     int levelIdxMin = myTimes[timerIdx].domain().min()[1];
     int levelIdxMax = myTimes[timerIdx].domain().max()[1];
     for (int levelIdx=levelIdxMax; levelIdx<=levelIdxMax; levelIdx++) {
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("LEVEL " << levelIdx << ": ");
       }
 
 #ifdef TIMERS_ENABLED
       if ((timerIdx <= numCounters) && (levelIdx < THRESHOLD_LEVEL)) {
         // computation code on proc 0 only
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           double lmin =
             myTimes[timerIdx][levelIdx][myTimes[timerIdx][levelIdx].domain().min()];
           double lmax = lmin;
@@ -1375,20 +1375,20 @@ void MG::printProfile() {
         double gmax3 = reduce::max(lmax3);
         double gsum3 = reduce::add(lsum3);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("YZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
           println("Min Time Across Procs:\t" << gmin1);
-          double gmean1 = gsum1/(numReadingsPerProc1*THREADS);
+          double gmean1 = gsum1/(numReadingsPerProc1*ranks());
           println("Mean Time Across Procs:\t" << gmean1);
           println("Max Time Across Procs:\t" << gmax1);
           println("XZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc2);
           println("Min Time Across Procs:\t" << gmin2);
-          double gmean2 = gsum2/(numReadingsPerProc2*THREADS);
+          double gmean2 = gsum2/(numReadingsPerProc2*ranks());
           println("Mean Time Across Procs:\t" << gmean2);
           println("Max Time Across Procs:\t" << gmax2);
           println("XY-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc3);
           println("Min Time Across Procs:\t" << gmin3);
-          double gmean3 = gsum3/(numReadingsPerProc3*THREADS);
+          double gmean3 = gsum3/(numReadingsPerProc3*ranks());
           println("Mean Time Across Procs:\t" << gmean3);
           println("Max Time Across Procs:\t" << gmax3 << "\n");
         }		
@@ -1439,15 +1439,15 @@ void MG::printProfile() {
         double gmax2 = reduce::max(lmax2);
         double gsum2 = reduce::add(lsum2);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("XZ-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc1);
           println("Min Time Across Procs:\t" << gmin1);
-          double gmean1 = gsum1/(numReadingsPerProc1*THREADS);
+          double gmean1 = gsum1/(numReadingsPerProc1*ranks());
           println("Mean Time Across Procs:\t" << gmean1);
           println("Max Time Across Procs:\t" << gmax1);
           println("XY-plane:\nNum Readings Per Proc:\t" << numReadingsPerProc2);
           println("Min Time Across Procs:\t" << gmin2);
-          double gmean2 = gsum2/(numReadingsPerProc2*THREADS);
+          double gmean2 = gsum2/(numReadingsPerProc2*ranks());
           println("Mean Time Across Procs:\t" << gmean2);
           println("Max Time Across Procs:\t" << gmax2 << "\n");
         }
@@ -1490,13 +1490,13 @@ void MG::printProfile() {
           };
 			
           double meanMins1 = sumMins1/(domainRange.size()/2);
-          double meanMeans1 = (sumSums1/((domainRange.size()/2)*THREADS));
+          double meanMeans1 = (sumSums1/((domainRange.size()/2)*ranks()));
           double meanMaxs1 = sumMaxs1/(domainRange.size()/2);
           double meanMins2 = sumMins2/(domainRange.size()/2);
-          double meanMeans2 = (sumSums2/((domainRange.size()/2)*THREADS));
+          double meanMeans2 = (sumSums2/((domainRange.size()/2)*ranks()));
           double meanMaxs2 = sumMaxs2/(domainRange.size()/2);
 
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             println("Threshold Barrier for Prolongate (one proc -> many procs):");
             println("Num Readings Per Proc:\t" << (domainRange.size()/2));
             println("Mean Min Wait Time:\t" << meanMins1);
@@ -1541,10 +1541,10 @@ void MG::printProfile() {
         };
 
         double meanMins = sumMins/domainRange.size();
-        double meanMeans = (sumSums/(domainRange.size()*THREADS));
+        double meanMeans = (sumSums/(domainRange.size()*ranks()));
         double meanMaxs = sumMaxs/domainRange.size();
 
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t" << domainRange.size());
           println("Mean Min Wait Time:\t" << meanMins);
           println("Mean Mean Wait Time:\t" << meanMeans);
@@ -1574,10 +1574,10 @@ void MG::printProfile() {
         double gmax = reduce::max(lmax);
         double gsum = reduce::add(lsum);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);
           println("Min Time Across Procs:\t" << gmin);
-          double gmean = gsum/(numReadingsPerProc*THREADS);
+          double gmean = gsum/(numReadingsPerProc*ranks());
           println("Mean Time Across Procs:\t" << gmean);
           println("Max Time Across Procs:\t" << gmax << "\n");
         }
@@ -1588,7 +1588,7 @@ void MG::printProfile() {
       if (timerIdx <= numCounters) {
         if (levelIdx < THRESHOLD_LEVEL) {
           // computation only on proc 0
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             long lmin =
               myCounts[timerIdx][levelIdx][myCounts[timerIdx][levelIdx].domain().min()];
             long lmax = lmin;
@@ -1638,10 +1638,10 @@ void MG::printProfile() {
           long gmax = reduce::max(lmax);
           long gsum = reduce::add(lsum);
 		    
-          if (MYTHREAD == 0) {
+          if (myrank() == 0) {
             println("Num Readings Per Proc:\t" << numReadingsPerProc);
             println("Min Count Across Procs:\t" << gmin);
-            long gmean = gsum/(numReadingsPerProc*THREADS);
+            long gmean = gsum/(numReadingsPerProc*ranks());
             println("Mean Count Across Proc:\t" << gmean);
             println("Max Count Across Procs:\t" << gmax << "\n");
           }

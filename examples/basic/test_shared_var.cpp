@@ -23,20 +23,20 @@ int main (int argc, char **arsv)
 {
   init(&argc, &arsv);
   
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     sv = 1;
   }
   barrier();
 
   /*
-  cout << "MYTHREAD: " << MYTHREAD << " global shared variable ga = " << sv << endl;
+  cout << "myrank(): " << myrank() << " global shared variable ga = " << sv << endl;
   barrier();
   */
 
-  for (uint32_t i=0; i<THREADS; i++) {
-    if (MYTHREAD == i) {
+  for (uint32_t i=0; i<ranks(); i++) {
+    if (myrank() == i) {
       sv = sv + 1;
-      cout << "MYTHREAD: " << MYTHREAD << " ga = " << sv << "\n";
+      cout << "myrank(): " << myrank() << " ga = " << sv << "\n";
       barrier();
     } else {
       barrier();
@@ -53,9 +53,9 @@ int main (int argc, char **arsv)
     sv = sv + 1;
   }
   barrier();
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     printf("shared data access without a lock: expected result %d, actual %d\n",
-           100*THREADS, (int)sv);
+           100*ranks(), (int)sv);
   }
   barrier();
 
@@ -69,9 +69,9 @@ int main (int argc, char **arsv)
     sv_lock.unlock();
   }
   barrier();
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     printf("shared data access with a lock: expected result %d, actual %d\n",
-           100*THREADS, (int)sv);
+           100*ranks(), (int)sv);
   }
   barrier();
 

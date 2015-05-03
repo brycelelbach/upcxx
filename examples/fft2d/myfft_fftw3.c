@@ -56,7 +56,7 @@ void fft_plan_1d(fftdir_t direction,
   fftw_plan_with_nthreads(num_threads);
 #endif
   
-  lib_plan = malloc(sizeof(fftw_plan));
+  lib_plan = (fftw_plan *)malloc(sizeof(fftw_plan));
   *lib_plan = fftw_plan_many_dft(1, &len, numffts,
                                (fftw_complex*) sample_inarray, NULL, instride, indist,
                                (fftw_complex*) sample_outarray, NULL, outstride, outdist, 

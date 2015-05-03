@@ -52,7 +52,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
   }
 
   ndarray<ndarray<double, 3, global GUNSTRIDED>,
-          1 UNSTRIDED> tempPoints(RD(0, (int)THREADS));
+          1 UNSTRIDED> tempPoints(RD(0, (int)ranks()));
   tempPoints.exchange(myPoints);
 
   RectDomain<3> blocks_rd(PT(0, 0, 0), numBlocksInGridSide);
@@ -63,7 +63,7 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
   // create "myPointsOnProc0" and "bufferForProc0" if needed
   if (proc0BuffersNeeded) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       localBuffersOnProc0 =
         ndarray<ndarray<double, 3, global GUNSTRIDED>, 3 UNSTRIDED>(blocks_rd);
       upcxx_foreach (p, localBuffersOnProc0.domain()) {
@@ -129,9 +129,9 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
     // create the distributed arrays "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
-            1 UNSTRIDED> tempOutBuffer(RD(0, (int)THREADS));
+            1 UNSTRIDED> tempOutBuffer(RD(0, (int)ranks()));
     ndarray<ndarray<ndarray<double, 3, global>, 1, global GUNSTRIDED>,
-            1 UNSTRIDED> tempInBuffer(RD(0, (int)THREADS));
+            1 UNSTRIDED> tempInBuffer(RD(0, (int)ranks()));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);
@@ -191,9 +191,9 @@ Grid::Grid(int level, bool ghostCellsNeeded, bool proc0BuffersNeeded) {
 
     // create the distributed array buffers "outBuffers" and "inBuffers"
     ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
-            1 UNSTRIDED> tempOutBuffer(RD(0, (int)THREADS));
+            1 UNSTRIDED> tempOutBuffer(RD(0, (int)ranks()));
     ndarray<ndarray<ndarray<double, 3, global>, 3, global GUNSTRIDED>,
-            1 UNSTRIDED> tempInBuffer(RD(0, (int)THREADS));
+            1 UNSTRIDED> tempInBuffer(RD(0, (int)ranks()));
 
     tempOutBuffer.exchange(myOutBuffer);
     tempInBuffer.exchange(myInBuffer);
@@ -222,13 +222,13 @@ void Grid::init() {
   int numBlocksInGridSide_z = 1;
   int numBlocks = 1;
 	
-  while (2*numBlocks <= THREADS) {
+  while (2*numBlocks <= ranks()) {
     numBlocksInGridSide_x *= 2;
     numBlocks *= 2;
-    if (2*numBlocks <= THREADS) {
+    if (2*numBlocks <= ranks()) {
       numBlocksInGridSide_y *= 2;
       numBlocks *= 2;
-      if (2*numBlocks <= THREADS) {
+      if (2*numBlocks <= ranks()) {
         numBlocksInGridSide_z *= 2;
         numBlocks *= 2;
       }
@@ -241,7 +241,7 @@ void Grid::init() {
                            numBlocksInGridSide_z);
 
   // initialize myBlockPos (this does the reverse of procForBlockPosition)
-  int temp = MYTHREAD;
+  int temp = myrank();
   int blockPos_x = temp / (numBlocksInGridSide[2] * numBlocksInGridSide[3]);
   temp -= blockPos_x * (numBlocksInGridSide[2] * numBlocksInGridSide[3]);
   int blockPos_y = temp / numBlocksInGridSide[3];

@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   *counter_ptr = 0;
 
   upcxx::barrier();
-  finish {
+  upcxx_finish {
     for (i=0; i<3; i++) {
       for (j=0; j<2; j++) {
         upcxx::rank_t src_rank = upcxx::myrank();

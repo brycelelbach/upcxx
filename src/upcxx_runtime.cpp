@@ -223,6 +223,13 @@ namespace upcxx
     while (advance() > 0);
     barrier();
     // gasnet_exit(0);
+    extern bool _threads_deprecated_warned;
+    if (global_myrank() == 0 && _threads_deprecated_warned) {
+      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+                << "         use upcxx::ranks() and upcxx::myranks() instead!"
+                << "\n";
+    }
+    
     return UPCXX_SUCCESS;
   }
 
@@ -260,7 +267,7 @@ namespace upcxx
     assert(in_task_queue != NULL);
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << myrank() << " is about to enqueue an async task.\n";
+    cerr << "Rank " << global_myrank() << " is about to enqueue an async task.\n";
     cerr << *task << endl;
 #endif
     // enqueue the async task
@@ -279,7 +286,7 @@ namespace upcxx
     gasnet_node_t src;
     gasnet_AMGetMsgSource(token, &src);
     fprintf(stderr, "Rank %u receives async done from %u",
-            myrank(), src);
+            global_myrank(), src);
 #endif
     
     if (am->ack_event != NULL) {
@@ -287,7 +294,7 @@ namespace upcxx
       // am->future->_rv = am->_rv;
 #ifdef UPCXX_DEBUG
       fprintf(stderr, "Rank %u receives async done from %u. event count %d\n",
-              myrank(), src, am->ack_event->_count);
+              global_myrank(), src, am->ack_event->_count);
 #endif
     }
   }
@@ -307,10 +314,10 @@ namespace upcxx
       gasnet_hsl_unlock(&in_task_queue_lock);
 
       assert (task != NULL);
-      assert (task->_callee == myrank());
+      assert (task->_callee == global_myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << "Rank " << myrank() << " is about to execute async task.\n";
+      cerr << "Rank " << global_myrank() << " is about to execute async task.\n";
       cerr << *task << "\n";
 #endif
 
@@ -320,12 +327,12 @@ namespace upcxx
         }
         
         if (task->_ack != NULL) {
-          if (task->_caller == myrank()) {
+          if (task->_caller == global_myrank()) {
             // local event acknowledgment
             task->_ack->decref(); // need to enqueue callback tasks
 #ifdef UPCXX_DEBUG
             fprintf(stderr, "Rank %u completes a local task. event count %d\n",
-                    myrank(), task->_ack->_count);
+                    global_myrank(), task->_ack->_count);
 #endif
           } else {
             // send an ack message back to the caller of the async task
@@ -357,10 +364,10 @@ namespace upcxx
       task = (async_task *)queue_dequeue(outq);
       gasnet_hsl_unlock(&out_task_queue_lock);
       assert (task != NULL);
-      assert (task->_callee != myrank());
+      assert (task->_callee != global_myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << "Rank " << myrank() << " is about to send outgoing async task.\n";
+      cerr << "Rank " << global_myrank() << " is about to send outgoing async task.\n";
       cerr << *task << endl;
 #endif
 
@@ -400,7 +407,7 @@ namespace upcxx
         // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
         event *e = (*it);
         assert(e != NULL);
-        // fprintf(stderr, "P %u Advance event: %p\n", myrank(), e);
+        // fprintf(stderr, "P %u Advance event: %p\n", global_myrank(), e);
         e->async_try();
         break;
       }
@@ -425,7 +432,7 @@ namespace upcxx
   void signal_exit()
   {
     // Only the master process should wait for incoming tasks
-    assert(myrank() == 0);
+    assert(global_myrank() == 0);
 
     for (rank_t i = 1; i < ranks(); i++) {
       async(i)(signal_exit_am);
@@ -436,7 +443,7 @@ namespace upcxx
   void wait_for_incoming_tasks()
   {
     // Only the worker processes should wait for incoming tasks
-    assert(myrank() != 0);
+    assert(global_myrank() != 0);
       
     // Wait until the master process sends out an exit signal 
     while (!exit_signal) {

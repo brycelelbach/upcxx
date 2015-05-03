@@ -9,7 +9,7 @@
 #include <type_traits> // for remove reference
 
 #include "gasnet_api.h"
-#include "async.h"
+// #include "async.h"
 
 // #define UPCXX_DEBUG
 
@@ -19,11 +19,12 @@ namespace upcxx
 
   // obj is a global_ref_base or a global_ptr of the object.
   // m is a field/member of the global object.
-  #define memberof(obj, m) \
+  #define upcxx_memberof(obj, m) \
     upcxx::make_memberof((obj).where(), (obj).raw_ptr()->m)
 
-  // Added for forwards compatibility
-  #define upcxx_memberof memberof
+  #ifdef UPCXX_SHORT_MACROS
+  # define memberof upcxx_memberof
+  #endif
 
   /// \cond SHOW_INTERNAL
   template<typename T, typename place_t = rank_t>
@@ -40,7 +41,7 @@ namespace upcxx
 
     global_ref_base& operator = (const T &rhs)
     {
-      if (_pla == myrank()) {
+      if (_pla == global_myrank()) {
         *_ptr = rhs;
       } else {
         // if not local
@@ -52,7 +53,7 @@ namespace upcxx
     global_ref_base& operator = (const global_ref_base<T> &rhs)
     {
       T val = rhs.get();
-      if (_pla == myrank()) {
+      if (_pla == global_myrank()) {
         *_ptr = val;
       } else {
         // if not local
@@ -71,7 +72,7 @@ namespace upcxx
 #define UPCXX_GLOBAL_REF_ASSIGN_OP(OP) \
     global_ref_base<T>& operator OP (const T &rhs) \
     { \
-      if (_pla == myrank()) { \
+      if (_pla == global_myrank()) { \
         *_ptr OP rhs; \
       } else { \
        T tmp; \
@@ -116,7 +117,7 @@ namespace upcxx
 
     T get() const
     {
-      if (_pla == myrank()) {
+      if (_pla == global_myrank()) {
         return (*_ptr);
       } else {
         // if not local
@@ -128,7 +129,7 @@ namespace upcxx
 
     operator T() const
     {
-      if (_pla == myrank()) {
+      if (_pla == global_myrank()) {
         return (*_ptr);
       } else {
         // if not local

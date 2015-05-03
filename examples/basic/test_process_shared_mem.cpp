@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 
   dom.boxes.init(dom.num_boxes, 1); // cyclic distribution
 
-  // dom.boxes.init(dom.num_boxes, dom.num_boxes/THREADS); // blocked distribution
+  // dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
 
   for (int i=upcxx::myrank(); i<dom.num_boxes; i += upcxx::ranks()) {
     dom.boxes[i] = upcxx::allocate<Box>(upcxx::myrank(), 1);
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   upcxx::barrier();
 
   // If I'm the first guy in the shared-memory node, I do the setup.
-  if (MYTHREAD == 0) {
+  if (upcxx::myrank() == 0) {
     for (int i=0; i<3; i++) {
       for (int j=0; j<3; j++) {
         for (int k=0; k<3; k++) {
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   upcxx::barrier();
 
   // If I'm the last guy in the shared-memory node, I print out data to verify
-  if (MYTHREAD == 1) {
+  if (upcxx::myrank() == 1) {
     for (int i=0; i<3; i += 1) {
       for (int j=0; j<3; j += 1) {
         for (int k=0; k<3; k += 1) {

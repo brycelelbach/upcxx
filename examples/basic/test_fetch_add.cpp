@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     }
   }
 
-  printf("Rank %u passed test_fetch_add!\n", myrank());
+  printf("Rank %u passed test_fetch_add!\n", (unsigned int) myrank());
   upcxx::finalize();
 
   return 0;

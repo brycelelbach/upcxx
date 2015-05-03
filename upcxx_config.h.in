@@ -5,5 +5,14 @@
 /* define if C++11 features are enabled */
 #undef UPCXX_HAVE_CXX11
 
+/* define if libcxx implements std::is_trivially_destructible */
+#undef UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE
+
+/* define if libcxx implements std::initializer_list */
+#undef UPCXX_HAVE_INITIALIZER_LIST
+
+/* define if short-names feature is enabled */
+#undef UPCXX_SHORT_MACROS
+
 /* define if Cray DMAPP features are enabled */
 #undef UPCXX_USE_DMAPP

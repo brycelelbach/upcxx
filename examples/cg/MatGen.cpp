@@ -27,7 +27,7 @@ SparseMat *MatGen::Initialize(int na, int nonzer, double shift, double rcond) {
   int lastcol = Util::colEnd + 1;
 
   // initialization of problem
-  int nz = na*(nonzer+1)*(nonzer+1)/THREADS + na*(nonzer+2+THREADS/256)/numProcCols;
+  int nz = na*(nonzer+1)*(nonzer+1)/ranks() + na*(nonzer+2+ranks()/256)/numProcCols;
   colidx = ndarray<int, 1 UNSTRIDED>(RD(0, nz+1));
   rowstr = ndarray<int, 1 UNSTRIDED>(RD(0, na+2));
   iv = new int[2*na+2];

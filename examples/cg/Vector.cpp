@@ -25,13 +25,13 @@ Vector::Vector() {
   assert(initialized); // ensure Vector class is initialized
 
   // form "localVectors" distributed array
-  allArrays = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)THREADS));
+  allArrays = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)ranks()));
   ndarray<double, 1 UNSTRIDED> myArray(RD(iStart, iEnd+1));
   allArrays.exchange(myArray);
 
 #if !defined(VTEAMS)
   // form the allResults array
-  allResults = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)THREADS));
+  allResults = ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)ranks()));
   // for myResult's first index, [0:log2numProcCols] are actual sums,
   // while [-log2numProcCols:-1] are data gathered from other procs
   ndarray<double, 1 UNSTRIDED> myResults(RD(-log2numProcCols, log2numProcCols+1));
@@ -63,8 +63,8 @@ void Vector::initialize(int paramN) {
   int divFactor = numProcCols;
   reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RD(0, log2numProcCols));
   for (int i = 0; i < log2numProcCols; i++) {
-    int procColPos = MYTHREAD % numProcCols;
-    int procRowPos = MYTHREAD / numProcCols;
+    int procColPos = myrank() % numProcCols;
+    int procRowPos = myrank() / numProcCols;
     int j = ((procColPos + divFactor/2) % divFactor) + procColPos / divFactor * divFactor;
     reduceExchangeProc[i] = Util::posToProcId(procRowPos, j);//procRowPos * numProcCols + j;
     divFactor /= 2;
@@ -91,7 +91,7 @@ double Vector::dot(const Vector &a) {
 # ifdef FORCE_VREDUCE
   src[0] = myResult;
 # endif
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     barrier(); // added
 # if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
@@ -105,7 +105,7 @@ double Vector::dot(const Vector &a) {
 #else // VTEAMS
   TIMER_START(reduceTimer);
   ndarray<double, 1 UNSTRIDED> myResults =
-    (ndarray<double, 1 UNSTRIDED>) allResults[(int) MYTHREAD];
+    (ndarray<double, 1 UNSTRIDED>) allResults[(int) myrank()];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {
@@ -137,7 +137,7 @@ double Vector::L2Norm() {
 # ifdef FORCE_VREDUCE
   src[0] = myResult;
 # endif
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     barrier(); // added
 # if !defined(FORCE_VREDUCE)
     myResult = reduce::add(myResult0); // myResult0 just to be safe
@@ -151,7 +151,7 @@ double Vector::L2Norm() {
 #else // VTEAMS
   TIMER_START(reduceTimer);
   ndarray<double, 1 UNSTRIDED> myResults =
-    (ndarray<double, 1 UNSTRIDED>) allResults[(int) MYTHREAD];
+    (ndarray<double, 1 UNSTRIDED>) allResults[(int) myrank()];
   myResults[0] = myResult;
 
   for (int i=0; i < log2numProcCols; i++) {

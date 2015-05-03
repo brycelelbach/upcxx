@@ -63,29 +63,29 @@ int main(int argc, char **argv) {
   int total_profit, total_weight, book_i, n_sold;
   timer solve_timer, backtrack_timer;
   ndarray<ndarray<int, 2, global GUNSTRIDED>,
-          1 UNSTRIDED> all_totals(RD(0, (int)THREADS));
+          1 UNSTRIDED> all_totals(RD(0, (int)ranks()));
   ndarray<ndarray<bool, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> all_use_book(RD(0, (int)THREADS));
+          1 UNSTRIDED> all_use_book(RD(0, (int)ranks()));
   ndarray<int, 1, global GUNSTRIDED> weight0, profit0;
   int my_books, my_start_book, my_end_book;
-  n_blocks = THREADS;
+  n_blocks = ranks();
 
   get_opts(argc, argv);
-  books_per_proc = (n_books + THREADS - 1) / THREADS;
-  my_books = ((THREADS - 1 == MYTHREAD) &&
+  books_per_proc = (n_books + ranks() - 1) / ranks();
+  my_books = ((ranks() - 1 == myrank()) &&
               (n_books % books_per_proc != 0)) ?
     (n_books % books_per_proc) : books_per_proc;
-  my_start_book = books_per_proc * MYTHREAD;
+  my_start_book = books_per_proc * myrank();
   my_end_book = my_start_book + my_books - 1;
   debug("" << my_books, 1);
 
   cap_per_block = (bag_cap + 1) / n_blocks;
-  if (MYTHREAD == 0)
+  if (myrank() == 0)
     println("cap per block: " << cap_per_block);
 
   weight = ndarray<int, 1 UNSTRIDED>(RD(0, n_books));
   profit = ndarray<int, 1 UNSTRIDED>(RD(0, n_books));
-  if (MYTHREAD != 0) {
+  if (myrank() != 0) {
     use_book =
       ndarray<bool, 1 UNSTRIDED>(RD(my_start_book, my_end_book+1));
   } else {
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
       ndarray<bool, 1 UNSTRIDED>(RD(0, n_books));
   }
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     // solve_timer = new Timer();
     // backtrack_timer = new Timer();
     init_books();
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
   all_use_book.exchange(use_book);
   // weight0 = broadcast(weight, 0);
   // profit0 = broadcast(profit, 0);
-  // if (MYTHREAD != 0) {
+  // if (myrank() != 0) {
   //   weight.copy(weight0);
   //   profit.copy(profit0);
   // }
@@ -116,39 +116,39 @@ int main(int argc, char **argv) {
   broadcast(profit, profit, 0);
 
   barrier();
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     solve_timer.reset();
     backtrack_timer.reset();
   }
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     solve_timer.start();
   }
   total_profit = solve(n_books, bag_cap, weight, profit, total,
                        all_totals, my_books, my_start_book,
                        my_end_book, n_blocks);
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     solve_timer.stop();
   }
 
   barrier();
   debug("G", 1);
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     backtrack_timer.start();
   }
   backtrack(n_books, bag_cap , weight, total, use_book,
             my_start_book, my_end_book);
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     ndarray<bool, 1, global GUNSTRIDED> puse_book;
-    for (int p = 1; p < THREADS; p++) {
+    for (int p = 1; p < ranks(); p++) {
       puse_book = all_use_book[p];
       use_book.copy(puse_book);
     }
     backtrack_timer.stop();
   }
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("Total profit: " << total_profit);
     println("Using books:");
     total_weight = n_sold = 0;
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
       }
     if (total_profit != 0)
       println("Profit didn't balance!");
-    println("Number of processors: " << THREADS);
+    println("Number of processors: " << ranks());
     println("Total number of books: " << n_books);
     println("Max book weight: " << max_random_weight);
     println("Max book profit: " << max_random_profit);
@@ -204,7 +204,7 @@ static int solve(int n_books, int bag_cap,
   int my_start_cap, my_end_cap;
   int total_profit;
   debug("books: " << my_start_book << " " << my_end_book, 1);
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     for (cap_j = 0; cap_j <= bag_cap; ++cap_j) {
       if (weight[0] > cap_j)
         /* Doesn't fit. */
@@ -215,19 +215,19 @@ static int solve(int n_books, int bag_cap,
     my_start_book++;
   }
   debug("A", 1);
-  start_iter = MYTHREAD;
-  end_iter = MYTHREAD + n_blocks - 1;
+  start_iter = myrank();
+  end_iter = myrank() + n_blocks - 1;
   debug(start_iter << " " << end_iter, 1);
-  for (iter = 0; iter < THREADS + n_blocks - 1; ++iter) {
+  for (iter = 0; iter < ranks() + n_blocks - 1; ++iter) {
     barrier();
     debug("B " << iter, 2);
     if (start_iter <= iter && end_iter >= iter) {
       debug("D", 2);
-      block_no = iter - MYTHREAD;
+      block_no = iter - myrank();
       my_start_cap = block_no * cap_per_block;
       my_end_cap = (block_no == n_blocks - 1 ? bag_cap :
                     my_start_cap + cap_per_block - 1);
-      if (MYTHREAD != 0) {
+      if (myrank() != 0) {
         copyTotal(all_totals, total, my_start_book-1,
                   my_start_cap, my_end_cap);
       }
@@ -253,10 +253,10 @@ static int solve(int n_books, int bag_cap,
   }
   barrier();
   debug("C", 1);
-  if (MYTHREAD == THREADS - 1) {
+  if (myrank() == ranks() - 1) {
     total_profit = getTotal(total, n_books-1, bag_cap);
   }
-  total_profit = broadcast(total_profit, THREADS - 1);
+  total_profit = broadcast(total_profit, ranks() - 1);
   return total_profit;
 }
 
@@ -268,14 +268,14 @@ static void backtrack(int n_books, int bag_cap,
   int book_i;
   ndarray<int, 1 UNSTRIDED> off(RD(0, 1));
   ndarray<ndarray<int, 1, global GUNSTRIDED>,
-          1 UNSTRIDED> offs(RD(0, (int)THREADS));
+          1 UNSTRIDED> offs(RD(0, (int)ranks()));
   int my_start_book2 = my_start_book;
-  if (MYTHREAD == 0)
+  if (myrank() == 0)
     my_start_book2++;
   offs.exchange(off);
   off[0] = bag_cap;
-  for (int proc = THREADS-1; proc >= 0; proc--) {
-    if (proc == MYTHREAD) {
+  for (int proc = ranks()-1; proc >= 0; proc--) {
+    if (proc == myrank()) {
       for (book_i = my_end_book; book_i >= my_start_book2; --book_i) {
         if (getTotal(total, book_i, off[0]) !=
             getTotal(total, book_i-1, off[0])) {
@@ -284,8 +284,8 @@ static void backtrack(int n_books, int bag_cap,
         }
         else use_book[book_i] = false;
       }
-      if (MYTHREAD != 0) {
-        offs[MYTHREAD-1][0] = off[0];
+      if (myrank() != 0) {
+        offs[myrank()-1][0] = off[0];
       }
     }
     barrier();
@@ -363,7 +363,7 @@ static void get_opts(int argc, char **args) {
     } else if (!strcmp(opt, "-s")){
       seedval = atoi(args[++i]);
     } else {
-      if (MYTHREAD == 0)
+      if (myrank() == 0)
         cerr << "Unknown option: " << opt << endl;
       dump_usage(name, cerr, 1);
     }
@@ -374,11 +374,11 @@ static void get_opts(int argc, char **args) {
 
 static void dump_usage(char *name, ostream &out, int errcode) {
   /*h?b:c:f:rW:P:s:*/
-  if (MYTHREAD != 0) exit(errcode);
+  if (myrank() != 0) exit(errcode);
   out << "Usage:   " << name << " [options]\n" <<
     "Options: " <<
     "  \t-h or -?      this message\n" <<
-    "\t\t-B            number of pipeline stages (default: THREADS)\n" <<
+    "\t\t-B            number of pipeline stages (default: ranks())\n" <<
     "\t\t-b <int>      number of books (default: " << DEFAULT_N_BOOKS << ")\n" <<
     "\t\t-c <int>      bag capacity (default: " << DEFAULT_BAG_CAP << ")\n" <<
     "\t\t-g            generate weights and profits statically (default)\n" <<

@@ -58,7 +58,7 @@ class Util {
   static void initialize(int paramN, int procCount, int procId);
 
   static void initialize(int paramN) {
-    initialize(paramN, THREADS, MYTHREAD);
+    initialize(paramN, ranks(), myrank());
   }
 
   static void test(int na, int minnum, int maxnum);

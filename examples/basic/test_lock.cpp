@@ -19,7 +19,7 @@ shared_array<int> sd_arr;
 void print_task(int task_id, int arg2)
 {
   sl.lock();
-  cout << "MYTHREAD " << MYTHREAD <<  ": task_id:" << task_id
+  cout << "myrank() " << myrank() <<  ": task_id:" << task_id
        << " arg2: " << arg2 << endl;
   usleep(1000);
   sl.unlock();
@@ -40,40 +40,40 @@ int main(int argc, char **argv)
 
   barrier();
 
-  sd_arr.init(THREADS);
-  sd_arr[MYTHREAD] = 0;
+  sd_arr.init(ranks());
+  sd_arr[myrank()] = 0;
 
-  sl_arr.init(THREADS);
+  sl_arr.init(ranks());
 
   // initialize the lock with "placement new"
-  new (sl_arr[MYTHREAD].raw_ptr()) shared_lock();
+  new (sl_arr[myrank()].raw_ptr()) shared_lock();
 
   barrier();
 
   for (uint32_t i = 0; i< 100; i++) {
-    (&sl_arr[MYTHREAD])->lock();
-    sd_arr[MYTHREAD] += 1;
-    (&sl_arr[MYTHREAD])->unlock();
+    (&sl_arr[myrank()])->lock();
+    sd_arr[myrank()] += 1;
+    (&sl_arr[myrank()])->unlock();
 
-    sl_arr[(MYTHREAD+1)%THREADS].get().lock();
-    sd_arr[(MYTHREAD+1)%THREADS] += 1;
-    sl_arr[(MYTHREAD+1)%THREADS].get().unlock();
+    sl_arr[(myrank()+1)%ranks()].get().lock();
+    sd_arr[(myrank()+1)%ranks()] += 1;
+    sl_arr[(myrank()+1)%ranks()].get().unlock();
 
-    sl_arr[(MYTHREAD+2)%THREADS].get().lock();
-    sd_arr[(MYTHREAD+2)%THREADS] += 1;
-    sl_arr[(MYTHREAD+2)%THREADS].get().unlock();
+    sl_arr[(myrank()+2)%ranks()].get().lock();
+    sd_arr[(myrank()+2)%ranks()] += 1;
+    sl_arr[(myrank()+2)%ranks()].get().unlock();
   }
 
   barrier();
 
-  if (sd_arr[MYTHREAD] != 300) {
+  if (sd_arr[myrank()] != 300) {
     printf("Error: sd_arr[%u] is %d, but is expected to be %d\n",
-           MYTHREAD, sd_arr[MYTHREAD].get(), 300);
+           myrank(), sd_arr[myrank()].get(), 300);
   }
 
   barrier();
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     printf("test_lock passed!\n");
   }
 
