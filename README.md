@@ -1,3 +1,4 @@
+![upc++ logo 20150505.png](https://bitbucket.org/repo/KbBG4B/images/295606647-upc++%20logo%2020150505.png)
 ### UPC\+\+: a PGAS extension for C\+\+ ###
 
 UPC++ is a parallel programming extension for developing C++ applications with the partitioned global address space (PGAS) model.  UPC++ has three main objectives: 
