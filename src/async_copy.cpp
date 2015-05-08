@@ -103,21 +103,38 @@ namespace upcxx
     free(events);
   }
 
+  GASNETT_INLINE(copy_and_set_reply_inner)
+  void copy_and_set_reply_inner(gasnet_token_t token, void *done_ptr)
+  {
+    if (done_ptr != NULL) {
+      event *done_event = (event *) done_ptr;
+      done_event->decref();
+    }
+  }
+  SHORT_HANDLER(copy_and_set_reply_inner, 1, 2,
+                (token, UNPACK(a0)),
+                (token, UNPACK2(a0, a1)));
+
   GASNETT_INLINE(copy_and_set_request_inner)
   void copy_and_set_request_inner(gasnet_token_t token,
                                   void *addr,
                                   size_t nbytes,
                                   void *target_addr,
-                                  void *flag_addr)
+                                  void *flag_addr,
+                                  void *done_event)
   {
     assert(target_addr != NULL);
     assert(flag_addr != NULL);
     memcpy(target_addr, addr, nbytes);
+    gasnett_local_wmb(); // make sure the flag is set after the data written
     *(flag_t*)flag_addr = UPCXX_FLAG_VAL_SET;
+    if (done_event != NULL) {
+      SHORT_SRP(1,2,(token, gasneti_handleridx(copy_and_set_reply), PACK(done_event)));
+    }
   }
-  MEDIUM_HANDLER(copy_and_set_request, 2, 4,
-                 (token, addr, nbytes, UNPACK(a0),      UNPACK(a1)),
-                 (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3)));
+  MEDIUM_HANDLER(copy_and_set_request, 3, 6,
+                 (token, addr, nbytes, UNPACK(a0),      UNPACK(a1),      UNPACK(a1)),
+                 (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
 
 #ifdef UPCXX_USE_DMAPP
   int async_put_and_set_dmapp(global_ptr<void> src,
@@ -173,12 +190,16 @@ namespace upcxx
       gasnet_exit(1);
     }
 
+    if (dst.where() != flag_addr.where()) {
+      fprintf(stderr, "async_copy error: dst and flag_addr should be on the same rank.\n");
+      gasnet_exit(1);
+    }
+
     // Use the the Cray DMAPP specialized version of put-and-set if available,
     // otherwise use the generic implementation
 #ifdef UPCXX_USE_DMAPP
     if (env_use_dmapp) {
       if (src.where() == global_myrank()) {
-        assert(dst.where() == flag_addr.where());
         return async_put_and_set_dmapp(src, dst, nbytes, flag_addr, e);
       }
     }
