@@ -23,6 +23,7 @@ AC_CONFIG_FILES([
   examples/knapsack/Makefile
   examples/mg/Makefile
   examples/samplesort/Makefile
+  examples/spmv/Makefile
   examples/stencil/Makefile
 ])
 
