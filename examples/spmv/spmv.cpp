@@ -3,12 +3,12 @@
  */
 
 #include <upcxx.h>
-#include <forkjoin.h>
+#include <forkjoin.h> // emulate to start main() with only one rank (master)
 
 using namespace upcxx;
 
-#include <algorithm>
-#include <cstdlib>
+#include <algorithm> // for generate()
+#include <cstdlib> // for rand()
 
 size_t NNZPR = 64;  // 512;  // number of non-zero elements per row
 size_t M = 2048;  // 1024*1024; // matrix size (M-by-M)
@@ -25,7 +25,7 @@ void print_sparse_matrix(T *A,
 
   for (i = 0; i < nrows; i++) {
     for (j = 0; j < col_indices[i]; j++) {
-      printf("%lg(llu)\t ", A[j]);
+      printf("[%lu] %lg\t ", j, A[j]);
     }
     printf("\n");
   }
@@ -88,25 +88,6 @@ void gen_matrix(T *my_A,
   for (int i = 0; i < num_nnz; i++) {
     my_col_indices[i] = random_int();
     my_A[i] = random_double();
-  }
-}
-
-template<typename T>
-void gen_matrix2(T *my_A,
-                 size_t *my_col_indices,
-                 size_t *my_row_offsets,
-                 size_t nrows)
-{
-  // generate the sparse matrix
-  // each place only generates its own portion of the sparse matrix
-  my_row_offsets[0] = 0;
-  for (size_t row = 0; row < nrows; row++) {
-    my_row_offsets[row + 1] = row * NNZPR;
-    // Set the matrix with a simple pattern
-    for (size_t i = 0; i < NNZPR; i++) {
-      my_A[row * NNZPR + i] = 1;
-      my_col_indices[row * NNZPR + i] = i;
-    }
   }
 }
 
@@ -199,7 +180,7 @@ int main(int argc, char **argv)
   async_wait();
 
   double elapsed_time = TIME() - start_time;
-  printf("spmv NNZ %lu, M %lu, np %d, time = %f s\n",
+  printf("spmv done. # of non-zero elements %lu, M %lu, np %u, time = %f s\n",
          NNZPR * M, M, P, elapsed_time / 1e+6);
 
 #if 0
