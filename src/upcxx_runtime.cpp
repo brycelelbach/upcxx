@@ -233,7 +233,7 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-  bool is_inited() { return init_flag; }
+  bool is_init() { return init_flag; }
 
   uint32_t global_ranks()
   {

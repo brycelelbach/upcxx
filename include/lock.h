@@ -39,7 +39,7 @@ namespace upcxx
     inline shared_lock()
     {
       _locked = 0;
-      if (is_inited()) {
+      if (is_init()) {
         _owner = global_myrank();
         _holder = global_myrank();
       } else {
