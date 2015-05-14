@@ -197,7 +197,7 @@ namespace upcxx
     __init_shared_array()
     {
 #ifdef UPCXX_DEBUG
-      printf("Constructing __dumb_obj_for_init_shared_array\n");
+      printf("Constructing __dummy_obj_for_init_shared_array\n");
 #endif
       if (pending_array_inits == NULL)
         pending_array_inits = new std::vector<void*>;
@@ -207,17 +207,17 @@ namespace upcxx
     ~__init_shared_array()
     {
 #ifdef UPCXX_DEBUG
-      printf("Destructing __dumb_obj_for_init_shared_array\n");
+      printf("Destructing __dummy_obj_for_init_shared_array\n");
 #endif
       assert(pending_array_inits != NULL);
       delete pending_array_inits;
     }
   };
-  static __init_shared_array __dumb_obj_for_init_shared_array;
+  static __init_shared_array __dummy_obj_for_init_shared_array;
 
   static inline void run_pending_array_inits()
   {
-    assert(pending_array_inits != NULL);
+    // assert(pending_array_inits != NULL);
 
 #ifdef UPCXX_DEBUG
     printf("Running run_pending_array_inits(). pending_array_inits sz %lu\n",
