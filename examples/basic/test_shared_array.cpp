@@ -22,7 +22,7 @@ void update()
   int myid = upcxx::myrank();
 
   printf("Rank %d in update\n", myid);
-  A.init();
+  //  A.init(); // no longer need to call init for shared_arra
   printf("Rank %d after shared array A.init\n", myid);
   barrier();
   printf("myid %d is updating...\n", myid);

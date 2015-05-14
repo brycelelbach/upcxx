@@ -240,10 +240,12 @@ namespace upcxx
   extern gasnet_team_handle_t current_gasnet_team();
 
   static inline uint32_t ranks() {
+    if (is_init() == false) return 0xFFFFFFFF; // return a special value if not inited
     return team::current_team()->size();
   }
 
   static inline uint32_t myrank() {
+    if (is_init() == false) return 0xFFFFFFFF; // return a special value if not inited
     return team::current_team()->myrank();
   }
 

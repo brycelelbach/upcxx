@@ -86,7 +86,7 @@ namespace upcxx
   gasnet_nodeinfo_t *all_gasnet_nodeinfo;
   gasnet_nodeinfo_t *my_gasnet_nodeinfo;
   gasnet_node_t my_gasnet_supernode;
-  
+
   gasnet_hsl_t async_lock;
   // queue_t *async_task_queue = NULL;
   gasnet_hsl_t in_task_queue_lock;
@@ -107,6 +107,8 @@ namespace upcxx
 
   int env_use_am_for_copy_and_set;
   int env_use_dmapp;
+
+  std::vector<void*> *pending_array_inits = NULL;
 
   int init(int *pargc, char ***pargv)
   {
@@ -152,7 +154,7 @@ namespace upcxx
     }
     my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
     my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
-    
+
     // Allocate gasnet segment space for shared_var
     if (total_shared_var_sz != 0) {
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -213,10 +215,14 @@ namespace upcxx
     env_use_am_for_copy_and_set = gasnett_getenv_yesno_withdefault("UPCXX_USE_AM_FOR_COPY_AND_SET", 0);
 
     init_flag = true;
+
+    // run the pending initializations of shared arrays
+    run_pending_array_inits();
+
     barrier();
     return UPCXX_SUCCESS;
   }
-    
+
   int finalize()
   {
     async_wait();
@@ -229,7 +235,7 @@ namespace upcxx
                 << "         use upcxx::ranks() and upcxx::myranks() instead!"
                 << "\n";
     }
-    
+
     return UPCXX_SUCCESS;
   }
 
@@ -262,7 +268,7 @@ namespace upcxx
     task = (async_task *)malloc(nbytes);
     assert(task != NULL);
     memcpy(task, buf, nbytes);
-      
+
     // assert(async_task_queue != NULL);
     assert(in_task_queue != NULL);
 
@@ -288,7 +294,7 @@ namespace upcxx
     fprintf(stderr, "Rank %u receives async done from %u",
             global_myrank(), src);
 #endif
-    
+
     if (am->ack_event != NULL) {
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
@@ -325,7 +331,7 @@ namespace upcxx
         if (task->_fp) {
           (*task->_fp)(task->_args);
         }
-        
+
         if (task->_ack != NULL) {
           if (task->_caller == global_myrank()) {
             // local event acknowledgment
@@ -347,7 +353,7 @@ namespace upcxx
         delete task;
         num_dispatched++;
         if (num_dispatched >= max_dispatched) break;
-    }; // end of while (!queue_is_empty(inq)) 
+    }; // end of while (!queue_is_empty(inq))
 
     return num_dispatched;
   } // end of poll_in_task_queue;
@@ -372,13 +378,13 @@ namespace upcxx
 #endif
 
       // remote async task
-      // Send AM "there" to request async task execution 
+      // Send AM "there" to request async task execution
       GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
                                           task, task->nbytes()));
       delete task;
       num_dispatched++;
       if (num_dispatched >= max_dispatched) break;
-    } // end of while (!queue_is_empty(outq)) 
+    } // end of while (!queue_is_empty(outq))
 
     return num_dispatched;
   } // end of poll_out_task_queue()
@@ -423,12 +429,12 @@ namespace upcxx
   } // peek()
 
   volatile int exit_signal = 0;
-    
+
   void signal_exit_am()
   {
     exit_signal = 1;
   }
-    
+
   void signal_exit()
   {
     // Only the master process should wait for incoming tasks
@@ -437,15 +443,15 @@ namespace upcxx
     for (rank_t i = 1; i < ranks(); i++) {
       async(i)(signal_exit_am);
     }
-    async_wait(); 
+    async_wait();
   }
 
   void wait_for_incoming_tasks()
   {
     // Only the worker processes should wait for incoming tasks
     assert(global_myrank() != 0);
-      
-    // Wait until the master process sends out an exit signal 
+
+    // Wait until the master process sends out an exit signal
     while (!exit_signal) {
       advance();
     }
@@ -501,11 +507,10 @@ namespace upcxx
 #if GASNET_PSHM
     if (is_memory_shared_with(r) == false)
       return NULL;
-    
+
     return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
 #else
     return NULL; // always return NULL if no PSHM support
 #endif
   }
 } // namespace upcxx
-

@@ -54,7 +54,7 @@ namespace upcxx
     alloc_am_t *am = (alloc_am_t *)buf;
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << global_myrank() << " is inside alloc_cpu_am_handler.\n";
+    std::cerr << "Rank " << global_myrank() << " is inside alloc_cpu_am_handler.\n";
 #endif
 
     alloc_reply_t reply;
@@ -67,7 +67,8 @@ namespace upcxx
 
 #ifdef UPCXX_DEBUG
     assert(reply.ptr != NULL);
-    cerr << "Rank " << global_myrank() << " allocated " << am->nbytes << " memory at " << reply.ptr << "\n";
+    std::cerr << "Rank " << global_myrank() << " allocated " << am->nbytes
+              << " memory at " << reply.ptr << "\n";
 #endif
 
     reply.cb_event = am->cb_event;
@@ -84,8 +85,8 @@ namespace upcxx
     alloc_reply_t *reply = (alloc_reply_t *)buf;
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << global_myrank() << " is in alloc_reply_handler. reply->ptr "
-         << reply->ptr << "\n";
+    std::cerr << "Rank " << global_myrank() << " is in alloc_reply_handler. reply->ptr "
+              << reply->ptr << "\n";
 #endif
 
     *(reply->ptr_addr) = reply->ptr;
