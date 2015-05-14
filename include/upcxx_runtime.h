@@ -100,7 +100,7 @@ namespace upcxx
   // The advance function is recommended.
   inline int progress() { return advance(); }
 
-  // drain() is superceded by avdance(), provided for backward compatibility.
+  // drain() is superseded by advance(), provided for backward compatibility.
   // The advance function is recommended.
   inline int drain(int max_dispatched = 0)
   {

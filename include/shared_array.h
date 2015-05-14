@@ -119,7 +119,7 @@ namespace upcxx
       h = gasnet_coll_gather_all_nb(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
                                     UPCXX_GASNET_COLL_FLAG);
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
-        advance(); // neeed to keep polling the task queue whlie waiting
+        advance(); // need to keep polling the task queue while waiting
       }
 #ifdef UPCXX_DEBUG
       printf("my rank %d, size %lu, blk_sz %lu, local_sz %lu, type_sz %lu, _data %p\n",

@@ -127,7 +127,7 @@ namespace upcxx
       gasnet_init(pargc, pargv); // init gasnet
     } else {
       int dummy_argc = 1;
-      char *dummy_argv = new char[6]; // "upcxx'
+      char *dummy_argv = new char[6]; // "upcxx"
       char **p_dummy_argv = &dummy_argv;
       gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
     }

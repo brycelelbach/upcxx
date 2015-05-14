@@ -34,7 +34,7 @@ namespace upcxx
   /**
    * \addtogroup asyncgroup Asynchronous task execution and Progress
    * @{
-   * Events are used to notify asych task completion and invoke callback functions.
+   * Events are used to notify asynch task completion and invoke callback functions.
    */
   struct event {
     volatile int _count; // outstanding number of tasks.

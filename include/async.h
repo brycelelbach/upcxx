@@ -51,7 +51,7 @@ namespace upcxx
    *
    * Conditional asynchronous function execution
    * The task will be automatically enqueued for execution after
-   * the event "after" is signalled.
+   * the event "after" is signaled.
    * Optionally signal the event "ack" for task completion
    *
    * ~~~~~~~~~~~~~~~{.cpp}
@@ -72,7 +72,7 @@ namespace upcxx
    *
    * async for Active Message style communication
    * ~~~~~~~~~~~~~~~{.cpp}
-   * async(uint32_t rank, void *src, size_t nbyte, event *ack)
+   * async(uint32_t rank, void *src, size_t nbytes, event *ack)
           (function, arg1, arg2, ...);
    * ~~~~~~~~~~~~~~~
    * \see test_async_am.cpp
