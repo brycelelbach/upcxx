@@ -123,6 +123,10 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_init()\n";
 #endif
+
+#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
+    gasnet_init(pargc, pargv); // init gasnet
+#else
     if (pargc != NULL && pargv != NULL) {
       gasnet_init(pargc, pargv); // init gasnet
     } else {
@@ -131,6 +135,7 @@ namespace upcxx
       char **p_dummy_argv = &dummy_argv;
       gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
     }
+#endif
 
     // allocate UPC++ internal global variable before anything else
     _team_stack = new std::vector<team *>;
