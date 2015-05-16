@@ -15,18 +15,15 @@ typedef struct Box_ {
 struct Domain {
   int num_boxes;
   shared_array< global_ptr<Box> > boxes;
+
+  Domain(int num) : num_boxes(num), boxes(num)
+  { }
 };
 
-Domain dom;
+Domain dom(8*8*8);
 
 int main(int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
-
-  dom.num_boxes = 8*8*8;
-
-  dom.boxes.init(dom.num_boxes, 1); // cyclic distribution
-
   // dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
 
   for (int i=myrank(); i<dom.num_boxes; i += ranks()) {
@@ -68,8 +65,8 @@ int main(int argc, char **argv)
     }
   }
 
+  // Wait for everyone to complete before exit
   upcxx::barrier();
 
-  upcxx::finalize();
   return 0;
 }

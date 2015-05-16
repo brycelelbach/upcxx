@@ -59,17 +59,11 @@ namespace upcxx
       _size = size;
       _type_size = sizeof(T);
 
-      if (upcxx::is_init()) {
-        // init the array if upcxx is already initialized
-        init(size, blk_sz);
-      } else {
-        // queue up the initialization if upcxx is not yet initialized
-        assert(pending_array_inits != NULL);
-        pending_array_inits->push_back(this);
-#ifdef UPCXX_DEBUG
-        printf("pending_array_inits size %lu\n", pending_array_inits->size());
-#endif
-      }
+      assert(upcxx::is_init());
+
+      _alldata = (T **)malloc(ranks() * sizeof(T*));
+      assert(_alldata != NULL);
+      init(size, blk_sz);
     }
 
     /**
@@ -100,7 +94,7 @@ namespace upcxx
      */
     void init(size_t sz, size_t blk_sz)
     {
-      if (_data != NULL) return;
+      if (_data != NULL) deallocate(_data);
 
       rank_t nplaces = ranks();
       if (sz != 0) _size = sz;
@@ -109,10 +103,7 @@ namespace upcxx
 
       // allocate the data space in bytes
       _data = (T*)allocate(myrank(), _local_size * _type_size).raw_ptr();
-
       assert(_data != NULL);
-      _alldata = (T **)malloc(nplaces * sizeof(T*));
-      assert(_alldata != NULL);
 
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_handle_t h;
@@ -210,7 +201,7 @@ namespace upcxx
       printf("Destructing __dummy_obj_for_init_shared_array\n");
 #endif
       assert(pending_array_inits != NULL);
-      delete pending_array_inits;
+      // delete pending_array_inits;
     }
   };
   static __init_shared_array __dummy_obj_for_init_shared_array;

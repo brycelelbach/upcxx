@@ -17,7 +17,7 @@ namespace upcxx
 
   uint32_t my_team_seq = 1;
   gasnet_hsl_t team::_tid_lock = GASNET_HSL_INITIALIZER;
-  vector<team *> team::_team_stack;
+  vector<team *> * _team_stack = NULL;
 
   bool _threads_deprecated_warned = false;
 

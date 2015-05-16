@@ -122,14 +122,23 @@ namespace upcxx
                << "\n";
   }
 
-  extern event system_event; // defined in upcxx.cpp
-  extern std::list<event *> outstanding_events;
+  extern event *system_event; // defined in upcxx.cpp
+  extern std::list<event *> *outstanding_events;
   extern gasnet_hsl_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);
   void pop_event();
   event *peek_event();
+
+  struct event_stack {
+    std::vector<event *> stack;
+    inline event_stack() {
+      stack.push_back(system_event);
+    }
+  };
+  extern event_stack *events;
+
 
   inline void async_wait(event *e)
   {
