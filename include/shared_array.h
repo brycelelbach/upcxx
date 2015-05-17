@@ -96,10 +96,10 @@ namespace upcxx
     {
       if (_data != NULL) deallocate(_data);
 
-      rank_t nplaces = ranks();
+      rank_t np = ranks();
       if (sz != 0) _size = sz;
       if (blk_sz != 0) _blk_sz = blk_sz;
-      _local_size = (_size + nplaces - 1) / nplaces;
+      _local_size = ((_size+_blk_sz -1)/_blk_sz + np - 1) / np * _blk_sz;
 
       // allocate the data space in bytes
       _data = (T*)allocate(myrank(), _local_size * _type_size).raw_ptr();
@@ -112,10 +112,10 @@ namespace upcxx
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
         advance(); // need to keep polling the task queue while waiting
       }
-#ifdef UPCXX_DEBUG
+#if UPCXX_DEBUG
       printf("my rank %d, size %lu, blk_sz %lu, local_sz %lu, type_sz %lu, _data %p\n",
              myrank(), size(), get_blk_sz(), _local_size, _type_size, _data);
-      for (int i=0; i<nplaces; i++) {
+      for (int i=0; i<np; i++) {
         printf("_alldata[%d]=%p ", i, _alldata[i]);
       }
       printf("\n");
@@ -235,8 +235,7 @@ namespace upcxx
   template<typename T>
   void set(shared_array<T> *ga, T val)
   {
-    int P = ranks();
-    for (int i=P-1; i>=0; i--)
+    for (rank_t i=0; i<ranks(); i++)
       async(i)(init_ga<T>, ga, val);
   }
 } // namespace upcxx

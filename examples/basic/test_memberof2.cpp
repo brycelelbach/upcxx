@@ -98,5 +98,8 @@ int main(int argc, char **argv)
   }
 
   upcxx::barrier();
+  if (myrank() == 0)
+    printf("test_memberof2 passed!\n");
+
   return 0;
 }
