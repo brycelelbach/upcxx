@@ -44,13 +44,13 @@ typedef struct {
 buffer_t *all_buffers_src;
 buffer_t *all_buffers_dst;
 
-shared_array< global_ptr<ELEMENT_T>, 1 > sorted;
+shared_array< global_ptr<ELEMENT_T>, 1 > sorted(ranks());
 
 ELEMENT_T *splitters;
 
 shared_array<ELEMENT_T, 1> keys;
 
-shared_array<uint64_t, 1> sorted_key_counts;
+shared_array<uint64_t, 1> sorted_key_counts(ranks());
 
 
 double mysecond()
@@ -302,14 +302,12 @@ void sample_sort(uint64_t key_count)
 
 int main(int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
-
   uint64_t my_key_size = KEYS_PER_THREAD; // assume key_size is a multiple of ranks()
   uint64_t total_key_size = (uint64_t)KEYS_PER_THREAD * ranks();
 
   keys.init(total_key_size);
-  sorted.init(ranks());
-  sorted_key_counts.init(ranks());
+  // sorted.init(ranks());
+  // sorted_key_counts.init(ranks());
 
 #ifdef VERIFY
   global_ptr<ELEMENT_T>keys_copy;
@@ -446,9 +444,5 @@ int main(int argc, char **argv)
     }
   }
 #endif
-                                                
-  upcxx::barrier();
-  upcxx::finalize();
-  
   return 0;
 }

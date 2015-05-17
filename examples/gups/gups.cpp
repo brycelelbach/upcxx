@@ -100,10 +100,6 @@ int main(int argc, char **argv)
   double GUPs;
   double latency;
 
-  upcxx::init(&argc, &argv);
-
-  Table.init();
-
   if(myrank() == 0) {
     printf("\nTable size = %g MBytes/CPU, %g MB/total on %d threads\n",
            (double)TableSize*8/1024/1024/ranks(),
@@ -151,9 +147,6 @@ int main(int argc, char **argv)
   }
 #endif
   
-  barrier();
-  upcxx::finalize();
-
   return 0;
 }
 
