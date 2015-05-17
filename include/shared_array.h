@@ -100,7 +100,7 @@ namespace upcxx
      */
     void init(size_t sz, size_t blk_sz)
     {
-      if (_data != NULL) return;
+      if (_data != NULL) deallocate(_data);
 
       rank_t nplaces = ranks();
       if (sz != 0) _size = sz;
