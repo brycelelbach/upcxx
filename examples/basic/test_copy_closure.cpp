@@ -24,7 +24,6 @@ void lambda_wrapper(upcxx::global_ptr<T> remote_lambda)
 
 int main(int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
   int i, j;
   upcxx::global_ptr<int> counter_ptr = upcxx::allocate<int>(upcxx::myrank(), 1);
   *counter_ptr = 0;
@@ -51,7 +50,10 @@ int main(int argc, char **argv)
   printf("myrank %u, counter updated by my right (+1) neighbor is %d\n", 
          upcxx::myrank(), (int)(*counter_ptr)); 
 
-  upcxx::finalize();
+  upcxx::barrier();
+  if (upcxx::myrank() == 0)
+    printf("test_copy_closure passed!\n");
+
   return 0;
 }
 #endif // close #ifndef UPCXX_HAVE_CXX11

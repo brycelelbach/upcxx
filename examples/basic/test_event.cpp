@@ -50,5 +50,8 @@ int main(int argc, char **argv)
 
   e.wait();
 
+  if (myrank() == 0)
+    printf("test_event passed!\n");
+
   return 0;
 }

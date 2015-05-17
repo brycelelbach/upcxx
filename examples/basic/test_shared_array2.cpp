@@ -42,5 +42,9 @@ int main(int argc, char **argv)
     printf("\n\n");
   }
 
+  upcxx::barrier();
+  if (upcxx::myrank() == 0)
+    printf("test_shared_array2 passed!\n");
+
   return 0;
 }
