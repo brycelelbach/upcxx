@@ -81,11 +81,14 @@ namespace upcxx
     return new_tid;
   }
   
-  std::vector< std::vector<rank_t> > pshm_teams;
+  std::vector< std::vector<rank_t> > *pshm_teams = NULL;
 
   void init_pshm_teams(const gasnet_nodeinfo_t *nodeinfo_from_gasnet,
                        uint32_t num_nodes)
   {
+    if (pshm_teams != NULL) return;
+
+    pshm_teams = new std::vector< std::vector<rank_t> >;
     if (nodeinfo_from_gasnet != NULL) {
       // Figure out the total number of supernodes
       gasnet_node_t max_supernode=0;
@@ -95,15 +98,15 @@ namespace upcxx
         }
       }
       // printf("max_supernode %u\n", max_supernode);
-      pshm_teams.resize(max_supernode+1);
+      pshm_teams->resize(max_supernode+1);
 
       for (uint32_t i=0; i<num_nodes; i++) {
-        pshm_teams[nodeinfo_from_gasnet[i].supernode].push_back(i);
+        (*pshm_teams)[nodeinfo_from_gasnet[i].supernode].push_back(i);
       }
     } else {
-      pshm_teams.resize(global_ranks());
+      pshm_teams->resize(global_ranks());
       for (uint32_t i=0; i<global_ranks(); i++) {
-        pshm_teams[i].push_back(i);
+        (*pshm_teams)[i].push_back(i);
       }
     }
   }

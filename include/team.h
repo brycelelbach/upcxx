@@ -286,7 +286,7 @@ namespace upcxx
   */
 
   extern team team_all;
-  extern std::vector< std::vector<rank_t> > pshm_teams;
+  extern std::vector< std::vector<rank_t> > *pshm_teams;
 
 } // namespace upcxx
 
