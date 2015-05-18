@@ -10,7 +10,7 @@
 
 int main (int argc, char **argv)
 {
-  std::cout << "I'm thread " << upcxx::myrank() << " of "
-            << upcxx::ranks() << " threads \n";
+  std::cout << "I'm rank " << upcxx::myrank() << " of "
+            << upcxx::ranks() << " ranks.\n";
   return 0;
 }
