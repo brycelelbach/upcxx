@@ -4,6 +4,7 @@ if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_BIN_FILES = \
   test_array \
   test_array_dist \
+  test_array_ghost_copy \
   test_reduce \
   test_safe_broadcast 
 else
@@ -58,6 +59,7 @@ testperf2_SOURCES = testperf2.cpp
 if UPCXX_MD_ARRAY
 test_array_SOURCES = test_array.cpp
 test_array_dist_SOURCES = test_array_dist.cpp
+test_array_ghost_copy_SOURCES = test_array_ghost_copy.cpp
 test_reduce_SOURCES = test_reduce.cpp
 test_safe_broadcast_SOURCES = test_safe_broadcast.cpp
 endif
