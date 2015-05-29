@@ -38,7 +38,7 @@ namespace upcxx
       fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
       gasnet_exit(1);
     }
-    if (e == &system_event) {
+    if (e == system_event) {
       // use implicit non-blocking copy for the global scope,
       // need to call gasnet_wait_syncnbi_all() to synchronize later
       if (dst.where() == global_myrank()) {

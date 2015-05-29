@@ -59,17 +59,11 @@ namespace upcxx
       _size = size;
       _type_size = sizeof(T);
 
-      if (upcxx::is_init()) {
-        // init the array if upcxx is already initialized
-        init(size, blk_sz);
-      } else {
-        // queue up the initialization if upcxx is not yet initialized
-        assert(pending_array_inits != NULL);
-        pending_array_inits->push_back(this);
-#ifdef UPCXX_DEBUG
-        printf("pending_array_inits size %lu\n", pending_array_inits->size());
-#endif
-      }
+      assert(upcxx::is_init());
+
+      _alldata = (T **)malloc(ranks() * sizeof(T*));
+      assert(_alldata != NULL);
+      init(size, blk_sz);
     }
 
     /**
@@ -102,17 +96,14 @@ namespace upcxx
     {
       if (_data != NULL) deallocate(_data);
 
-      rank_t nplaces = ranks();
+      rank_t np = ranks();
       if (sz != 0) _size = sz;
       if (blk_sz != 0) _blk_sz = blk_sz;
-      _local_size = (_size + nplaces - 1) / nplaces;
+      _local_size = ((_size+_blk_sz -1)/_blk_sz + np - 1) / np * _blk_sz;
 
       // allocate the data space in bytes
       _data = (T*)allocate(myrank(), _local_size * _type_size).raw_ptr();
-
       assert(_data != NULL);
-      _alldata = (T **)malloc(nplaces * sizeof(T*));
-      assert(_alldata != NULL);
 
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_handle_t h;
@@ -121,10 +112,10 @@ namespace upcxx
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
         advance(); // need to keep polling the task queue while waiting
       }
-#ifdef UPCXX_DEBUG
+#if UPCXX_DEBUG
       printf("my rank %d, size %lu, blk_sz %lu, local_sz %lu, type_sz %lu, _data %p\n",
              myrank(), size(), get_blk_sz(), _local_size, _type_size, _data);
-      for (int i=0; i<nplaces; i++) {
+      for (int i=0; i<np; i++) {
         printf("_alldata[%d]=%p ", i, _alldata[i]);
       }
       printf("\n");
@@ -210,7 +201,7 @@ namespace upcxx
       printf("Destructing __dummy_obj_for_init_shared_array\n");
 #endif
       assert(pending_array_inits != NULL);
-      delete pending_array_inits;
+      // delete pending_array_inits;
     }
   };
   static __init_shared_array __dummy_obj_for_init_shared_array;
@@ -244,8 +235,7 @@ namespace upcxx
   template<typename T>
   void set(shared_array<T> *ga, T val)
   {
-    int P = ranks();
-    for (int i=P-1; i>=0; i--)
+    for (rank_t i=0; i<ranks(); i++)
       async(i)(init_ga<T>, ga, val);
   }
 } // namespace upcxx

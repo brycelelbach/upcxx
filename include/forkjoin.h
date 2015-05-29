@@ -25,8 +25,6 @@ int main(int argc, char **argv)
 {
   int rv = 0;
 
-  upcxx::init(&argc, &argv);
-
   // The master spawns tasks and the slaves wait.
   if (upcxx::myrank() == 0) {
     // start the user main function
@@ -35,8 +33,6 @@ int main(int argc, char **argv)
   } else {
     upcxx::wait_for_incoming_tasks();
   }
-
-  upcxx::finalize();
 
   return rv;
 }

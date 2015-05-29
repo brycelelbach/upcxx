@@ -126,6 +126,7 @@ namespace upcxx
    * Barrier synchronization of all nodes
    */
   int barrier();
+
 } // namespace upcxx
 
 #endif /* UPCXX_RUNTIME_H_ */

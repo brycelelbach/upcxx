@@ -14,7 +14,7 @@
 
 using namespace upcxx;
 
-shared_array<int> sa; // size == ranks()
+shared_array<int> sa(ranks()); // size = ranks()
 
 int test_barrier(const team &t)
 {
@@ -363,9 +363,6 @@ int test_allreduce(const team &t, size_t count)
 
 int main(int argc, char **argv)
 {
-  init(&argc, &argv);
-  sa.init(ranks());
- 
   team *row_team, *col_team;
   uint32_t nrows, ncols = 1, row_id, col_id;
 
@@ -514,6 +511,5 @@ int main(int argc, char **argv)
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";
 
-  finalize();
   return 0;
 }

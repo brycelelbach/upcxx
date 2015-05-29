@@ -36,16 +36,12 @@ namespace upcxx
 #endif
 
   public:
-    inline shared_lock()
+    inline shared_lock(rank_t owner=0)
     {
       _locked = 0;
-      if (is_init()) {
-        _owner = global_myrank();
-        _holder = global_myrank();
-      } else {
-        _owner = 0;
-        _holder = 0;
-      }
+      _owner = owner;
+      _holder = _owner;
+
       myself = this;
 #ifdef UPCXX_THREAD_SAFE
       pthread_mutex_init(&_mutex, NULL);

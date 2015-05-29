@@ -93,9 +93,9 @@ namespace upcxx
   gasnet_hsl_t out_task_queue_lock;
   queue_t *in_task_queue = NULL;
   queue_t *out_task_queue = NULL;
-  event system_event;
+  event *system_event;
   bool init_flag = false;  //  equals 1 if the backend is initialized
-  std::list<event*> outstanding_events;
+  std::list<event*> *outstanding_events;
   gasnet_hsl_t outstanding_events_lock;
 
   // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
@@ -123,6 +123,10 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_init()\n";
 #endif
+
+#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
+    gasnet_init(pargc, pargv); // init gasnet
+#else
     if (pargc != NULL && pargv != NULL) {
       gasnet_init(pargc, pargv); // init gasnet
     } else {
@@ -131,6 +135,13 @@ namespace upcxx
       char **p_dummy_argv = &dummy_argv;
       gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
     }
+#endif
+
+    // allocate UPC++ internal global variable before anything else
+    _team_stack = new std::vector<team *>;
+    system_event = new event;
+    outstanding_events = new std::list<event *>;
+    events = new event_stack;
 
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
@@ -223,7 +234,7 @@ namespace upcxx
     init_flag = true;
 
     // run the pending initializations of shared arrays
-    run_pending_array_inits();
+    // run_pending_array_inits();
 
     barrier();
     return UPCXX_SUCCESS;
@@ -242,6 +253,9 @@ namespace upcxx
                 << "\n";
     }
 
+#ifdef UPCXX_DEBUG
+    printf("Rank %u: done finalize()\n", global_myrank());
+#endif
     return UPCXX_SUCCESS;
   }
 
@@ -413,9 +427,9 @@ namespace upcxx
     }
 
     // check outstanding events
-    if (!outstanding_events.empty()) {
-      for (std::list<event*>::iterator it = outstanding_events.begin();
-           it != outstanding_events.end(); ++it) {
+    if (!outstanding_events->empty()) {
+      for (std::list<event*>::iterator it = outstanding_events->begin();
+           it != outstanding_events->end(); ++it) {
         // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
         event *e = (*it);
         assert(e != NULL);

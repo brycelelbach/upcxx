@@ -37,4 +37,41 @@
 #include "shared_array.h"
 #include "atomic.h"
 
+namespace upcxx
+{
+  struct upcxx_runtime
+  {
+    bool _owner;
+
+    upcxx_runtime()
+    {
+      if (!is_init()) {
+#if UPCXX_DEBUG
+        printf("Initializing upcxx runtime.\n");
+#endif
+        init(NULL, NULL);
+        _owner = true;
+#if UPCXX_DEBUG
+        printf("Rank %u: Initialized upcxx runtime.\n", myrank());
+#endif
+      } else {
+        _owner = false;
+      }
+    }
+
+    ~upcxx_runtime()
+    {
+      assert(is_init());
+
+      if (_owner) {
+#if UPCXX_DEBUG
+        printf("Rank %u: Destructing upcxx runtime\n", myrank());
+#endif
+        finalize();
+      }
+    }
+  };
+  static upcxx_runtime __upcxx_runtime_obj; // this object is not expected to be accessed directly by the user
+}
+
 #endif /* UPCXX_H_ */

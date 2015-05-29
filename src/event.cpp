@@ -103,10 +103,10 @@ namespace upcxx
     upcxx_mutex_lock(&_mutex);
     int old = _count;
     _count += c;
-    if (this != &system_event && old == 0) {
+    if (this != system_event && old == 0) {
       gasnet_hsl_lock(&outstanding_events_lock);
       // fprintf(stderr, "P %u   Add outstanding_event %p\n", global_myrank(), this);
-      outstanding_events.push_back(this);
+      outstanding_events->push_back(this);
       gasnet_hsl_unlock(&outstanding_events_lock);
     }
     upcxx_mutex_unlock(&_mutex);
@@ -128,21 +128,16 @@ namespace upcxx
 
     if (tmp == 0) {
       enqueue_cb();
-      if (this != &system_event) {
+      if (this != system_event) {
         gasnet_hsl_lock(&outstanding_events_lock);
         // fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
-        outstanding_events.remove(this);
+        outstanding_events->remove(this);
         gasnet_hsl_unlock(&outstanding_events_lock);
       }
     }
   }
 
-  struct event_stack {
-    vector<event *> stack;
-    event_stack() {
-      stack.push_back(&system_event);
-    }
-  };
+  event_stack *events = NULL;
 
   void event::add_gasnet_handle(gasnet_handle_t h)
   {
@@ -162,30 +157,29 @@ namespace upcxx
   }
 
 #endif
-  static event_stack events;
 
   void push_event(event *e)
   {
-    events.stack.push_back(e);
+    events->stack.push_back(e);
   }
 
   void pop_event()
   {
-    assert(events.stack.back() != &system_event);
-    events.stack.pop_back();
+    assert(events->stack.back() != system_event);
+    events->stack.pop_back();
   }
 
   event *peek_event()
   {
-    return events.stack.back();
+    return events->stack.back();
   }
 
   void async_wait()
   {
-    while (!outstanding_events.empty()) {
+    while (!outstanding_events->empty()) {
       upcxx::advance(1,10);
     }
-    system_event.wait();
+    system_event->wait();
     gasnet_wait_syncnbi_all();
   }
 
@@ -196,7 +190,7 @@ namespace upcxx
 
     int rv = e->async_try();
 
-    if (e == &system_event) {
+    if (e == system_event) {
       rv = rv && gasnet_try_syncnbi_all();
     }
     return rv;

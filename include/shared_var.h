@@ -5,6 +5,7 @@
 #pragma once
 
 #include "gasnet_api.h"
+#include "allocate.h"
 
 namespace upcxx
 {
@@ -49,40 +50,69 @@ namespace upcxx
   struct shared_var
   {
   private:
-    size_t _my_offset;
+    //size_t _my_offset;
+    global_ptr<T> _ptr;
     T _val;
 
   public:
     shared_var()
     {
+      /*
       _my_offset = total_shared_var_sz;
       total_shared_var_sz += sizeof(T);
+      */
+      alloc();
     }
       
     inline shared_var(const T &val) : _val(val)
     {
+      /*
       _my_offset = total_shared_var_sz;
       total_shared_var_sz += sizeof(T);
+      */
+      alloc();
     }
 
     // copy constructor
     inline
     shared_var(const shared_var<T> &g) : _val(g._val)
     {
+      /*
       _my_offset = total_shared_var_sz;
       total_shared_var_sz += sizeof(T);
+      */
+      alloc();
+    }
+
+    inline void alloc(rank_t where=0)
+    {
+      // allocate the data space in bytes
+      if (myrank() == where) {
+        _ptr = allocate<T>(where, 1);
+      }
+
+      gasnet_coll_handle_t h;
+      h = gasnet_coll_broadcast_nb(GASNET_TEAM_ALL, &_ptr, where, &_ptr, sizeof(_ptr),
+                                   UPCXX_GASNET_COLL_FLAG);
+      while(gasnet_coll_try_sync(h) != GASNET_OK) {
+        advance(); // need to keep polling the task queue while waiting
+      }
+      assert(_ptr != NULL);
+      std::cout << myrank() << ": _ptr " << _ptr << "\n";
     }
 
     T& get()
     {
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      // gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T));
+      copy<T>(_ptr, &_val, 1);
       return _val;
     }
     
     void put(const T &val)
     {
       _val = val;
-      gasnet_put(0, (char *)shared_var_addr+_my_offset, &_val, sizeof(T));
+      // gasnet_put(0, (char *)shared_var_addr+_my_offset, &_val, sizeof(T));
+      copy<T>(&_val, _ptr, 1);
     }
       
     shared_var<T>& operator =(const T &val)
@@ -94,7 +124,8 @@ namespace upcxx
 #define UPCXX_SHARED_VAR_ASSIGN_OP(OP) \
     shared_var<T>& operator OP(const T &a) \
     { \
-      gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T)); \
+      /* gasnet_get(&_val, 0, (char *)shared_var_addr+_my_offset, sizeof(T)); */ \
+      copy<T>(_ptr, &_val, 1); \
       _val OP a; \
       put(_val); \
       return *this; \
