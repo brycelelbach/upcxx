@@ -16,18 +16,45 @@ namespace upcxx
 {
   int event::async_try()
   {
-    if (!_h.empty()) {
-#if UPCXX_HAVE_CXX11
-      for (auto it = _h.begin(); it != _h.end(); ++it) {
-#else
-      for (std::list<gasnet_handle_t>::iterator it = _h.begin(); it != _h.end(); ++it) {
-#endif
+    if (upcxx_mutex_trylock(&_mutex) != 0) {
+      return 0; // somebody else is holding the lock, so return not done yet
+    }
+
+    // Acquired the lock
+
+    // check outstanding gasnet handles
+    if (!_gasnet_handles.empty()) {
+     // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
+     for (std::vector<gasnet_handle_t>::iterator it = _gasnet_handles.begin();
+           it != _gasnet_handles.end();) {
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
-          remove_handle(*it);
-          break;
+          _gasnet_handles.erase(it); // erase increase it automatically
+          decref();
+        } else {
+          ++it;
         }
       }
     }
+
+#ifdef UPCXX_USE_DMAPP
+    // check outstanding dmapp handles
+    if (!_dmapp_handles.empty()) {
+     // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
+     for (std::vector<dmapp_syncid_handle_t>::iterator it = _dmapp_handles.begin();
+           it != _dmapp_handles.end();) {
+       int flag;
+       DMAPP_SAFE(dmapp_syncid_test(*it, &flag);
+       if (flag) {
+          _dmapp_handles.erase(it); // erase increase it automatically
+          decref();
+        } else {
+          ++it;
+        }
+      }
+    }
+#endif
+
+    upcxx_mutex_unlock(&_mutex); // trylock must be successful to get here
     return isdone();
   }
 
@@ -50,7 +77,7 @@ namespace upcxx
       for (int i=0; i<_num_done_cb; i++) {
         if (_done_cb[i] != NULL) {
           async_task *task = _done_cb[i];
-          if (task->_callee == myrank()) {
+          if (task->_callee == global_myrank()) {
             // local task
             assert(in_task_queue != NULL);
             gasnet_hsl_lock(&in_task_queue_lock);
@@ -78,7 +105,7 @@ namespace upcxx
     _count += c;
     if (this != &system_event && old == 0) {
       gasnet_hsl_lock(&outstanding_events_lock);
-      // fprintf(stderr, "P %u   Add outstanding_event %p\n", myrank(), this);
+      // fprintf(stderr, "P %u   Add outstanding_event %p\n", global_myrank(), this);
       outstanding_events.push_back(this);
       gasnet_hsl_unlock(&outstanding_events_lock);
     }
@@ -103,7 +130,7 @@ namespace upcxx
       enqueue_cb();
       if (this != &system_event) {
         gasnet_hsl_lock(&outstanding_events_lock);
-        // fprintf(stderr, "P %u Erase outstanding_event %p\n", myrank(), this);
+        // fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
         outstanding_events.remove(this);
         gasnet_hsl_unlock(&outstanding_events_lock);
       }
@@ -117,22 +144,24 @@ namespace upcxx
     }
   };
 
-  void event::add_handle(gasnet_handle_t h)
+  void event::add_gasnet_handle(gasnet_handle_t h)
   {
     upcxx_mutex_lock(&_mutex);
-    _h.push_back(h);
+    _gasnet_handles.push_back(h);
     upcxx_mutex_unlock(&_mutex);
     incref();
   }
 
-  void event::remove_handle(gasnet_handle_t h)
+#ifdef UPCXX_USE_DMAPP
+  void event::add_dmapp_handle(dmapp_syncid_handle_t h)
   {
     upcxx_mutex_lock(&_mutex);
-    _h.remove(h);
+    _dmapp_handles.push_back(h);
     upcxx_mutex_unlock(&_mutex);
-    decref();
+    incref();
   }
 
+#endif
   static event_stack events;
 
   void push_event(event *e)

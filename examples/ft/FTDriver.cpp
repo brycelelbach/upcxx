@@ -61,16 +61,16 @@ FTDriver::FTDriver(char paramClassType) {
   }
 
   // determine partitioning slab sizes
-  xDimSlabSize = nx/THREADS;
-  int xDimSlabStartRow = MYTHREAD * xDimSlabSize;
+  xDimSlabSize = nx/ranks();
+  int xDimSlabStartRow = myrank() * xDimSlabSize;
   int xDimSlabEndRow = xDimSlabStartRow + xDimSlabSize;
 
-  yDimSlabSize = ny/THREADS;
-  int yDimSlabStartRow = MYTHREAD * yDimSlabSize;
+  yDimSlabSize = ny/ranks();
+  int yDimSlabStartRow = myrank() * yDimSlabSize;
   int yDimSlabEndRow = yDimSlabStartRow + yDimSlabSize;
 
-  zDimSlabSize = nz/THREADS;
-  int zDimSlabStartRow = MYTHREAD * zDimSlabSize;
+  zDimSlabSize = nz/ranks();
+  int zDimSlabStartRow = myrank() * zDimSlabSize;
   int zDimSlabEndRow = zDimSlabStartRow + zDimSlabSize;
 
   // padded working arrays (to avoid cache-thrashing)
@@ -79,7 +79,7 @@ FTDriver::FTDriver(char paramClassType) {
                                                      nz+PADDING)));
   array1 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array1.exchange(myArray1);
 
 #ifdef SLABS
@@ -93,7 +93,7 @@ FTDriver::FTDriver(char paramClassType) {
 #endif
   array2 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array2.exchange(myArray2);
 
   ndarray<Complex, 3 UNSTRIDED> myArray3(RECTDOMAIN((yDimSlabStartRow, 0, 0),
@@ -101,7 +101,7 @@ FTDriver::FTDriver(char paramClassType) {
                                                      nx+PADDING)));
   array3 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array3.exchange(myArray3);
 
   ndarray<Complex, 3 UNSTRIDED> myArray4(RECTDOMAIN((yDimSlabStartRow, 0, 0),
@@ -109,7 +109,7 @@ FTDriver::FTDriver(char paramClassType) {
                                                      nx+PADDING)));
   array4 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array4.exchange(myArray4);
 
 #ifdef SLABS
@@ -123,7 +123,7 @@ FTDriver::FTDriver(char paramClassType) {
 #endif
   array5 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array5.exchange(myArray5);
 
   ndarray<Complex, 3 UNSTRIDED> myArray6(RECTDOMAIN((zDimSlabStartRow, 0, 0),
@@ -131,7 +131,7 @@ FTDriver::FTDriver(char paramClassType) {
                                                      ny+PADDING)));
   array6 =
     ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                  (THREADS)));
+                                                                  (ranks())));
   array6.exchange(myArray6);
 
 
@@ -144,7 +144,7 @@ FTDriver::FTDriver(char paramClassType) {
 
 void FTDriver::printSetupTiming(int i) {
 #ifdef TIMERS_ENABLED
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("");
     println("SETUP: ");
   }
@@ -153,15 +153,15 @@ void FTDriver::printSetupTiming(int i) {
   double gmaxTime = reduce::max(mySetupTime);
   double gsumTime = reduce::add(mySetupTime);
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     if (i == 0) {
-      println("Time: " << gminTime << ", " << (gsumTime/THREADS) <<
+      println("Time: " << gminTime << ", " << (gsumTime/ranks()) <<
               ", " << gmaxTime);
     }
     else if (i == 1) {
       println("Num Readings Per Proc:\t1\nMin Time Over Procs:\t" <<
               gminTime << "\nMean Time Over Procs:\t" <<
-              (gsumTime/THREADS) << "\nMax Time Over Procs:\t" <<
+              (gsumTime/ranks()) << "\nMax Time Over Procs:\t" <<
               gmaxTime << "\n");
     }
   }
@@ -184,7 +184,7 @@ void FTDriver::main(int argc, char **argv) {
   }
 
   if (invalidInput) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Allowed problem classes are A, B, C, D, S, and W.");
     }
     exit(1);
@@ -195,10 +195,10 @@ void FTDriver::main(int argc, char **argv) {
           Driver.array4, Driver.array5, Driver.array6);
   Test myTest(Driver.array3);
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("Titanium NAS FT Benchmark- Parallel\n");
     println("Problem class = " << Driver.classType);
-    println("Number of processors = " << THREADS);
+    println("Number of processors = " << ranks());
     println("Grid size = " << nx << " x " << ny << " x " << nz);
     println("Number of iterations = " << numIterations);
     println("");
@@ -239,7 +239,7 @@ void FTDriver::main(int argc, char **argv) {
   // end timer
 
   // print profiling info
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\nSUMMARY- min, mean, max for each component");
     println("All times in seconds.");
   }
@@ -251,7 +251,7 @@ void FTDriver::main(int argc, char **argv) {
   double myTotalTime = Driver.myTotalTimer.secs();
   double maxTotalTime = reduce::max(myTotalTime);
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("");
     println("Max Time Over All Procs: " << maxTotalTime << "\n\n");
   }

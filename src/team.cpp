@@ -9,6 +9,8 @@
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
 #endif
 
+using namespace std;
+
 namespace upcxx
 {
   team team_all;
@@ -18,6 +20,11 @@ namespace upcxx
   vector<team *> team::_team_stack;
 
   bool _threads_deprecated_warned = false;
+
+  gasnet_team_handle_t current_gasnet_team()
+  {
+    return team::current_team()->gasnet_team();
+  }
 
 #define TEAM_ID_BITS 8
 #define TEAM_ID_SEQ_MASK 0xFF

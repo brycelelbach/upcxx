@@ -7,7 +7,7 @@ namespace upcxx
   {
     void *addr;
 
-    if (rank == myrank()) {
+    if (rank == global_myrank()) {
 #ifdef USE_GASNET_FAST_SEGMENT
       addr = gasnet_seg_alloc(nbytes);
 #else
@@ -26,7 +26,7 @@ namespace upcxx
     global_ptr<void> ptr(addr, rank);
 
 #ifdef DEBUG
-    fprintf(stderr, "allocated %llu bytes at cpu %d\n", addr, pla);
+    fprintf(stderr, "allocated %llu bytes at %p on node %d\n", nbytes, addr, rank);
 #endif
 
     return ptr;
@@ -34,7 +34,7 @@ namespace upcxx
 
   void deallocate(global_ptr<void> ptr)
   {
-    if (ptr.where() == myrank()) {
+    if (ptr.where() == global_myrank()) {
 #ifdef USE_GASNET_FAST_SEGMENT
       gasnet_seg_free(ptr.raw_ptr());
 #else
@@ -54,7 +54,7 @@ namespace upcxx
     alloc_am_t *am = (alloc_am_t *)buf;
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << myrank() << " is inside alloc_cpu_am_handler.\n";
+    std::cerr << "Rank " << global_myrank() << " is inside alloc_cpu_am_handler.\n";
 #endif
 
     alloc_reply_t reply;
@@ -67,7 +67,8 @@ namespace upcxx
 
 #ifdef UPCXX_DEBUG
     assert(reply.ptr != NULL);
-    cerr << "Rank " << myrank() << " allocated " << am->nbytes << " memory at " << reply.ptr << "\n";
+    std::cerr << "Rank " << global_myrank() << " allocated " << am->nbytes
+              << " memory at " << reply.ptr << "\n";
 #endif
 
     reply.cb_event = am->cb_event;
@@ -84,8 +85,8 @@ namespace upcxx
     alloc_reply_t *reply = (alloc_reply_t *)buf;
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << myrank() << " is in alloc_reply_handler. reply->ptr "
-         << reply->ptr << "\n";
+    std::cerr << "Rank " << global_myrank() << " is in alloc_reply_handler. reply->ptr "
+              << reply->ptr << "\n";
 #endif
 
     *(reply->ptr_addr) = reply->ptr;

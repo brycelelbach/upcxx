@@ -1,7 +1,7 @@
 AC_INIT([upcxx], [0.1], [yzheng@lbl.gov], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
-AM_INIT_AUTOMAKE([1.10 no-define foreign])
+AM_INIT_AUTOMAKE([1.10 no-define foreign subdir-objects])
 
 LT_INIT([disable-shared])
 dnl LT_INIT()
@@ -15,6 +15,7 @@ AC_CONFIG_FILES([
   include/Makefile
   include/upcxx.mak
   src/Makefile
+  scripts/upc++
   examples/Makefile
   examples/basic/Makefile
   examples/cg/Makefile
@@ -22,6 +23,7 @@ AC_CONFIG_FILES([
   examples/knapsack/Makefile
   examples/mg/Makefile
   examples/samplesort/Makefile
+  examples/spmv/Makefile
   examples/stencil/Makefile
 ])
 
@@ -54,12 +56,34 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         if test "$HAVE_CXX11" = 1; then
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          CXXFLAGS+=" -DUSE_CXX11 "
+          AC_SUBST(CXX11FLAG)
+          dnl Check for support for is_trivially_destructible
+          AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+                #include <type_traits>
+                bool test = std::is_trivially_destructible<double>::value;
+                ])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
+          AC_MSG_RESULT([$TRIVIALDESTRUCT])
+          if test "x$TRIVIALDESTRUCT" = "xyes"; then
+            AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
+          fi
+          dnl Check for support for initializer lists
+          AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+                #include <initializer_list>
+                void test(std::initializer_list<double> &ilist) {}
+                ])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
+          AC_MSG_RESULT([$INITIALIZERLIST])
+          if test "x$INITIALIZERLIST" = "xyes"; then
+            AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
+          fi
         fi
       ])
 
 dnl Add flags for building UPC++
-UPCXX_FLAGS=" -DUSE_GASNET_FAST_SEGMENT -DONLY_MSPACES -DGASNET_ALLOW_OPTIMIZED_DEBUG "
+UPCXX_FLAGS=" -DGASNET_ALLOW_OPTIMIZED_DEBUG "
+AC_SUBST(UPCXX_FLAGS)
+
 CFLAGS+=${UPCXX_FLAGS}
 CXXFLAGS+=${UPCXX_FLAGS}
 
@@ -93,16 +117,39 @@ if test "x$GCC" = "xyes"; then
   CXXFLAGS+=" -Wno-literal-suffix -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS=1 "
 fi
 
+dnl Option to enable shorter UPC++ macro names (default is disable)
+AC_ARG_ENABLE([short-names],
+    AS_HELP_STRING([--enable-short-names], [Enable shorter names for common UPC++ keywords]))
+
+AS_IF([test "x$enable_short_names" = "xyes"], [
+  dnl Do the stuff needed for enabling md-array
+  AC_DEFINE(UPCXX_SHORT_MACROS, 1, [define if short-names feature is enabled])
+  AC_SUBST(UPCXX_SHORT_MACROS)
+])
+
 dnl Option to enable UPC++ multidimensional arrays (default is disable)
 AC_ARG_ENABLE([md-array],
     AS_HELP_STRING([--enable-md-array], [Enable Titanium-style multidimensional arrays]))
 
 AS_IF([test "x$enable_md_array" = "xyes"], [
   dnl Do the stuff needed for enabling md-array
-  AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if the md-array feature is enabled])
+  AC_DEFINE(UPCXX_HAVE_MD_ARRAY, 1, [define if md-array feature is enabled])
   AC_SUBST(UPCXX_HAVE_MD_ARRAY)
 ])
 
 AM_CONDITIONAL([UPCXX_MD_ARRAY], [test "x$enable_md_array" = "xyes"])
+
+dnl Option to enable using the Cray DMAPP API on Aries network (default is disable)
+AC_ARG_ENABLE([dmapp],
+    AS_HELP_STRING([--enable-dmapp], [Enable using DMAPP on Cray Aries network]))
+
+AS_IF([test "x$enable_dmapp" = "xyes"], [
+  dnl Do the stuff needed for enabling dmapp
+  AC_DEFINE(UPCXX_USE_DMAPP, 1, [define if dmapp feature is enabled])
+  AC_SUBST(UPCXX_USE_DMAPP)
+])
+
+AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
+
 
 AC_OUTPUT

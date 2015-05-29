@@ -22,7 +22,7 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
     numProcCols(paramNumProcCols) {
 
   // // tempSparseMatGrid is indexed by proc number, and is used to create sparseMatGrid
-  // LocalSparseMat [1d] tempSparseMatGrid = new LocalSparseMat [0:(THREADS-1)];
+  // LocalSparseMat [1d] tempSparseMatGrid = new LocalSparseMat [0:(ranks()-1)];
   // tempSparseMatGrid.exchange(mySparseMat);
 
   // // now create sparseMatGrid, which is indexed by processor grid position
@@ -37,26 +37,27 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
   rowStart = Util::rowStart;
   rowEnd = Util::rowEnd;
   log2numProcCols = Util::log2numProcCols;
-  transposeProc = Util::transposeProc(MYTHREAD);
+  transposeProc = Util::transposeProc(myrank());
 
   // form the allResults array
 #ifdef TEAMS
-  myResults = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((rowStart), (rowEnd+1)));
+  myResults = ndarray<double, 1 UNSTRIDED>(RD(rowStart, rowEnd+1));
   allResults =
-    ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
+    ndarray<ndarray<double, 1, global GUNSTRIDED>, 1 UNSTRIDED>(RD(0, (int)ranks()));
   allResults.exchange(myResults);
-  mtmp = ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((rowStart), (rowEnd+1)));
+  mtmp = ndarray<double, 1 UNSTRIDED>(RD(rowStart, rowEnd+1));
 #else
   // for myResult's first index, 0 to log2numProcCols are actual sums,
   // while -log2numProcCols to -1 are data gathered from other procs
-  ndarray<double, 2, global> myResults(RECTDOMAIN((-log2numProcCols, rowStart), (log2numProcCols+1, rowEnd+1)));
+  ndarray<double, 2, global> myResults(RD(PT(-log2numProcCols, rowStart),
+                                          PT(log2numProcCols+1, rowEnd+1)));
   allResults =
-    ndarray<ndarray<double, 2, global>, 1 UNSTRIDED>(RECTDOMAIN((0), ((int)THREADS)));
+    ndarray<ndarray<double, 2, global>, 1 UNSTRIDED>(RD(0, (int)ranks()));
   allResults.exchange(myResults);
 
   // set up the reduce phase schedule for SpMV
   int divFactor = numProcCols;
-  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (log2numProcCols)));
+  reduceExchangeProc = ndarray<int, 1 UNSTRIDED>(RD(0, log2numProcCols));
   for (int i = 0; i < log2numProcCols; i++) {
     int j = ((procColPos + divFactor/2) % divFactor) + procColPos / divFactor * divFactor;
     reduceExchangeProc[i] = Util::posToProcId(procRowPos, j);//procRowPos * numProcCols + j;
@@ -72,38 +73,38 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
 
   // myTimer = new Timer();
   numTimers = 6;
-  myTimes = ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
+  myTimes = ndarray<ndarray<double, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(1, numTimers+1));
 
   // set up arrays for storing times
   myTimes[T_SPMV_LOCAL_COMP] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter + 1));
   myTimes[T_SPMV_REDUCTION_COMP] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter * log2numProcCols + 1));
 #ifdef TEAMS
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter + 1));
 #else
   myTimes[T_SPMV_REDUCTION_COMM] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter * log2numProcCols + 1));
 #endif
   myTimes[T_SPMV_REDUCTION_BARRIER_POLLS] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter * log2numProcCols + 1));
   myTimes[T_SPMV_DIAGONAL_SWAP_COMM] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter + 1));
   myTimes[T_SPMV_DIAGONAL_SWAP_BARRIER_POLLS] =
-    ndarray<double, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<double, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter + 1));
 #endif
 
 #ifdef COUNTERS_ENABLED
   myCounter = new PAPICounter(PAPI_MEASURE);
   numCounters = 2;
-  myCounts =  ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>(RECTDOMAIN((1), (numTimers+1)));
+  myCounts =  ndarray<ndarray<long, 1 UNSTRIDED>, 1 UNSTRIDED>(RD(1, numTimers+1));
 
   // set up arrays for storing counts
   myCounts[T_SPMV_LOCAL_COMP] =
-    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter + 1)));
+    ndarray<long, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter + 1));
   myCounts[T_SPMV_REDUCTION_COMP] =
-    ndarray<long, 1 UNSTRIDED>(RECTDOMAIN((1), (26 * CGDriver::niter * log2numProcCols + 1)));
+    ndarray<long, 1 UNSTRIDED>(RD(1, 26 * CGDriver::niter * log2numProcCols + 1));
 #endif
 
 #ifdef TEAMS
@@ -113,25 +114,25 @@ SparseMat::SparseMat(LocalSparseMat &paramMySparseMat, int paramNumProcRows,
   rpivot = procRowPos;
   cpivot = procColPos;
   reduceCopy = (procColPos == procRowPos);
-  reduceSource = MYTHREAD;
+  reduceSource = myrank();
   if (numProcRows != numProcCols) {
     rpivot = procRowPos * 2;
     cpivot = procColPos / 2;
     reduceCopy = true;
     if ((procColPos % 2) != 0 && cpivot == procRowPos) {
-      reduceSource = MYTHREAD - 1;
+      reduceSource = myrank() - 1;
     } else if (cpivot != procRowPos)
       reduceCopy = false;
   }
   // setup team for synchronizing before reduce copies
   copyTeam = new team();
-  copyTeam->split(reduceSource, reduceSource == MYTHREAD ? 0 : 1);//MYTHREAD);
+  copyTeam->split(reduceSource, reduceSource == myrank() ? 0 : 1);//myrank());
   // copyTeam->initializeAll();
   copySync = copyTeam->mychild()->size() > 1;
 # else
   transposeTeam = new team();
-  transposeTeam->split(transposeProc < MYTHREAD ? transposeProc : MYTHREAD,
-                       transposeProc < MYTHREAD ? 1 : 0);
+  transposeTeam->split(transposeProc < myrank() ? transposeProc : myrank(),
+                       transposeProc < myrank() ? 1 : 0);
   // transposeTeam->initializeAll();
 # endif
 #endif
@@ -141,7 +142,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   ndarray<double, 1 UNSTRIDED> myOut = output.getMyArray();
   ndarray<double, 1 UNSTRIDED> myIn = input.getMyArray();
 
-  // LocalSparseMat local mySparseMat = (LocalSparseMat local) mySparseMat;//sparseMatGrid[MYTHREAD/numProcCols, MYTHREAD%numProcCols];
+  // LocalSparseMat local mySparseMat = (LocalSparseMat local) mySparseMat;//sparseMatGrid[myrank()/numProcCols, myrank()%numProcCols];
   LocalSparseMat &mySparseMat = this->mySparseMat;
 #ifdef VREDUCE
   ndarray<double, 1 UNSTRIDED> myResults0 = mtmp;
@@ -149,7 +150,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   ndarray<double, 1 UNSTRIDED> myResults0 = myResults;
 #else
   ndarray<double, 2 UNSTRIDED> myResults =
-    (ndarray<double, 2 UNSTRIDED>) allResults[MYTHREAD];
+    (ndarray<double, 2 UNSTRIDED>) allResults[myrank()];
   ndarray<double, 1 UNSTRIDED> myResults0 =
     (ndarray<double, 1 UNSTRIDED>) myResults.slice(1, 0);
 #endif
@@ -166,33 +167,33 @@ void SparseMat::multiply(Vector &output, Vector &input) {
 
 #ifdef CTEAMS
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     myResults0 = (ndarray<double, 1 UNSTRIDED>) myResults;
     reduce::add(mtmp, myResults0, rpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(copyTeam) {
+  upcxx_teamsplit(copyTeam) {
     if (copySync)
       barrier(); // ensure reductions above complete before copy
   }
   if (reduceCopy)
     myOut.copy(allResults[reduceSource]);
-  teamsplit(columnTeam) {
+  upcxx_teamsplit(columnTeam) {
     myOut.vbroadcast(cpivot);
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_DIAGONAL_SWAP_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
 #elif defined(VREDUCE)
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     myResults0 = myResults;
     reduce::add(mtmp, myResults0);
   }
   barrier(); // ensure reductions above complete
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(transposeTeam) {
+  upcxx_teamsplit(transposeTeam) {
     // actual diagonal swap
     if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);
@@ -209,7 +210,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
 #elif defined(TEAMS)
   TIMER_START(myTimer);
-  teamsplit(rowTeam) {
+  upcxx_teamsplit(rowTeam) {
     int start = rowStart;
     int end = rowEnd;
     for (int r = start; r <= end; r++) {
@@ -218,7 +219,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   }
   TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMM][multiplyCallCount]);
   TIMER_START(myTimer);
-  teamsplit(transposeTeam) {
+  upcxx_teamsplit(transposeTeam) {
     // actual diagonal swap
     if (team::current_team()->size() == 1) {
       myOut.copy(myResults0);
@@ -255,7 +256,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
     ndarray<double, 1> myNewData = myResults.slice(1, -(i+1));
     FOREACH (p, myNewResults.domain()) {
       myNewResults[p] = myNewData[p] + myOldResults[p];
-    }
+    };
 
     TIMER_STOP_READ(myTimer, myTimes[T_SPMV_REDUCTION_COMP][(multiplyCallCount-1) * log2numProcCols + (i+1)]);
     COUNTER_STOP_READ(myCounter, myCounts[T_SPMV_REDUCTION_COMP][(multiplyCallCount-1) * log2numProcCols + (i+1)]);
@@ -268,7 +269,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
 
   // actual diagonal swap
-  if (MYTHREAD == transposeProc) {
+  if (myrank() == transposeProc) {
     myOut.copy(myResults.slice(1, log2numProcCols));
   }
   else {
@@ -290,7 +291,7 @@ void SparseMat::multiply(Vector &output, Vector &input) {
   TIMER_START(myTimer);
 
   // actual diagonal swap
-  if (MYTHREAD == transposeProc) {
+  if (myrank() == transposeProc) {
     myOut.copy(myResults.slice(1, log2numProcCols));
   }
   else {
@@ -310,20 +311,20 @@ void SparseMat::resetProfile() {
   FOREACH (component, myTimes.domain()) {
     FOREACH (timing, myTimes[component].domain()) {
       myTimes[component][timing] = 0;
-    }
-  }
+    };
+  };
 #endif
 #ifdef COUNTERS_ENABLED
   FOREACH (component, myCounts.domain()) {
     FOREACH (count, myCounts[component].domain()) {
       myCounts[component][count] = 0;
-    }
-  }
+    };
+  };
 #endif
 }
 
 void SparseMat::printSummary() {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("\nSUMMARY- min, mean, max for each component");
     println("All times in seconds.\n");
   }
@@ -333,7 +334,7 @@ void SparseMat::printSummary() {
   double totalCommTime = 0.0;
 
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_SPMV_LOCAL_COMP:
         println("SPMV LOCAL COMPUTATION: ");
@@ -360,7 +361,7 @@ void SparseMat::printSummary() {
     double totalComponentTime = 0.0;
     FOREACH (timing, myTimes[timerIdx].domain()) {
       totalComponentTime += myTimes[timerIdx][timing];
-    }
+    };
     totalTime += totalComponentTime;
     if (timerIdx != T_SPMV_LOCAL_COMP)
       totalCommTime += totalComponentTime;
@@ -369,8 +370,8 @@ void SparseMat::printSummary() {
     double sumTotalComponentTime = reduce::add(totalComponentTime);
     double maxTotalComponentTime = reduce::max(totalComponentTime);
 	    
-    if (MYTHREAD == 0) {
-      println("Time: " << minTotalComponentTime << ", " << (sumTotalComponentTime/THREADS) << ", " << maxTotalComponentTime);
+    if (myrank() == 0) {
+      println("Time: " << minTotalComponentTime << ", " << (sumTotalComponentTime/ranks()) << ", " << maxTotalComponentTime);
     }
 # endif
 # ifdef COUNTERS_ENABLED
@@ -378,14 +379,14 @@ void SparseMat::printSummary() {
       long totalComponentCount = 0;
       FOREACH (count, myCounts[timerIdx].domain()) {
         totalComponentCount += myCounts[timerIdx][count];
-      }
+      };
 		
       long minTotalComponentCount = reduce::min(totalComponentCount);
       long sumTotalComponentCount = reduce::add(totalComponentCount);
       long maxTotalComponentCount = reduce::max(totalComponentCount);
 		
-      if (MYTHREAD == 0) {
-        println("Count: " << minTotalComponentCount << ", " << (sumTotalComponentCount/THREADS) << ", " << maxTotalComponentCount);
+      if (myrank() == 0) {
+        println("Count: " << minTotalComponentCount << ", " << (sumTotalComponentCount/ranks()) << ", " << maxTotalComponentCount);
       }
     }
 # endif
@@ -401,12 +402,12 @@ void SparseMat::printSummary() {
   double maxTotalCommTime = reduce::max(totalCommTime);
   spmvCommTime = totalCommTime;
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     println("");
     println("SPMV TOTAL COMMUNICATION");
-    println("Time: " << minTotalCommTime << ", " << (sumTotalCommTime/THREADS) << ", " << maxTotalCommTime);
+    println("Time: " << minTotalCommTime << ", " << (sumTotalCommTime/ranks()) << ", " << maxTotalCommTime);
     println("SPMV TOTAL");
-    println("Time: " << minTotalTime << ", " << (sumTotalTime/THREADS) << ", " << maxTotalTime);
+    println("Time: " << minTotalTime << ", " << (sumTotalTime/ranks()) << ", " << maxTotalTime);
   }
 #endif
 }
@@ -414,7 +415,7 @@ void SparseMat::printSummary() {
 void SparseMat::printProfile() {
 #if defined(TIMERS_ENABLED) || defined(COUNTERS_ENABLED)
   for (int timerIdx=1; timerIdx<=numTimers; timerIdx++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (timerIdx) {
       case T_SPMV_LOCAL_COMP:
         println("SPMV LOCAL COMPUTATION:\n");
@@ -440,7 +441,7 @@ void SparseMat::printProfile() {
 # ifdef TIMERS_ENABLED
     // print timer info
     if (myTimes[timerIdx].domain().is_empty()) {
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("Num Readings Per Proc:\t0\nMin Time Over Procs:\t0.0\nMean Time Over Procs:\t0.0\nMax Time Over Procs:\t0.0\n");
       }
     }
@@ -460,16 +461,16 @@ void SparseMat::printProfile() {
         }
         lsumTime += value;
         numReadingsPerProc++;
-      }
+      };
 		
       double gminTime = reduce::min(lminTime);
       double gmax = reduce::max(lmaxTime);
       double gsumTime = reduce::add(lsumTime);
 		
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("Num Readings Per Proc:\t" << numReadingsPerProc);
         println("Min Time Over Procs:\t" << gminTime);
-        double gmeanTime = gsumTime/(numReadingsPerProc*THREADS);
+        double gmeanTime = gsumTime/(numReadingsPerProc*ranks());
         println("Mean Time Over Procs:\t" << gmeanTime);
         println("Max Time Over Procs:\t" << gmax << "\n");
       }
@@ -480,7 +481,7 @@ void SparseMat::printProfile() {
 # ifdef COUNTERS_ENABLED
     if (timerIdx <= numCounters) {
       if (myCounts[timerIdx].domain().is_empty()) {
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t0");
           println("Min Count Over Procs:\t0.0");
           println("Mean Count Over Procs:\t0.0");
@@ -503,16 +504,16 @@ void SparseMat::printProfile() {
           }
           lsumCount += value;
           numReadingsPerProc++;
-        }
+        };
 		    
         long gminCount = reduce::min(lminCount);
         long gmaxCount = reduce::max(lmaxCount);
         long gsumCount = reduce::add(lsumCount);
 		    
-        if (MYTHREAD == 0) {
+        if (myrank() == 0) {
           println("Num Readings Per Proc:\t" << numReadingsPerProc);
           println("Min Count Over Procs:\t" << gminCount);
-          long gmeanCount = gsumCount/(numReadingsPerProc*THREADS);
+          long gmeanCount = gsumCount/(numReadingsPerProc*ranks());
           println("Mean Count Over Procs:\t" << gmeanCount);
           println("Max Count Over Procs:\t" << gmaxCount << "\n");
         }

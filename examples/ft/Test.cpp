@@ -14,21 +14,21 @@ Test::Test(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array) {
   numIterations = FTDriver::numIterations;
 
   // expArray in the same shape as array3
-  ndarray<double, 3 UNSTRIDED> myExpArray(array[MYTHREAD].domain());
+  ndarray<double, 3 UNSTRIDED> myExpArray(array[myrank()].domain());
   expArray =
     ndarray<ndarray<double, 3, global GUNSTRIDED>, 1>(RECTDOMAIN((0),
-                                                                 (THREADS)));
+                                                                 (ranks())));
   expArray.exchange(myExpArray);
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     checkSumArray =
       ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((1), (numIterations+1)));
   }
 
   // create "localComplexesOnProc0" and "myRemoteComplexesOnProc0"
-  if (MYTHREAD == 0)  {
+  if (myrank() == 0)  {
     localComplexesOnProc0 =
-      ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((0), (THREADS)));
+      ndarray<Complex, 1 UNSTRIDED>(RECTDOMAIN((0), (ranks())));
   }
 
   myRemoteComplexesOnProc0 = broadcast(localComplexesOnProc0, 0);
@@ -61,7 +61,7 @@ Test::Test(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array) {
 
 void Test::initialConditions(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array) {
   ndarray<Complex, 3 UNSTRIDED> myArray =
-    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
+    (ndarray<Complex, 3 UNSTRIDED>) array[myrank()];
   ndarray<double, 1 UNSTRIDED> temp(RECTDOMAIN((0), (1)));
 	
   int iMin = myArray.domain().min()[1];
@@ -99,7 +99,7 @@ void Test::initialConditions(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> 
 void Test::initializeExponentialArray() {
   const double c1 = (-4.0e-6) * PI * PI;
   ndarray<double, 3 UNSTRIDED> myExpArray =
-    (ndarray<double, 3 UNSTRIDED>) expArray[MYTHREAD];
+    (ndarray<double, 3 UNSTRIDED>) expArray[myrank()];
 
   int i, j, k;
   int halfnx = nx/2;
@@ -119,9 +119,9 @@ void Test::evolve(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
   TIMER_START(myTimer);
 
   ndarray<Complex, 3 UNSTRIDED> myArray =
-    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
+    (ndarray<Complex, 3 UNSTRIDED>) array[myrank()];
   ndarray<double, 3 UNSTRIDED> myExpArray =
-    (ndarray<double, 3 UNSTRIDED>) expArray[MYTHREAD];
+    (ndarray<double, 3 UNSTRIDED>) expArray[myrank()];
 
 #ifdef SPLIT_LOOP
   foreach3 (i, j, k, myArray.domain().shrink(PADDING, 3)) {
@@ -143,7 +143,7 @@ void Test::checkSum(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
   TIMER_START(myTimer);
 
   ndarray<Complex, 3 UNSTRIDED> myArray =
-    (ndarray<Complex, 3 UNSTRIDED>) array[MYTHREAD];
+    (ndarray<Complex, 3 UNSTRIDED>) array[myrank()];
   RectDomain<3> myArrayDomain = myArray.domain();
   long ntotal = nx * ny * nz;
   Complex procCheckSum(0, 0);
@@ -158,10 +158,10 @@ void Test::checkSum(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
     }
   }
 
-  myRemoteComplexesOnProc0[MYTHREAD] = procCheckSum;
+  myRemoteComplexesOnProc0[myrank()] = procCheckSum;
   barrier();
 	
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     Complex totalCheckSum;
 #ifdef SPLIT_LOOP
     foreach1 (p, localComplexesOnProc0.domain()) {
@@ -180,7 +180,7 @@ void Test::checkSum(ndarray<ndarray<Complex, 3, global GUNSTRIDED>, 1> array,
 }
 
 void Test::verifyCheckSum(char classType) {
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     // set up verifyArray
     ndarray<Complex, 1> verifyArray(RECTDOMAIN((1), (numIterations+1)));
 	    
@@ -323,7 +323,7 @@ void Test::verifyCheckSum(char classType) {
 
 void Test::printSummary() {
   for (int i=1; i <= 2; i++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (i) {
       case T_EVOLVE:
         println("EVOLVE: ");
@@ -344,9 +344,9 @@ void Test::printSummary() {
     double sumTotalComponentTime = reduce::add(totalComponentTime);
     double maxTotalComponentTime = reduce::max(totalComponentTime);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Time: " << minTotalComponentTime << ", " <<
-              (sumTotalComponentTime/THREADS) << ", " <<
+              (sumTotalComponentTime/ranks()) << ", " <<
               maxTotalComponentTime);
     }
 #endif
@@ -360,9 +360,9 @@ void Test::printSummary() {
     long sumTotalComponentCount = reduce::add(totalComponentCount);
     long maxTotalComponentCount = reduce::max(totalComponentCount);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Count: " << minTotalComponentCount << ", " <<
-              (sumTotalComponentCount/THREADS) << ", " <<
+              (sumTotalComponentCount/ranks()) << ", " <<
               maxTotalComponentCount);
     }
 #endif
@@ -371,7 +371,7 @@ void Test::printSummary() {
 
 void Test::printProfile() {
   for (int i=1; i <= 2; i++) {
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       switch (i) {
       case T_EVOLVE:
         println("EVOLVE:");
@@ -406,10 +406,10 @@ void Test::printProfile() {
     double gmaxTime = reduce::max(lmaxTime);
     double gsumTime = reduce::add(lsumTime);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Num Readings Per Proc:\t" << numReadingsPerProc);
       println("Min Time Over Procs:\t" << gminTime);
-      double gmeanTime = gsumTime/(numReadingsPerProc*THREADS);
+      double gmeanTime = gsumTime/(numReadingsPerProc*ranks());
       println("Mean Time Over Procs:\t" << gmeanTime);
       println("Max Time Over Procs:\t" << gmaxTime << "\n");
     }
@@ -437,19 +437,19 @@ void Test::printProfile() {
     long gmaxCount = reduce::max(lmaxCount);
     long gsumCount = reduce::add(lsumCount);
 	    
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       println("Num Readings Per Proc:\t" << numReadingsPerProc);
       println("Min Count Over Procs:\t" << gminCount);
-      double gmeanCount = gsumCount/(numReadingsPerProc*THREADS);
+      double gmeanCount = gsumCount/(numReadingsPerProc*ranks());
       println("Mean Count Over Procs:\t" << gmeanCount);
       println("Max Count Over Procs:\t" << gmaxCount << "\n");
     }
 
     /*
-      if (MYTHREAD == 0) {
+      if (myrank() == 0) {
         println("Min Count Over Procs:\t" << gminCount <<
                 "\nMean Count Over Procs:\t" <<
-                (gsumCount/(numReadingsPerProc*THREADS)) <<
+                (gsumCount/(numReadingsPerProc*ranks())) <<
                 "\nMax Count Over Procs:\t" << gmaxCount << "\n");
       }
     */

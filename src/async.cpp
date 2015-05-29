@@ -9,17 +9,12 @@ void gasnet_launcher<rank_t>::launch(generic_fp fp,
                                      size_t arg_sz)
 {
   async_task task;
-  task.init_async_task(myrank(),
+  task.init_async_task(global_myrank(),
                        _there,
                        _ack,
                        fp,
                        arg_sz,
                        async_args);
-  /*
-  if (_ack != NULL) {
-    _ack->incref();
-  }
-  */
   submit_task(&task, _after);
 }
 
@@ -28,22 +23,26 @@ void gasnet_launcher<range>::launch(generic_fp fp,
                                     void *async_args,
                                     size_t arg_sz)
 {
-  if (_ack != NULL) {
-    // _ack->incref(_there.count());
-    _ack->incref(_g.size());
-  }
+#if 0
+  for (int i = 0; i < _there.count(); i++) {
+    async_task task;
+    task.init_async_task(global_myrank(),
+                         _there[i],
+                         _ack,
+                         fp,
+                         arg_sz,
+                         async_args);
+    submit_task(&task, _after);
 
-  int remain_tasks = _g.size();
-  while (remain_tasks > 0) {
-    range target = _there;
-    if (remain_tasks < _there.count()) {
-      target = target - (_there.count() - remain_tasks);
-    }
-    // cout << target << "\n";
-    am_bcast(target, _ack, fp, arg_sz, async_args, _after,
-             _g.size()-remain_tasks,
-             (_g.index() == -1 ? 0 : 1));
-    remain_tasks -= target.count();
   }
+#else
+  if (_ack != NULL) {
+    if (_there.contains(global_myrank()))
+      _ack->incref(_there.count()-1);
+    else
+      _ack->incref(_there.count());
+  }
+  am_bcast(_there, _ack, fp, arg_sz, async_args, _after, global_myrank());
+#endif
 }
 

@@ -24,6 +24,8 @@ namespace upcxx {
     ARRAY_MISC_ALLOC_REQUEST,
     gasneti_handleridx(misc_alloc_reply) =
     ARRAY_MISC_ALLOC_REPLY,
+    gasneti_handleridx(array_alloc_request) =
+    ARRAY_ARRAY_ALLOC_REQUEST,
     gasneti_handleridx(strided_pack_request) =
     ARRAY_STRIDED_PACK_REQUEST,
     gasneti_handleridx(strided_pack_reply) =
@@ -32,6 +34,8 @@ namespace upcxx {
     ARRAY_STRIDED_UNPACKALL_REQUEST,
     gasneti_handleridx(strided_unpack_reply) =
     ARRAY_STRIDED_UNPACK_REPLY,
+    gasneti_handleridx(strided_unpackData_request) =
+    ARRAY_STRIDED_UNPACKDATA_REQUEST,
     gasneti_handleridx(strided_unpackOnly_request) =
     ARRAY_STRIDED_UNPACKONLY_REQUEST,
     gasneti_handleridx(sparse_simpleScatter_request) =
@@ -53,11 +57,13 @@ namespace upcxx {
   SHORT_HANDLER_DECL(misc_delete_request, 1, 2);
   SHORT_HANDLER_DECL(misc_alloc_request, 2, 4);
   SHORT_HANDLER_DECL(misc_alloc_reply, 2, 4);
+  MEDIUM_HANDLER_DECL(array_alloc_request, 2, 4);
 
   MEDIUM_HANDLER_DECL(strided_pack_request, 3, 6);
   MEDIUM_HANDLER_DECL(strided_pack_reply, 4, 8);
   MEDIUM_HANDLER_DECL(strided_unpackAll_request, 4, 7);
-  SHORT_HANDLER_DECL(strided_unpack_reply, 2, 3);
+  SHORT_HANDLER_DECL(strided_unpack_reply, 3, 5);
+  LONG_HANDLER_DECL(strided_unpackData_request, 5, 9);
   MEDIUM_HANDLER_DECL(strided_unpackOnly_request, 4, 7);
 
   MEDIUM_HANDLER_DECL(sparse_simpleScatter_request, 3, 6);

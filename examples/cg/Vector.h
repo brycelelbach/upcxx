@@ -44,7 +44,7 @@ class Vector {
 
   // return current "vector" field
   inline ndarray<double, 1 UNSTRIDED> getMyArray() const {
-    return (ndarray<double, 1 UNSTRIDED>) allArrays[MYTHREAD];
+    return (ndarray<double, 1 UNSTRIDED>) allArrays[(int) myrank()];
   }
 
   // deep-copy the elements of "a"'s vector field to "this"'s vector field

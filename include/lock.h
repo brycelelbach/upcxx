@@ -27,8 +27,10 @@ namespace upcxx
   struct  shared_lock {
   private:
     volatile int _locked; /**< lock state: 1 - locked, 0 - unlocked */
-    volatile gasnet_node_t _owner; /**< current owner of the lock */
-    int _init_flag;
+    rank_t _owner; /**< the owner of the lock */
+    rank_t _holder; /**< the current holder of the lock */
+    shared_lock *myself;
+
 #ifdef UPCXX_THREAD_SAFE
     pthread_mutex_t _mutex; /**< local handler-safe lock for thread/signal safety */
 #endif
@@ -37,8 +39,14 @@ namespace upcxx
     inline shared_lock()
     {
       _locked = 0;
-      _owner = 0;
-      _init_flag = 0;
+      if (is_init()) {
+        _owner = global_myrank();
+        _holder = global_myrank();
+      } else {
+        _owner = 0;
+        _holder = 0;
+      }
+      myself = this;
 #ifdef UPCXX_THREAD_SAFE
       pthread_mutex_init(&_mutex, NULL);
 #endif
@@ -68,10 +76,13 @@ namespace upcxx
     /**
      * \return 1 if the lock is hold by the calling process
      */
-    inline int islocked() { return _locked; }
+    int islocked();
 
-    inline gasnet_node_t getowner() { return _owner; }
-    inline void setowner(gasnet_node_t o) { _owner = o; }
+    inline rank_t get_owner() { return _owner; }
+    inline void set_owner(gasnet_node_t o) { _owner = o; }
+
+    inline rank_t get_holder() { return _holder; }
+    inline void set_holder(rank_t r) { _holder = r; }
 
     static void lock_am_handler(gasnet_token_t token, void *buf, size_t nbytes);
     static void lock_reply_handler(gasnet_token_t token, void *buf, size_t nbytes);
@@ -80,20 +91,27 @@ namespace upcxx
     /// \endcond
   };
 
+  struct lock_reply_t; // partial declaration of using its pointer type
+
+  struct lock_rv_t {
+    rank_t holder;
+    int islocked;
+  };
+
   struct lock_am_t {
-    int id;
     shared_lock *lock;
+    lock_rv_t *rv_addr; // the address for the return value
     event *cb_event;
+    int queryonly;
   };
 
   struct lock_reply_t {
-    shared_lock *lock;
-    gasnet_node_t lock_owner;
+    lock_rv_t *rv_addr;
+    lock_rv_t rv;
     event *cb_event;
   };
 
   struct unlock_am_t {
-    int id;
     shared_lock *lock;
   };
 } // namespace upcxx

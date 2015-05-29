@@ -11,6 +11,10 @@
 #include "upcxx_internal.h"
 #include "array_bulk_internal.h"
 
+#ifdef UPCXX_USE_DMAPP
+#include "dmapp_channel/dmapp_helper.h"
+#endif
+
 // #define UPCXX_DEBUG
 
 using namespace std;
@@ -49,16 +53,22 @@ namespace upcxx
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
     {INC_AM,                  (void (*)())inc_am_handler},
+    {FETCH_ADD_U64_AM,        (void (*)())fetch_add_am_handler<uint64_t>},
+    {FETCH_ADD_U64_REPLY,     (void (*)())fetch_add_reply_handler<uint64_t>},
+
+    gasneti_handler_tableentry_with_bits(copy_and_set_request),
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */
     gasneti_handler_tableentry_with_bits(misc_delete_request),
     gasneti_handler_tableentry_with_bits(misc_alloc_request),
     gasneti_handler_tableentry_with_bits(misc_alloc_reply),
+    gasneti_handler_tableentry_with_bits(array_alloc_request),
     gasneti_handler_tableentry_with_bits(strided_pack_request),
     gasneti_handler_tableentry_with_bits(strided_pack_reply),
     gasneti_handler_tableentry_with_bits(strided_unpackAll_request),
     gasneti_handler_tableentry_with_bits(strided_unpack_reply),
+    gasneti_handler_tableentry_with_bits(strided_unpackData_request),
     gasneti_handler_tableentry_with_bits(strided_unpackOnly_request),
     gasneti_handler_tableentry_with_bits(sparse_simpleScatter_request),
     gasneti_handler_tableentry_with_bits(sparse_done_reply),
@@ -76,7 +86,7 @@ namespace upcxx
   gasnet_nodeinfo_t *all_gasnet_nodeinfo;
   gasnet_nodeinfo_t *my_gasnet_nodeinfo;
   gasnet_node_t my_gasnet_supernode;
-  
+
   gasnet_hsl_t async_lock;
   // queue_t *async_task_queue = NULL;
   gasnet_hsl_t in_task_queue_lock;
@@ -84,7 +94,7 @@ namespace upcxx
   queue_t *in_task_queue = NULL;
   queue_t *out_task_queue = NULL;
   event system_event;
-  int init_flag = 0;  //  equals 1 if the backend is initialized
+  bool init_flag = false;  //  equals 1 if the backend is initialized
   std::list<event*> outstanding_events;
   gasnet_hsl_t outstanding_events_lock;
 
@@ -94,6 +104,11 @@ namespace upcxx
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
+
+  int env_use_am_for_copy_and_set;
+  int env_use_dmapp;
+
+  std::vector<void*> *pending_array_inits = NULL;
 
   int init(int *pargc, char ***pargv)
   {
@@ -108,8 +123,14 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_init()\n";
 #endif
-    gasnet_init(pargc, pargv); // init gasnet
-
+    if (pargc != NULL && pargv != NULL) {
+      gasnet_init(pargc, pargv); // init gasnet
+    } else {
+      int dummy_argc = 1;
+      char *dummy_argv = new char[6]; // "upcxx"
+      char **p_dummy_argv = &dummy_argv;
+      gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
+    }
 
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
@@ -139,7 +160,7 @@ namespace upcxx
     }
     my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
     my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
-    
+
     // Allocate gasnet segment space for shared_var
     if (total_shared_var_sz != 0) {
 #ifdef USE_GASNET_FAST_SEGMENT
@@ -185,24 +206,46 @@ namespace upcxx
     gasnet_hsl_init(&async_lock);
     gasnet_hsl_init(&outstanding_events_lock);
 
+#ifdef UPCXX_USE_DMAPP
+    init_dmapp();
+    env_use_dmapp = gasnett_getenv_yesno_withdefault("UPCXX_USE_DMAPP", 1);
+#else
+    env_use_dmapp = 0;
+#endif
+
 #ifdef UPCXX_HAVE_MD_ARRAY
     // Initialize array bulk operations
     array_bulk_init();
 #endif
 
-    init_flag = 1;
+    env_use_am_for_copy_and_set = gasnett_getenv_yesno_withdefault("UPCXX_USE_AM_FOR_COPY_AND_SET", 0);
+
+    init_flag = true;
+
+    // run the pending initializations of shared arrays
+    run_pending_array_inits();
+
     barrier();
     return UPCXX_SUCCESS;
   }
-    
+
   int finalize()
   {
     async_wait();
     while (advance() > 0);
     barrier();
     // gasnet_exit(0);
+    extern bool _threads_deprecated_warned;
+    if (global_myrank() == 0 && _threads_deprecated_warned) {
+      std::cerr << "WARNING: THREADS and MYTHREADS are deprecated;\n"
+                << "         use upcxx::ranks() and upcxx::myranks() instead!"
+                << "\n";
+    }
+
     return UPCXX_SUCCESS;
   }
+
+  bool is_init() { return init_flag; }
 
   uint32_t global_ranks()
   {
@@ -231,12 +274,12 @@ namespace upcxx
     task = (async_task *)malloc(nbytes);
     assert(task != NULL);
     memcpy(task, buf, nbytes);
-      
+
     // assert(async_task_queue != NULL);
     assert(in_task_queue != NULL);
 
 #ifdef UPCXX_DEBUG
-    cerr << "Rank " << myrank() << " is about to enqueue an async task.\n";
+    cerr << "Rank " << global_myrank() << " is about to enqueue an async task.\n";
     cerr << *task << endl;
 #endif
     // enqueue the async task
@@ -251,9 +294,20 @@ namespace upcxx
 
     assert(nbytes == sizeof(async_done_am_t));
 
+#ifdef UPCXX_DEBUG
+    gasnet_node_t src;
+    gasnet_AMGetMsgSource(token, &src);
+    fprintf(stderr, "Rank %u receives async done from %u",
+            global_myrank(), src);
+#endif
+
     if (am->ack_event != NULL) {
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "Rank %u receives async done from %u. event count %d\n",
+              global_myrank(), src, am->ack_event->_count);
+#endif
     }
   }
 
@@ -272,10 +326,10 @@ namespace upcxx
       gasnet_hsl_unlock(&in_task_queue_lock);
 
       assert (task != NULL);
-      assert (task->_callee == myrank());
+      assert (task->_callee == global_myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << "Rank " << myrank() << " is about to execute async task.\n";
+      cerr << "Rank " << global_myrank() << " is about to execute async task.\n";
       cerr << *task << "\n";
 #endif
 
@@ -283,11 +337,15 @@ namespace upcxx
         if (task->_fp) {
           (*task->_fp)(task->_args);
         }
-        
+
         if (task->_ack != NULL) {
-          if (task->_caller == myrank()) {
+          if (task->_caller == global_myrank()) {
             // local event acknowledgment
             task->_ack->decref(); // need to enqueue callback tasks
+#ifdef UPCXX_DEBUG
+            fprintf(stderr, "Rank %u completes a local task. event count %d\n",
+                    global_myrank(), task->_ack->_count);
+#endif
           } else {
             // send an ack message back to the caller of the async task
             async_done_am_t am;
@@ -301,7 +359,7 @@ namespace upcxx
         delete task;
         num_dispatched++;
         if (num_dispatched >= max_dispatched) break;
-    }; // end of while (!queue_is_empty(inq)) 
+    }; // end of while (!queue_is_empty(inq))
 
     return num_dispatched;
   } // end of poll_in_task_queue;
@@ -318,21 +376,21 @@ namespace upcxx
       task = (async_task *)queue_dequeue(outq);
       gasnet_hsl_unlock(&out_task_queue_lock);
       assert (task != NULL);
-      assert (task->_callee != myrank());
+      assert (task->_callee != global_myrank());
 
 #ifdef UPCXX_DEBUG
-      cerr << "Rank " << myrank() << " is about to send outgoing async task.\n";
+      cerr << "Rank " << global_myrank() << " is about to send outgoing async task.\n";
       cerr << *task << endl;
 #endif
 
       // remote async task
-      // Send AM "there" to request async task execution 
+      // Send AM "there" to request async task execution
       GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
                                           task, task->nbytes()));
       delete task;
       num_dispatched++;
       if (num_dispatched >= max_dispatched) break;
-    } // end of while (!queue_is_empty(outq)) 
+    } // end of while (!queue_is_empty(outq))
 
     return num_dispatched;
   } // end of poll_out_task_queue()
@@ -361,8 +419,8 @@ namespace upcxx
         // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
         event *e = (*it);
         assert(e != NULL);
-        // fprintf(stderr, "P %u Advance event: %p\n", myrank(), e);
-        e->test();
+        // fprintf(stderr, "P %u Advance event: %p\n", global_myrank(), e);
+        e->async_try();
         break;
       }
     }
@@ -377,29 +435,29 @@ namespace upcxx
   } // peek()
 
   volatile int exit_signal = 0;
-    
+
   void signal_exit_am()
   {
     exit_signal = 1;
   }
-    
+
   void signal_exit()
   {
     // Only the master process should wait for incoming tasks
-    assert(myrank() == 0);
+    assert(global_myrank() == 0);
 
     for (rank_t i = 1; i < ranks(); i++) {
       async(i)(signal_exit_am);
     }
-    async_wait(); 
+    async_wait();
   }
 
   void wait_for_incoming_tasks()
   {
     // Only the worker processes should wait for incoming tasks
-    assert(myrank() != 0);
-      
-    // Wait until the master process sends out an exit signal 
+    assert(global_myrank() != 0);
+
+    // Wait until the master process sends out an exit signal
     while (!exit_signal) {
       advance();
     }
@@ -455,11 +513,10 @@ namespace upcxx
 #if GASNET_PSHM
     if (is_memory_shared_with(r) == false)
       return NULL;
-    
+
     return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
 #else
     return NULL; // always return NULL if no PSHM support
 #endif
   }
 } // namespace upcxx
-

@@ -5,7 +5,7 @@ int xdim, ydim, zdim;
 int xparts, yparts, zparts;
 ndarray<rectdomain<3>, 1> allDomains;
 rectdomain<3> myDomain;
-ndarray<double, 3, simple> myGridA, myGridB;
+ndarray<double, 3> myGridA, myGridB;
 ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
 ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
 ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
@@ -69,9 +69,9 @@ ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
 
 void initGrid(ndarray<double, 3> grid) {
 #ifdef RANDOM_VALUES
-  foreach (p, grid.domain()) {
+  upcxx_foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
-  }
+  };
 #else
   grid.set(CONSTANT_VALUE);
 #endif
@@ -89,16 +89,16 @@ void probe(int steps) {
     async_wait(); // sync async copies
     barrier(); // wait for puts from all nodes
 
-    foreach3 (i, j, k, myDomain) {
-      myGridB[PT(i, j, k)] =
-        myGridA[PT(i, j, k+1)] +
-        myGridA[PT(i, j, k-1)] +
-        myGridA[PT(i, j+1, k)] +
-        myGridA[PT(i, j-1, k)] +
-        myGridA[PT(i+1, j, k)] +
-        myGridA[PT(i-1, j, k)] +
-        WEIGHT * myGridA[PT(i, j, k)];
-    }
+    upcxx_foreach (p, myDomain) {
+      myGridB[p] =
+        myGridA[p + PT( 0,  0,  1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0,  1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT( 1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
+        WEIGHT * myGridA[p];
+    };
     // Swap pointers
     SWAP(myGridA, myGridB);
     SWAP(targetsA, targetsB);
@@ -121,33 +121,33 @@ int main(int argc, char **args) {
     yparts = atoi(args[5]);
     zparts = atoi(args[6]);
     steps = atoi(args[7]);
-    assert(THREADS == xparts * yparts * zparts);
+    assert(ranks() == xparts * yparts * zparts);
   } else {
     xdim = ydim = zdim = 64;
-    xparts = THREADS;
+    xparts = ranks();
     yparts = zparts = 1;
     steps = 8;
   }
 
   allDomains = computeDomains(PT(xdim,ydim,zdim),
                               PT(xparts,yparts,zparts),
-                              THREADS);
-  myDomain = allDomains[MYTHREAD];
+                              (int)ranks());
+  myDomain = allDomains[(int)myrank()];
 
-  myGridA = ndarray<double, 3, simple>(myDomain.accrete(1));
-  myGridB = ndarray<double, 3, simple>(myDomain.accrete(1));
-  allGridsA = ndarray<ndarray<double, 3, global>, 1>(RD(THREADS));
-  allGridsB = ndarray<ndarray<double, 3, global>, 1>(RD(THREADS));
+  myGridA.create(myDomain.accrete(1));
+  myGridB.create(myDomain.accrete(1));
+  allGridsA.create(RD((int)ranks()));
+  allGridsB.create(RD((int)ranks()));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
   ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
-                                        THREADS, MYTHREAD);
-  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(6));
-  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(6));
+                                        (int)ranks(), (int)myrank());
+  targetsA.create(RD(6));
+  targetsB.create(RD(6));
+  sourcesA.create(RD(6));
+  sourcesB.create(RD(6));
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
       targetsA[i] = allGridsA[nb[i]].constrict(myDomain);
@@ -166,7 +166,7 @@ int main(int argc, char **args) {
   t.stop();
 
   double val = myGridA[myDomain.min()];
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << "Time for stencil with split " << xparts << "x" << yparts
          << "x" << zparts << " (s): " << t.secs() << endl;
     cout << "Verification value: " << val << endl;

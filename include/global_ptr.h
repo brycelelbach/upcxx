@@ -11,8 +11,6 @@
 #include "event.h"
 #include "global_ref.h"
 
-using namespace std;
-
 namespace upcxx
 {
   bool is_memory_shared_with(rank_t r);
@@ -29,6 +27,9 @@ namespace upcxx
     typedef T value_type;
 
     base_ptr(T *ptr, const place_t &pla) : _ptr(ptr), _pla(pla)
+    {}
+
+    base_ptr(const place_t &pla, T *ptr) : _ptr(ptr), _pla(pla)
     {}
 
     place_t where() const
@@ -59,6 +60,23 @@ namespace upcxx
       return (where() != rhs.where() || raw_ptr() != rhs.raw_ptr());
     }
 
+#ifdef UPCXX_HAVE_CXX11
+    bool operator != (decltype(nullptr)) const
+    {
+      return (raw_ptr() != nullptr);
+    }
+
+    bool operator == (decltype(nullptr)) const
+    {
+      return (raw_ptr() == nullptr);
+    }
+#endif
+
+    bool isnull() const
+    {
+      return (raw_ptr() == NULL);
+    }
+
   protected:
     T *_ptr;
     place_t _pla;
@@ -86,13 +104,17 @@ namespace upcxx
     typedef T value_type;
 
   public:
-    inline explicit global_ptr() : base_ptr<T, rank_t>(NULL, 0) {}
+    inline explicit global_ptr() : base_ptr<T, rank_t>((T *)NULL, 0) {}
 
     inline explicit global_ptr(T *ptr)
       : base_ptr<T, rank_t>(ptr, global_myrank()) {}
 
     inline
     global_ptr(T *ptr, rank_t pla) :
+      base_ptr<T, rank_t>(ptr, pla) {}
+
+    inline
+    global_ptr(rank_t pla, T *ptr) :
       base_ptr<T, rank_t>(ptr, pla) {}
 
     inline
@@ -104,6 +126,9 @@ namespace upcxx
     : base_ptr<T, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
+#ifdef UPCXX_HAVE_CXX11
+    explicit
+#endif
     operator T*() const
     {
       if (this->where() == global_myrank()) {
@@ -118,13 +143,26 @@ namespace upcxx
       // local address
       return NULL;
 #endif
-      
     }
 
     template <typename T2>
     global_ref<T> operator [] (T2 i) const
     {
       return global_ref<T>(this->where(), (T *)this->raw_ptr() + i);
+    }
+
+    // Support -> operator when pointing to a local object
+    T* operator->() const
+    {
+      if (this->where() == upcxx::global_myrank()) {
+        return this->raw_ptr();
+      } else {
+        std::cerr << "global_ptr " << *this << " is pointing to a remote object "
+                  << "but the '->' operator is supported only when pointing to "
+                  << "a local object.  Please use 'upcxx_memberof(global_ptr, filed)'\n";
+        gasnet_exit(1);
+      }
+      return NULL; // should never get here
     }
 
     global_ref<T> operator *() const
@@ -152,7 +190,7 @@ namespace upcxx
   struct global_ptr<void> : public base_ptr<void, rank_t>
   {
   public:
-    inline explicit global_ptr() : base_ptr<void, rank_t>(NULL, 0) {}
+    inline explicit global_ptr() : base_ptr<void, rank_t>((void *)NULL, 0) {}
 
     inline explicit global_ptr(void *ptr, rank_t pla = global_myrank()) :
       base_ptr<void, rank_t>(ptr, pla) {}
@@ -170,6 +208,9 @@ namespace upcxx
       : base_ptr<void, rank_t>(p.raw_ptr(), p.where()) {}
 
     // type casting operator for local pointers
+#ifdef UPCXX_HAVE_CXX11
+    explicit
+#endif
     operator void*()
     {
       if (this->where() == global_myrank()) {

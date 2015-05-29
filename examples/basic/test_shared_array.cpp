@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+using namespace std;
 using namespace upcxx;
 
 const size_t ARRAY_SIZE = 16;
@@ -17,11 +18,13 @@ shared_array<unsigned long> A(ARRAY_SIZE);
 
 void update()
 {
-  int np = THREADS;
-  int myid = MYTHREAD;
+  int np = upcxx::ranks();
+  int myid = upcxx::myrank();
 
-  A.init();
-
+  printf("Rank %d in update\n", myid);
+  //  A.init(); // no longer need to call init for shared_arra
+  printf("Rank %d after shared array A.init\n", myid);
+  barrier();
   printf("myid %d is updating...\n", myid);
 
   for (size_t i=myid; i<ARRAY_SIZE; i+=np) {
@@ -33,10 +36,13 @@ void update()
 
 int main(int argc, char **argv)
 {
-  for (int i = THREADS-1; i>=0; i--) {
+  printf("I'm in main\n");
+  // upcxx::init(&argc, &argv);
+  for (int i = ranks()-1; i>=0; i--) {
+    printf("async to %d for array updates.\n", i);
     async(i)(update);
   }
-
+  printf("After async, before async_wait\n");
   upcxx::async_wait();
 
   for (size_t i=0; i<ARRAY_SIZE; i++) {
@@ -49,5 +55,6 @@ int main(int argc, char **argv)
   int a = A[3] + 1;
   printf("A[3] + 1 = %d\n", a);
 
+  // finalize();
   return 0;
 }

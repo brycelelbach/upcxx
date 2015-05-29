@@ -70,7 +70,7 @@ namespace upcxx {
   };
 
   /* Combination of enable_if and is_same */
-#ifdef USE_CXX11
+#ifdef UPCXX_HAVE_CXX11
   template<class T, class U, class V>
   using enable_if_same = enable_if<is_same<T, U>::value, V>;
 #else

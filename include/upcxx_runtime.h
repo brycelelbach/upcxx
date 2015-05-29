@@ -13,9 +13,11 @@
 #ifdef UPCXX_THREAD_SAFE
 #include <pthread.h>
 #define upcxx_mutex_lock      pthread_mutex_lock
+#define upcxx_mutex_trylock   pthread_mutex_trylock
 #define upcxx_mutex_unlock    pthread_mutex_unlock
 #else
 #define upcxx_mutex_lock(X)
+#define upcxx_mutex_trylock(X) 0
 #define upcxx_mutex_unlock(X)
 #endif
 
@@ -54,6 +56,8 @@ namespace upcxx
    * once at the end of the client program.
    */
   int finalize();
+
+  bool is_init();
 
   rank_t global_ranks();
 
@@ -96,7 +100,7 @@ namespace upcxx
   // The advance function is recommended.
   inline int progress() { return advance(); }
 
-  // drain() is superceded by avdance(), provided for backward compatibility.
+  // drain() is superseded by advance(), provided for backward compatibility.
   // The advance function is recommended.
   inline int drain(int max_dispatched = 0)
   {

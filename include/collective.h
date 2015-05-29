@@ -10,10 +10,14 @@
 #include "gasnet_api.h"
 #include "upcxx_types.h"
 #include "coll_flags.h"
-#include "team.h"
+#include "allocate.h"
 
 namespace upcxx
 {
+  // Defined in team.cpp but we don't want to include team.h here due to
+  // cyclic include dependencies
+  extern gasnet_team_handle_t current_gasnet_team();
+
   template<class T>
   void upcxx_reduce(T *src, T *dst, size_t count, uint32_t root,
                     upcxx_op_t op, upcxx_datatype_t dt)
@@ -42,10 +46,11 @@ namespace upcxx
   {
     // gasnet_coll_gather_all(current_gasnet_team(), dst, src, nbytes,
     //                        UPCXX_GASNET_COLL_FLAG);
-    void *temp = malloc(nbytes * ranks());
+    void *temp = (void *)allocate(nbytes * gasnete_coll_team_size(current_gasnet_team()));
     assert(temp != NULL);
     upcxx_gather(src, temp, nbytes, 0);
-    upcxx_bcast(temp, dst, nbytes*ranks(), 0);
+    upcxx_bcast(temp, dst, nbytes * gasnete_coll_team_size(current_gasnet_team()), 0);
+    deallocate(temp);
   }
 
   static inline void upcxx_alltoall(void *src, void *dst, size_t nbytes)

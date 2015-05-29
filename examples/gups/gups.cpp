@@ -72,9 +72,9 @@ uint64_t starts(int64_t n)
 void RandomAccessUpdate()
 {
   uint64_t i;
-  uint64_t ran = starts(NUPDATE / THREADS * MYTHREAD);
+  uint64_t ran = starts(NUPDATE / ranks() * myrank());
 
-  for (i = MYTHREAD; i < NUPDATE; i += THREADS) {
+  for (i = myrank(); i < NUPDATE; i += ranks()) {
     ran = (ran << 1) ^ (((int64_t) ran < 0) ? POLY : 0);
     // Table[ran & (TableSize-1)] = Table[ran & (TableSize-1)] ^ ran;
     Table[ran & (TableSize-1)] ^= ran;
@@ -85,7 +85,7 @@ uint64_t RandomAccessVerify()
 {
   uint64_t i, localerrors, errors;
   localerrors = 0;
-  for (i = MYTHREAD; i < TableSize; i += THREADS) {
+  for (i = myrank(); i < TableSize; i += ranks()) {
     if (Table[i] != i) {
       localerrors++;
     }
@@ -104,19 +104,19 @@ int main(int argc, char **argv)
 
   Table.init();
 
-  if(MYTHREAD == 0) {
+  if(myrank() == 0) {
     printf("\nTable size = %g MBytes/CPU, %g MB/total on %d threads\n",
-           (double)TableSize*8/1024/1024/THREADS,
+           (double)TableSize*8/1024/1024/ranks(),
            (double)TableSize*8/1024/1024,
-           THREADS);
+           ranks());
     printf("\nExecuting randome updates...\n\n");
   }
 
   barrier(); // upc_barrier;
 
   time = get_time();
-  uint64_t * lt = (uint64_t *) &Table[MYTHREAD]; 
-  for (uint64_t i = MYTHREAD; i < TableSize; i += THREADS) {
+  uint64_t * lt = (uint64_t *) &Table[myrank()];
+  for (uint64_t i = myrank(); i < TableSize; i += ranks()) {
     *lt++ = i;
   }
 
@@ -126,9 +126,9 @@ int main(int argc, char **argv)
 
   time = get_time() - time;
   GUPs = (double)NUPDATE * 1e-9 / time;
-  latency = time * THREADS / NUPDATE * 1e6;
+  latency = time * ranks() / NUPDATE * 1e6;
 
-  if(MYTHREAD == 0) {
+  if(myrank() == 0) {
     printf("Number of updates = %llu\n", NUPDATE);
     printf("Real time used = %.6f seconds\n", time );
     printf("%.9f Billion(10^9) Updates per second [GUP/s]\n", GUPs);
@@ -136,11 +136,11 @@ int main(int argc, char **argv)
   }
 
 #if 1 // VERIFY  
-  if (MYTHREAD == 0) printf ("\nVerifying...\n");
+  if (myrank() == 0) printf ("\nVerifying...\n");
   RandomAccessUpdate();  // do it again
   barrier(); 
   uint64_t errors = RandomAccessVerify();
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     if ((double)errors/NUPDATE < 0.01) {
       printf ("Verification: SUCCESS (%llu errors in %llu updates)\n", 
               errors, NUPDATE);

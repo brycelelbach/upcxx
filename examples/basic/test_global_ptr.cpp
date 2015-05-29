@@ -26,7 +26,7 @@ int main (int argc, char **argv)
   global_ptr<double> ptr1;
   global_ptr<double> ptr2;
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     ptr1 = allocate<double>(0, count);
     ptr2 = allocate<double>(1, count);
 
@@ -37,7 +37,7 @@ int main (int argc, char **argv)
     // Initialize data pointed by ptr by a local pointer
     double *local_ptr1 = (double *)ptr1;
     for (size_t i=0; i<count; i++) {
-      local_ptr1[i] = (double)i + MYTHREAD * 1e6;
+      local_ptr1[i] = (double)i + myrank() * 1e6;
     }
     
     upcxx::copy(ptr1, ptr2, count);
@@ -45,7 +45,7 @@ int main (int argc, char **argv)
 
   barrier();
   
-  if (MYTHREAD == 1) {
+  if (myrank() == 1) {
     ptr2 = tmp_ptr;
     // verify data
     double *local_ptr2 = (double *)ptr2;

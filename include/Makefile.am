@@ -17,7 +17,11 @@ include_HEADERS =  \
   allocate.h \
   async.h \
   async_copy.h \
+  async_impl.h \
+  async_impl_templates1.h \
+  async_impl_templates2.h \
   async_templates.h \
+  atomic.h \
   coll_flags.h \
   collective.h \
   dl_malloc.h \
@@ -44,6 +48,11 @@ include_HEADERS =  \
 noinst_HEADERS = \
   upcxx_internal.h 
 
+if UPCXX_USE_DMAPP
+dmapp_includedir = $(includedir)/dmapp_channel
+dmapp_include_HEADERS = dmapp_channel/dmapp_helper.h
+endif
+
 if UPCXX_MD_ARRAY
 arrayincludedir = $(includedir)/upcxx-arrays
 arrayinclude_HEADERS =  \
@@ -59,9 +68,7 @@ arrayinclude_HEADERS =  \
   upcxx-arrays/domain.h \
   upcxx-arrays/domain.tpp \
   upcxx-arrays/domain_undefs.h \
-  upcxx-arrays/domains.h \
   upcxx-arrays/foreach.h \
-  upcxx-arrays/foreach_aux.h \
   upcxx-arrays/iter.h \
   upcxx-arrays/point.h \
   upcxx-arrays/point.tpp \

@@ -10,13 +10,15 @@
 #include <assert.h> // for assert
 // #include <stdint.h> // for uint32_t
 
-#include "gasnet_api.h"
-#include "async.h"
-#include "active_coll.h"
+#include <upcxx.h>
 
 // #define DEBUG
 
 using namespace std;
+
+#ifdef DEBUG
+upcxx::shared_lock output_lock;
+#endif
 
 namespace upcxx
 {
@@ -39,24 +41,41 @@ namespace upcxx
     // Recursively broadcast to the right half of the node partition
     upcxx::range new_target = bcast_arg->target;
     async_task &task = bcast_arg->task;
+    upcxx::range original_target = new_target;
+    bool islocal = bcast_arg->target.contains(global_myrank());
 
-#ifdef DEBUG
-    std::cerr << my_node << " in am_bcast_launch, target "
+#ifdef DEBUG0
+    std::cerr << global_myrank() << " in am_bcast_launch, target "
               << bcast_arg->target << " task " << task << "\n";
 #endif
 
+    if (original_target[0] != global_myrank()) {
+      async_task bcast_task;
+      bcast_task.init_async_task(global_myrank(),
+                                 bcast_arg->target[0],  // the first node
+                                 NULL,
+                                 am_bcast_launch,  // bcast kernel
+                                 bcast_arg->nbytes(),
+                                 bcast_arg);
+      submit_task(&bcast_task);
+      return;
+    }
+
+    
     while (new_target.count() > 1) {
 #ifdef DEBUG
+      output_lock.lock();
       std::cerr << "bcast to my right: new target " << new_target
-                << "new_target[0] " << new_target[0] << "\n";
+                << "\n new_target[0] " << new_target[0] << "\n";
+      output_lock.unlock();
 #endif
       async_task bcast_task;
       bcast_arg->root_index += new_target.count() / 2;
       // am_bcast_arg_t bcast_arg;
-      bcast_arg->target = range(new_target.begin() + new_target.count() / 2,
+      bcast_arg->target = range(new_target.begin() + new_target.count() / 2 * new_target.step(),
                                 new_target.end(),
                                 new_target.step());
-      bcast_task.init_async_task(myrank(),
+      bcast_task.init_async_task(global_myrank(),
                                  bcast_arg->target[0],  // the first node
                                  NULL,
                                  am_bcast_launch,  // bcast kernel
@@ -69,10 +88,17 @@ namespace upcxx
 
     // If I'm in the targets, insert the task into the async queue.
     // Do this after sending the AM bcast packets to maximize parallelism
-
-    task._callee = myrank();
-
-    submit_task(&task);
+#ifdef DEBUG
+    output_lock.lock();
+    std::cerr << "\nRank " << global_myrank() << " is in " << original_target << " "
+    << original_target.contains(global_myrank()) << endl;
+    output_lock.unlock();
+#endif
+    
+    if (islocal) {
+      task._callee = global_myrank();
+      submit_task(&task);
+    }
   }  // am_bcast_launch
 
   void am_bcast(range target,
@@ -81,8 +107,7 @@ namespace upcxx
                 size_t arg_sz,
                 void * args,
                 event *after,
-                int root_index,
-                int use_domain)
+                int root_index)
   {
     assert(ack != NULL);
 
@@ -91,9 +116,8 @@ namespace upcxx
     /* prepare bcast_arg */
     bcast_arg.target = target;
     bcast_arg.root_index = root_index;
-    bcast_arg.use_domain = use_domain;
-    bcast_arg.task.init_async_task(myrank(),
-                                   myrank(),
+    bcast_arg.task.init_async_task(global_myrank(),
+                                   global_myrank(),
                                    ack,
                                    fp,
                                    arg_sz,

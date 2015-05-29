@@ -34,10 +34,21 @@ int main(int argc, char **argv)
 
   global_ptr<double> src, dst;
   size_t sz = 1024*1024;
-  src = allocate<double>((myrank()+1)%THREADS, sz);
-  assert(src != NULL);
+  src = allocate<double>((myrank()+1)%ranks(), sz);
+#ifdef UPCXX_HAVE_CXX11
+  assert(src != nullptr); // assert(src != NULL); is OK but not type-safe
+#else  
+  assert(src.raw_ptr() != NULL); // or assert(!src.isnull());
+#endif
+  
   dst = allocate<double>(myrank(), sz);
-  assert(dst != NULL);
+#ifdef UPCXX_HAVE_CXX11
+  assert(dst != nullptr); // assert(dst != NULL); is OK but not type-safe
+#else
+  assert(dst.raw_ptr() != NULL); // or assert(!dst.isnull());
+#endif
+  
+  assert(dst != nullptr);
   src[sz-1] = 123456.789 + (double)myrank();
   dst[sz-1] = 0.0;
     

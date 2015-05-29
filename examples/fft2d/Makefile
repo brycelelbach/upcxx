@@ -8,6 +8,8 @@ all: clean
 clean:
 	-rm -f *.o $(EXES)
 
+CC ?= cc
+CXX ?= mpicxx
 
 UPCXX_INSTALL_DIR ?= /tmp/upcxx_install
 include $(UPCXX_INSTALL_DIR)/include/upcxx.mak

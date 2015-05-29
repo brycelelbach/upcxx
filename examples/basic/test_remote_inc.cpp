@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+using namespace std;
 using namespace upcxx;
 
 const size_t ARRAY_SIZE = 16;
@@ -25,7 +26,7 @@ int main(int argc, char **argv)
   }   
   barrier();
 
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     for (size_t i=0; i<ARRAY_SIZE; i++) {
       // printf("A[%lu]=%lu ", i, (unsigned long)A[i]);
       // printf("A[%lu]=%lu ", i, A[i]);

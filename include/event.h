@@ -16,8 +16,6 @@
 #include "queue.h"
 #include "upcxx_runtime.h"
 
-using namespace std;
-
 namespace upcxx
 {
   struct async_task; // defined in async_gasnet.h
@@ -36,7 +34,7 @@ namespace upcxx
   /**
    * \addtogroup asyncgroup Asynchronous task execution and Progress
    * @{
-   * Events are used to notify asych task completion and invoke callback functions.
+   * Events are used to notify asynch task completion and invoke callback functions.
    */
   struct event {
     volatile int _count; // outstanding number of tasks.
@@ -44,15 +42,16 @@ namespace upcxx
 #ifdef UPCXX_THREAD_SAFE
     pthread_mutex_t _mutex;
 #endif
-    list<gasnet_handle_t> _h;
+    std::vector<gasnet_handle_t> _gasnet_handles;
+#ifdef UPCXX_USE_DMAPP
+    std::vector<dmapp_syncid_handle_t> _dmapp_handles;
+#endif
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
-    // vector<async_task &> _cont_tasks;
+    // std::vector<async_task &> _cont_tasks;
 
-    inline event()
+    inline event() : _count(0), _num_done_cb(0), owner(0)
     {
-      _count = 0;
-      _num_done_cb = 0;
 #ifdef UPCXX_THREAD_SAFE
       pthread_mutex_init(&_mutex, NULL);
 #endif
@@ -79,9 +78,11 @@ namespace upcxx
     // Decrement the reference counter for the event
     void decref();
 
-    void add_handle(gasnet_handle_t h);
+    void add_gasnet_handle(gasnet_handle_t h);
 
-    void remove_handle(gasnet_handle_t h);
+#ifdef UPCXX_USE_DMAPP
+    void add_dmapp_handle(dmapp_syncid_handle_t h);
+#endif
 
     inline void lock() { upcxx_mutex_lock(&_mutex); }
 

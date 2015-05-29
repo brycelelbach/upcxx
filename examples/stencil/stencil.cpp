@@ -12,12 +12,12 @@ ndarray<rectdomain<3>, 1> allDomains;
 rectdomain<3> myDomain;
 ndarray<double, 3 UNSTRIDED> myGridA, myGridB;
 #ifdef SHARED_DIR
-shared_array<ndarray<double, 3, global> > allGridsA, allGridsB;
+shared_array<ndarray<double, 3, global UNSTRIDED> > allGridsA, allGridsB;
 #else
-ndarray<ndarray<double, 3, global>, 1> allGridsA, allGridsB;
+ndarray<ndarray<double, 3, global UNSTRIDED>, 1> allGridsA, allGridsB;
 #endif
-ndarray<ndarray<double, 3, global>, 1> targetsA, targetsB;
-ndarray<ndarray<double, 3>, 1> sourcesA, sourcesB;
+ndarray<ndarray<double, 3, global UNSTRIDED>, 1> targetsA, targetsB;
+ndarray<ndarray<double, 3 UNSTRIDED>, 1> sourcesA, sourcesB;
 #ifdef MPI_STYLE
 int nx, ny, nz;
 int nx_interior, ny_interior, nz_interior;
@@ -91,7 +91,7 @@ point<3> threadToPos(point<3> parts, int threads, int i) {
   int xpos = i / (parts[2] * parts[3]);
   int ypos = (i % (parts[2] * parts[3])) / parts[3];
   int zpos = i % parts[3];
-  return POINT(xpos, ypos, zpos);
+  return PT(xpos, ypos, zpos);
 }
 
 int posToThread(point<3> parts, int threads, point<3> pos) {
@@ -143,15 +143,15 @@ ndarray<int, 1> computeNeighbors(point<3> parts, int threads,
   return neighbors;
 }
 
-void initGrid(ndarray<double, 3> grid) {
+void initGrid(ndarray<double, 3 UNSTRIDED> grid) {
 #if DEBUG
-  cout << MYTHREAD << ": initializing grid with domain "
+  cout << myrank() << ": initializing grid with domain "
        << grid.domain() << endl;
 #endif
 #ifdef RANDOM_VALUES
-  foreach (p, grid.domain()) {
+  upcxx_foreach (p, grid.domain()) {
     grid[p] = ((double) rand()) / RAND_MAX;
-  }
+  };
 #else
   grid.set(CONSTANT_VALUE);
 #endif
@@ -374,17 +374,6 @@ void probe(int steps) {
         myGridA[PT(i-1, j, k)] +
         WEIGHT * myGridA[PT(i, j, k)];
     }
-#elif defined(SPLIT_LOOP)
-    cforeach3 (i, j, k, myDomain) {
-      myGridB[i][j][k] =
-        myGridA[i][j][k+1] +
-        myGridA[i][j][k-1] +
-        myGridA[i][j+1][k] +
-        myGridA[i][j-1][k] +
-        myGridA[i+1][j][k] +
-        myGridA[i-1][j][k] +
-        WEIGHT * myGridA[i][j][k];
-    }
 #elif defined(VAR_LOOP)
     cforeach3 (i, j, k, myDomain) {
       myGridB(i, j, k) =
@@ -395,36 +384,6 @@ void probe(int steps) {
         myGridA(i+1, j, k) +
         myGridA(i-1, j, k) +
         WEIGHT * myGridA(i, j, k);
-    }
-#elif defined (UNPACKED_LOOP)
-# ifdef UNPACK_SPEC
-#  ifndef CONCAT_
-#   define CONCAT_(a, b) CONCAT__(a, b)
-#   define CONCAT__(a, b) a ## b
-#  endif
-#  define AINDEX3_SPEC CONCAT_(AINDEX3_, UNPACK_SPEC)
-# else
-#  define AINDEX3_SPEC AINDEX3
-# endif
-# if defined(USE_RESTRICT) && defined(__GNUC__)
-    AINDEX3_SETUP_QUAL(myGridA, __restrict__);
-    AINDEX3_SETUP_QUAL(myGridB, __restrict__);
-# elif defined(USE_RESTRICT)
-    AINDEX3_SETUP_QUAL(myGridA, __restrict);
-    AINDEX3_SETUP_QUAL(myGridB, __restrict);
-# else
-    AINDEX3_SETUP(myGridA);
-    AINDEX3_SETUP(myGridB);
-# endif
-    cforeach3(i, j, k, myDomain) {
-      AINDEX3_SPEC(myGridB, i, j, k) =
-	AINDEX3_SPEC(myGridA, i, j, k+1) +
-	AINDEX3_SPEC(myGridA, i, j, k-1) +
-	AINDEX3_SPEC(myGridA, i, j+1, k) +
-	AINDEX3_SPEC(myGridA, i, j-1, k) +
-	AINDEX3_SPEC(myGridA, i+1, j, k) +
-	AINDEX3_SPEC(myGridA, i-1, j, k) +
-	WEIGHT * AINDEX3_SPEC(myGridA, i, j, k);
     }
 #elif defined(RAW_LOOP)
 # define Index3D(i,j,k)                                                 \
@@ -474,68 +433,53 @@ void probe(int steps) {
         }
       }
     }
-#elif defined(OMP_SPLIT_LOOP) && defined(USE_FOREACHH)
+#elif defined(OMP_LOOP)
     foreachh (3, myDomain, lwb, upb, stride, done) {
       foreachhd (i, 0, lwb, upb, stride) {
 # pragma omp parallel for
         foreachhd (j, 1, lwb, upb, stride) {
 # pragma ivdep
           foreachhd (k, 2, lwb, upb, stride) {
-            myGridB[i][j][k] =
-              myGridA[i][j][k+1] +
-              myGridA[i][j][k-1] +
-              myGridA[i][j+1][k] +
-              myGridA[i][j-1][k] +
-              myGridA[i+1][j][k] +
-              myGridA[i-1][j][k] +
-              WEIGHT * myGridA[i][j][k];
+            myGridB[PT(i, j, k)] =
+              myGridA[PT(i, j, k+1)] +
+              myGridA[PT(i, j, k-1)] +
+              myGridA[PT(i, j+1, k)] +
+              myGridA[PT(i, j-1, k)] +
+              myGridA[PT(i+1, j, k)] +
+              myGridA[PT(i-1, j, k)] +
+              WEIGHT * myGridA[PT(i, j, k)];
           }
         }
       }
     }
-#elif defined(OMP_SPLIT_LOOP)
-    foreachd (i, myDomain, 1) {
-      foreachd_pragma (omp parallel for, j, myDomain, 2) {
-	foreachd_pragma (ivdep, k, myDomain, 3) {
-	  myGridB[i][j][k] =
-	    myGridA[i][j][k+1] +
-	    myGridA[i][j][k-1] +
-	    myGridA[i][j+1][k] +
-	    myGridA[i][j-1][k] +
-	    myGridA[i+1][j][k] +
-	    myGridA[i-1][j][k] +
-	    WEIGHT * myGridA[i][j][k];
-	}
-      }
-    }
 #else
-    foreach (p, myDomain) {
+    upcxx_foreach (p, myDomain) {
 # ifdef SECOND_ORDER
       myGridB[p] =
-        myGridA[p + POINT( 0,  0,  2)] +
-        myGridA[p + POINT( 0,  0,  1)] +
-        myGridA[p + POINT( 0,  0, -1)] +
-        myGridA[p + POINT( 0,  0, -2)] +
-        myGridA[p + POINT( 0,  2,  0)] +
-        myGridA[p + POINT( 0,  1,  0)] +
-        myGridA[p + POINT( 0, -1,  0)] +
-        myGridA[p + POINT( 0, -2,  0)] +
-        myGridA[p + POINT( 2,  0,  0)] +
-        myGridA[p + POINT( 1,  0,  0)] +
-        myGridA[p + POINT(-1,  0,  0)] +
-        myGridA[p + POINT(-2,  0,  0)] +
+        myGridA[p + PT( 0,  0,  2)] +
+        myGridA[p + PT( 0,  0,  1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0,  0, -2)] +
+        myGridA[p + PT( 0,  2,  0)] +
+        myGridA[p + PT( 0,  1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT( 0, -2,  0)] +
+        myGridA[p + PT( 2,  0,  0)] +
+        myGridA[p + PT( 1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
+        myGridA[p + PT(-2,  0,  0)] +
         WEIGHT * myGridA[p];
 # else
       myGridB[p] =
-        myGridA[p + POINT( 0,  0,  1)] +
-        myGridA[p + POINT( 0,  0, -1)] +
-        myGridA[p + POINT( 0,  1,  0)] +
-        myGridA[p + POINT( 0, -1,  0)] +
-        myGridA[p + POINT( 1,  0,  0)] +
-        myGridA[p + POINT(-1,  0,  0)] +
+        myGridA[p + PT( 0,  0,  1)] +
+        myGridA[p + PT( 0,  0, -1)] +
+        myGridA[p + PT( 0,  1,  0)] +
+        myGridA[p + PT( 0, -1,  0)] +
+        myGridA[p + PT( 1,  0,  0)] +
+        myGridA[p + PT(-1,  0,  0)] +
         WEIGHT * myGridA[p];
 # endif
-    }
+    };
 #endif
     TIMER_STOP(timers[PROBE_COMPUTE]);
     TIMER_START(timers[POST_COMPUTE_BARRIER]);
@@ -550,17 +494,17 @@ void probe(int steps) {
 
 #ifdef TIMERS_ENABLED
 # define report(d, s) do { \
-    if (MYTHREAD == 0)      \
+    if (myrank() == 0)      \
       cout << s;            \
     report_value(d);        \
   } while (0)
 
 // Report min, average, max of given value.
 void report_value(double d) {
-  double ave = reduce::add(d, 0) / THREADS;
+  double ave = reduce::add(d, 0) / ranks();
   double max = reduce::max(d, 0);
   double min = reduce::min(d, 0);
-  if (MYTHREAD == 0) {
+  if (myrank() == 0) {
     cout << ": " << min << ", " << ave << ", " << max << endl;
   }
 }
@@ -590,26 +534,26 @@ int main(int argc, char **args) {
     yparts = atoi(args[5]);
     zparts = atoi(args[6]);
     steps = atoi(args[7]);
-    assert(THREADS == xparts * yparts * zparts);
+    assert(ranks() == xparts * yparts * zparts);
     if (argc > 8)
       numTrials = atoi(args[8]);
   } else {
     xdim = ydim = zdim = 64;
-    xparts = THREADS;
+    xparts = ranks();
     yparts = zparts = 1;
     steps = 8;
   }
 
 #if DEBUG
-  if (MYTHREAD == 0) {
-    for (int i = 0; i < THREADS; i++) {
+  if (myrank() == 0) {
+    for (int i = 0; i < ranks(); i++) {
       point<3> pos =
-        threadToPos(POINT(xparts,yparts,zparts), THREADS, i);
+        threadToPos(PT(xparts,yparts,zparts), ranks(), i);
       cout << i << " -> " << pos << ", " << pos << " -> "
-           << posToThread(POINT(xparts,yparts,zparts), THREADS, pos)
+           << posToThread(PT(xparts,yparts,zparts), ranks(), pos)
            << endl;
       ndarray<int, 1> nb =
-        computeNeighbors(POINT(xparts,yparts,zparts), THREADS, i);
+        computeNeighbors(PT(xparts,yparts,zparts), ranks(), i);
       for (int j = 0; j < nb.size(); j++) {
         cout << "  " << nb[j];
       }
@@ -618,12 +562,12 @@ int main(int argc, char **args) {
   }
 #endif
 
-  allDomains = computeDomains(POINT(xdim,ydim,zdim),
-                              POINT(xparts,yparts,zparts),
-                              THREADS);
-  myDomain = allDomains[MYTHREAD];
+  allDomains = computeDomains(PT(xdim,ydim,zdim),
+                              PT(xparts,yparts,zparts),
+                              ranks());
+  myDomain = allDomains[myrank()];
 #if DEBUG
-  cout << MYTHREAD << ": thread domain is " << myDomain << endl;
+  cout << myrank() << ": thread domain is " << myDomain << endl;
 #endif
 
   myGridA =
@@ -631,31 +575,29 @@ int main(int argc, char **args) {
   myGridB =
     ndarray<double, 3 UNSTRIDED>(myDomain.accrete(GHOST_WIDTH) CMAJOR);
 #ifdef SHARED_DIR
-  allGridsA.init(THREADS);
-  allGridsB.init(THREADS);
-  allGridsA[MYTHREAD] = myGridA;
-  allGridsB[MYTHREAD] = myGridB;
+  allGridsA.init(ranks());
+  allGridsB.init(ranks());
+  allGridsA[myrank()] = myGridA;
+  allGridsB[myrank()] = myGridB;
 #else
-  allGridsA =
-    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
-  allGridsB =
-    ndarray<ndarray<double, 3, global>, 1>(RD((int)THREADS));
+  allGridsA.create(RD((int)ranks()));
+  allGridsB.create(RD((int)ranks()));
   allGridsA.exchange(myGridA);
   allGridsB.exchange(myGridB);
 #endif
 
   // Compute ordered ghost zone overlaps, x -> y -> z.
-  ndarray<int, 1> nb = computeNeighbors(POINT(xparts,yparts,zparts),
-                                        (int)THREADS, (int)MYTHREAD);
+  ndarray<int, 1> nb = computeNeighbors(PT(xparts,yparts,zparts),
+                                        (int)ranks(), (int)myrank());
   rectdomain<3> targetDomain = myDomain;
-  targetsA = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  targetsB = ndarray<ndarray<double, 3, global>, 1>(RD(6));
-  sourcesA = ndarray<ndarray<double, 3>, 1>(RD(6));
-  sourcesB = ndarray<ndarray<double, 3>, 1>(RD(6));
+  targetsA.create(RD(6));
+  targetsB.create(RD(6));
+  sourcesA.create(RD(6));
+  sourcesB.create(RD(6));
   for (int i = 0; i < 6; i++) {
     if (nb[i] != -1) {
 #if DEBUG
-      cout << MYTHREAD << ": overlap " << i << " = "
+      cout << myrank() << ": overlap " << i << " = "
            << (((ndarray<double, 3, global>)
                 allGridsA[nb[i]]).domain() * targetDomain) << endl;
 #endif
@@ -684,7 +626,7 @@ int main(int argc, char **args) {
   nx = nx_interior + 2 * GHOST_WIDTH;
   ny = ny_interior + 2 * GHOST_WIDTH;
   nz = nz_interior + 2 * GHOST_WIDTH;
-  setupComm(PT(xparts,yparts,zparts), THREADS, MYTHREAD);
+  setupComm(PT(xparts,yparts,zparts), ranks(), myrank());
 
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
@@ -698,7 +640,7 @@ int main(int argc, char **args) {
 # if DEBUG
     point<3> p = packEnds[i] - packStarts[i];
     point<3> q = unpackEnds[i] - unpackStarts[i];
-    cout << MYTHREAD << ": Ghost size in dir " << i << ": "
+    cout << myrank() << ": Ghost size in dir " << i << ": "
          << (planeSizes[i] * GHOST_WIDTH) << ", "
          << (p[1] * p[2] * p[3]) << ", "
          << (q[1] * q[2] * q[3]) << endl;
@@ -706,14 +648,14 @@ int main(int argc, char **args) {
   }
 
 # if !USE_MPI
-  allInBufs.create(RD(THREADS));
+  allInBufs.create(RD(ranks()));
   allInBufs.exchange(inBufs);
   for (int i = 0; i < 6; i++) {
     if (neighbors[i] != -1) {
       targetBufs.buffers[i] =
         allInBufs[neighbors[i]].buffers[i];
 #  if DEBUG
-      cout << MYTHREAD << ": target " << i << ": "
+      cout << myrank() << ": target " << i << ": "
            << targetBufs.buffers[i] << endl;
 #  endif
     }
@@ -736,7 +678,7 @@ int main(int argc, char **args) {
     double val = myGridA[myDomain.min()];
     report(t.secs(), "Time for trial " << i << " with split " <<
            xparts << "x" << yparts << "x" << zparts << " (s)");
-    if (MYTHREAD == 0) {
+    if (myrank() == 0) {
       cout << "Verification value: " << val << endl;
     }
 #ifdef TIMERS_ENABLED

@@ -1,9 +1,9 @@
 #pragma once
 
-#define UPCXXA_PROCS THREADS
-#define UPCXXA_MYPROC MYTHREAD
-#define UPCXXA_GLOBAL_PROCS GLOBAL_THREADS
-#define UPCXXA_GLOBAL_MYPROC GLOBAL_MYTHREAD
+#define UPCXXA_PROCS upcxx::ranks()
+#define UPCXXA_MYPROC upcxx::myrank()
+#define UPCXXA_GLOBAL_PROCS upcxx::global_ranks()
+#define UPCXXA_GLOBAL_MYPROC upcxx::global_myrank()
 
 #define UPCXXA_DEREF                            UPCXXA_DEREF_LOCAL
 #define UPCXXA_ASSIGN                           UPCXXA_ASSIGN_LOCAL
@@ -75,8 +75,8 @@
                     nbytes, event)
 #define UPCXXA_GET_ARRAY(pmethod, cdesc, cdescsz, target, buffer) \
   upcxx::get_array(pmethod, cdesc, cdescsz, target, buffer)
-#define UPCXXA_PUT_ARRAY(umethod, cdesc, cdescsz, data, datasz, target, event) \
-  upcxx::put_array(umethod, cdesc, cdescsz, data, datasz, target, event)
+#define UPCXXA_PUT_ARRAY(umethod, cdesc, cdescsz, data, datasz, target, event, newbuf) \
+  upcxx::put_array(umethod, cdesc, cdescsz, data, datasz, target, event, newbuf)
 #define UPCXXA_SPARSE_SCATTER(dsts, src, target, num, elemsz) \
   upcxx::sparse_scatter(dsts, src, target, num, elemsz)
 #define UPCXXA_SPARSE_GATHER(dst, srcs, target, num, elemsz) \

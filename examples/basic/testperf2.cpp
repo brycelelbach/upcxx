@@ -45,12 +45,12 @@ int main (int argc, char **arsv)
     total_time3 += TIME() - start_time;
   }
   barrier();
-  if (MYTHREAD == 0) {
-    assert((uint32_t)sv == niters * THREADS);
+  if (myrank() == 0) {
+    assert((uint32_t)sv == niters * ranks());
   }
   
-  printf("MYTHREAD %d: lock time %lg (us), unlock time % lg (us), shared variable access time (read+write) %lg (us)\n",
-         MYTHREAD, (double)total_time1/niters, (double)total_time3/niters, (double)total_time2/niters);
+  printf("myrank() %d: lock time %lg (us), unlock time % lg (us), shared variable access time (read+write) %lg (us)\n",
+         myrank(), (double)total_time1/niters, (double)total_time3/niters, (double)total_time2/niters);
 
   barrier();
   finalize();

@@ -13,26 +13,26 @@ LocalSparseMat::LocalSparseMat(ndarray<double, 1 UNSTRIDED> la,
 	
 	// "rowptr", "colidx", and "a" are all in global coordinates and zero-based
 	// In contrast, "la", "lcidx", and "lrow" are all one-based
-  ndarray<int, 1 UNSTRIDED> rowptr(RECTDOMAIN((rowStart), (rowEnd+2)));
-  colidx = ndarray<int, 1 UNSTRIDED>(RECTDOMAIN((0), (numNonZeros)));
+  ndarray<int, 1 UNSTRIDED> rowptr(RD(rowStart, rowEnd+2));
+  colidx = ndarray<int, 1 UNSTRIDED>(RD(0, numNonZeros));
   a = ndarray<double, 1 UNSTRIDED>(colidx.domain());
 
   // populate the "rowptr", "colidx", and "a" arrays
   FOREACH (p, rowptr.domain()) {
-    rowptr[p] = lrow.translate(POINT(rowStart-1))[p]-1;
-  }
-  foreach (p, colidx.domain()) {
+    rowptr[p] = lrow.translate(PT(rowStart-1))[p]-1;
+  };
+  upcxx_foreach (p, colidx.domain()) {
     colidx[p] = lcidx[p[1]+1]-1;
     a[p] = la[p[1]+1];
-  }
+  };
 
   // populate the "rowRectDomains" array
   rowRectDomains =
     ndarray<RectDomain<1>, 1 UNSTRIDED>(RectDomain<1>(rowptr.domain().min(),
                                                       rowptr.domain().max()));
   FOREACH (i, rowRectDomains.domain()) {
-    rowRectDomains[i] = RECTDOMAIN((rowptr[i]), (rowptr[i+1]));
-  }
+    rowRectDomains[i] = RD(rowptr[i], rowptr[i+1]);
+  };
 }
 
 void LocalSparseMat::multiply(ndarray<double, 1 UNSTRIDED> output,
@@ -49,7 +49,7 @@ void LocalSparseMat::multiply(ndarray<double, 1 UNSTRIDED> output,
     sum = 0;
     FOREACH (j, lrowRectDomains[i]) {
       sum += la[j] * input[lcolidx[j]];
-    }
+    };
     output[i] = sum;
-  }
+  };
 }
