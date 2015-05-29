@@ -31,9 +31,14 @@ print_usage() {
     echo "    upc++ hello.cpp  ## compile hello.cpp and link it to a.out"
     echo ""
     echo "  UPC++ specific options:"
-    echo "    -h print this help message"
-    echo "    -show print the command line that upc++ would execute"
-    echo "    -cxx=C++ COMPILER, overwrite the default C++ complier"
+    echo "    -h  Print this help message"
+    echo "    -show  Print the command line that upc++ would execute"
+    echo "    -cxx=<C++ compiler>  Overwrite the default C++ complier"
+    echo "                                                         "
+    echo "    --short-names  Enable short names for UPC++ constructs (memberof, finish, teamsplit, foreach)"
+    echo "    --bounds-checking  Enable bounds-checking for shared array accesses and global pointer dereferences"
+    echo "    --column-major-arrays  Make default array layout column major rather than row major"
+    echo "    --default-stridedness=<stridedness>  Specify default stridedness of multidimensional arrays"
     echo ""
 }
 
@@ -46,6 +51,7 @@ argno=0
 for arg in "$@" ; do
     # Set addarg to no if this arg should be ignored by the C compiler
     addarg=yes
+
     case "$arg" in 
     # ----------------------------------------------------------------
     # Compiler options that affect whether we are linking or no
@@ -53,30 +59,34 @@ for arg in "$@" ; do
     # The compiler links by default
     complieonly=yes
     ;;
+    
     # ----------------------------------------------------------------
-    # Options that control how we use mpicxx (e.g., -show, 
-    # -cxx=* -config=*
+    # Options that control how we use upc++
     -echo)
     addarg=no
     set -x
     ;;
+
     -cxx=*)
     CXX=`echo A$arg | sed -e 's/A-cxx=//g'`
     addarg=no
     ;;
-    # Backwards compatibility for MPICH1 - scripts
+    
     -CC=*)
     CXX=`echo A$arg | sed -e 's/A-CC=//g'`
     addarg=no
     ;;
+    
     -h)
     print_usage
     exit 0
     ;;
-    -show)
+    
+    -show|--show)
     addarg=no
     ECHO=echo
     ;;
+    
     -v)
     # Pass this argument to the compiler as well.
     echo "UPC++ version $UPCXX_VERSION"
@@ -84,6 +94,28 @@ for arg in "$@" ; do
     echo 'Please run "'${CXX}' -v" to see the info from the C++ compiler'
     exit 0
     ;;
+    
+    --short-names)
+    addarg=no
+    UPCXX_CXXFLAGS+=" -DUPCXX_SHORT_MACROS "
+    ;;
+
+    --bounds-checking)
+    addarg=no
+    UPCXX_CXXFLAGS+=" -DUPCXX_BOUNDS_CHECKING "
+    ;;
+
+    --column-major-arrays)
+    addarg=no
+    UPCXX_CXXFLAGS+=" -DUPCXXA_DEFAULT_CMAJOR "
+    ;;
+
+    --default-stridedness=*)
+    DEFAULT_STRIDE=`echo A$arg | sed -e 's/A--default-stridedness=//g'`
+    addarg=no
+    UPCXX_CXXFLAGS+=" -DUPCXXA_DEFAULT_STRIDEDNESS=${DEFAULT_STRIDE} "
+    ;;
+
     *)
     ;;
     esac
