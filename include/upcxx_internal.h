@@ -90,7 +90,7 @@ namespace upcxx
   SHORT_HANDLER_DECL(copy_and_set_reply, 1, 2);
 
   enum { gasneti_handleridx(copy_and_set_request) = COPY_AND_SET_AM };
-  enum { gasneti_handleridx(copy_and_set_relpy) = COPY_AND_SET_REPLY };
+  enum { gasneti_handleridx(copy_and_set_reply) = COPY_AND_SET_REPLY };
 
   //typedef struct {
   //  void *addr;

@@ -28,7 +28,7 @@ struct Buffer {
 global_ptr<Buffer> allocate_buffer(int n)
 {
   // allocate the buffer that can hold a flag and n doubles
-  size_t nbytes = n*sizeof(double)+sizeof(flag_t);
+  size_t nbytes = n*sizeof(double)+sizeof(flag_t);
   return (global_ptr<Buffer>)upcxx::allocate<char>(myrank(), nbytes);
 }
 
@@ -37,9 +37,9 @@ void deallocate_buffer(global_ptr<Buffer> b)
   upcxx::deallocate(b);
 }
 
-shared_array <global_ptr<Buffer>[NUM_PEERS]> inbuffers;
+shared_array <global_ptr<Buffer>[NUM_PEERS]> inbuffers(ranks()*NUM_PEERS);
 
-shared_array <global_ptr<Buffer>[NUM_PEERS]> outbuffers;
+shared_array <global_ptr<Buffer>[NUM_PEERS]> outbuffers(ranks()*NUM_PEERS);
 
 global_ptr<flag_t> my_peers_sendflags[NUM_PEERS]; // peer's inbuffer->flag
 global_ptr<double> my_peers_buffers[NUM_PEERS];
@@ -140,7 +140,7 @@ int verify_buffer_data(double *buf, int n, uint32_t rank, Neighbor peer)
     expected = (double)i + (double)peer*1e4 + rank*1e6;
     if (buf[i] != expected) {
       num_errors++;
-      printf("My rank %u data verification error (rank %u, peer %u, buf %p): buf[%lu]=%f but expecting %f.\n",
+      printf("My rank %u data verification error (rank %u, peer %u, buf %p): buf[%d]=%f but expecting %f.\n",
              myrank(), rank, peer, buf, i, buf[i], expected);
     }
   }
@@ -223,8 +223,6 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
 
 int main (int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
-  
   int count = DEFAULT_COUNT;
 
   if (argc > 1) {
@@ -284,14 +282,13 @@ int main (int argc, char **argv)
   }
 
   test_async_copy_and_set(count, nrows, ncols);
-
+
   barrier();
 
   for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
     deallocate_buffer(my_inbuffers[peer]);
     deallocate_buffer(my_outbuffers[peer]);
   }
-  upcxx::finalize();
 
   return 0;
 }

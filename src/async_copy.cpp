@@ -111,7 +111,7 @@ namespace upcxx
       done_event->decref();
     }
   }
-  SHORT_HANDLER(copy_and_set_reply_inner, 1, 2,
+  SHORT_HANDLER(copy_and_set_reply, 1, 2,
                 (token, UNPACK(a0)),
                 (token, UNPACK2(a0, a1)));
 
@@ -129,7 +129,7 @@ namespace upcxx
     gasnett_local_wmb(); // make sure the flag is set after the data written
     *(flag_t*)flag_addr = UPCXX_FLAG_VAL_SET;
     if (done_event != NULL) {
-      SHORT_SRP(1,2,(token, gasneti_handleridx(copy_and_set_reply), PACK(done_event)));
+      GASNET_SAFE(SHORT_REP(1,2,(token, COPY_AND_SET_REPLY, PACK(done_event))));
     }
   }
   MEDIUM_HANDLER(copy_and_set_request, 3, 6,
@@ -138,10 +138,10 @@ namespace upcxx
 
 #ifdef UPCXX_USE_DMAPP
   int async_put_and_set_dmapp(global_ptr<void> src,
-                                global_ptr<void> dst,
-                                size_t nbytes,
-                                global_ptr<flag_t> flag_addr,
-                                event *e)
+                              global_ptr<void> dst,
+                              size_t nbytes,
+                              global_ptr<flag_t> flag_addr,
+                              event *e)
   {
     uint64_t nelems;
     dmapp_type_t dtype;
