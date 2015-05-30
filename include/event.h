@@ -34,7 +34,7 @@ namespace upcxx
   /**
    * \addtogroup asyncgroup Asynchronous task execution and Progress
    * @{
-   * Events are used to notify asych task completion and invoke callback functions.
+   * Events are used to notify asynch task completion and invoke callback functions.
    */
   struct event {
     volatile int _count; // outstanding number of tasks.
@@ -122,14 +122,23 @@ namespace upcxx
                << "\n";
   }
 
-  extern event system_event; // defined in upcxx.cpp
-  extern std::list<event *> outstanding_events;
+  extern event *system_event; // defined in upcxx.cpp
+  extern std::list<event *> *outstanding_events;
   extern gasnet_hsl_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);
   void pop_event();
   event *peek_event();
+
+  struct event_stack {
+    std::vector<event *> stack;
+    inline event_stack() {
+      stack.push_back(system_event);
+    }
+  };
+  extern event_stack *events;
+
 
   inline void async_wait(event *e)
   {

@@ -18,12 +18,12 @@ shared_array<unsigned long> A(ARRAY_SIZE);
 
 void update()
 {
-  int np = upcxx::ranks();
-  int myid = upcxx::myrank();
+  int np = ranks();
+  int myid = myrank();
 
-  printf("Rank %d in update\n", myid);
-  A.init();
-  printf("Rank %d after shared array A.init\n", myid);
+  printf("Rank %d in update\n", myrank());
+  //  A.init(); // no longer need to call init for shared_arra
+  printf("Rank %d after shared array A.init\n", myrank());
   barrier();
   printf("myid %d is updating...\n", myid);
 
@@ -55,6 +55,8 @@ int main(int argc, char **argv)
   int a = A[3] + 1;
   printf("A[3] + 1 = %d\n", a);
 
-  // finalize();
+  if (myrank() == 0)
+    printf("test_shared_array passed!\n");
+
   return 0;
 }

@@ -13,8 +13,8 @@ using namespace upcxx;
 
 shared_lock sl;
 
-shared_array<shared_lock> sl_arr;
-shared_array<int> sd_arr;
+shared_array<shared_lock> sl_arr(ranks());
+shared_array<int> sd_arr(ranks());
 
 void print_task(int task_id, int arg2)
 {
@@ -27,7 +27,7 @@ void print_task(int task_id, int arg2)
 
 int main(int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
+  // upcxx::init(&argc, &argv);
 
   printf("Rank %u of %u starts test_lock...\n",
          myrank(), ranks());
@@ -40,13 +40,13 @@ int main(int argc, char **argv)
 
   barrier();
 
-  sd_arr.init(ranks());
+  // sd_arr.init(ranks());
   sd_arr[myrank()] = 0;
 
-  sl_arr.init(ranks());
+  // sl_arr.init(ranks());
 
   // initialize the lock with "placement new"
-  new (sl_arr[myrank()].raw_ptr()) shared_lock();
+  new (sl_arr[myrank()].raw_ptr()) shared_lock(myrank());
 
   barrier();
 
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
     printf("test_lock passed!\n");
   }
 
-  upcxx::finalize();
+  // upcxx::finalize();
 
   return 0;
 }

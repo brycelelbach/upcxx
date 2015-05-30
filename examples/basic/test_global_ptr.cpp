@@ -18,9 +18,6 @@ shared_var < global_ptr<double> > tmp_ptr;
 
 int main (int argc, char **argv)
 {
-  // \Todo: group all init functions together in a global init function
-  init(&argc, &argv);
-  
   size_t count = 128;
 
   global_ptr<double> ptr1;
@@ -56,8 +53,8 @@ int main (int argc, char **argv)
   }
 
   barrier();
-
-  finalize();
+  if (myrank() == 0)
+    printf("test_global_ptr passed!\n");
 
   return 0;
 }

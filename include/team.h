@@ -22,12 +22,15 @@
 
 namespace upcxx
 {
+  struct team;
+
+  extern std::vector<team *> *_team_stack;
 
   struct ts_scope;
 
   struct team {
     team() : _mychild(NULL) {
-      if (_team_stack.size() > 0) {
+      if (_team_stack->size() > 0) {
         const team *other = current_team();
         _parent = other->_parent;
         _size = other->_size;
@@ -171,9 +174,9 @@ namespace upcxx
 
     static uint32_t new_team_id();
 
-    static team *current_team() { return _team_stack.back(); }
+    static team *current_team() { return _team_stack->back(); }
 
-    static team *global_team() { return _team_stack[0]; }
+    static team *global_team() { return (*_team_stack)[0]; }
 
     friend int init(int *pargc, char ***pargv);
     friend struct ts_scope;
@@ -197,23 +200,23 @@ namespace upcxx
       _team_id = 0;
       _gasnet_team = GASNET_TEAM_ALL;
       // add to top of team stack
-      if (_team_stack.size() == 0)
-        _team_stack.push_back(this);
+      if (_team_stack->size() == 0)
+        _team_stack->push_back(this);
     }
 
     static gasnet_hsl_t _tid_lock;
-    static std::vector<team *> _team_stack;
+    // static std::vector<team *> _team_stack;
 
     static void descend_team(team *t) {
       if (t->_parent->_team_id != current_team()->_team_id) {
         std::cerr << "team is not a subteam of current team\n";
         abort();
       }
-      _team_stack.push_back(t);
+      _team_stack->push_back(t);
     }
 
     static void ascend_team() {
-      _team_stack.pop_back();
+      _team_stack->pop_back();
     }
   }; // end of struct team
   
@@ -240,10 +243,12 @@ namespace upcxx
   extern gasnet_team_handle_t current_gasnet_team();
 
   static inline uint32_t ranks() {
+    if (is_init() == false) return 0xFFFFFFFF; // return a special value if not inited
     return team::current_team()->size();
   }
 
   static inline uint32_t myrank() {
+    if (is_init() == false) return 0xFFFFFFFF; // return a special value if not inited
     return team::current_team()->myrank();
   }
 
@@ -281,7 +286,7 @@ namespace upcxx
   */
 
   extern team team_all;
-  extern std::vector< std::vector<rank_t> > pshm_teams;
+  extern std::vector< std::vector<rank_t> > *pshm_teams;
 
 } // namespace upcxx
 

@@ -10,7 +10,6 @@
 using namespace upcxx;
 
 int main(int argc, char **argv) {
-  init(&argc, &argv);
 
   {
     ndarray<int, 1> arr(RD(0, 5));
@@ -71,6 +70,5 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  finalize();
   return 0;
 }

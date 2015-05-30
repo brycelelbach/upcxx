@@ -1,15 +1,11 @@
 #include <upcxx.h>
 #include <stdio.h>
 
-upcxx::shared_array<int> a;
+// size 6*ranks() and blk_sz 2
+upcxx::shared_array<int> a(6*upcxx::ranks(), 2);
 
 int main(int argc, char **argv)
 {
-  upcxx::init(&argc, &argv);
-
-  // init a with size 6*ranks() and blk_sz 2
-  a.init(6*upcxx::ranks(), 2);
-
   if (upcxx::myrank() == 0) {
     printf("ranks() %d, array size %lu, block size %lu.\n",
            upcxx::ranks(), a.size(), a.get_blk_sz());
@@ -46,6 +42,9 @@ int main(int argc, char **argv)
     printf("\n\n");
   }
 
-  upcxx::finalize();
+  upcxx::barrier();
+  if (upcxx::myrank() == 0)
+    printf("test_shared_array2 passed!\n");
+
   return 0;
 }

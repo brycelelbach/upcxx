@@ -64,9 +64,11 @@ int main (int argc, char **arsv)
 
   // shared data access with a lock
   for (int i=0; i<100; i++) {
-    sv_lock.lock();
-    sv = sv + 1;
-    sv_lock.unlock();
+    // sv_lock.lock();
+    if (myrank() == i % ranks())
+      sv = sv + ranks();
+    barrier();
+    // sv_lock.unlock();
   }
   barrier();
   if (myrank() == 0) {

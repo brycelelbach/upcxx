@@ -101,10 +101,10 @@ void test_copy() {
 }
 
 int main(int argc, char **argv) {
-  init(&argc, &argv);
+
   test_copy();
   barrier();
   if (myrank() == 0) println("done.");
-  finalize();
+
   return 0;
 }

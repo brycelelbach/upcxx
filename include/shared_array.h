@@ -1,5 +1,5 @@
 /**
- * Multi-node 1-D shared arrays 
+ * Multi-node 1-D shared arrays
  *
  * See test_shared_array.cpp and gups.cpp for usage examples
  */
@@ -7,11 +7,14 @@
 #pragma once
 
 #include "global_ref.h"
+#include "coll_flags.h"
 
-// #define UPCXX_UPCXX_DEBUG
+// #define UPCXX_DEBUG
 
 namespace upcxx
 {
+  extern std::vector<void*> *pending_array_inits;
+
   /**
    * \ingroup gasgroup
    * \brief shared 1-D array with 1-D block-cyclic distribution
@@ -31,6 +34,7 @@ namespace upcxx
     size_t _blk_sz; // blocking factor
     size_t _local_size;
     size_t _size;
+    size_t _type_size;
 
     void global2local(const size_t global_index,
                       size_t &local_index,
@@ -51,8 +55,15 @@ namespace upcxx
       _data = NULL;
       _alldata = NULL;
       _blk_sz = blk_sz;
-      _local_size = size;
+      _local_size = 0;
       _size = size;
+      _type_size = sizeof(T);
+
+      assert(upcxx::is_init());
+
+      _alldata = (T **)malloc(ranks() * sizeof(T*));
+      assert(_alldata != NULL);
+      init(size, blk_sz);
     }
 
     /**
@@ -81,35 +92,44 @@ namespace upcxx
      * \param sz total size (# of elements) of the shared array
      * \param blk_sz the blocking factor (# of elements per block)
      */
-    void init(size_t sz=0, size_t blk_sz=BLK_SZ)
+    void init(size_t sz, size_t blk_sz)
     {
-      if (_data != NULL) return;
+      if (_data != NULL) deallocate(_data);
 
-      int nplaces = ranks();
+      rank_t np = ranks();
       if (sz != 0) _size = sz;
       if (blk_sz != 0) _blk_sz = blk_sz;
-      _local_size = (_size + nplaces - 1) / nplaces;
-      
-      _data = allocate<T>(myrank(), _local_size).raw_ptr();
-      
+      _local_size = ((_size+_blk_sz -1)/_blk_sz + np - 1) / np * _blk_sz;
+
+      // allocate the data space in bytes
+      _data = (T*)allocate(myrank(), _local_size * _type_size).raw_ptr();
       assert(_data != NULL);
-      _alldata = (T **)malloc(nplaces * sizeof(T*));
-      assert(_alldata != NULL);
 
       // \Todo _data allocated in this way is not aligned!!
       gasnet_coll_handle_t h;
       h = gasnet_coll_gather_all_nb(GASNET_TEAM_ALL, _alldata, &_data, sizeof(T*),
-                                    GASNET_COLL_IN_MYSYNC | GASNET_COLL_OUT_MYSYNC | GASNET_COLL_LOCAL);
+                                    UPCXX_GASNET_COLL_FLAG);
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
-        advance(); // neeed to keep polling the task queue whlie waiting
+        advance(); // need to keep polling the task queue while waiting
       }
-#ifdef UPCXX_DEBUG
-      printf("my rank %d, _data %p\n", myrank(), _data);
-      for (int i=0; i<nplaces; i++) {
+#if UPCXX_DEBUG
+      printf("my rank %d, size %lu, blk_sz %lu, local_sz %lu, type_sz %lu, _data %p\n",
+             myrank(), size(), get_blk_sz(), _local_size, _type_size, _data);
+      for (int i=0; i<np; i++) {
         printf("_alldata[%d]=%p ", i, _alldata[i]);
       }
       printf("\n");
 #endif
+    }
+
+    void init()
+    {
+      init(size(), get_blk_sz());
+    }
+
+    void init(size_t sz)
+    {
+      init(sz, get_blk_sz());
     }
 
     ~shared_array()
@@ -148,28 +168,74 @@ namespace upcxx
       // assert(_alldata != NULL);
 
 #ifdef UPCXX_DEBUG
-      printf("shared_array [], gi %lu, li %lu, nid %d\n",
-             global_index, local_index, n.id());
+      printf("shared_array [], gi %lu, li %lu, rank %u\n",
+             global_index, local_index, rank);
 #endif
       // only works with statically declared (and presumably aligned) data
       return global_ref<T>(rank, &_alldata[rank][local_index]);
     }
   }; // struct shared_array
 
-  // init_shared_array should be called by all processes
+  // init should be called by all processes
   template<typename T>
-  void init_ga(shared_array<T> *ga, T val)
+  static void init_ga(shared_array<T> *sa, size_t sz, size_t blk_sz)
   {
-    // printf("myrank %d: ga %p, val %g\n", myrank(), ga, (double)val);
-    ga->init(val);
+    sa->init(sz, blk_sz);
+  }
+
+  struct __init_shared_array
+  {
+    __init_shared_array()
+    {
+#ifdef UPCXX_DEBUG
+      printf("Constructing __dummy_obj_for_init_shared_array\n");
+#endif
+      if (pending_array_inits == NULL)
+        pending_array_inits = new std::vector<void*>;
+      assert(pending_array_inits != NULL);
+    }
+
+    ~__init_shared_array()
+    {
+#ifdef UPCXX_DEBUG
+      printf("Destructing __dummy_obj_for_init_shared_array\n");
+#endif
+      assert(pending_array_inits != NULL);
+      // delete pending_array_inits;
+    }
+  };
+  static __init_shared_array __dummy_obj_for_init_shared_array;
+
+  static inline void run_pending_array_inits()
+  {
+    // assert(pending_array_inits != NULL);
+
+#ifdef UPCXX_DEBUG
+    printf("Running run_pending_array_inits(). pending_array_inits sz %lu\n",
+           pending_array_inits->size());
+#endif
+
+#if UPCXX_HAVE_CXX11
+    for (auto it = pending_array_inits->begin();
+         it != pending_array_inits->end(); ++it) {
+#else
+    for (std::vector<void*>::iterator it = pending_array_inits->begin();
+         it != pending_array_inits->end(); ++it) {
+#endif
+      shared_array<void> *current = (shared_array<void> *)*it;
+#ifdef UPCXX_DEBUG
+      printf("Rank %u: Init shared_array %p, size %lu, blk_sz %lu\n",
+             myrank(), current, current->size(), current->get_blk_sz());
+#endif
+      current->init();
+    }
   }
 
   // set_shared_array should be called by only one process
   template<typename T>
   void set(shared_array<T> *ga, T val)
   {
-    int P = ranks();
-    for (int i=P-1; i>=0; i--)
+    for (rank_t i=0; i<ranks(); i++)
       async(i)(init_ga<T>, ga, val);
   }
 } // namespace upcxx
