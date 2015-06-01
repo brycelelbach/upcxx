@@ -16,6 +16,9 @@
 #ifdef UPCXX_SHORT_MACROS
 # define UPCXXA_SHORT_MACROS
 #endif
+#ifdef UPCXX_BOUNDS_CHECKING
+# define UPCXXA_BOUNDS_CHECKING 1
+#endif
 #include "allocate.h"
 #include "array_bulk.h"
 #include "array_defs.h"

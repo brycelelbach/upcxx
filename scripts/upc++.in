@@ -36,7 +36,7 @@ print_usage() {
     echo "    -cxx=<C++ compiler>  Overwrite the default C++ complier"
     echo "                                                         "
     echo "    --short-names  Enable short names for UPC++ constructs (memberof, finish, teamsplit, foreach)"
-    echo "    --bounds-checking  Enable bounds-checking for shared array accesses and global pointer dereferences"
+    echo "    --bounds-checking  Enable bounds-checking for multidimensional and shared array accesses and global pointer dereferences"
     echo "    --column-major-arrays  Make default array layout column major rather than row major"
     echo "    --default-stridedness=<stridedness>  Specify default stridedness of multidimensional arrays"
     echo ""
