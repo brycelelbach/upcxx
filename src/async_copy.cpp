@@ -62,6 +62,9 @@ namespace upcxx
 
   void set_flag(global_ptr<flag_t> flag_addr)
   {
+#if UPCXX_DEBUG
+    std::cout << "Rank " << global_myrank() << " set_flag flag_addr " << flag_addr << "\n";
+#endif
     (*flag_addr) = UPCXX_FLAG_VAL_SET;
   }
 
@@ -127,6 +130,10 @@ namespace upcxx
     assert(flag_addr != NULL);
     memcpy(target_addr, addr, nbytes);
     gasnett_local_wmb(); // make sure the flag is set after the data written
+#if UPCXX_DEBUG
+    printf("copy_and_set_request_inner: target_addr %p, flag_addr %p\n",
+           target_addr, flag_addr);
+#endif
     *(flag_t*)flag_addr = UPCXX_FLAG_VAL_SET;
     if (done_event != NULL) {
       GASNET_SAFE(SHORT_REP(1,2,(token, COPY_AND_SET_REPLY, PACK(done_event))));
@@ -184,6 +191,12 @@ namespace upcxx
                          global_ptr<flag_t> flag_addr,
                          event *e)
   {
+#if UPCXX_DEBUG
+    std::cout << "Rank " << global_myrank() << " async_copy_and_set src " << src
+              << " dst " << dst << " nbytes " << nbytes << " flag_addr " << flag_addr
+              << "\n";
+#endif
+    
     // Either src or dst must be local
     if (dst.where() != global_myrank() && src.where() != global_myrank()) {
       fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
@@ -207,19 +220,21 @@ namespace upcxx
 
     // implementation based on GASNet medium AM
     if (env_use_am_for_copy_and_set && nbytes < gasnet_AMMaxMedium()) {
-      GASNET_SAFE(MEDIUM_REQ(2, 4, (dst.where(), COPY_AND_SET_AM,
+      if (e != NULL) e->incref();
+      GASNET_SAFE(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SET_AM,
                                     src.raw_ptr(), nbytes,
                                     PACK(dst.raw_ptr()),
-                                    PACK(flag_addr.raw_ptr()))));
+                                    PACK(flag_addr.raw_ptr()),
+                                    PACK(e))));
     } else {
       // async_copy_and_set implementation based on RDMA put and local async tasks
       event **temp_events = allocate_events(1);
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
       // enqueue a local async task that will asynchronously set the remote flag via RMDA put
-      async_after(global_myrank(), temp_events[0], e)(async_set_flag, flag_addr, e);
+      async_after(global_myrank(), temp_events[0])(async_set_flag, flag_addr, e);
       // enqueue another local task that will clean up the temp_events after e is done
-      async_after(global_myrank(), e)(deallocate_events, 1, temp_events);
+      async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
     }
 
     return UPCXX_SUCCESS;

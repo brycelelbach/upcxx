@@ -11,6 +11,8 @@
 using namespace std;
 using namespace upcxx;
 
+// #define DEBUG 1
+
 #define NUM_PEERS 4
 #define DEFAULT_COUNT 16
 
@@ -20,7 +22,7 @@ typedef enum { NORTH = 0, SOUTH = 1, EAST = 2, WEST = 3} Neighbor;
 
 struct Buffer {
   flag_t flag; // polled (read) locally and only set by remote peer
-  double data[1]; // this is just a marker for the payload data, actual size may vary
+  double data[0]; // this is just a marker for the payload data, actual size may vary
   flag_t *get_flag_addr() { return &flag; }
   double *get_data_addr() { return &data[0]; }
 };
@@ -37,13 +39,12 @@ void deallocate_buffer(global_ptr<Buffer> b)
   upcxx::deallocate(b);
 }
 
-shared_array <global_ptr<Buffer>[NUM_PEERS]> inbuffers(ranks()*NUM_PEERS);
+shared_array <global_ptr<Buffer>[NUM_PEERS]> inbuffers(ranks());
 
-shared_array <global_ptr<Buffer>[NUM_PEERS]> outbuffers(ranks()*NUM_PEERS);
+shared_array <global_ptr<Buffer>[NUM_PEERS]> outbuffers(ranks());
 
 global_ptr<flag_t> my_peers_sendflags[NUM_PEERS]; // peer's inbuffer->flag
 global_ptr<double> my_peers_buffers[NUM_PEERS];
-
 global_ptr<flag_t> my_peers_recvflags[NUM_PEERS]; // outbuffer->flag
 
 global_ptr<Buffer> *my_inbuffers, *my_outbuffers;
@@ -115,11 +116,16 @@ Neighbor reciprocal_dir(Neighbor d)
   return o;
 }
 
-void set_buffer_data(double *buf, int n, uint32_t rank, Neighbor peer)
+inline double compute_buffer_data(int i, uint32_t rank, Neighbor peer, int level)
+{
+  return (double)i + (double)peer*1e3 + (double)rank*1e6 + (double)level*1e9;
+}
+  
+void set_buffer_data(double *buf, int n, uint32_t rank, Neighbor peer, int level)
 {
   assert(buf != NULL);
   for (int i = 0; i < n; i++) {
-    buf[i] = (double)i + (double)peer*1e4 + rank*1e6;
+    buf[i] = compute_buffer_data(i, rank, peer, level);
   }
 }
 
@@ -131,17 +137,17 @@ void clear_buffer_data(double *buf, int n)
   }
 }
 
-int verify_buffer_data(double *buf, int n, uint32_t rank, Neighbor peer)
+int verify_buffer_data(double *buf, int n, uint32_t rank, Neighbor peer, int level)
 {
   int num_errors = 0;
   double expected;
   assert(buf != NULL);
   for (int i = 0; i < n; i++) {
-    expected = (double)i + (double)peer*1e4 + rank*1e6;
+    expected = compute_buffer_data(i, rank, peer, level);
     if (buf[i] != expected) {
       num_errors++;
       printf("My rank %u data verification error (rank %u, peer %u, buf %p): buf[%d]=%f but expecting %f.\n",
-             myrank(), rank, peer, buf, i, buf[i], expected);
+             myrank(), rank, peer, buf, i, buf[i], expected);      
     }
   }
   return num_errors;
@@ -152,17 +158,13 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
   // printf("Testing test_copy with %d doubles...\n", count);
 
   // Initialize data pointed by ptr by a local pointer
-  const int total_levels = 4;
+  const int total_levels = 3;
 
   for (uint32_t peer = 0; peer<NUM_PEERS; peer++) {
     my_inbuffers[peer]->flag = UPCXX_FLAG_VAL_UNSET;
     my_outbuffers[peer]->flag = UPCXX_FLAG_VAL_UNSET;
     double *in = my_inbuffers[peer]->get_data_addr();
-    double *out = my_outbuffers[peer]->get_data_addr();
-    clear_buffer_data(out, count);
-    set_buffer_data(in, count,
-            neighbor_to_rank((Neighbor)peer, nrows, ncols),
-                    (Neighbor)peer);
+    clear_buffer_data(in, count);
   }
 
   barrier();
@@ -171,17 +173,31 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
 
   // assume circular boundary which is simpler
   for (int l=0; l<total_levels; l++) {
-    printf("Rank %u starts level %d\n", myrank(), l);
+#if DEBUG
+    printf("Rank %u starts level %d of %d\n", myrank(), l, total_levels);
+#endif
+
+    for (uint32_t peer = 0; peer<NUM_PEERS; peer++) {
+      double *out = my_outbuffers[peer]->get_data_addr();
+      set_buffer_data(out, count,
+                      neighbor_to_rank((Neighbor)peer, nrows, ncols),
+                      (Neighbor)peer, l);
+    }
+
+    // Init my send buffer based of the current level
+    int num_send = 0;
+    int num_recv = 0;
 
     // Notify remote peer that my buffer is ready to receive
     for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
       async_set_flag(my_peers_sendflags[peer]); // set remote ready send flag
     }
 
-    // Init my send buffer based of the current level
-    int num_send = 0;
-    int num_recv = 0;
-    while (num_send < NUM_PEERS && num_recv < NUM_PEERS) {
+#if DEBUG
+    printf("Rank %u finishes async_set_flag at level %d.\n", myrank(), l);
+#endif
+      
+    while (num_send < NUM_PEERS || num_recv < NUM_PEERS) {
       for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
         // check if any peer is ready to receive my data
         if (my_outbuffers[peer]->flag == UPCXX_FLAG_VAL_SET) {
@@ -193,8 +209,11 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
                                      my_peers_recvflags[peer]);
           my_outbuffers[peer]->flag = UPCXX_FLAG_VAL_UNSET;
           num_send++;
+#if DEBUG
+          printf("Rank %u level %u sent data to peer %u, num_send %d, num_recv %d\n",
+                 myrank(), l, peer, num_send, num_recv);
+#endif
         }
-        async_try(); // or advance()
         // check if any data has arrived to my buffer
         if (my_inbuffers[peer]->flag == UPCXX_FLAG_VAL_SET) {
           // unpack data in buffer[peer];
@@ -202,16 +221,23 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
           int num_errors = verify_buffer_data(my_inbuffers[peer]->data,
                                               count,
                                               myrank(),
-                                              reciprocal_dir((Neighbor)peer));
+                                              reciprocal_dir((Neighbor)peer),
+                                              l);
           my_inbuffers[peer]->flag = UPCXX_FLAG_VAL_UNSET; // clear the data available flag
           num_recv++;
+#if DEBUG
+          printf("Rank %u level %u received data from peer %u, num_send %d, num_recv %d\n",
+                 myrank(), l, peer, num_send, num_recv);
+#endif
         }
-        async_try();
+        advance();
       } // end of for peer loop
     } // end of while loop
-
+    barrier();
     // At this point all data exchange at this level is done
+#if DEBUG
     printf("Rank %u finished level %d\n", myrank(), l);
+#endif
   } // end of for l loop
 
   barrier();
@@ -257,10 +283,6 @@ int main (int argc, char **argv)
            count, nrows, ncols);
   }
 
-  // Initialize buffers
-  inbuffers.init(ranks()*NUM_PEERS);
-  outbuffers.init(ranks()*NUM_PEERS);
-
   my_inbuffers = (global_ptr<Buffer> *)&inbuffers[myrank()][0];
   my_outbuffers = (global_ptr<Buffer> *)&outbuffers[myrank()][0];
 
@@ -275,20 +297,49 @@ int main (int argc, char **argv)
   for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
     uint32_t peer_rank = neighbor_to_rank((Neighbor)peer, nrows, ncols);
     global_ptr<Buffer> tmp =  inbuffers[peer_rank][reciprocal_dir((Neighbor)peer)];
-    my_peers_sendflags[peer] = (global_ptr<flag_t>)tmp;
+    my_peers_recvflags[peer] = (global_ptr<flag_t>)tmp;
     my_peers_buffers[peer] = (global_ptr<double>)((global_ptr<char>)tmp+sizeof(flag_t));
     tmp = outbuffers[peer_rank][reciprocal_dir((Neighbor)peer)];
-    my_peers_recvflags[peer] = (global_ptr<flag_t>)tmp;
+    my_peers_sendflags[peer] = (global_ptr<flag_t>)tmp;
   }
 
+#if DEBUG
+    for (int r = 0; r < ranks(); r++) {
+      if (myrank() == r) {
+        for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
+          uint32_t peer_rank = neighbor_to_rank((Neighbor)peer, nrows, ncols);
+          printf("Rank %u, my_inbuffers[%u] = ", myrank(), peer);
+          std::cout << my_inbuffers[peer] << "\n";
+          printf("Rank %u, my_outbuffers[%u] = ", myrank(), peer);
+          std::cout << my_outbuffers[peer] << "\n";
+          printf("Rank %u peer %u peer_rank %u reciprocal_dir %u\n",
+                 myrank(), peer, peer_rank, reciprocal_dir((Neighbor)peer));
+          std::cout << "Rank " << myrank() << " peer " << peer
+                    << " my_peers_sendflags[peer]=" << my_peers_sendflags[peer]
+                    << " my_peers_buffers[peer]=" <<  my_peers_buffers[peer]  << "\n";
+          std::cout << "Rank " << myrank() << " peer " << peer 
+                    << " my_peers_recvflags[peer]=" << my_peers_recvflags[peer]
+                    << "\n";
+        }
+      }
+      barrier();
+    }
+#endif
+
+  
+  barrier();
+  
   test_async_copy_and_set(count, nrows, ncols);
 
   barrier();
-
+  
   for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {
     deallocate_buffer(my_inbuffers[peer]);
     deallocate_buffer(my_outbuffers[peer]);
   }
 
+  if (myrank() == 0)
+    printf("Passed test_copy_and_set!\n");
+  
   return 0;
 }

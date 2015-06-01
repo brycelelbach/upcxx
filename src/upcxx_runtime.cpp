@@ -254,7 +254,7 @@ namespace upcxx
                 << "\n";
     }
 
-#ifdef UPCXX_DEBUG
+#if UPCXX_DEBUG
     printf("Rank %u: done finalize()\n", global_myrank());
 #endif
     return UPCXX_SUCCESS;
