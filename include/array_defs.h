@@ -49,13 +49,14 @@
 #define UPCXXA_GET_BOXID(gptr) UPCXXA_TO_BOX(gptr)
 #define UPCXXA_BOX_T rank_t
 #define UPCXXA_TO_BOX(ptr) (ptr).where()
-#define UPCXXA_TO_LOCAL(ptr) (ptr).raw_ptr()
+#define UPCXXA_TO_LOCAL(ptr) (ptr).localize()
 #define UPCXXA_TO_GLOBALB(global, box, local)   \
   (global) = upcxx::global_ptr<T>(local, box)
+// UPCXXA_EQUAL_GLOBAL needs to be fixed for PSHM
 #define UPCXXA_EQUAL_GLOBAL(p, q) ((p) == (q))
 #define UPCXXA_MYBOX upcxx::myrank()
 #define UPCXXA_IS_DIRECTLY_ADDRESSABLE(ptr)     \
-  ((ptr.where()) == upcxx::myrank())
+  (ptr).is_local()
 #define UPCXXA_GLOBALIZE(global, local)                 \
   UPCXXA_TO_GLOBALB(global, UPCXXA_MYBOX, local)
 #define UPCXXA_PROC_TO_BOXID_PROC(proc, boxid, bproc) do {      \

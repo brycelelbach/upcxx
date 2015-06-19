@@ -145,6 +145,23 @@ namespace upcxx
 #endif
     }
 
+    T *localize() const
+    {
+      return this->operator T*();
+    }
+
+    bool is_local() const
+    {
+      if (this->where() == global_myrank()) {
+        return true;
+      }
+#if GASNET_PSHM
+      return is_memory_shared_with(this->where());
+#else
+      return false;
+#endif
+    }
+
     template <typename T2>
     global_ref<T> operator [] (T2 i) const
     {
