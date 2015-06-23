@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <assert.h>
 
+// #define UPCXX_DEBUG
+
 #include "upcxx.h"
 #include "upcxx_internal.h"
 #include "array_bulk_internal.h"
@@ -14,8 +16,6 @@
 #ifdef UPCXX_USE_DMAPP
 #include "dmapp_channel/dmapp_helper.h"
 #endif
-
-// #define UPCXX_DEBUG
 
 using namespace std;
 
@@ -125,7 +125,7 @@ namespace upcxx
 #endif
 
 #if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
-    gasnet_init(pargc, pargv); // init gasnet
+    gasnet_init(NULL, NULL); // init gasnet
 #else
     if (pargc != NULL && pargv != NULL) {
       gasnet_init(pargc, pargv); // init gasnet

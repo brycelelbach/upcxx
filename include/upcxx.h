@@ -46,12 +46,12 @@ namespace upcxx
     upcxx_runtime()
     {
       if (!is_init()) {
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
         printf("Initializing upcxx runtime.\n");
 #endif
         init(NULL, NULL);
         _owner = true;
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
         printf("Rank %u: Initialized upcxx runtime.\n", myrank());
 #endif
       } else {
@@ -64,7 +64,7 @@ namespace upcxx
       assert(is_init());
 
       if (_owner) {
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
         printf("Rank %u: Destructing upcxx runtime\n", myrank());
 #endif
         finalize();

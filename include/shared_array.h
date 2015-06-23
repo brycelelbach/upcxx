@@ -112,7 +112,7 @@ namespace upcxx
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
         advance(); // need to keep polling the task queue while waiting
       }
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
       printf("my rank %d, size %lu, blk_sz %lu, local_sz %lu, type_sz %lu, _data %p\n",
              myrank(), size(), get_blk_sz(), _local_size, _type_size, _data);
       for (int i=0; i<np; i++) {
@@ -215,7 +215,7 @@ namespace upcxx
            pending_array_inits->size());
 #endif
 
-#if UPCXX_HAVE_CXX11
+#ifdef UPCXX_HAVE_CXX11
     for (auto it = pending_array_inits->begin();
          it != pending_array_inits->end(); ++it) {
 #else
