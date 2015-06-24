@@ -103,7 +103,7 @@ fi
 if [ "$complieonly" = yes ] ; then
    $ECHO ${CXX} ${UPCXX_CXXFLAGS}  "${allargs[@]}" 
 else
-   $ECHO ${CXX} ${UPCXX_CXXFLAGS} "${allargs[@]}" ${UPCXX_LDLIBS}
+   $ECHO ${CXX} ${UPCXX_CXXFLAGS} ${UPCXX_LDFLAGS} "${allargs[@]}" ${UPCXX_LDLIBS}
 fi
 
 exit $?
