@@ -120,6 +120,11 @@ namespace upcxx
       return UPCXX_ERROR;
     }
 
+#ifdef GASNETI_USE_HUGETLBFS
+    // initialize HUGETLBFS before calling gasnet_init
+    // can't call setup_libhugetlbfs() because it's static inside libhugetlbfs.
+#endif
+
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_init()\n";
 #endif

@@ -1,3 +1,6 @@
+
+#define UPCXX_NO_INITIALIZER_OBJECT
+
 #include <upcxx.h>
 #include <upcxx_internal.h>
 #include "dmapp_channel/dmapp_helper.h"
