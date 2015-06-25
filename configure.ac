@@ -85,13 +85,6 @@ AS_IF([test "x$enable_cxx11" = "xno"],
         fi
       ])
 
-dnl Add flags for building UPC++
-UPCXX_FLAGS=" -DGASNET_ALLOW_OPTIMIZED_DEBUG "
-AC_SUBST(UPCXX_FLAGS)
-
-CFLAGS+=${UPCXX_FLAGS}
-CXXFLAGS+=${UPCXX_FLAGS}
-
 dnl Check for Clang
 AC_MSG_CHECKING([if compiling with clang])
 AC_COMPILE_IFELSE(
@@ -104,7 +97,7 @@ AC_MSG_RESULT([$CLANG])
 dnl for clang++
 if test "x$CLANG" = "xyes"; then
   ## suppress warnings due to legacy usage of C in GASNet
-  CXXFLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
+  UPCXX_FLAGS+=" -Wno-reserved-user-defined-literal -Wno-deprecated-register"
 fi
 
 dnl Check for GCC
@@ -119,8 +112,15 @@ AC_MSG_RESULT([$GCC])
 dnl for g++
 if test "x$GCC" = "xyes"; then
   ## suppress warnings due to legacy usage of C in GASNet
-  CXXFLAGS+=" -Wno-literal-suffix -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS=1 "
+  UPCXX_FLAGS+=" -Wno-literal-suffix -DGASNETT_USE_GCC_ATTRIBUTE_MAYALIAS=1 "
 fi
+
+dnl Add flags for building UPC++
+UPCXX_FLAGS+=" -DGASNET_ALLOW_OPTIMIZED_DEBUG "
+AC_SUBST(UPCXX_FLAGS)
+
+CFLAGS+=${UPCXX_FLAGS}
+CXXFLAGS+=${UPCXX_FLAGS}
 
 dnl Option to enable shorter UPC++ macro names (default is disable)
 AC_ARG_ENABLE([short-names],
