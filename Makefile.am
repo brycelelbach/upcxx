@@ -2,7 +2,10 @@ SUBDIRS = include src examples
 
 ACLOCAL_AMFLAGS = -I m4
 
-include_HEADERS = upcxx_config.h
+include_HEADERS = upcxx_config.h 
+
+install-data-hook:
+	cp $(GASNET_MAKEFILE)  $(prefix)/include
 
 install-exec-hook:
 	python $(srcdir)/scripts/set_upcxx_vars.py -f $(prefix)/include/upcxx.mak > $(prefix)/bin/upcxx_vars.sh

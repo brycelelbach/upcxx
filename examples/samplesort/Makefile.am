@@ -1,4 +1,4 @@
-include $(GASNET_MAKEFILE)
+include ../../$(GASNET_MAKEFILE)
 
 bin_PROGRAMS = \
   sample_sort

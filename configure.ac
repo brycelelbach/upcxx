@@ -34,7 +34,12 @@ AC_ARG_WITH([gasnet],
   [AS_HELP_STRING([--with-gasnet], [path to gasnet conduit-specific makefile])],
   [
     if test -f "$withval" ; then
-      AC_SUBST([GASNET_MAKEFILE], ["$withval"])
+      cp $withval .
+      gasnet_makefile=$(basename $withval)
+      chmod o+w $gasnet_makefile
+      sed -i.BAK 's/-Wl,--whole-archive,-lhugetlbfs,--no-whole-archive/-lhugetlbfs/' $gasnet_makefile
+      AC_SUBST([GASNET_MAKEFILE], ["$gasnet_makefile"])
+      dnl AC_SUBST([GASNET_MAKEFILE], ["$withval"])
     else    
       AC_MSG_FAILURE([Could not find GASNet Makefile.])
     fi
@@ -150,6 +155,5 @@ AS_IF([test "x$enable_dmapp" = "xyes"], [
 ])
 
 AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
-
 
 AC_OUTPUT

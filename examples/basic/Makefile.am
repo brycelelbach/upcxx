@@ -1,4 +1,4 @@
-include $(GASNET_MAKEFILE)
+include ../../$(GASNET_MAKEFILE)
 
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_BIN_FILES = \
