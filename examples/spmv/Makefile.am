@@ -9,6 +9,6 @@ AM_CPPFLAGS = \
   $(GASNET_CPPFLAGS) 
 
 AM_LDFLAGS = \
-  $(GASNET_LDFLAGS) -Wl,--whole-archive,$(top_builddir)/src/.libs/libupcxx.a,--no-whole-archive
+  $(GASNET_LDFLAGS) 
 
-LDADD = $(GASNET_LIBS)
+LDADD = $(top_builddir)/src/.libs/libupcxx.a $(GASNET_LIBS)
