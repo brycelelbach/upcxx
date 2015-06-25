@@ -3,11 +3,7 @@ UPCXX_MD_ARRAY_H_FILES = \
 	array.h \
   array_bulk.h \
   array_bulk_internal.h \
-  array_defs.h \
-  broadcast.h \
-  interfaces.h \
-  interfaces_internal.h \
-  reduce.h 
+  array_defs.h 
 else
 UPCXX_MD_ARRAY_H_FILES =
 endif
@@ -22,6 +18,7 @@ include_HEADERS =  \
   async_impl_templates2.h \
   async_templates.h \
   atomic.h \
+  broadcast.h \
   coll_flags.h \
   collective.h \
   dl_malloc.h \
@@ -32,9 +29,12 @@ include_HEADERS =  \
   global_ptr.h \
   global_ref.h \
   group.h \
+  interfaces.h \
+  interfaces_internal.h \
   lock.h \
   queue.h \
   range.h \
+  reduce.h \
   shared_array.h \
   shared_var.h \
   team.h \
