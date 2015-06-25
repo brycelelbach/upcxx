@@ -98,7 +98,9 @@ namespace upcxx
         advance(); // need to keep polling the task queue while waiting
       }
       assert(_ptr != NULL);
+#ifdef UPCXX_DEBUG
       std::cout << myrank() << ": _ptr " << _ptr << "\n";
+#endif
     }
 
     T& get()
