@@ -16,7 +16,7 @@ VPATH=$(UPCXX_INSTALL_DIR)/include
 
 #LIBS += -L $(UPCXX_INSTALL_DIR)/lib -lupcxx 
 
-CXX=mpicxx # -mkl
+CXX ?= mpicxx # -mkl
 
 ## module load mkl  
 
@@ -36,7 +36,7 @@ ESSL = -L/soft/apps/ESSL-4.4.1-1/lib -lesslsmpbg -L/soft/apps/ibmcmp/xlmass/bg/4
 #BLAS = $(MKL)
 
 ## For MAC OS
-LDFLAGS +=  -framework Accelerate 
+#LDFLAGS +=  -framework Accelerate 
 
 #CXXFLAGS += -I$(MKL_INC)
 
