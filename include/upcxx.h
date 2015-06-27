@@ -1,5 +1,5 @@
 /**
- *\mainpage UPCXX 
+ *\mainpage UPCXX
  * UPCXX is a global address space programming system implemented as a C++ library.
  *
  * UPCXX clients should include \c upcxx.h, which includes all other
@@ -42,37 +42,14 @@ namespace upcxx
 {
   struct upcxx_runtime
   {
+  public:
+    upcxx_runtime();
+    ~upcxx_runtime();
+  private:
     bool _owner;
-
-    upcxx_runtime()
-    {
-      if (!is_init()) {
-#ifdef UPCXX_DEBUG
-        printf("Initializing upcxx runtime.\n");
-#endif
-        init(NULL, NULL);
-        _owner = true;
-#ifdef UPCXX_DEBUG
-        printf("Rank %u: Initialized upcxx runtime.\n", myrank());
-#endif
-      } else {
-        _owner = false;
-      }
-    }
-
-    ~upcxx_runtime()
-    {
-      assert(is_init());
-
-      if (_owner) {
-#ifdef UPCXX_DEBUG
-        printf("Rank %u: Destructing upcxx runtime\n", myrank());
-#endif
-        finalize();
-      }
-    }
   };
-  static upcxx_runtime __upcxx_runtime_obj; // this object is not expected to be accessed directly by the user
+  // this object is not expected to be accessed directly by the user
+  static upcxx_runtime __upcxx_runtime_obj;
 }
 #endif
 

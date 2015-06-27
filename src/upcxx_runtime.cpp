@@ -247,6 +247,16 @@ namespace upcxx
 
   int finalize()
   {
+    // Move the true finalize function to _finalize, which should be
+    // called the upcxx_runtime destructor and not by the user
+    // explictly.
+    return UPCXX_SUCCESS;
+  }
+
+  static int _finalize()
+  {
+    if (init_flag) return UPCXX_ERROR;
+
     async_wait();
     while (advance() > 0);
     barrier();
@@ -261,6 +271,8 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     printf("Rank %u: done finalize()\n", global_myrank());
 #endif
+
+    init_flag = false;
     return UPCXX_SUCCESS;
   }
 
@@ -537,5 +549,33 @@ namespace upcxx
 #else
     return NULL; // always return NULL if no PSHM support
 #endif
+  }
+
+  upcxx_runtime::upcxx_runtime()
+  {
+    if (!is_init()) {
+#ifdef UPCXX_DEBUG
+      printf("Initializing upcxx runtime.\n");
+#endif
+      init(NULL, NULL);
+      _owner = true;
+#ifdef UPCXX_DEBUG
+      printf("Rank %u: Initialized upcxx runtime.\n", myrank());
+#endif
+    } else {
+      _owner = false;
+    }
+  }
+
+  upcxx_runtime::~upcxx_runtime()
+  {
+    assert(is_init());
+
+    if (_owner) {
+#ifdef UPCXX_DEBUG
+      printf("Rank %u: Destructing upcxx runtime\n", myrank());
+#endif
+      _finalize();
+    }
   }
 } // namespace upcxx
