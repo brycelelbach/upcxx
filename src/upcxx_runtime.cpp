@@ -255,7 +255,7 @@ namespace upcxx
 
   static int _finalize()
   {
-    if (init_flag) return UPCXX_ERROR;
+    if (!init_flag) return UPCXX_ERROR;
 
     async_wait();
     while (advance() > 0);
