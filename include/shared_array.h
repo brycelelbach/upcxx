@@ -63,7 +63,8 @@ namespace upcxx
 
       _alldata = (T **)malloc(ranks() * sizeof(T*));
       assert(_alldata != NULL);
-      init(size, blk_sz);
+      if (size != 0)
+        init(size, blk_sz);
     }
 
     /**
@@ -94,11 +95,16 @@ namespace upcxx
      */
     void init(size_t sz, size_t blk_sz)
     {
+      if (sz == 0) return;
+
       if (_data != NULL) deallocate(_data);
 
       rank_t np = ranks();
-      if (sz != 0) _size = sz;
-      if (blk_sz != 0) _blk_sz = blk_sz;
+      _size = sz;
+      if (blk_sz != 0)
+        _blk_sz = blk_sz;
+      else
+        _blk_sz = (sz + np - 1) / np;
       _local_size = ((_size+_blk_sz -1)/_blk_sz + np - 1) / np * _blk_sz;
 
       // allocate the data space in bytes
