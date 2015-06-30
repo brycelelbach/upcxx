@@ -147,7 +147,10 @@ namespace upcxx
 
     T *localize() const
     {
-      return this->operator T*();
+      if (is_local())
+        return this->operator T*();
+      else
+        return this->raw_ptr();
     }
 
     bool is_local() const
