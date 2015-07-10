@@ -6,7 +6,7 @@
 UPCXX_VERSION=20150420
 
 UPCXX_INSTALL=@prefix@
-CXX=@CXX@
+CXX="@CXX@"
 
 ## import environment variables
 . ${UPCXX_INSTALL}/bin/upcxx_vars.sh
