@@ -6,7 +6,9 @@
 
 #pragma once
 
+#ifdef UPCXX_HAVE_CXX11
 #include <type_traits> // for remove reference
+#endif
 
 #include "gasnet_api.h"
 // #include "async.h"

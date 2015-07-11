@@ -24,7 +24,7 @@
 #include <cstring>
 #include <cassert>
 #include <ios>
-#include <stdint.h>
+// #include <stdint.h>
 
 #include "upcxx_types.h"
 #include "queue.h"
