@@ -48,7 +48,6 @@ int main(int argc, char **argv)
   assert(dst.raw_ptr() != NULL); // or assert(!dst.isnull());
 #endif
   
-  assert(dst != nullptr);
   src[sz-1] = 123456.789 + (double)myrank();
   dst[sz-1] = 0.0;
     
