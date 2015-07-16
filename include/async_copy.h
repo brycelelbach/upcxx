@@ -80,6 +80,20 @@ namespace upcxx
                       e);
   }
 
+  template<typename T>
+  inline int async_copy(global_ptr<T> src, T* dst, size_t count,
+                        event *e = peek_event())
+  {
+      return async_copy(src, global_ptr<T>(dst), count, e);
+  }
+
+  template<typename T>
+  inline int async_copy(T* src, global_ptr<T> dst, size_t count,
+                        event *e = peek_event())
+  {
+    return async_copy(global_ptr<T>(src), dst, count, e);
+  }
+
   /**
    * \ingroup gasgroup
    * \brief Non-blocking copy-and-set, which first performs an async copy
