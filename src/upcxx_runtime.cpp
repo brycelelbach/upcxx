@@ -249,7 +249,7 @@ namespace upcxx
   {
     // Move the true finalize function to _finalize, which should be
     // called the upcxx_runtime destructor and not by the user
-    // explictly.
+    // explicitly.
     return UPCXX_SUCCESS;
   }
 
