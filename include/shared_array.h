@@ -58,9 +58,6 @@ namespace upcxx
       _local_size = 0;
       _size = size;
       _type_size = sizeof(T);
-
-      assert(upcxx::is_init());
-
       _alldata = (T **)malloc(ranks() * sizeof(T*));
       assert(_alldata != NULL);
       if (size != 0)
@@ -95,6 +92,12 @@ namespace upcxx
      */
     void init(size_t sz, size_t blk_sz)
     {
+      if (!upcxx::is_init()) {
+        std::cerr << "error: attempt to create shared_array before "
+                  << "initializing UPC++" << std::endl;
+        abort();
+      }
+
       if (sz == 0) return;
 
       if (_data != NULL) deallocate(_data);
