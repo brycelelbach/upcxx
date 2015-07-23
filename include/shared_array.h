@@ -92,6 +92,12 @@ namespace upcxx
      */
     void init(size_t sz, size_t blk_sz)
     {
+      if (!upcxx::is_init()) {
+        std::cerr << "error: attempt to create shared_array before "
+                  << "initializing UPC++" << std::endl;
+        abort();
+      }
+
       if (sz == 0) return;
 
       if (_data != NULL) deallocate(_data);
