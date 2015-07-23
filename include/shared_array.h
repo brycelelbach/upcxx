@@ -58,9 +58,6 @@ namespace upcxx
       _local_size = 0;
       _size = size;
       _type_size = sizeof(T);
-
-      assert(upcxx::is_init());
-
       _alldata = (T **)malloc(ranks() * sizeof(T*));
       assert(_alldata != NULL);
       if (size != 0)
