@@ -13,8 +13,8 @@
 
 #if USE_UPCXX
 # include <upcxx.h>
-# include <array.h>
-# include <event.h>
+# include <upcxx/array.h>
+# include <upcxx/event.h>
 #elif USE_MPI
 # include <assert.h>
 # include <mpi.h>
@@ -81,8 +81,8 @@ struct reduce {
 #endif
 
 #if USE_UPCXX
-# include <timer.h>
-# include <reduce.h>
+# include <upcxx/timer.h>
+# include <upcxx/reduce.h>
 #elif __cplusplus >= 201103L
 # include <chrono>
 struct timer {

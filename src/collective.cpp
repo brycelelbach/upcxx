@@ -3,7 +3,7 @@
  */
 
 #include <assert.h>
-#include "collective.h"
+#include "upcxx/collective.h"
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -90,7 +90,7 @@ namespace upcxx {
     const T *src2 = (const T *)right_operands;
     assert(elem_size == sizeof(T));
     assert(result_count == left_count);
-    
+
     upcxx_op_t op_t = (upcxx_op_t)arg;
     switch(op_t) {
     case UPCXX_SUM:

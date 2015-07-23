@@ -5,7 +5,7 @@
 #define UPCXX_NO_INITIALIZER_OBJECT
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
+#include "upcxx/upcxx_internal.h"
 
 #ifndef GASNET_COLL_SCRATCH_SEG_SIZE
 #define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
@@ -49,18 +49,18 @@ namespace upcxx
     gasnet_team_handle_t new_gasnet_team
       = gasnete_coll_team_split(_gasnet_team, color, key, &scratch_seg GASNETE_THREAD_GET);
     assert(new_gasnet_team != NULL);
-  
+
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);
     // range r_tmp = range(0,0,0);
     new_team = new team(this, team_sz, key, color, new_gasnet_team);
-    
+
     assert(new_team != NULL);
 
     if (_mychild == NULL) _mychild = new_team;
-    
+
     return UPCXX_SUCCESS;
   } // team::split
-  
+
   int team::split(uint32_t color,
                   uint32_t key)
   {
@@ -82,7 +82,7 @@ namespace upcxx
     gasnet_hsl_unlock(&team::_tid_lock);
     return new_tid;
   }
-  
+
   std::vector< std::vector<rank_t> > *pshm_teams = NULL;
 
   void init_pshm_teams(const gasnet_nodeinfo_t *nodeinfo_from_gasnet,

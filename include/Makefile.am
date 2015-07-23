@@ -1,52 +1,56 @@
+include_HEADERS =  \
+	upcxx.h \
+  upcxx.mak
+
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_H_FILES = \
-	array.h \
-  array_bulk.h \
-  array_bulk_internal.h \
-  array_defs.h 
+	upcxx/array.h \
+  upcxx/array_bulk.h \
+  upcxx/array_bulk_internal.h \
+  upcxx/array_defs.h
 else
 UPCXX_MD_ARRAY_H_FILES =
 endif
 
-include_HEADERS =  \
-  active_coll.h \
-  allocate.h \
-  async.h \
-  async_copy.h \
-  async_impl.h \
-  async_impl_templates1.h \
-  async_impl_templates2.h \
-  async_templates.h \
-  atomic.h \
-  broadcast.h \
-  coll_flags.h \
-  collective.h \
-  dl_malloc.h \
-  event.h \
-  finish.h \
-  forkjoin.h \
-  gasnet_api.h \
-  global_ptr.h \
-  global_ref.h \
-  group.h \
-  interfaces.h \
-  interfaces_internal.h \
-  lock.h \
-  queue.h \
-  range.h \
-  reduce.h \
-  shared_array.h \
-  shared_var.h \
-  team.h \
-  timer.h \
-  upcxx.h \
-  upcxx_runtime.h \
-  upcxx_types.h \
-  utils.h \
-  upcxx.mak $(UPCXX_MD_ARRAY_H_FILES)
+upcxxincludedir = $(includedir)/upcxx
+upcxxinclude_HEADERS =  \
+  upcxx/active_coll.h \
+  upcxx/allocate.h \
+  upcxx/async.h \
+  upcxx/async_copy.h \
+  upcxx/async_impl.h \
+  upcxx/async_impl_templates1.h \
+  upcxx/async_impl_templates2.h \
+  upcxx/async_templates.h \
+  upcxx/atomic.h \
+  upcxx/broadcast.h \
+  upcxx/coll_flags.h \
+  upcxx/collective.h \
+  upcxx/dl_malloc.h \
+  upcxx/event.h \
+  upcxx/finish.h \
+  upcxx/forkjoin.h \
+  upcxx/gasnet_api.h \
+  upcxx/global_ptr.h \
+  upcxx/global_ref.h \
+  upcxx/group.h \
+  upcxx/interfaces.h \
+  upcxx/interfaces_internal.h \
+  upcxx/lock.h \
+  upcxx/queue.h \
+  upcxx/range.h \
+  upcxx/reduce.h \
+  upcxx/shared_array.h \
+  upcxx/shared_var.h \
+  upcxx/team.h \
+  upcxx/timer.h \
+  upcxx/upcxx.h \
+  upcxx/upcxx_runtime.h \
+  upcxx/upcxx_types.h \
+  upcxx/utils.h  $(UPCXX_MD_ARRAY_H_FILES)
 
 noinst_HEADERS = \
-  upcxx_internal.h 
+  upcxx/upcxx_internal.h
 
 if UPCXX_USE_DMAPP
 dmapp_includedir = $(includedir)/dmapp_channel

@@ -1,7 +1,6 @@
 #define UPCXX_NO_INITIALIZER_OBJECT
 
 #include "upcxx.h"
-#include "team.h"
 
 namespace upcxx {
   int barrier()

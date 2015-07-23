@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <portable_inttypes.h>
-#include "allocate.h"
-#include "array_bulk.h"
-#include "array_bulk_internal.h"
-#include "array_defs.h"
-#include "team.h" // for upcxx::myrank()
-#include "upcxx_internal.h" // for gasnet_seg_alloc
+#include "upcxx/allocate.h"
+#include "upcxx/array_bulk.h"
+#include "upcxx/array_bulk_internal.h"
+#include "upcxx/array_defs.h"
+#include "upcxx/team.h" // for upcxx::myrank()
+#include "upcxx/upcxx_internal.h" // for gasnet_seg_alloc
 
 /* No multithreading support for now */
 /* TODO: use UPC++ global_machine.node_count() */

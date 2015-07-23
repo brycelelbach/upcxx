@@ -9,10 +9,10 @@
 
 #if USE_UPCXX
 # include <upcxx.h>
-# include <array.h>
-# include <reduce.h>
-# include <broadcast.h>
-# include <event.h>
+# include <upcxx/array.h>
+# include <upcxx/reduce.h>
+# include <upcxx/broadcast.h>
+# include <upcxx/event.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
 static void barrier() {}
@@ -23,9 +23,9 @@ static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
 struct reduce {
-  template<class T> static T add(T val, int = 0) { return val; } 
-  template<class T> static T max(T val, int = 0) { return val; } 
-  template<class T> static T min(T val, int = 0) { return val; } 
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
 };
 
 template<class T> T broadcast(T val, int root) {
@@ -45,7 +45,7 @@ void broadcast(upcxx::ndarray<T, N, F1, F2> &src,
 #endif
 
 #if USE_UPCXX
-# include <timer.h>
+# include <upcxx/timer.h>
 #elif __cplusplus >= 201103L
 # include <chrono>
 struct timer {

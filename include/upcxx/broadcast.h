@@ -11,9 +11,9 @@
 
 #pragma once
 
-#include <global_ptr.h>
-#include <collective.h>
-#include <interfaces_internal.h>
+#include <upcxx/global_ptr.h>
+#include <upcxx/collective.h>
+#include <upcxx/interfaces_internal.h>
 
 namespace upcxx {
   template<class T>

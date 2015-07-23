@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <upcxx.h>
-#include <array.h>
+#include <upcxx/array.h>
 
 using namespace std;
 using namespace upcxx;

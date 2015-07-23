@@ -6,7 +6,7 @@
  */
 
 #include <upcxx.h>
-#include <finish.h>
+#include <upcxx/finish.h>
 
 using namespace upcxx;
 

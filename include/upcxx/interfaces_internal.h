@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <global_ptr.h>
+#include <upcxx/global_ptr.h>
 
 namespace upcxx {
   template<class T, int N> struct globalize_result {

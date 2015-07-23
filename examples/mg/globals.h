@@ -29,7 +29,7 @@
 #define PUSH_DATA
 
 /* The following optimization uses buffers to communicate with each block's nearest neighbors so that
-   copied arrays are stored contiguously in memory both when sending and receiving.  
+   copied arrays are stored contiguously in memory both when sending and receiving.
    THIS FLAG IS CURRENTLY REQUIRED FOR NONBLOCKING ARRAYCOPY TO OCCUR.  */
 #define CONTIGUOUS_ARRAY_BUFFERS
 
@@ -45,10 +45,10 @@
 #include <iostream>
 #if USE_UPCXX
 # include <upcxx.h>
-# include <array.h>
-# include <broadcast.h>
-# include <reduce.h>
-# include <event.h>
+# include <upcxx/array.h>
+# include <upcxx/broadcast.h>
+# include <upcxx/reduce.h>
+# include <upcxx/event.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
 static void barrier() {}
@@ -60,9 +60,9 @@ static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
 struct reduce {
-  template<class T> static T add(T val, int = 0) { return val; } 
-  template<class T> static T max(T val, int = 0) { return val; } 
-  template<class T> static T min(T val, int = 0) { return val; } 
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
 };
 #endif
 
@@ -75,8 +75,8 @@ struct reduce {
 using namespace upcxx;
 
 #if USE_UPCXX
-# include <timer.h>
-# include <reduce.h>
+# include <upcxx/timer.h>
+# include <upcxx/reduce.h>
 #elif __cplusplus >= 201103L
 # include <chrono>
 struct timer {

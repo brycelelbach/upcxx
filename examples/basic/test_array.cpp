@@ -1,7 +1,7 @@
 /* Dan's tester for Ti-array operations */
 #include <iostream>
 #include <upcxx.h>
-#include <array.h>
+#include <upcxx/array.h>
 
 #if __cplusplus >= 201103L
 // test passing raw initializer lists to array ops

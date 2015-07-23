@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include <allocate.h>
-#include <coll_flags.h>
-#include <collective.h>
-#include <interfaces_internal.h>
+#include <upcxx/allocate.h>
+#include <upcxx/coll_flags.h>
+#include <upcxx/collective.h>
+#include <upcxx/interfaces_internal.h>
 //#include <team.h>
 
 #define UPCXXR_WRAPPER_DECL(T, num_class, type_code)    \

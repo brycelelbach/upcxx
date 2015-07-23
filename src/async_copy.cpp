@@ -1,7 +1,7 @@
 #define UPCXX_NO_INITIALIZER_OBJECT
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
+#include "upcxx/upcxx_internal.h"
 
 // #define DEBUG
 

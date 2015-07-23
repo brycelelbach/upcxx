@@ -69,8 +69,8 @@
 #endif
 
 #if USE_UPCXX
-# include <timer.h>
-# include <reduce.h>
+# include <upcxx/timer.h>
+# include <upcxx/reduce.h>
 #elif __cplusplus >= 201103L
 # include <chrono>
 struct timer {
@@ -143,9 +143,9 @@ struct timer {
 # include <upcxx.h>
 # ifdef TEAMS
 #  define USE_TEAMS
-#  include <team.h>
+#  include <upcxx/team.h>
 # endif
-# include <array.h>
+# include <upcxx/array.h>
 #else
 # include "../../include/upcxx-arrays/array.h"
 #endif
@@ -165,8 +165,8 @@ static void init(int *argc, char ***argv) {}
 static void finalize() {}
 
 struct reduce {
-  template<class T> static T add(T val, int = 0) { return val; } 
-  template<class T> static T max(T val, int = 0) { return val; } 
-  template<class T> static T min(T val, int = 0) { return val; } 
+  template<class T> static T add(T val, int = 0) { return val; }
+  template<class T> static T max(T val, int = 0) { return val; }
+  template<class T> static T min(T val, int = 0) { return val; }
 };
 #endif

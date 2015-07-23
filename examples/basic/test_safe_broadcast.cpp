@@ -2,10 +2,8 @@
 
 #include <iostream>
 #include <upcxx.h>
-#include <global_ptr.h>
-#include <collective.h>
-#include <array.h>
-#include <broadcast.h>
+#include <upcxx/array.h>
+#include <upcxx/broadcast.h>
 
 using namespace upcxx;
 

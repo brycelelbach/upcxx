@@ -1,5 +1,5 @@
 /*
- * lock.cpp - implement global lock 
+ * lock.cpp - implement global lock
  */
 
 #include <assert.h>
@@ -7,7 +7,7 @@
 #define UPCXX_NO_INITIALIZER_OBJECT
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
+#include "upcxx/upcxx_internal.h"
 
 namespace upcxx
 {
@@ -21,7 +21,7 @@ namespace upcxx
 
     gasnet_node_t srcnode;
     GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
-     
+
     if (!am->queryonly) {
       upcxx_mutex_lock(&lock->_mutex);
 #ifdef UPCXX_DEBUG
@@ -54,8 +54,8 @@ namespace upcxx
                                        void *buf,
                                        size_t nbytes)
   {
-      
-    lock_reply_t *reply = (lock_reply_t *)buf;      
+
+    lock_reply_t *reply = (lock_reply_t *)buf;
     assert(nbytes == sizeof(lock_reply_t));
 
     reply->rv_addr->holder = reply->rv.holder;
@@ -149,5 +149,3 @@ namespace upcxx
     return rv.islocked;
   }
 } // namespace upcxx
-
-

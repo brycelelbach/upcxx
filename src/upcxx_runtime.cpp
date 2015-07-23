@@ -10,11 +10,11 @@
 // #define UPCXX_DEBUG
 
 #include "upcxx.h"
-#include "upcxx_internal.h"
-#include "array_bulk_internal.h"
+#include "upcxx/upcxx_internal.h"
+#include "upcxx/array_bulk_internal.h"
 
 #ifdef UPCXX_USE_DMAPP
-#include "dmapp_channel/dmapp_helper.h"
+#include "upcxx/dmapp_channel/dmapp_helper.h"
 #endif
 
 using namespace std;

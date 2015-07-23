@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <upcxx.h>
-#include <finish.h>
+#include <upcxx/finish.h>
 
 #ifndef UPCXX_HAVE_CXX11
 int main(int argc, char **argv)
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
                  src_rank, i, j, upcxx::myrank());
           *counter_ptr = *counter_ptr + upcxx::myrank();
         };
-        upcxx::global_ptr<decltype(lambda)> remote_lambda 
+        upcxx::global_ptr<decltype(lambda)> remote_lambda
           = upcxx::allocate<decltype(lambda)>(src_rank, 1);
         memcpy(remote_lambda.raw_ptr(), &lambda, sizeof(decltype(lambda)));
         upcxx::async((src_rank+1)%upcxx::ranks())(lambda_wrapper<decltype(lambda)>, remote_lambda);
@@ -47,8 +47,8 @@ int main(int argc, char **argv)
   } // close finish
   upcxx::barrier();
 
-  printf("myrank %u, counter updated by my right (+1) neighbor is %d\n", 
-         upcxx::myrank(), (int)(*counter_ptr)); 
+  printf("myrank %u, counter updated by my right (+1) neighbor is %d\n",
+         upcxx::myrank(), (int)(*counter_ptr));
 
   upcxx::barrier();
   if (upcxx::myrank() == 0)
