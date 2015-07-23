@@ -1,6 +1,6 @@
 ///
 /// Parallel distributed dense matrix-matrix multiplication by the
-/// SUMMA algorithm.  
+/// SUMMA algorithm.
 ///
 ///
 
@@ -64,7 +64,7 @@ double random_double(void)
 void gen_matrix()
 {
   int foo = 1;
-  
+
   // copy the global matrix view to local
   /*
   global_ptr<global_matrix<double> > pA(&A);
@@ -105,7 +105,7 @@ void gen_matrix()
       }
     }
   }
-  
+
   for (int i = 0; i < C.m_blks(); i++) {
     for (int j = 0; j < C.n_blks(); j++) {
       global_ptr<double > curr_block = C(i, j);
@@ -116,7 +116,7 @@ void gen_matrix()
   }
 }
 
-// Implement the SUMMA algorithm for parallel matrix multiplication   
+// Implement the SUMMA algorithm for parallel matrix multiplication
 // C = A * B
 template<typename T>
 void summa(global_matrix<T> &A, global_matrix<T> &B, global_matrix<T> &C)
@@ -142,7 +142,7 @@ void summa(global_matrix<T> &A, global_matrix<T> &B, global_matrix<T> &C)
     for (int i = 0; i < m_blks; i += pgrid_nrow) {
       // move the A(i+myrow, k) block locally
       upcxx::copy<T>(A(i+myrow, k), pTmp1, blk_sz * blk_sz);
-      
+
       for (int j = 0; j < n_blks; j += pgrid_ncol) {
         // move the B(k, j+mycol) block locally
         upcxx::copy<T>(B(k, j+mycol), pTmp2, blk_sz * blk_sz);
@@ -150,10 +150,10 @@ void summa(global_matrix<T> &A, global_matrix<T> &B, global_matrix<T> &C)
 
         // This barrier would slow down BG/P performance
         // substantially.  But it can improve performance on Carver
-        // significantly.  
+        // significantly.
         /* barrier(); */
 
-        // local matrix multiplication: tmp3 += tmp1 * tmp2;       
+        // local matrix multiplication: tmp3 += tmp1 * tmp2;
         matrix<T>::gemm(tmp1, tmp2, tmp3);
       } // close of the j loop
     } // close of the i loop
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
     if (blk_sz < 1) {
       blk_sz = default_blk_sz;
     }
-    
+
     if (argc > 3) {
       pgrid_nrow = atoi(argv[3]);
     }
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
     blk_sz = default_blk_sz;
     pgrid_nrow = 1;
     pgrid_ncol = ranks();
-    M = blk_sz * pgrid_ncol;  
+    M = blk_sz * pgrid_ncol;
   }
 
   // Use square matrices for simpilicity
@@ -224,15 +224,15 @@ int main(int argc, char **argv)
     A.alloc_blocks(m_blks, n_blks, blk_sz, pgrid_nrow, pgrid_ncol);
     B.alloc_blocks(m_blks, n_blks, blk_sz, pgrid_nrow, pgrid_ncol);
     C.alloc_blocks(m_blks, n_blks, blk_sz, pgrid_nrow, pgrid_ncol);
-    
+
 #ifdef DEBUG
     cout << "A: " << A;
     cout << "B: " << B;
     cout << "C: " << C;
 #endif
-    
-    A_shared = A; 
-    B_shared = B; 
+
+    A_shared = A;
+    B_shared = B;
     C_shared = C;
   }
 
@@ -242,20 +242,20 @@ int main(int argc, char **argv)
 
   gen_matrix();
   barrier();
-    
+
   if (myrank() == 0)
     printf("Performing SUMMA matrix-matrix multiplication...\n");
-  
+
   barrier();
   double starttime = mysecond();
   summa<double>(A, B, C);
   barrier();
   double elapsedtime = mysecond() - starttime;
-  
+
   if (myrank() == 0) {
     printf("matrix multiplication: M %d, blk_sz %d, np %d, pgrid_nrow %d, time %f sec, Gflops %f\n",
            M, blk_sz, ranks(), pgrid_nrow, elapsedtime,
-           2.0*M*L*N/1024/1024/1024/elapsedtime);           
+           2.0*M*L*N/1024/1024/1024/elapsedtime);
   }
   barrier();
 
@@ -281,7 +281,7 @@ int main(int argc, char **argv)
 #endif
 
   // clean up gasnet before exit
-  finalize();
+  upcxx::finalize();
 
   return rv;
 }

@@ -21,13 +21,13 @@ using namespace std;
 using namespace upcxx;
 
 int main(int argc, char **argv) {
-
+  upcxx::init(&argc, &argv);
   cout << "Running array operations tests.." << endl;
   { /* test some descriptor operations */
     Array<long, 1 Global> x(RD(0, 100, 1)); // x has domain 0..99
     for (int i=0; i <= 99; i++) x[i] = i; // init to easy values
     upcxx_foreach (p, x.domain()) {
-      if (x[p] != p[1]) 
+      if (x[p] != p[1])
         cout << "Mismatch detected in x at " << p << ": expected: " <<
           p[1] << "  got: " << x[p] << endl;
     };
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     if (y.domain().min()[1] != 5 || y.domain().max()[1] != 94)
       cout << "Constrict failed. y.domain=" << y.domain() << endl;
     upcxx_foreach (p, y.domain()) {
-      if (y[p] != p[1]) 
+      if (y[p] != p[1])
         cout << "Mismatch detected in y at " << p << ": expected: " <<
           p[1] << "  got: " << y[p] << endl;
     };
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     if (z.domain().min()[1] != 105 || z.domain().max()[1] != 194)
       cout << "Translate failed. z.domain=" << z.domain() << endl;
     upcxx_foreach (p, z.domain()) {
-      if (z[p] != p[1]-100) 
+      if (z[p] != p[1]-100)
         cout << "Mismatch detected in z at " << p << ": expected: " <<
           (p[1]-100) << "  got: " << z[p] << endl;
     };
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     if (z2.domain().min()[1] != 205 || z2.domain().max()[1] != 294)
       cout << "Translate failed. z2.domain=" << z2.domain() << endl;
     upcxx_foreach (p, z2.domain()) {
-      if (z2[p] != p[1]-200) 
+      if (z2[p] != p[1]-200)
         cout << "Mismatch detected in z2 at " << p << ": expected: " <<
           (p[1]-200) << "  got: " << z2[p] << endl;
     };
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     if (z3.domain().min()[1] != -45 || z3.domain().max()[1] != 44)
       cout << "Translate failed. z3.domain=" << z3.domain() << endl;
     upcxx_foreach (p, z3.domain()) {
-      if (z3[p] != p[1]+50) 
+      if (z3[p] != p[1]+50)
         cout << "Mismatch detected in z3 at " << p << ": expected: " <<
           (p[1]+50) << "  got: " << z3[p] << endl;
     };
@@ -80,13 +80,13 @@ int main(int argc, char **argv) {
       int expected;
       if (p[1] < 50) expected = p[1];
       else expected = p[1]+1000;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy test 1 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
     };
   }
- 
+
   { /* contiguous copy with non-trivial stride */
     Array<int, 1, strided Global> x(RD(10, 101, 10));
     Array<int, 1, strided Global> y =
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     x.copy(y);
     upcxx_foreach (p, x.domain()) {
       int expected = p[1]+1000;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy test 2 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     x.copy(y);
     upcxx_foreach (p, x.domain()) {
       int expected = p[1]*100+p[2]+1000;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy test 3 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
       int expected;
       if (p[2] > 15) expected = p[1]*100+p[2];
       else expected = p[1]*100+p[2]+1000;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy test 4 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
       int expected;
       if (p[1] < 2) expected = 100+p[1];
       else expected = 100+p[1]-2;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy overlap test 1 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
       int expected;
       if (p[1] < 20) expected = 100+p[1];
       else expected = 100+p[1]-20;
-      if (x[p] != expected) 
+      if (x[p] != expected)
         cout << "Mismatch detected in copy overlap test 2 at " << p <<
           ": expected: " << expected <<
           "  got: " << x[p] << endl;
@@ -172,6 +172,6 @@ int main(int argc, char **argv) {
   }
 
   cout << "done." << endl;
-
+  upcxx::finalize();
   return 0;
 }

@@ -14,7 +14,7 @@
 
 using namespace upcxx;
 
-shared_array<int> sa(ranks()); // size = ranks()
+shared_array<int> sa;
 
 int test_barrier(const team &t)
 {
@@ -27,18 +27,18 @@ int test_barrier(const team &t)
   for (slow_rank=0; slow_rank<t.size(); slow_rank++) {
     uint32_t slow_global_rank = t.team_rank_to_global(slow_rank);
     int expected = 123456789 + slow_global_rank;
-    
+
     if (t.myrank() == slow_rank) {
       sa[slow_global_rank] = 0;
     }
     t.barrier();
-    
+
     if (t.myrank() == slow_rank) {
       sleep(1); // sleep 1 sec
       sa[slow_global_rank] = expected;
     }
     t.barrier();
-    
+
     if (sa[slow_global_rank] != expected) {
       std::cerr << global_myrank() << ": team barrier error: I exited the barrier before the slow rank enters it. Team " << t << "\n";
       exit(1);
@@ -53,17 +53,17 @@ int test_bcast(const team &t, size_t count)
 {
   global_ptr<T> src;
   global_ptr<T> dst;
-    
+
   src = allocate<T>(myrank(), count);
   dst = allocate<T>(myrank(), count);
-    
+
 #ifdef DEBUG
   cerr << global_myrank() << " scr: " << src << "\n";
   cerr << global_myrank() << " dst: " << dst << "\n";
 #endif
 
   t.barrier();
-  
+
   for (uint32_t root = 0; root < t.size(); root++) {
     // Initialize data pointed by host_ptr by a local pointer
     T *lsrc = (T *)src;
@@ -366,6 +366,9 @@ int main(int argc, char **argv)
   team *row_team, *col_team;
   uint32_t nrows, ncols = 1, row_id, col_id;
 
+  upcxx::init(&argc, &argv);
+  sa.init(ranks()); // size = ranks()
+
   if (argc > 1) {
     ncols = atoi(argv[1]);
   }
@@ -375,12 +378,12 @@ int main(int argc, char **argv)
     ncols = 1;
   }
   nrows = ranks() / ncols;
-  
+
   std::cout << "team_all: " << team_all << "\n";
 
   if (myrank() == 0)
     std::cout << "Testing team barrier on team_all...\n";
-  
+
   test_barrier(team_all);
 
   team_all.barrier();
@@ -418,11 +421,11 @@ int main(int argc, char **argv)
 
   if (myrank() == 0)
     std::cout << "Passed testing team_all!\n";
-  
+
   if (myrank() == 0)
     printf("Splitting team_all into %u row teams and %u column teams...\n",
            nrows, ncols);
- 
+
   row_id = myrank() / ncols;
   col_id = myrank() % ncols;
 
@@ -431,7 +434,7 @@ int main(int argc, char **argv)
   team_all.split(col_id, row_id, col_team); // Col teams
 
   barrier();
-  
+
   if (myrank() == 0)
     std::cout << "Finish team split\n";
 
@@ -459,7 +462,7 @@ int main(int argc, char **argv)
       std::cout << "Testing team allgather on row teams...\n";
 
   test_allgather<uint32_t>(*row_team, 101);
-  
+
   if (myrank() == 0)
     std::cout << "Testing team alltoall on row teams...\n";
 
@@ -511,5 +514,6 @@ int main(int argc, char **argv)
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";
 
+  upcxx::finalize();
   return 0;
 }

@@ -7,7 +7,6 @@
 
 #include <upcxx.h>
 #include <finish.h>
-#include <forkjoin.h> // for single-thread execution model emulation
 
 #include <iostream>
 
@@ -21,17 +20,24 @@ void print_task(int task_id)
 
 int main(int argc, char **argv)
 {
+  upcxx::init(&argc, &argv);
   printf("myrank() %d will spawn %d tasks...\n",
          myrank(), ranks());
 
   upcxx_finish {
     for (uint32_t i = 0; i < ranks(); i++) {
-      printf("thread %d spawns a task at node %d\n", myrank(), i);
+      printf("Rank %d spawns a task at node %d\n", myrank(), i);
       async(i)(print_task, 1000+i);
     }
   }
 
-  printf("All async tasks are done.\n");
+  upcxx::barrier();
+
+  if (myrank() == 0) {
+    printf("All async tasks are done.\n");
+  }
+
+  upcxx::finalize();
 
   return 0;
 }

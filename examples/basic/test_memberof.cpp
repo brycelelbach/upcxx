@@ -16,7 +16,7 @@ struct Domain {
   int num_boxes;
   shared_array< global_ptr<Box> > boxes;
 
-  Domain(int num) : num_boxes(num), boxes(num)
+  Domain(int num) : num_boxes(num)
   { }
 };
 
@@ -24,7 +24,8 @@ Domain dom(8*8*8);
 
 int main(int argc, char **argv)
 {
-  // dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
+  upcxx::init(&argc, &argv);
+  dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
 
   for (int i=myrank(); i<dom.num_boxes; i += ranks()) {
     dom.boxes[i] = upcxx::allocate<Box>(i%ranks(), 1);
@@ -68,5 +69,10 @@ int main(int argc, char **argv)
   // Wait for everyone to complete before exit
   upcxx::barrier();
 
+  if (myrank() == 0) {
+    printf("test_memberof passed!\n");
+  }
+
+  upcxx::finalize();
   return 0;
 }

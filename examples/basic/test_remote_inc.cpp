@@ -12,18 +12,18 @@ using namespace upcxx;
 const size_t ARRAY_SIZE = 16;
 
 // cyclic distribution of global array A
-shared_array<long> A(ARRAY_SIZE);
+shared_array<long> A;
 
 int main(int argc, char **argv)
 {
   init(&argc, &argv);
-  A.init();
+  A.init(ARRAY_SIZE);
 
   for (int j=0; j<10; j++) {
     for (size_t i=0; i<ARRAY_SIZE; i++) {
       remote_inc(&A[i]);
     }
-  }   
+  }
   barrier();
 
   if (myrank() == 0) {

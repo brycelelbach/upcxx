@@ -9,21 +9,23 @@
 
 using namespace upcxx;
 
-upcxx::shared_array<upcxx::atomic<uint64_t> >counters(ranks());
+shared_array<upcxx::atomic<uint64_t> >counters;
 
 uint64_t dummy = 0;
 
 int main(int argc, char **argv)
 {
+  upcxx::init(&argc, &argv);
   printf("Rank %u of %u starts test_fetch_add...\n",
          myrank(), ranks());
 
+  counters.init(ranks());
   // counters[myrank()] = 0;
 
   barrier();
 
   uint64_t old_val;
-  
+
   for (int i = 0; i < 100; i++) {
     for (int t = 0; t < ranks(); t++) {
       global_ptr<upcxx::atomic<uint64_t> > obj = &counters[t];
@@ -53,5 +55,6 @@ int main(int argc, char **argv)
   if (myrank() == 0)
     printf("test_fetch_add passed!\n");
 
+  upcxx::finalize();
   return 0;
 }

@@ -8,7 +8,6 @@
  */
 
 #include <upcxx.h>
-#include <forkjoin.h> // for single-thread execution model emulation
 
 #include <iostream>
 #include <stdio.h>
@@ -29,6 +28,8 @@ void print_task(int task_id)
 
 int main(int argc, char **argv)
 {
+  upcxx::init(&argc, &argv);
+
   event e;
   async_task cb = async_task(myrank(),
                              myrank(),
@@ -50,8 +51,11 @@ int main(int argc, char **argv)
 
   e.wait();
 
+  upcxx::barrier();
+
   if (myrank() == 0)
     printf("test_event passed!\n");
 
+  upcxx::finalize();
   return 0;
 }

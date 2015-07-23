@@ -28,7 +28,7 @@ using namespace upcxx;
 #define POLY      0x0000000000000007ULL
 #define PERIOD    1317624576693539401LL
 
-shared_array<uint64_t> Table(TableSize);
+shared_array<uint64_t> Table;
 
 double get_time()
 {
@@ -65,7 +65,7 @@ uint64_t starts(int64_t n)
     i -= 1;
     if ((n >> i) & 1)  ran = (ran << 1) ^ ((int64_t) ran < 0 ? POLY : 0);
   }
-  
+
   return ran;
 }
 
@@ -100,6 +100,9 @@ int main(int argc, char **argv)
   double GUPs;
   double latency;
 
+  upcxx::init(&argc, &argv);
+  Table.init(TableSize);
+
   if(myrank() == 0) {
     printf("\nTable size = %g MBytes/CPU, %g MB/total on %d threads\n",
            (double)TableSize*8/1024/1024/ranks(),
@@ -116,9 +119,9 @@ int main(int argc, char **argv)
     *lt++ = i;
   }
 
-  barrier(); 
+  barrier();
   RandomAccessUpdate();
-  barrier(); 
+  barrier();
 
   time = get_time() - time;
   GUPs = (double)NUPDATE * 1e-9 / time;
@@ -131,22 +134,22 @@ int main(int argc, char **argv)
     printf("Update latency = %6.2f usecs\n", latency);
   }
 
-#if 1 // VERIFY  
+#if 1 // VERIFY
   if (myrank() == 0) printf ("\nVerifying...\n");
   RandomAccessUpdate();  // do it again
-  barrier(); 
+  barrier();
   uint64_t errors = RandomAccessVerify();
   if (myrank() == 0) {
     if ((double)errors/NUPDATE < 0.01) {
-      printf ("Verification: SUCCESS (%llu errors in %llu updates)\n", 
+      printf ("Verification: SUCCESS (%llu errors in %llu updates)\n",
               errors, NUPDATE);
     } else {
-      printf ("Verification FAILED, (%llu errors in %llu updates)\n", 
+      printf ("Verification FAILED, (%llu errors in %llu updates)\n",
               errors, NUPDATE);
     }
   }
 #endif
-  
+
+  upcxx::finalize();
   return 0;
 }
-

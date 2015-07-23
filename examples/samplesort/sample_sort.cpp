@@ -44,13 +44,13 @@ typedef struct {
 buffer_t *all_buffers_src;
 buffer_t *all_buffers_dst;
 
-shared_array< global_ptr<ELEMENT_T>, 1 > sorted(ranks());
+shared_array< global_ptr<ELEMENT_T>, 1 > sorted; // (ranks());
 
 ELEMENT_T *splitters;
 
 shared_array<ELEMENT_T, 1> keys;
 
-shared_array<uint64_t, 1> sorted_key_counts(ranks());
+shared_array<uint64_t, 1> sorted_key_counts; // (ranks());
 
 
 double mysecond()
@@ -85,7 +85,7 @@ int compare_element(const void * a, const void * b)
 
 }
 
-void compute_splitters(uint64_t key_count, 
+void compute_splitters(uint64_t key_count,
                        int samples_per_thread)
 {
   splitters = (ELEMENT_T *)malloc(sizeof(ELEMENT_T) * ranks());
@@ -110,11 +110,11 @@ void compute_splitters(uint64_t key_count,
     }
 
     qsort(candidates, candidate_count, sizeof(ELEMENT_T), compare_element);
-  
+
     // Subsample the candidates for the key splitters
     my_splitters[0] = candidates[0];  // We won't use this one.
     for (i = 1; i < ranks(); i++) {
-      my_splitters[i] = candidates[i * samples_per_thread]; 
+      my_splitters[i] = candidates[i * samples_per_thread];
     }
 
     upcxx::upcxx_bcast(my_splitters, splitters, sizeof(ELEMENT_T)*ranks(), 0);
@@ -180,7 +180,7 @@ void redistribute(uint64_t key_count)
       } else {
         hist[k]++;
       }
-    } 
+    }
   }
 
 #ifdef DEBUG
@@ -203,8 +203,8 @@ void redistribute(uint64_t key_count)
 #endif
 
   all_buffers_src = (buffer_t *)malloc(sizeof(buffer_t) * ranks());
-  assert(all_buffers_src != NULL); 
- 
+  assert(all_buffers_src != NULL);
+
   all_buffers_dst = (buffer_t *)malloc(sizeof(buffer_t) * ranks());
   assert(all_buffers_dst != NULL);
 
@@ -243,10 +243,10 @@ void redistribute(uint64_t key_count)
              all_buffers_dst[i].ptr.raw_ptr(),
              (sorted[myrank()] + offset / sizeof(ELEMENT_T)).where(),
              (sorted[myrank()] + offset / sizeof(ELEMENT_T)).raw_ptr());
-#endif               
+#endif
       upcxx::async_copy((global_ptr<void>)all_buffers_dst[i].ptr,
                         (global_ptr<void>)(sorted[myrank()] + offset / sizeof(ELEMENT_T)),
-                        all_buffers_dst[i].nbytes);    
+                        all_buffers_dst[i].nbytes);
       offset += all_buffers_dst[i].nbytes;
     }
   }
@@ -302,17 +302,19 @@ void sample_sort(uint64_t key_count)
 
 int main(int argc, char **argv)
 {
+  upcxx::init(&argc, &argv);
+
   uint64_t my_key_size = KEYS_PER_THREAD; // assume key_size is a multiple of ranks()
   uint64_t total_key_size = (uint64_t)KEYS_PER_THREAD * ranks();
 
   keys.init(total_key_size);
-  // sorted.init(ranks());
-  // sorted_key_counts.init(ranks());
+  sorted.init(ranks());
+  sorted_key_counts.init(ranks());
 
 #ifdef VERIFY
   global_ptr<ELEMENT_T>keys_copy;
 #endif
-     
+
   // initialize the keys with random numbers
   init_keys((ELEMENT_T *)&keys[myrank()], my_key_size);
   barrier();
@@ -351,7 +353,7 @@ int main(int argc, char **argv)
   double total_time = mysecond() - starttime;
 
   if (myrank() == 0) {
-    printf("Sample sort time = %lg sec, %lg keys/s \n", total_time, 
+    printf("Sample sort time = %lg sec, %lg keys/s \n", total_time,
            (double)total_key_size/total_time);
   }
 
@@ -402,7 +404,7 @@ int main(int argc, char **argv)
       printf("\nverifying: i %llu, t %d, index %llu\n", i, t, index);
 #endif
       while (sorted_key_counts[t] == 0) t++;
-      
+
 #ifdef UPCXX_HAVE_CXX11
       current = sorted[t][index];
 #else
@@ -414,7 +416,7 @@ int main(int argc, char **argv)
 #endif
         num_errors++;
       }
-      
+
       index++;
       if (index == sorted_key_counts[t]) {
         t++;
@@ -444,5 +446,7 @@ int main(int argc, char **argv)
     }
   }
 #endif
+
+  upcxx::finalize();
   return 0;
 }

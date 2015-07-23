@@ -7,7 +7,6 @@
 
 #include <upcxx.h>
 #include <finish.h>
-#include <forkjoin.h> // for single-thread execution model emulation
 
 using namespace upcxx;
 
@@ -43,40 +42,45 @@ int spawn_tasks()
 
 int main(int argc, char **argv)
 {
-  printf("myrank() %d will spawn %d tasks...\n",
-         myrank(), 3*ranks());
+  upcxx::init(&argc, &argv);
 
-  int spawned = 0;
-  for (int i = 0; i < 3; i++)
-    task_count[i] = 0;
+  if (myrank() == 0) {
+    printf("myrank() %d will spawn %d tasks...\n",
+           myrank(), 3*ranks());
 
-  upcxx_finish {
-    for (uint32_t i = 0; i < ranks(); i++) {
-      printf("thread %d spawns a task at node %d\n", myrank(), i);
-      async(i)(task, 0);
-      spawned += 1;
-    }
-
-    printf("group %d complete? %d\n", 0, task_count[0] == ranks());
+    int spawned = 0;
+    for (int i = 0; i < 3; i++)
+      task_count[i] = 0;
 
     upcxx_finish {
       for (uint32_t i = 0; i < ranks(); i++) {
         printf("thread %d spawns a task at node %d\n", myrank(), i);
-        async(i)(task, 1);
+        async(i)(task, 0);
         spawned += 1;
       }
+
+      printf("group %d complete? %d\n", 0, task_count[0] == ranks());
+
+      upcxx_finish {
+        for (uint32_t i = 0; i < ranks(); i++) {
+          printf("thread %d spawns a task at node %d\n", myrank(), i);
+          async(i)(task, 1);
+          spawned += 1;
+        }
+      }
+
+      printf("group %d complete? %d\n", 1, task_count[1] == ranks());
+
+      spawned += spawn_tasks();
+
+      printf("group %d complete? %d\n", 2, task_count[2] == ranks());
     }
 
-    printf("group %d complete? %d\n", 1, task_count[1] == ranks());
+    printf("group %d complete? %d\n", 0, task_count[0] == ranks());
 
-    spawned += spawn_tasks();
-
-    printf("group %d complete? %d\n", 2, task_count[2] == ranks());
+    printf("All async tasks are done.\n");
   }
 
-  printf("group %d complete? %d\n", 0, task_count[0] == ranks());
-
-  printf("All async tasks are done.\n");
-
+  upcxx::finalize();
   return 0;
 }
