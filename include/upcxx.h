@@ -37,20 +37,4 @@
 #include "shared_array.h"
 #include "atomic.h"
 
-#ifndef UPCXX_NO_INITIALIZER_OBJECT
-namespace upcxx
-{
-  struct upcxx_runtime
-  {
-  public:
-    upcxx_runtime();
-    ~upcxx_runtime();
-  private:
-    bool _owner;
-  };
-  // this object is not expected to be accessed directly by the user
-  static upcxx_runtime __upcxx_runtime_obj;
-}
-#endif
-
 #endif /* UPCXX_H_ */

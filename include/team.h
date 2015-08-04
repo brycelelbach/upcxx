@@ -30,7 +30,7 @@ namespace upcxx
 
   struct team {
     team() : _mychild(NULL) {
-      if (_team_stack->size() > 0) {
+      if (_team_stack != NULL && _team_stack->size() > 0) {
         const team *other = current_team();
         _parent = other->_parent;
         _size = other->_size;

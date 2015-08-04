@@ -143,6 +143,7 @@ namespace upcxx
 
     ~shared_array()
     {
+      barrier();
       if (_alldata) free(_alldata);
       if (_data != NULL)
         deallocate(_data); // _data is from the global address space
@@ -159,10 +160,6 @@ namespace upcxx
      */
     void all_alloc(size_t nblocks, size_t blk_sz=BLK_SZ)
     {
-      if (_alldata != NULL || _data != NULL) {
-        // fatal error!
-      }
-
       this->init(nblocks*blk_sz, blk_sz);
     }
 
@@ -192,28 +189,12 @@ namespace upcxx
     sa->init(sz, blk_sz);
   }
 
-  struct __init_shared_array
+  static inline void enqueue_init()
   {
-    __init_shared_array()
-    {
-#ifdef UPCXX_DEBUG
-      printf("Constructing __dummy_obj_for_init_shared_array\n");
-#endif
-      if (pending_array_inits == NULL)
-        pending_array_inits = new std::vector<void*>;
-      assert(pending_array_inits != NULL);
-    }
-
-    ~__init_shared_array()
-    {
-#ifdef UPCXX_DEBUG
-      printf("Destructing __dummy_obj_for_init_shared_array\n");
-#endif
-      assert(pending_array_inits != NULL);
-      // delete pending_array_inits;
-    }
-  };
-  static __init_shared_array __dummy_obj_for_init_shared_array;
+    if (pending_array_inits == NULL)
+      pending_array_inits = new std::vector<void*>;
+    assert(pending_array_inits != NULL);
+  }
 
   static inline void run_pending_array_inits()
   {
