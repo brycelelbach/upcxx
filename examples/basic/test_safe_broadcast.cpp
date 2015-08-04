@@ -10,7 +10,7 @@
 using namespace upcxx;
 
 int main(int argc, char **argv) {
-
+  init(&argc, &argv);
   {
     ndarray<int, 1> arr(RD(0, 5));
     broadcast(arr, 0);
@@ -69,6 +69,6 @@ int main(int argc, char **argv) {
     broadcast(src, dst, 0);
   }
 #endif
-
+  finalize();
   return 0;
 }
