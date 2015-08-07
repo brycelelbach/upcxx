@@ -13,15 +13,7 @@ namespace upcxx
   // Implement global address space shared variable template  
   // **************************************************************************
   
-  /*
-   * shared_var_addr = shared_var_addr_P0 - my_shared_var_addr;
-   *
-   * where shared_var_addr_P0 is the local address of a global
-   * datum on rank 0 and my_shared_var_addr is the local address of
-   * the datum on my rank.
-   */
-  extern void *shared_var_addr;
-  extern size_t total_shared_var_sz;
+  extern std::vector<void *> *pending_shared_var_inits;
 
   /**
    * \ingroup gasgroup
@@ -50,45 +42,46 @@ namespace upcxx
   struct shared_var
   {
   private:
-    //size_t _my_offset;
     global_ptr<T> _ptr;
+    size_t _type_size;
     T _val;
 
   public:
-    shared_var()
+    shared_var() : _type_size(sizeof(T))
     {
-      /*
-      _my_offset = total_shared_var_sz;
-      total_shared_var_sz += sizeof(T);
-      */
-      alloc();
+      if (upcxx::is_init()) {
+        init();
+      } else {
+        enqueue_init();
+      }
     }
       
-    inline shared_var(const T &val) : _val(val)
+    inline shared_var(const T &val) : _type_size(sizeof(T)), _val(val)
     {
-      /*
-      _my_offset = total_shared_var_sz;
-      total_shared_var_sz += sizeof(T);
-      */
-      alloc();
+      if (upcxx::is_init()) {
+        init();
+      } else {
+        enqueue_init();
+      }
     }
 
     // copy constructor
     inline
-    shared_var(const shared_var<T> &g) : _val(g._val)
+    shared_var(const shared_var<T> &g) : _type_size(g._type_size), _val(g._val)
     {
-      /*
-      _my_offset = total_shared_var_sz;
-      total_shared_var_sz += sizeof(T);
-      */
-      alloc();
+      if (upcxx::is_init()) {
+        init();
+      } else {
+        enqueue_init();
+      }
     }
 
-    inline void alloc(rank_t where=0)
+    // init is a collective operation
+    inline void init(rank_t where=0)
     {
       // allocate the data space in bytes
       if (myrank() == where) {
-        _ptr = allocate<T>(where, 1);
+        _ptr = allocate(where, _type_size);
       }
 
       gasnet_coll_handle_t h;
@@ -101,6 +94,14 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
       std::cout << myrank() << ": _ptr " << _ptr << "\n";
 #endif
+    }
+
+    inline void enqueue_init()
+    {
+      if (pending_shared_var_inits== NULL)
+        pending_shared_var_inits = new std::vector<void*>;
+      assert(pending_shared_var_inits!= NULL);
+      pending_shared_var_inits->push_back((void *)this);
     }
 
     T& get()
@@ -177,5 +178,27 @@ namespace upcxx
 
   }; // struct shared_var
 
+  static inline void run_pending_shared_var_inits()
+  {
+#ifdef UPCXX_DEBUG
+    printf("Running shared_var::run_pending_inits(). pending_inits sz %lu\n",
+           pending_inits->size());
+#endif
+
+#ifdef UPCXX_HAVE_CXX11
+    for (auto it = pending_shared_var_inits->begin();
+        it != pending_shared_var_inits->end(); ++it) {
+#else
+    for (std::vector<void*>::iterator it = pending_inits->begin();
+        it != pending_inits->end(); ++it) {
+#endif
+      shared_var<char> *current = (shared_var<char> *)*it;
+#ifdef UPCXX_DEBUG
+      printf("Rank %u: Init shared_var %p, size %lu\n",
+             myrank(), current, current->_type_size);
+#endif
+      current->init();
+    }
+  }
 } // namespace upcxx
 

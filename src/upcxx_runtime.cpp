@@ -98,9 +98,7 @@ namespace upcxx
   std::list<event*> *outstanding_events;
   gasnet_hsl_t outstanding_events_lock;
 
-  // maybe non-zero: = address of global_var_offset on node 0 - address of global_var_offset
-  void *shared_var_addr = NULL;
-  size_t total_shared_var_sz = 0;
+  std::vector<void *> *pending_shared_var_inits;
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
@@ -177,19 +175,6 @@ namespace upcxx
     my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
     my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
 
-    // Allocate gasnet segment space for shared_var
-    if (total_shared_var_sz != 0) {
-#ifdef USE_GASNET_FAST_SEGMENT
-      shared_var_addr = gasnet_seg_alloc(total_shared_var_sz);
-#else
-      shared_var_addr = malloc(total_shared_var_sz);
-#endif
-      assert(shared_var_addr != NULL);
-      void *tmp_addr = shared_var_addr;
-      gasnet_coll_broadcast(GASNET_TEAM_ALL, &shared_var_addr, 0, &tmp_addr,
-                            sizeof(void *), UPCXX_GASNET_COLL_FLAG);
-    }
-
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "rank %u, total_shared_var_sz %lu, shared_var_addr %p\n",
             gasnet_mynode(), total_shared_var_sz, shared_var_addr);
@@ -238,18 +223,14 @@ namespace upcxx
 
     init_flag = true;
 
+    // run the pending_shared_var_inits
+    if (pending_shared_var_inits != NULL)
+      run_pending_shared_var_inits();
+
     // run the pending initializations of shared arrays
     // run_pending_array_inits();
 
     barrier();
-    return UPCXX_SUCCESS;
-  }
-
-  int finalize()
-  {
-    // Move the true finalize function to _finalize, which should be
-    // called the upcxx_runtime destructor and not by the user
-    // explictly.
     return UPCXX_SUCCESS;
   }
 
@@ -274,6 +255,11 @@ namespace upcxx
 
     init_flag = false;
     return UPCXX_SUCCESS;
+  }
+
+  int finalize()
+  {
+    return _finalize();
   }
 
   bool is_init() { return init_flag; }
@@ -551,31 +537,4 @@ namespace upcxx
 #endif
   }
 
-  upcxx_runtime::upcxx_runtime()
-  {
-    if (!is_init()) {
-#ifdef UPCXX_DEBUG
-      printf("Initializing upcxx runtime.\n");
-#endif
-      init(NULL, NULL);
-      _owner = true;
-#ifdef UPCXX_DEBUG
-      printf("Rank %u: Initialized upcxx runtime.\n", myrank());
-#endif
-    } else {
-      _owner = false;
-    }
-  }
-
-  upcxx_runtime::~upcxx_runtime()
-  {
-    assert(is_init());
-
-    if (_owner) {
-#ifdef UPCXX_DEBUG
-      printf("Rank %u: Destructing upcxx runtime\n", myrank());
-#endif
-      _finalize();
-    }
-  }
 } // namespace upcxx

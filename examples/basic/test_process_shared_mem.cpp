@@ -28,15 +28,13 @@ typedef struct Box_ {
 struct Domain {
   int num_boxes;
   upcxx::shared_array< upcxx::global_ptr<Box> > boxes;
-
-  Domain(int num) : num_boxes(num), boxes(num)
-  { }
 };
 
-Domain dom(3*3*3);
+Domain dom;
 
 int main(int argc, char **argv)
 {
+  upcxx::init(&argc, &argv);
   // print out pshm_teams
   // std::vector< std::vector<rank_t> > pshm_teams;
   if (upcxx::myrank() == 0) {
@@ -49,6 +47,10 @@ int main(int argc, char **argv)
     }
   }
   upcxx::barrier();
+
+  dom.num_boxes = 3*3*3;
+  dom.boxes.init(dom.num_boxes, 1); // cyclic distribution
+  // dom.boxes.init(dom.num_boxes, dom.num_boxes/ranks()); // blocked distribution
 
   for (int i=upcxx::myrank(); i<dom.num_boxes; i += upcxx::ranks()) {
     dom.boxes[i] = upcxx::allocate<Box>(upcxx::myrank(), 1);
@@ -105,5 +107,9 @@ int main(int argc, char **argv)
 
   upcxx::barrier();
 
+  if (upcxx::myrank() == 0)
+    printf("test_process_shared_mem passed!\n");
+
+  upcxx::finalize();
   return 0;
 }
