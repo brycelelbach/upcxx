@@ -21,7 +21,7 @@ namespace upcxx
    *
    * In the current implementation, the application needs to call
    * the init() member function for each shared array object after
-   * calling upcxxx::init().  For example, sa.init(total_sz, blk_sz);
+   * calling upcxx::init().  For example, sa.init(total_sz, blk_sz);
    *
    * In UPC++, the block size (blk_sz) can be changed at runtime
    * by set_blk_sz().
