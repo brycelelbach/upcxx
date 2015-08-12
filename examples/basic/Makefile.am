@@ -2,6 +2,7 @@ include ../../$(GASNET_MAKEFILE)
 
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_BIN_FILES = \
+  test_acc_async \
   test_array \
   test_array_dist \
   test_array_ghost_copy \
@@ -57,6 +58,7 @@ test_team_SOURCES = test_team.cpp
 testperf2_SOURCES = testperf2.cpp
 
 if UPCXX_MD_ARRAY
+test_acc_async_SOURCES = test_acc_async.cpp
 test_array_SOURCES = test_array.cpp
 test_array_dist_SOURCES = test_array_dist.cpp
 test_array_ghost_copy_SOURCES = test_array_ghost_copy.cpp
