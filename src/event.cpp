@@ -6,8 +6,6 @@
 #include <assert.h>
 #include <vector>
 
-#define UPCXX_NO_INITIALIZER_OBJECT
-
 #include "upcxx.h"
 
 // #define DEBUG

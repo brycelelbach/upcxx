@@ -2,8 +2,6 @@
  * team.cpp
  */
 
-#define UPCXX_NO_INITIALIZER_OBJECT
-
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 

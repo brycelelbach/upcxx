@@ -8,11 +8,8 @@
 #include <stdlib.h> // for malloc
 #include <string.h> // for memcpy
 #include <assert.h> // for assert
-// #include <stdint.h> // for uint32_t
 
-#define UPCXX_NO_INITIALIZER_OBJECT
-
-#include <upcxx.h>
+#include "upcxx.h"
 
 // #define DEBUG
 

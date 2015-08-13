@@ -1,12 +1,10 @@
-#define UPCXX_NO_INITIALIZER_OBJECT
-
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 
 // #define DEBUG
 
 #ifdef UPCXX_USE_DMAPP
-#include "dmapp_channel/dmapp_helper.h"
+#include "upcxx/dmapp_channel/dmapp_helper.h"
 #endif
 
 namespace upcxx
