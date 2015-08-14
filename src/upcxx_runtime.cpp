@@ -56,7 +56,8 @@ namespace upcxx
     {FETCH_ADD_U64_AM,        (void (*)())fetch_add_am_handler<uint64_t>},
     {FETCH_ADD_U64_REPLY,     (void (*)())fetch_add_reply_handler<uint64_t>},
 
-    gasneti_handler_tableentry_with_bits(copy_and_set_request),
+    gasneti_handler_tableentry_with_bits(copy_and_signal_request),
+    gasneti_handler_tableentry_with_bits(copy_and_signal_reply),
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */

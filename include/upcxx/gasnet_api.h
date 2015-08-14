@@ -61,10 +61,11 @@ enum am_index_t {
   AM_BCAST,         // active broadcast
   AM_BCAST_REPLY,   // active broadcast reply
   INC_AM,           // remote increment
-  COPY_AND_SET_AM,  // copy data and set a remote flag
   FETCH_ADD_U64_AM,  // fetch and add for uint64_t
   FETCH_ADD_U64_REPLY, // reply message for FETCH_ADD_U64_AM
-
+  COPY_AND_SIGNAL_REQUEST, // transfer data and signal a remote event
+  COPY_AND_SIGNAL_REPLY,   // reply a COPY_AND_SIGNAL_REQUEST
+  
   /* array_bulk.c */
   ARRAY_MISC_DELETE_REQUEST,
   ARRAY_MISC_ALLOC_REQUEST,

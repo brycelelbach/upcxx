@@ -1,5 +1,5 @@
 /**
- * Multi-node global pointers and memory allocation and copy functions
+ * Implement data transfer functions: copy, async_copy, async_copy_and_signal
  */
 
 #pragma once
@@ -10,21 +10,26 @@
 
 namespace upcxx
 {
-
-  // **************************************************************************
-  // Implement copy, allocate and free with ptr for GASNet backend
-  // **************************************************************************
-
-  int copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes);
-
   /**
    * \ingroup gasgroup
-   * \brief copy data from cpu to cpu
+   * \brief transfer data between processes
    *
    * \tparam T type of the element
    * \param src the pointer of src data
    * \param dst the pointer of dst data
-   * \param count the number of element to be copied
+   * \param nbytes the number of bytes to be transferred
+   *
+   */
+  int copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes);
+
+  /**
+   * \ingroup gasgroup
+   * \brief transfer data between processes
+   *
+   * \tparam T type of the element
+   * \param src the pointer of src data
+   * \param dst the pointer of dst data
+   * \param count the number of element to be transferred
    *
    * \see test_global_ptr.cpp
    */
@@ -38,7 +43,7 @@ namespace upcxx
   template<typename T>
   inline int copy(global_ptr<T> src, T* dst, size_t count)
   {
-      return copy(src, global_ptr<T>(dst), count);
+    return copy(src, global_ptr<T>(dst), count);
   }
 
   template<typename T>
@@ -50,104 +55,98 @@ namespace upcxx
   int async_copy(global_ptr<void> src,
                  global_ptr<void> dst,
                  size_t bytes,
-                 event *e = peek_event());
-
-  inline void sync_nb(gasnet_handle_t h)
-  {
-    gasnet_wait_syncnb(h);
-  }
+                 event *done_event = peek_event());
 
   /**
    * \ingroup gasgroup
-   * \brief Non-blocking copy data from cpu to cpu
+   * \brief Non-blocking transfer data between processes
    *
    * \tparam T type of the element
    * \param src the pointer of src data
    * \param dst the pointer of dst data
    * \param count the number of element to be copied
-   * \param e the event which should be notified after the completion of the copy
+   * \param done_event the event to be signaled after transfer completion 
    */
   template<typename T>
   int async_copy(global_ptr<T> src,
                  global_ptr<T> dst,
                  size_t count,
-                 event *e = peek_event())
+                 event *done_event = peek_event())
   {
     size_t nbytes = count * sizeof(T);
     return async_copy((global_ptr<void>)src,
                       (global_ptr<void>)dst,
                       nbytes,
-                      e);
+                      done_event);
   }
 
   template<typename T>
   inline int async_copy(global_ptr<T> src, T* dst, size_t count,
-                        event *e = peek_event())
+                        event *done_event = peek_event())
   {
-      return async_copy(src, global_ptr<T>(dst), count, e);
+    return async_copy(src, global_ptr<T>(dst), count, done_event);
   }
 
   template<typename T>
   inline int async_copy(T* src, global_ptr<T> dst, size_t count,
-                        event *e = peek_event())
+                        event *done_event = peek_event())
   {
-    return async_copy(global_ptr<T>(src), dst, count, e);
+    return async_copy(global_ptr<T>(src), dst, count, done_event);
   }
 
   /**
    * \ingroup gasgroup
-   * \brief Non-blocking copy-and-set, which first performs an async copy
-   * and after the data transfer completes it sets a flag on remote rank
+   * \brief Non-blocking signaling copy, which first performs an async copy
+   * and then signal an event on the destination rank
+   *
+   * The remote rank can wait on the event to check if the corresponding
+   * async_copy data have arrived.
+   *
+   * \tparam T type of the element
+   * \param src the pointer of src data
+   * \param dst the pointer of dst data
+   * \param nbytes the number of bytes to be transferred
+   * \param signal_event the event to be signaled on the dst rank
+   * \param done_event the event to be signaled after copy completion
+   */
+  int async_copy_and_signal(global_ptr<void> src,
+                            global_ptr<void> dst,
+                            size_t nbytes,
+                            event *singal_event,
+                            event *done_event = peek_event());
+
+  /**
+   * \ingroup gasgroup
+   * \brief Non-blocking signaling copy, which first performs an async copy
+   * and then signal an event on the destination rank
+   *
+   * The remote rank can wait on the event to check if the corresponding
+   * async_copy data have arrived.
    *
    * The remote rank can wait on the flag to check if the corresponding
    * async_copy data have arrived.
    *
+   * \tparam T type of the element
    * \param src the pointer of src data
    * \param dst the pointer of dst data
-   * \param nbytes the number of bytes to be copied
-   * \param flag_addr the pointer to the remote flag
-   * \param flag_val the value to set in the remote flag
-   * \param e the local event which should be notified after the completion of the copy
+   * \param count the number of element to be transferred
+   * \param signal_event the event to be signaled on the dst rank
+   * \param done_event the event to be signaled after copy completion
    */
-  int async_copy_and_set(global_ptr<void> src,
-                         global_ptr<void> dst,
-                         size_t nbytes,
-                         global_ptr<flag_t> flag_addr,
-                         event *e = peek_event());
-
-  /**
-    * \ingroup gasgroup
-    * \brief Non-blocking copy-and-set, which first performs an async copy
-    * and after the data transfer completes it sets a flag on remote rank
-    *
-    * The remote rank can wait on the flag to check if the corresponding
-    * async_copy data have arrived.
-    *
-    * \tparam T type of the element
-    * \param src the pointer of src data
-    * \param dst the pointer of dst data
-    * \param count the number of element to be copied
-    * \param flag_addr the pointer to the remote flag
-    * \param e the event which should be notified after the completion of the copy
-    */
-   template<typename T>
-   int async_copy_and_set(global_ptr<T> src,
-                          global_ptr<T> dst,
-                          size_t count,
-                          global_ptr<flag_t> flag_addr,
-                          event *e = peek_event())
-   {
-     size_t nbytes = count * sizeof(T);
-     return async_copy_and_set((global_ptr<void>)src,
-                               (global_ptr<void>)dst,
-                               nbytes,
-                               flag_addr,
-                               e);
-   }
-
-   void async_set_flag(global_ptr<flag_t> flag_addr, event *e = NULL);
-
-   void async_unset_flag(global_ptr<flag_t> flag_addr, event *e = NULL);
+  template<typename T>
+  int async_copy_and_signal(global_ptr<T> src,
+                            global_ptr<T> dst,
+                            size_t count,
+                            event *singal_event,
+                            event *done_event = peek_event())
+  {
+    size_t nbytes = count * sizeof(T);
+    return async_copy_and_signal((global_ptr<void>)src,
+                                 (global_ptr<void>)dst,
+                                 nbytes,
+                                 singal_event,
+                                 done_event);
+  }
 
   /**
    * async_copy_fence is deprecated. Please use async_wait() instead.
