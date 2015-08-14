@@ -30,6 +30,7 @@ void compute_task(int i, event *e, global_ptr<double> src, global_ptr<double> ds
 
 int main(int argc, char **argv)
 {
+  init(&argc, &argv);
   global_ptr<double> src, dst;
   size_t sz = 1024*1024;
   src = allocate<double>((myrank()+1)%ranks(), sz);
@@ -66,5 +67,6 @@ int main(int argc, char **argv)
   if (myrank() == 0)
     printf("test_event2 passed!\n");
 
+  finalize();
   return 0;
 }
