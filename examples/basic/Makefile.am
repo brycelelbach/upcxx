@@ -17,6 +17,7 @@ bin_PROGRAMS = \
   test_am_bcast \
   test_async \
   test_copy_closure \
+  test_copy_and_signal \
   test_dynamic_finish \
   test_event \
   test_event2 \
@@ -39,6 +40,7 @@ hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
 test_async_SOURCES = test_async.cpp
 test_copy_closure_SOURCES = test_copy_closure.cpp
+test_copy_and_signal_SOURCES = test_copy_and_signal.cpp
 test_dynamic_finish_SOURCES = test_dynamic_finish.cpp
 test_event_SOURCES = test_event.cpp
 test_event2_SOURCES = test_event2.cpp
