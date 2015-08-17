@@ -1,14 +1,14 @@
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 
-// #define DEBUG
+// #define UPCXX_DEBUG
 
 namespace upcxx
 {
   int copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes)
   {
 #ifdef DEBUG
-    fprintf(stderr, "src id %d, src ptr %p, nbytes %llu, dst id %d, dst ptr %p\n",
+    fprintf(stderr, "src id %d, src ptr %p, nbytes %lu, dst id %d, dst ptr %p\n",
             src.where(), src.raw_ptr(), nbytes, dst.where(), dst.raw_ptr());
 #endif
     if (dst.where() == global_myrank()) {
@@ -79,7 +79,7 @@ namespace upcxx
                                      void *signal_event,
                                      void *done_event)
   {
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
     printf("copy_and_signal_request_inner: target_addr %p, signal_event %p\n",
            target_addr, signal_event);
 #endif
@@ -93,7 +93,7 @@ namespace upcxx
       gasnett_local_wmb(); // make sure the flag is set after the data written
     }
     
-    ((event *)signal_event)->incref(); // signal the event on the destination
+    ((event *)signal_event)->decref(); // signal the event on the destination
     
     if (done_event != NULL) {
       GASNET_SAFE(SHORT_REP(1,2,(token, COPY_AND_SIGNAL_REPLY, PACK(done_event))));
@@ -109,9 +109,10 @@ namespace upcxx
                             event *singal_event,
                             event *done_event)
   {
-#if UPCXX_DEBUG
+#ifdef UPCXX_DEBUG
     std::cout << "Rank " << global_myrank() << " async_copy_and_signal src " << src
-              << " dst " << dst << " nbytes " << nbytes << " singal_event " << singal_event
+              << " dst " << dst << " nbytes " << nbytes
+              << " singal_event " << singal_event << " done_event " << done_event
               << "\n";
 #endif
     
@@ -121,6 +122,7 @@ namespace upcxx
       gasnet_exit(1);
     }
 
+    assert(singal_event != NULL);
     if (done_event != NULL) done_event->incref();
     
     // implementation based on GASNet medium AM
