@@ -58,8 +58,6 @@ namespace upcxx
       _local_size = 0;
       _size = size;
       _type_size = sizeof(T);
-      _alldata = (T **)malloc(ranks() * sizeof(T*));
-      assert(_alldata != NULL);
       if (size != 0)
         init(size, blk_sz);
     }
@@ -99,6 +97,11 @@ namespace upcxx
       }
 
       if (sz == 0) return;
+
+      if (_alldata == NULL) {
+        _alldata = (T **)malloc(ranks() * sizeof(T*));
+        assert(_alldata != NULL);
+      }
 
       if (_data != NULL) deallocate(_data);
 
@@ -141,7 +144,7 @@ namespace upcxx
       init(sz, get_blk_sz());
     }
 
-    ~shared_array()
+    void finalize()
     {
       barrier();
       if (_alldata) free(_alldata);

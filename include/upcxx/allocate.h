@@ -49,10 +49,7 @@ namespace upcxx
 
   void deallocate(global_ptr<void> ptr);
 
-  static inline void deallocate(void *ptr) 
-  {
-    deallocate(global_ptr<void>(ptr, global_myrank()));
-  }
+  void deallocate(void *ptr);
 
   /**
    * \ingroup gasgroup

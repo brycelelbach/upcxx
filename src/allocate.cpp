@@ -47,6 +47,15 @@ namespace upcxx
     }
   }
 
+  void deallocate(void *ptr)
+  {
+#ifdef USE_GASNET_FAST_SEGMENT
+    gasnet_seg_free(ptr);
+#else
+    free(ptr);
+#endif
+  } 
+
   void alloc_cpu_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
     assert(buf != NULL);
