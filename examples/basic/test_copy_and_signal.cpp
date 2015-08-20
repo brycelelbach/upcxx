@@ -250,7 +250,7 @@ void pgas_send(global_ptr<void> src,
 
   // Can't find the send_info entry in the hash table
   // Create a new send_info and store the receiver part of it
-  SendInfo send_info = SendInfo(src, dst, nbytes, SeqNum, signal_event, done_event);
+  SendInfo send_info(src, dst, nbytes, SeqNum, signal_event, done_event);
   pgas_send_info_map.insert(std::pair<upcxx::rank_t, SendInfo>(dst.where(), send_info));
 }
 
