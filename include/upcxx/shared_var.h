@@ -189,8 +189,8 @@ namespace upcxx
     for (auto it = pending_shared_var_inits->begin();
         it != pending_shared_var_inits->end(); ++it) {
 #else
-    for (std::vector<void*>::iterator it = pending_inits->begin();
-        it != pending_inits->end(); ++it) {
+    for (std::vector<void*>::iterator it = pending_shared_var_inits->begin();
+        it != pending_shared_var_inits->end(); ++it) {
 #endif
       shared_var<char> *current = (shared_var<char> *)*it;
 #ifdef UPCXX_DEBUG
