@@ -122,7 +122,7 @@ namespace upcxx {
         dst = src + 1;
       }
       src[0] = reduce_internal(val, op, 0);
-      upcxx_bcast(src, dst, sizeof(T), 0);
+      upcxx::bcast(src, dst, sizeof(T), 0);
       return dst[0];
     }
 
@@ -134,7 +134,7 @@ namespace upcxx {
         dst = src + 1;
       }
       src[0] = val;
-      upcxx_reduce(src, dst, 1, root, op, datatype_wrapper<T>::value);
+      upcxx::reduce(src, dst, 1, root, op, datatype_wrapper<T>::value);
       return dst[0];
     }
 
@@ -142,14 +142,14 @@ namespace upcxx {
                                                   int count,
                                                   upcxx_op_t op) {
       reduce_internal(src, dst, count, op, 0);
-      upcxx_bcast(dst, dst, count * sizeof(T), 0);
+      upcxx::bcast(dst, dst, count * sizeof(T), 0);
     }
 
     template<class T> static void reduce_internal(T *src, T *dst,
                                                   int count,
                                                   upcxx_op_t op,
                                                   int root) {
-      upcxx_reduce(src, dst, count, root, op, datatype_wrapper<T>::value);
+      upcxx::reduce(src, dst, count, root, op, datatype_wrapper<T>::value);
     }
 
   public:

@@ -20,21 +20,21 @@ namespace upcxx {
   UPCXXI_GLOBALIZE_TYPE(T) broadcast(T val, int root) {
     UPCXXI_GLOBALIZE_TYPE(T) sval = (UPCXXI_GLOBALIZE_TYPE(T)) val;
     UPCXXI_GLOBALIZE_TYPE(T) result;
-    upcxx_bcast(&sval, &result, sizeof(UPCXXI_GLOBALIZE_TYPE(T)),
-                root);
+    upcxx::bcast(&sval, &result, sizeof(UPCXXI_GLOBALIZE_TYPE(T)),
+                 root);
     return result;
   }
 
   template<class T> void broadcast(UPCXXI_NONGLOBALIZE_TYPE(T) * src,
                                    T *dst, size_t count, int root) {
-    upcxx_bcast(src, dst, count*sizeof(T), root);
+    upcxx::bcast(src, dst, count*sizeof(T), root);
   }
 
   template<class Array>
   void broadcast(Array src, Array dst, int root,
                  UPCXXI_ARRAY_NG_TYPE(Array) * = 0) {
-    upcxx_bcast(src.storage_ptr(), dst.storage_ptr(),
-                src.size()*sizeof(UPCXXI_ARRAY_ELEM_TYPE(Array)),
+    upcxx::bcast(src.storage_ptr(), dst.storage_ptr(),
+                 src.size()*sizeof(UPCXXI_ARRAY_ELEM_TYPE(Array)),
                 root);
   }
 } // namespace upcxx

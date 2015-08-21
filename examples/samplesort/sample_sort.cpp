@@ -117,13 +117,13 @@ void compute_splitters(uint64_t key_count,
       my_splitters[i] = candidates[i * samples_per_thread];
     }
 
-    upcxx::upcxx_bcast(my_splitters, splitters, sizeof(ELEMENT_T)*ranks(), 0);
+    upcxx::bcast(my_splitters, splitters, sizeof(ELEMENT_T)*ranks(), 0);
 
     free(candidates);
     free(my_splitters);
   } else {
     // myrank() != 0
-    upcxx::upcxx_bcast(NULL, splitters, sizeof(ELEMENT_T)*ranks(), 0);
+    upcxx::bcast(NULL, splitters, sizeof(ELEMENT_T)*ranks(), 0);
   }
 }
 

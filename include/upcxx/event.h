@@ -117,7 +117,7 @@ namespace upcxx
   inline
   std::ostream& operator<<(std::ostream& out, const event& e)
   {
-    return out << "gasnet event: count " << e.count()
+    return out << "event: count " << e.count()
                << ", # of callback tasks " << e.num_done_cb()
                << "\n";
   }
