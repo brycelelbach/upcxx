@@ -113,17 +113,17 @@ namespace upcxx
   }
 
   // Decrement the reference counter for the event
-  void event::decref()
+  void event::decref(uint32_t c)
   {
     upcxx_mutex_lock(&_mutex);
-    if (_count == 0) {
+    _count -= c;
+    if (_count < 0) {
       fprintf(stderr,
-              "Fatal error: attempt to decrement an event (%p) with 0 references!\n",
+              "Fatal error: attempt to decrement an event (%p) to be a negative number of references!\n",
               this);
       gasnet_exit(1);
     }
-
-    int tmp = --_count; // obtain the value of count before unlock
+    int tmp = _count; // obtain the value of count before unlock
     upcxx_mutex_unlock(&_mutex);
 
     if (tmp == 0) {
@@ -194,6 +194,18 @@ namespace upcxx
       rv = rv && gasnet_try_syncnbi_all();
     }
     return rv;
+  }
+
+  void event_incref(event *e, uint32_t c)
+  {
+    assert(e != NULL);
+    e->incref(c);
+  }
+
+  void event_decref(event *e, uint32_t c)
+  {
+    assert(e != NULL);
+    e->decref(c);
   }
 
 } // namespace upcxx

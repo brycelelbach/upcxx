@@ -106,14 +106,16 @@ namespace upcxx
    * \param src the pointer of src data
    * \param dst the pointer of dst data
    * \param nbytes the number of bytes to be transferred
-   * \param signal_event the event to be signaled on the dst rank
-   * \param done_event the event to be signaled after copy completion
+   * \param signal_event the event to be signaled on the dst rank after transfer
+   * \param local_completion sender event when the local buffer can be reused
+   * \param remote_completion sender event when the dst buffer is written
    */
   int async_copy_and_signal(global_ptr<void> src,
                             global_ptr<void> dst,
                             size_t nbytes,
-                            event *singal_event,
-                            event *done_event = peek_event());
+                            event *signal_event,
+                            event *local_completion,
+                            event *remote_completion = peek_event());
 
   /**
    * \ingroup gasgroup
@@ -137,15 +139,17 @@ namespace upcxx
   int async_copy_and_signal(global_ptr<T> src,
                             global_ptr<T> dst,
                             size_t count,
-                            event *singal_event,
-                            event *done_event = peek_event())
+                            event *signal_event,
+                            event *local_completion,
+                            event *remote_completion = peek_event())
   {
     size_t nbytes = count * sizeof(T);
     return async_copy_and_signal((global_ptr<void>)src,
                                  (global_ptr<void>)dst,
                                  nbytes,
-                                 singal_event,
-                                 done_event);
+                                 signal_event,
+                                 local_completion,
+                                 remote_completion);
   }
 
   /**

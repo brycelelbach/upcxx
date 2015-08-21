@@ -154,7 +154,7 @@ struct SendInfo {
   size_t nbytes;
   int SeqNum;
   event *signal_event;
-  event *done_event;
+  event *local_completion;
 
   SendInfo(global_ptr<void> src,
            global_ptr<void> dst,
@@ -167,7 +167,7 @@ struct SendInfo {
       nbytes  (nb),
       SeqNum  (SN),
       signal_event(signal_e),
-      done_event(done_e)
+      local_completion(done_e)
   { ; }
 
   void check()
@@ -176,7 +176,7 @@ struct SendInfo {
     assert(dst_ptr != NULL);
     assert(nbytes > 0);
     assert(signal_event != NULL);
-    assert(done_event != NULL);
+    assert(local_completion != NULL);
   }
 };
 
@@ -188,12 +188,12 @@ void pgas_send(global_ptr<void> src,
                size_t nbytes,
                int SeqNum,
                event *signal_event,
-               event *done_event)
+               event *local_completion)
 {
 #ifdef DEBUG1
   std::cout << "myrank " << myrank() << " pgas_send: src " << src << " dst " << dst << " nbytes " << nbytes
             << " SeqNum " << SeqNum << " signal_event " << signal_event
-            << " done_event " << done_event << "\n";
+            << " local_completion " << local_completion << "\n";
 #endif
 
   // We use dst_rank as the key for the hash table
@@ -218,7 +218,7 @@ void pgas_send(global_ptr<void> src,
       if (send_info.src_ptr == NULL) {
         // pgas_send request from Recv came earlier
         send_info.src_ptr = src;
-        send_info.done_event = done_event;
+        send_info.local_completion = local_completion;
 #ifdef DEBUG
         std::cout << "myrank " << myrank() << " send found SeqNum match "
                   << SeqNum << "\n";
@@ -240,7 +240,8 @@ void pgas_send(global_ptr<void> src,
                             send_info.dst_ptr,
                             send_info.nbytes,
                             send_info.signal_event,
-                            send_info.done_event);
+                            send_info.local_completion,
+                            NULL);
       num_sends++;
       // Delete the send_info from the map
       pgas_send_info_map.erase(it);
@@ -250,7 +251,7 @@ void pgas_send(global_ptr<void> src,
 
   // Can't find the send_info entry in the hash table
   // Create a new send_info and store the receiver part of it
-  SendInfo send_info {src, dst, nbytes, SeqNum, signal_event, done_event};
+  SendInfo send_info {src, dst, nbytes, SeqNum, signal_event, local_completion};
   pgas_send_info_map.insert(std::pair<upcxx::rank_t, SendInfo>(dst.where(), send_info));
 }
 

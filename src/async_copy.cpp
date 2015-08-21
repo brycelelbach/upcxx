@@ -103,16 +103,42 @@ namespace upcxx
                  (token, addr, nbytes, UNPACK(a0),      UNPACK(a1),      UNPACK(a1)),
                  (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
   
+  event **allocate_events(uint32_t num_events)
+  {
+    event **temp_events = (event **)malloc(sizeof(event *) * num_events);
+    assert(temp_events != NULL);
+
+    for (uint32_t i = 0; i < num_events; i++) {
+      temp_events[i] = new event;
+      assert(temp_events[i] != NULL);
+    }
+
+    return temp_events;
+  }
+
+  void deallocate_events(uint32_t num_events, event **events)
+   {
+     assert(events != NULL);
+     for (uint32_t i = 0; i < num_events; i++) {
+       assert(events[i] != NULL);
+       delete events[i];
+     }
+     free(events);
+   }
+
   int async_copy_and_signal(global_ptr<void> src,
                             global_ptr<void> dst,
                             size_t nbytes,
-                            event *singal_event,
-                            event *done_event)
+                            event *signal_event,
+                            event *local_completion,
+                            event *remote_completion)
   {
 #ifdef UPCXX_DEBUG
     std::cout << "Rank " << global_myrank() << " async_copy_and_signal src " << src
               << " dst " << dst << " nbytes " << nbytes
-              << " singal_event " << singal_event << " done_event " << done_event
+              << " signal_eventevent " << signal_event
+              << " local_completion event " << local_completion
+              << " remote_completion event " << remote_completion
               << "\n";
 #endif
     
@@ -122,24 +148,39 @@ namespace upcxx
       gasnet_exit(1);
     }
 
-    assert(singal_event != NULL);
-    if (done_event != NULL) done_event->incref();
+    assert(signal_event != NULL);
+    if (local_completion!= NULL) local_completion->incref();
+    if (remote_completion!= NULL) remote_completion->incref();
     
     // implementation based on GASNet medium AM
     if (nbytes <= gasnet_AMMaxMedium()) {
       GASNET_SAFE(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                     src.raw_ptr(), nbytes,
                                     PACK(dst.raw_ptr()),
-                                    PACK(singal_event),
-                                    PACK(done_event))));
+                                    PACK(signal_event),
+                                    PACK(remote_completion))));
+      local_completion->decref(); // send buffer is reusable immediately
     } else {
+      /*
       assert(nbytes <= gasnet_AMMaxLongRequest()); 
       GASNET_SAFE(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                        src.raw_ptr(), nbytes, dst.raw_ptr(),
                                        PACK(NULL), // no need to copy for long AMs
-                                       PACK(singal_event),
-                                       PACK(done_event))));
-
+                                       PACK(signal_event),
+                                       PACK(remote_completion))));
+      */
+      // async_copy_and_set implementation based on RDMA put and local async tasks
+      event **temp_events = allocate_events(1);
+      // start the async copy of the payload
+      async_copy(src, dst, nbytes, temp_events[0]);
+      // enqueue a local async task that will asynchronously set the remote flag via RMDA put
+      if (local_completion != NULL)
+        async_after(global_myrank(), temp_events[0])(event_decref, local_completion, 1);
+      if (remote_completion != NULL)
+        async_after(global_myrank(), temp_events[0])(event_decref, remote_completion, 1);
+      async_after(dst.where(), temp_events[0])(event_decref, signal_event, 1);
+      // enqueue another local task that will clean up the temp_events after e is done
+      async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
     }
     
     return UPCXX_SUCCESS;

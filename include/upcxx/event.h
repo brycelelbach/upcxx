@@ -76,7 +76,7 @@ namespace upcxx
     void incref(uint32_t c=1);
 
     // Decrement the reference counter for the event
-    void decref();
+    void decref(uint32_t c=1);
 
     void add_gasnet_handle(gasnet_handle_t h);
 
@@ -111,6 +111,9 @@ namespace upcxx
     inline int test() { return async_try(); }
   };
   /// @}
+
+  void event_incref(event *e, uint32_t c=1);
+  void event_decref(event *e, uint32_t c=1);
 
   typedef struct event future;
 
