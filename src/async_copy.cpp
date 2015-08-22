@@ -51,6 +51,9 @@ namespace upcxx
       } else { // src.where() == global_myrank()
         h = gasnet_put_nb_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
       }
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "Rank %u async_copy to add handle %p to event %p\n", myrank(), h, e);
+#endif
       e->add_gasnet_handle(h);
     }
     return UPCXX_SUCCESS;

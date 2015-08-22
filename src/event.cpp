@@ -21,12 +21,18 @@ namespace upcxx
     }
 
     // Acquired the lock
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "Rank %u is calling async_try with event %p\n", myrank(), this);
+#endif
 
     // check outstanding gasnet handles
     if (!_gasnet_handles.empty()) {
-     // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
-     for (std::vector<gasnet_handle_t>::iterator it = _gasnet_handles.begin();
+      // for (auto it = _h.begin(); it != _h.end()) { // UPCXX_HAVE_CXX11
+      for (std::vector<gasnet_handle_t>::iterator it = _gasnet_handles.begin();
            it != _gasnet_handles.end();) {
+#ifdef UPCXX_DEBUG
+        fprintf(stderr, "Rank %u is async_try is checking handle %p\n", myrank(), *it);
+#endif
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
           _gasnet_handles.erase(it); // erase increase it automatically
           decref();
@@ -61,7 +67,7 @@ namespace upcxx
   void event::wait()
   {
     while (!async_try()) {
-      advance(1, 10);
+      advance();
       // YZ: don't need to yield if CPUs are not over-subscribed.
       // gasnett_sched_yield();
     }
@@ -101,11 +107,16 @@ namespace upcxx
   void event::incref(uint32_t c)
   {
     upcxx_mutex_lock(&_mutex);
-    int old = _count;
+    uint32_t old = _count;
     _count += c;
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "P %u incref event %p, c = %d, old %u\n", global_myrank(), this, c, old);
+#endif
     if (this != system_event && old == 0) {
       gasnet_hsl_lock(&outstanding_events_lock);
-      // fprintf(stderr, "P %u   Add outstanding_event %p\n", global_myrank(), this);
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "P %u Add outstanding_event %p\n", global_myrank(), this);
+#endif
       outstanding_events->push_back(this);
       gasnet_hsl_unlock(&outstanding_events_lock);
     }
@@ -130,7 +141,9 @@ namespace upcxx
       enqueue_cb();
       if (this != system_event) {
         gasnet_hsl_lock(&outstanding_events_lock);
-        // fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
+#ifdef UPCXX_DEBUG
+        fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
+#endif
         outstanding_events->remove(this);
         gasnet_hsl_unlock(&outstanding_events_lock);
       }

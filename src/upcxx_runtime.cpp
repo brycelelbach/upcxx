@@ -434,12 +434,13 @@ namespace upcxx
     if (!outstanding_events->empty()) {
       for (std::list<event*>::iterator it = outstanding_events->begin();
            it != outstanding_events->end(); ++it) {
-        // cerr << "Number of outstanding_events: " << outstanding_events.size() << endl;
         event *e = (*it);
         assert(e != NULL);
-        // fprintf(stderr, "P %u Advance event: %p\n", global_myrank(), e);
-        e->async_try();
-        break;
+#ifdef UPCXX_DEBUG
+        fprintf(stderr, "P %u: Number of outstanding_events %u, Advance event: %p\n", 
+                global_myrank(), outstanding_events->size(), e);
+#endif
+        if (e->async_try()) break;
       }
     }
 
