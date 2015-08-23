@@ -87,8 +87,6 @@ namespace upcxx
            target_addr, signal_event);
 #endif
 
-    assert(signal_event != NULL);
-
     // We are using the same AM handler for both Medium and Long AMs.
     // For a long AM request, the target_addr should be NULL.
     if (target_addr != NULL) {
@@ -96,7 +94,8 @@ namespace upcxx
       gasnett_local_wmb(); // make sure the flag is set after the data written
     }
     
-    ((event *)signal_event)->decref(); // signal the event on the destination
+    if (signal_event != NULL)
+      ((event *)signal_event)->decref(); // signal the event on the destination
     
     if (done_event != NULL) {
       GASNET_SAFE(SHORT_REP(1,2,(token, COPY_AND_SIGNAL_REPLY, PACK(done_event))));
@@ -151,10 +150,6 @@ namespace upcxx
       gasnet_exit(1);
     }
 
-    assert(signal_event != NULL);
-    if (local_completion!= NULL) local_completion->incref();
-    if (remote_completion!= NULL) remote_completion->incref();
-    
     // implementation based on GASNet medium AM
     if (nbytes <= gasnet_AMMaxMedium()) {
       GASNET_SAFE(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
@@ -162,7 +157,7 @@ namespace upcxx
                                     PACK(dst.raw_ptr()),
                                     PACK(signal_event),
                                     PACK(remote_completion))));
-      local_completion->decref(); // send buffer is reusable immediately
+      if (remote_completion!= NULL) remote_completion->incref();
     } else {
       /*
       assert(nbytes <= gasnet_AMMaxLongRequest()); 
@@ -176,12 +171,21 @@ namespace upcxx
       event **temp_events = allocate_events(1);
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
-      // enqueue a local async task that will asynchronously set the remote flag via RMDA put
-      if (local_completion != NULL)
+
+      if (local_completion != NULL) {
+        local_completion->incref();
         async_after(global_myrank(), temp_events[0])(event_decref, local_completion, 1);
-      if (remote_completion != NULL)
+      }
+
+      if (remote_completion != NULL) {
+        remote_completion->incref();
         async_after(global_myrank(), temp_events[0])(event_decref, remote_completion, 1);
-      async_after(dst.where(), temp_events[0])(event_decref, signal_event, 1);
+      }
+
+      if (signal_event != NULL) {
+        async_after(dst.where(), temp_events[0])(event_decref, signal_event, 1);
+      }
+
       // enqueue another local task that will clean up the temp_events after e is done
       async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
     }
