@@ -20,6 +20,8 @@ def process_line(line, is_csh):
         line = line.replace('(', '{')
         line = line.replace(')', '}')
         line = re.sub('\s+', ' ', line)
+        if (line.startswith('GASNET_LDFLAGS_OVERRIDE')):
+            line = re.sub('-O[0-9]', '', line) ## remove "-Ox" flag
         if (is_csh):
             print("set "),
             
