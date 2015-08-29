@@ -165,8 +165,8 @@ namespace upcxx {
 #endif
 
 #define GASNET_BARRIER do {                                           \
-    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_notify(0, GASNET_BARRIERFLAG_ANONYMOUS))));\
-    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_ANONYMOUS))));  \
+    UPCXX_CALL_GASNET(gasnet_barrier_notify(0, GASNET_BARRIERFLAG_UNNAMED));\
+    UPCXX_CALL_GASNET(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_UNNAMED));  \
   } while (0)
 
 #endif /* UPCXX_RUNTIME_H_ */

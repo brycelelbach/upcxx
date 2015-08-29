@@ -6,10 +6,10 @@ namespace upcxx {
   {
     int rv;
     UPCXX_CALL_GASNET(gasnet_coll_barrier_notify(current_gasnet_team(), 0,
-                                                 GASNET_BARRIERFLAG_ANONYMOUS));
+                                                 GASNET_BARRIERFLAG_UNNAMED));
     do {
       UPCXX_CALL_GASNET(rv=gasnet_coll_barrier_try(current_gasnet_team(), 0,
-                                                   GASNET_BARRIERFLAG_ANONYMOUS));
+                                                   GASNET_BARRIERFLAG_UNNAMED));
       if (rv == GASNET_ERR_NOT_READY) {
         if (advance() < 0) { // process the async task queue
           return UPCXX_ERROR;
