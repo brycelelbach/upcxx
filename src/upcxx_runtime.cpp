@@ -88,7 +88,7 @@ namespace upcxx
   gasnet_nodeinfo_t *my_gasnet_nodeinfo;
   gasnet_node_t my_gasnet_supernode;
 
-#if defined(UPCXX_THREAD_SAFE)
+#if defined(UPCXX_THREAD_SAFE) || defined(GASNET_PAR)
   upcxx_mutex_t async_lock = UPCXX_MUTEX_INITIALIZER;
   upcxx_mutex_t in_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
   upcxx_mutex_t out_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
@@ -499,8 +499,8 @@ namespace upcxx
     return UPCXX_SUCCESS;
   }
 
-#if defined(UPCXX_THREAD_SAFE)
-  pthread_mutex_t upcxxi_mutex_for_memory = PTHREAD_MUTEX_INITIALIZER;
+#if defined(UPCXX_THREAD_SAFE) || defined(GASNET_PAR)
+  upcxx_mutex_t upcxxi_mutex_for_memory = UPCXX_MUTEX_INITIALIZER;
 #endif
 
   // free memory

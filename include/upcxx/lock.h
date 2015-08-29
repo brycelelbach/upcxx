@@ -31,8 +31,8 @@ namespace upcxx
     rank_t _holder; /**< the current holder of the lock */
     shared_lock *myself;
 
-#ifdef UPCXX_THREAD_SAFE
-    pthread_mutex_t _mutex; /**< local handler-safe lock for thread/signal safety */
+#if defined(UPCXX_THREAD_SAFE) || defined(GASNET_PAR)
+    upcxx_mutex_t _mutex; /**< local handler-safe lock for thread/signal safety */
 #endif
 
   public:
@@ -43,8 +43,8 @@ namespace upcxx
       _holder = _owner;
 
       myself = this;
-#ifdef UPCXX_THREAD_SAFE
-      pthread_mutex_init(&_mutex, NULL);
+#if defined(UPCXX_THREAD_SAFE)  || defined(GASNET_PAR)
+      upcxx_mutex_init(&_mutex);
 #endif
     }
 

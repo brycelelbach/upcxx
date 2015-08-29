@@ -115,14 +115,17 @@ namespace upcxx
   int barrier();
 } // namespace upcxx
 
-#if !defined(UPCXX_THREAD_SAFE)
-#define upcxx_mutex_lock(X)
-#define upcxx_mutex_trylock(X) 0
-#define upcxx_mutex_unlock(X)
-#define upcxx_mutex_init(X)
-#define upcxx_mutex_t int
-#define UPCXX_MUTEX_INITIALIZER 0
-#elif !defined(GASNET_PAR) || defined(UPCXX_USE_PTHREAD_MUTEX)
+#if defined(GASNET_PAR)
+#define UPCXX_THREAD_SAFE     1
+#define upcxx_mutex_lock      gasnet_hsl_lock
+#define upcxx_mutex_trylock   gasnet_hsl_trylock
+#define upcxx_mutex_unlock    gasnet_hsl_unlock
+#define upcxx_mutex_init      gasnet_hsl_init
+#define upcxx_mutex_t         gasnet_hsl_t
+#define UPCXX_MUTEX_INITIALIZER GASNET_HSL_INITIALIZER
+
+#elif defined(UPCXX_THREAD_SAFE) && !defined(GASNET_PAR)
+
 #include <pthread.h>
 #define upcxx_mutex_lock(X)   pthread_mutex_lock(X)
 #define upcxx_mutex_trylock(X) pthread_mutex_trylock(X)
@@ -130,36 +133,40 @@ namespace upcxx
 #define upcxx_mutex_init(X)   pthread_mutex_init(X, NULL)
 #define upcxx_mutex_t         pthread_mutex_t
 #define UPCXX_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
-#else
-#define upcxx_mutex_lock      gasnet_hsl_lock
-#define upcxx_mutex_trylock   gasnet_hsl_trylock
-#define upcxx_mutex_unlock    gasnet_hsl_unlock
-#define upcxx_mutex_init      gasnet_hsl_init
-#define upcxx_mutex_t         gasnet_hsl_t
-#define UPCXX_MUTEX_INITIALIZER GASNET_HSL_INITIALIZER
+
+#else // Not thread-safe
+
+#define upcxx_mutex_lock(X)
+#define upcxx_mutex_trylock(X) 0
+#define upcxx_mutex_unlock(X)
+#define upcxx_mutex_init(X)
+#define upcxx_mutex_t int
+#define UPCXX_MUTEX_INITIALIZER 0
+
 #endif
 
-#if defined(UPCXX_THREAD_SAFE) && !defined(GASNET_PAR)
+#if defined(GASNET_PAR)
+
+// GASNET is thread-safe by itself in PAR mode, no need to lock in UPC++ level
+#define UPCXX_CALL_GASNET(fncall) fncall
+
+#else
+
 // protect gasnet calls if GASNET_PAR mode is not used
 namespace upcxx {
   extern upcxx_mutex_t gasnet_call_lock;
 }
-#endif
-
-#if defined(GASNET_PAR)
-// GASNET is thread-safe by itself in PAR mode, no need to lock in UPC++ level
-#define UPCXX_CALL_GASNET(fncall) fnacall
-#else
 #define UPCXX_CALL_GASNET(fncall) do {                                \
     upcxx_mutex_lock(&upcxx::gasnet_call_lock);                       \
     fncall;                                                           \
     upcxx_mutex_unlock(&upcxx::gasnet_call_lock);                     \
   } while(0)
+
 #endif
 
 #define GASNET_BARRIER do {                                           \
-    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_notify(0, GASNET_BARRIERFLAG_UNNAMED)));\
-    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_UNNAMED)));  \
+    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_notify(0, GASNET_BARRIERFLAG_ANONYMOUS))));\
+    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_ANONYMOUS))));  \
   } while (0)
 
 #endif /* UPCXX_RUNTIME_H_ */

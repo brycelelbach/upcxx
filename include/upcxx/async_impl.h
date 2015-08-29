@@ -189,15 +189,15 @@ namespace upcxx
     if (task->_callee == global_myrank()) {
       // local task
       assert(in_task_queue != NULL);
-      gasnet_hsl_lock(&in_task_queue_lock);
+      upcxx_mutex_lock(&in_task_queue_lock);
       queue_enqueue(in_task_queue, tmp);
-      gasnet_hsl_unlock(&in_task_queue_lock);
+      upcxx_mutex_unlock(&in_task_queue_lock);
     } else {
       // remote task
       assert(out_task_queue != NULL);
-      gasnet_hsl_lock(&out_task_queue_lock);
+      upcxx_mutex_lock(&out_task_queue_lock);
       queue_enqueue(out_task_queue, tmp);
-      gasnet_hsl_unlock(&out_task_queue_lock);
+      upcxx_mutex_unlock(&out_task_queue_lock);
     }
   } // end of submit_task
   

@@ -38,9 +38,11 @@ int main(int argc, char **argv)
   sleep(1);
   printf("Rank %u wakes up.\n", myrank());  
   async_wait();
+  fflush(stdout);
   
   barrier();
-  if (myrank() == 0) printf("\n\nStart to test progress thread...\n");
+
+  if (myrank() == 0) printf("\n\nStart to test progress thread...\n\n");
   barrier();
 
   for (uint32_t i = 0; i < ranks(); i++) {

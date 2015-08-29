@@ -39,7 +39,7 @@ namespace upcxx
   struct event {
     volatile int _count; // outstanding number of tasks.
     int owner;
-#ifdef UPCXX_THREAD_SAFE
+#if defined(UPCXX_THREAD_SAFE) || defined(GASNET_PAR)
     upcxx_mutex_t _mutex;
 #endif
     std::vector<gasnet_handle_t> _gasnet_handles;
