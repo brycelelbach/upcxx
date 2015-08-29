@@ -37,6 +37,7 @@ upcxxinclude_HEADERS =  \
   upcxx/interfaces.h \
   upcxx/interfaces_internal.h \
   upcxx/lock.h \
+  upcxx/progress_thread.h \
   upcxx/queue.h \
   upcxx/range.h \
   upcxx/reduce.h \

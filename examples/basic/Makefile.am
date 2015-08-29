@@ -29,6 +29,7 @@ bin_PROGRAMS = \
   test_memberof2 \
   test_memberof3 \
   test_process_shared_mem \
+	test_progress_thread \
   test_remote_inc \
   test_shared_array \
   test_shared_array2 \
@@ -52,6 +53,7 @@ test_memberof_SOURCES = test_memberof.cpp
 test_memberof2_SOURCES = test_memberof2.cpp
 test_memberof3_SOURCES = test_memberof3.cpp
 test_process_shared_mem_SOURCES = test_process_shared_mem.cpp
+test_progress_thread_SOURCES = test_progress_thread.cpp
 test_remote_inc_SOURCES = test_remote_inc.cpp
 test_shared_array_SOURCES = test_shared_array.cpp
 test_shared_array2_SOURCES = test_shared_array2.cpp

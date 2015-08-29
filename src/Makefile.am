@@ -29,6 +29,7 @@ libupcxx_la_SOURCES = \
   barrier.cpp        \
   collective.cpp     \
   event.cpp          \
+  progress_thread.cpp\
   lock.cpp           \
   team.cpp           \
   upcxx_runtime.cpp $(UPCXX_DMAPP_CPP_FILES) $(UPCXX_MD_ARRAY_CPP_FILES)

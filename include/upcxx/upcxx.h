@@ -36,5 +36,6 @@
 #include "collective.h"
 #include "shared_array.h"
 #include "atomic.h"
+#include "progress_thread.h"
 
 #endif /* UPCXX_H_ */
