@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 #endif
   }
   
-  printf("Rank %u will fall asleep for 1 second and not async tasks should happen before it wakes up...\n",
+  printf("Rank %u will fall asleep for 1 second and no async tasks should happen before it wakes up...\n",
          myrank());
   sleep(1);
   printf("Rank %u wakes up.\n", myrank());  
