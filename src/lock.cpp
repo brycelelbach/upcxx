@@ -18,7 +18,7 @@ namespace upcxx
     shared_lock *lock = am->lock;
 
     gasnet_node_t srcnode;
-    GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
+    GASNET_CHECK_RV(gasnet_AMGetMsgSource(token, &srcnode));
 
     if (!am->queryonly) {
       upcxx_mutex_lock(&lock->_mutex);
@@ -45,7 +45,9 @@ namespace upcxx
     reply.rv_addr = am->rv_addr;
     reply.cb_event = am->cb_event;
 
-    GASNET_SAFE(gasnet_AMReplyMedium0(token, LOCK_REPLY, &reply, sizeof(reply)));
+    UPCXX_CALL_GASNET(
+        GASNET_CHECK_RV(
+            gasnet_AMReplyMedium0(token, LOCK_REPLY, &reply, sizeof(reply))));
   }
 
   void shared_lock::lock_reply_handler(gasnet_token_t token,
@@ -70,7 +72,7 @@ namespace upcxx
     assert(am->lock->_locked);
 
     gasnet_node_t srcnode;
-    GASNET_SAFE(gasnet_AMGetMsgSource(token, &srcnode));
+    GASNET_CHECK_RV(gasnet_AMGetMsgSource(token, &srcnode));
 
     upcxx_mutex_lock(&am->lock->_mutex);
     if (am->lock->_holder != srcnode) {
@@ -100,7 +102,7 @@ namespace upcxx
             global_myrank(), this, _locked, _holder, _owner);
 #endif
 
-    GASNET_SAFE(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
+    GASNET_CHECK_RV(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
     e.wait();
 
     if (rv.holder == global_myrank() && rv.islocked) {
@@ -119,7 +121,7 @@ namespace upcxx
   {
     unlock_am_t am;
     am.lock = myself;
-    GASNET_SAFE(gasnet_AMRequestMedium0(get_owner(), UNLOCK_AM, &am, sizeof(am)));
+    GASNET_CHECK_RV(gasnet_AMRequestMedium0(get_owner(), UNLOCK_AM, &am, sizeof(am)));
 
     // If Active Messages may be delivered out-of-order, we need
     // to wait for a reply from the lock master node (0) before
@@ -141,7 +143,7 @@ namespace upcxx
     e.incref();
     am.cb_event = &e;
 
-    GASNET_SAFE(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
+    GASNET_CHECK_RV(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
     e.wait();
 
     return rv.islocked;

@@ -16,3 +16,6 @@
 
 /* define if Cray DMAPP features are enabled */
 #undef UPCXX_USE_DMAPP
+
+/* define if thread safety feature is enabled */
+#undef UPCXX_THREAD_SAFE

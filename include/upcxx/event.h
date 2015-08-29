@@ -22,9 +22,9 @@ namespace upcxx
 
   // extern gasnet_hsl_t async_lock;
   // extern queue_t *async_task_queue;
-  extern gasnet_hsl_t in_task_queue_lock;
+  extern upcxx_mutex_t in_task_queue_lock;
   extern queue_t *in_task_queue;
-  extern gasnet_hsl_t out_task_queue_lock;
+  extern upcxx_mutex_t out_task_queue_lock;
   extern queue_t *out_task_queue;
 
 #define MAX_NUM_DONE_CB 16
@@ -40,7 +40,7 @@ namespace upcxx
     volatile int _count; // outstanding number of tasks.
     int owner;
 #ifdef UPCXX_THREAD_SAFE
-    pthread_mutex_t _mutex;
+    upcxx_mutex_t _mutex;
 #endif
     std::vector<gasnet_handle_t> _gasnet_handles;
 #ifdef UPCXX_USE_DMAPP
@@ -52,9 +52,7 @@ namespace upcxx
 
     inline event() : _count(0), _num_done_cb(0), owner(0)
     {
-#ifdef UPCXX_THREAD_SAFE
-      pthread_mutex_init(&_mutex, NULL);
-#endif
+      upcxx_mutex_init(&_mutex);
     }
 
     inline ~event()
@@ -127,7 +125,7 @@ namespace upcxx
 
   extern event *system_event; // defined in upcxx.cpp
   extern std::list<event *> *outstanding_events;
-  extern gasnet_hsl_t outstanding_events_lock;
+  extern upcxx_mutex_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);

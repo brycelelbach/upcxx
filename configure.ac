@@ -156,4 +156,17 @@ AS_IF([test "x$enable_dmapp" = "xyes"], [
 
 AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
 
+// UPCXX_THREAD_SAFE
+dnl Option to enable UPC++ thread safety (default is disable)
+AC_ARG_ENABLE([thread-safe],
+    AS_HELP_STRING([--enable-thread-safe], [Enable thread safety for the UPC++ runtime]))
+
+AS_IF([test "x$enable_thread_safe" = "xyes"], [
+  dnl Do the stuff needed for enabling thread safety
+  AC_DEFINE(UPCXX_THREAD_SAFE, 1, [define if thread safety is enabled])
+  AC_SUBST(UPCXX_THREAD_SAFE)
+])
+
+AM_CONDITIONAL([UPCXX_THREAD_SAFE], [test "x$enable_thread_safe" = "xyes"])
+
 AC_OUTPUT

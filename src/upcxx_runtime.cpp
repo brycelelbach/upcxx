@@ -88,17 +88,21 @@ namespace upcxx
   gasnet_nodeinfo_t *my_gasnet_nodeinfo;
   gasnet_node_t my_gasnet_supernode;
 
-  gasnet_hsl_t async_lock;
-  // queue_t *async_task_queue = NULL;
-  gasnet_hsl_t in_task_queue_lock;
-  gasnet_hsl_t out_task_queue_lock;
+#if defined(UPCXX_THREAD_SAFE)
+  upcxx_mutex_t async_lock = UPCXX_MUTEX_INITIALIZER;
+  upcxx_mutex_t in_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
+  upcxx_mutex_t out_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
+  upcxx_mutex_t outstanding_events_lock = UPCXX_MUTEX_INITIALIZER;
+  // protect gasnet calls if GASNET_PAR mode is not used
+  upcxx_mutex_t gasnet_call_lock = UPCXX_MUTEX_INITIALIZER;
+#endif
+
+
   queue_t *in_task_queue = NULL;
   queue_t *out_task_queue = NULL;
   event *system_event;
   bool init_flag = false;  //  equals 1 if the backend is initialized
   std::list<event*> *outstanding_events;
-  gasnet_hsl_t outstanding_events_lock;
-
   std::vector<void *> *pending_shared_var_inits;
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
@@ -114,6 +118,8 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     cerr << "upcxx::init()\n";
 #endif
+    static upcxx_mutex_t init_lock = UPCXX_MUTEX_INITIALIZER;
+    upcxx_mutex_lock(&init_lock);
 
     if (init_flag) {
       return UPCXX_ERROR;
@@ -150,10 +156,13 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
 #endif
-    GASNET_SAFE(gasnet_attach(AMtable,
-                              sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
-                              gasnet_getMaxLocalSegmentSize(),
-                              0));
+    UPCXX_CALL_GASNET(
+        GASNET_CHECK_RV(
+            gasnet_attach(AMtable,
+                          sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
+                          gasnet_getMaxLocalSegmentSize(),
+                          0)));
+
     // The following collectives initialization only works with SEG build
     // \TODO: add support for the PAR-SYNC build
     // gasnet_coll_init(NULL, 0, NULL, 0, 0); // init gasnet collectives
@@ -187,26 +196,11 @@ namespace upcxx
     // Initialize PSHM teams
     init_pshm_teams(all_gasnet_nodeinfo, _global_ranks);
 
-    // Because we assume the data and text segments of processes are
-    // aligned (offset is always 0).  We are not using the offsets arrays for
-    // now.
-    /*
-      gasnet_dataseg_offsets = (uint64_t *)malloc(sizeof(uint64_t) * gasnet_nodes());
-      gasnet_textseg_offsets = (uint64_t *)malloc(sizeof(uint64_t) * gasnet_nodes());
-      assert(gasnet_dataseg_offsets != NULL);
-      assert(gasnet_textseg_offsets != NULL);
-    */
-
     // Initialize the async task queues and the async locks
-    gasnet_hsl_init(&in_task_queue_lock);
-    gasnet_hsl_init(&out_task_queue_lock);
     in_task_queue = queue_new();
     out_task_queue = queue_new();
     assert(in_task_queue != NULL);
     assert(out_task_queue != NULL);
-
-    gasnet_hsl_init(&async_lock);
-    gasnet_hsl_init(&outstanding_events_lock);
 
 #ifdef UPCXX_USE_DMAPP
     init_dmapp();
@@ -232,6 +226,8 @@ namespace upcxx
     // run_pending_array_inits();
 
     barrier();
+
+    upcxx_mutex_unlock(&init_lock);
     return UPCXX_SUCCESS;
   }
 
@@ -281,6 +277,10 @@ namespace upcxx
   void inc_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
   {
     struct inc_am_t *am = (struct inc_am_t *)buf;
+    // gasnett_strongatomic64_X
+    // uint64_t gasnett_atomic64_add(gasnett_atomic64_t *p, uint64_t v, int flags);
+    // Atomically add value v to *p, returning the new value.
+
     long *tmp = (long *)am->ptr;
     (*tmp)++;
   }
@@ -301,9 +301,9 @@ namespace upcxx
     cerr << *task << endl;
 #endif
     // enqueue the async task
-    gasnet_hsl_lock(&in_task_queue_lock);
+    upcxx_mutex_lock(&in_task_queue_lock);
     queue_enqueue(in_task_queue, task);
-    gasnet_hsl_unlock(&in_task_queue_lock);
+    upcxx_mutex_unlock(&in_task_queue_lock);
   }
 
   void async_done_am_handler(gasnet_token_t token, void *buf, size_t nbytes)
@@ -334,16 +334,16 @@ namespace upcxx
     async_task *task;
     int num_dispatched = 0;
 
-    gasnet_AMPoll(); // make progress in GASNet
+    UPCXX_CALL_GASNET(gasnet_AMPoll()); // make progress in GASNet
 
     // Execute tasks in the async queue
     while (!queue_is_empty(inq)) {
       // dequeue an async task
-      gasnet_hsl_lock(&in_task_queue_lock);
+      upcxx_mutex_lock(&in_task_queue_lock);
       task = (async_task *)queue_dequeue(inq);
-      gasnet_hsl_unlock(&in_task_queue_lock);
+      upcxx_mutex_unlock(&in_task_queue_lock);
 
-      assert (task != NULL);
+      if (task == NULL) break;
       assert (task->_callee == global_myrank());
 
 #ifdef UPCXX_DEBUG
@@ -368,10 +368,12 @@ namespace upcxx
             // send an ack message back to the caller of the async task
             async_done_am_t am;
             am.ack_event = task->_ack;
-            GASNET_SAFE(gasnet_AMRequestMedium0(task->_caller,
-                                                ASYNC_DONE_AM,
-                                                &am,
-                                                sizeof(am)));
+            UPCXX_CALL_GASNET(
+                GASNET_CHECK_RV(
+                    gasnet_AMRequestMedium0(task->_caller,
+                                            ASYNC_DONE_AM,
+                                            &am,
+                                            sizeof(am))));
           }
         }
         delete task;
@@ -390,10 +392,10 @@ namespace upcxx
     // Execute tasks in the async queue
     while (!queue_is_empty(outq)) {
       // dequeue an async task
-      gasnet_hsl_lock(&out_task_queue_lock);
+      upcxx_mutex_lock(&out_task_queue_lock);
       task = (async_task *)queue_dequeue(outq);
-      gasnet_hsl_unlock(&out_task_queue_lock);
-      assert (task != NULL);
+      upcxx_mutex_unlock(&out_task_queue_lock);
+      if (task == NULL) break;
       assert (task->_callee != global_myrank());
 
 #ifdef UPCXX_DEBUG
@@ -403,8 +405,11 @@ namespace upcxx
 
       // remote async task
       // Send AM "there" to request async task execution
-      GASNET_SAFE(gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
-                                          task, task->nbytes()));
+      UPCXX_CALL_GASNET(
+          GASNET_CHECK_RV(
+              gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
+                                      task, task->nbytes())));
+
       delete task;
       num_dispatched++;
       if (num_dispatched >= max_dispatched) break;
@@ -431,6 +436,7 @@ namespace upcxx
     }
 
     // check outstanding events
+    upcxx_mutex_lock(&outstanding_events_lock);
     if (!outstanding_events->empty()) {
       for (std::list<event*>::iterator it = outstanding_events->begin();
            it != outstanding_events->end(); ++it) {
@@ -443,13 +449,14 @@ namespace upcxx
         if (e->async_try()) break;
       }
     }
+    upcxx_mutex_unlock(&outstanding_events_lock);
 
     return num_out + num_in;
   } // advance()
 
   int peek()
   {
-    gasnet_AMPoll();
+    UPCXX_CALL_GASNET(gasnet_AMPoll());
     return ! (queue_is_empty(in_task_queue) && queue_is_empty(out_task_queue));
   } // peek()
 
@@ -486,9 +493,15 @@ namespace upcxx
   {
     inc_am_t am;
     am.ptr = ptr.raw_ptr();
-    GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am)));
+    UPCXX_CALL_GASNET(
+        GASNET_CHECK_RV(
+            gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am))));
     return UPCXX_SUCCESS;
   }
+
+#if defined(UPCXX_THREAD_SAFE)
+  pthread_mutex_t upcxxi_mutex_for_memory = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
   // free memory
   void gasnet_seg_free(void *p)
@@ -497,18 +510,27 @@ namespace upcxx
       fprintf(stderr, "Error: the gasnet memory space is not initialized.\n");
       fprintf(stderr, "It is likely due to the pointer (%p) was not from hp_malloc().\n",
               p);
-      gasnet_exit(1);
+      UPCXX_CALL_GASNET(gasnet_exit(1));
     }
     assert(p != 0);
+
+    upcxx_mutex_lock(&upcxxi_mutex_for_memory);
     mspace_free(_gasnet_mspace, p);
+    upcxx_mutex_unlock(&upcxxi_mutex_for_memory);
   }
 
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment)
   {
+    upcxx_mutex_lock(&upcxxi_mutex_for_memory);
+
     if (_gasnet_mspace== 0) {
       init_gasnet_seg_mspace();
     }
-    return mspace_memalign(_gasnet_mspace, alignment, nbytes);
+    void *m = mspace_memalign(_gasnet_mspace, alignment, nbytes);
+
+    upcxx_mutex_unlock(&upcxxi_mutex_for_memory);
+
+    return m;
   }
 
   void *gasnet_seg_alloc(size_t nbytes)

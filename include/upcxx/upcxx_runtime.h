@@ -10,17 +10,6 @@
 #ifndef UPCXX_RUNTIME_H_
 #define UPCXX_RUNTIME_H_
 
-#ifdef UPCXX_THREAD_SAFE
-#include <pthread.h>
-#define upcxx_mutex_lock      pthread_mutex_lock
-#define upcxx_mutex_trylock   pthread_mutex_trylock
-#define upcxx_mutex_unlock    pthread_mutex_unlock
-#else
-#define upcxx_mutex_lock(X)
-#define upcxx_mutex_trylock(X) 0
-#define upcxx_mutex_unlock(X)
-#endif
-
 #include <cstring>
 #include <cassert>
 #include <ios>
@@ -38,7 +27,7 @@ namespace upcxx
    * This group of API is for initialization and self-query.
    */
 
-  /** 
+  /**
    * \ingroup initgroup
    * Initialize the GASNet runtime, which should be called
    * only once at the beginning of the client program.
@@ -71,15 +60,13 @@ namespace upcxx
    * Default maximum number of task to dispatch for every time
    * the incoming task queue is polled/advanced.
    */
-  #define MAX_DISPATCHED_IN   1
+  #define MAX_DISPATCHED_IN   10
 
   /**
    * Default maximum number of task to dispatch for every time
-   * the outgoing task queue is polled/advanced.  We choose a
-   * relatively large number 99 to try to send out remote tasks
-   * requests as soon as possible.
+   * the outgoing task queue is polled/advanced.
    */
-  #define MAX_DISPATCHED_OUT  99
+  #define MAX_DISPATCHED_OUT  10
 
   /**
    * \ingroup asyncgroup
@@ -105,7 +92,7 @@ namespace upcxx
   inline int drain(int max_dispatched = 0)
   {
     return advance(max_dispatched, max_dispatched);
-  } 
+  }
 
   /**
    * \ingroup asyncgroup
@@ -126,7 +113,53 @@ namespace upcxx
    * Barrier synchronization of all nodes
    */
   int barrier();
-
 } // namespace upcxx
+
+#if !defined(UPCXX_THREAD_SAFE)
+#define upcxx_mutex_lock(X)
+#define upcxx_mutex_trylock(X) 0
+#define upcxx_mutex_unlock(X)
+#define upcxx_mutex_init(X)
+#define upcxx_mutex_t int
+#define UPCXX_MUTEX_INITIALIZER 0
+#elif !defined(GASNET_PAR) || defined(UPCXX_USE_PTHREAD_MUTEX)
+#include <pthread.h>
+#define upcxx_mutex_lock(X)   pthread_mutex_lock(X)
+#define upcxx_mutex_trylock(X) pthread_mutex_trylock(X)
+#define upcxx_mutex_unlock(X) pthread_mutex_unlock(X)
+#define upcxx_mutex_init(X)   pthread_mutex_init(X, NULL)
+#define upcxx_mutex_t         pthread_mutex_t
+#define UPCXX_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+#else
+#define upcxx_mutex_lock      gasnet_hsl_lock
+#define upcxx_mutex_trylock   gasnet_hsl_trylock
+#define upcxx_mutex_unlock    gasnet_hsl_unlock
+#define upcxx_mutex_init      gasnet_hsl_init
+#define upcxx_mutex_t         gasnet_hsl_t
+#define UPCXX_MUTEX_INITIALIZER GASNET_HSL_INITIALIZER
+#endif
+
+#if defined(UPCXX_THREAD_SAFE) && !defined(GASNET_PAR)
+// protect gasnet calls if GASNET_PAR mode is not used
+namespace upcxx {
+  extern upcxx_mutex_t gasnet_call_lock;
+}
+#endif
+
+#if defined(GASNET_PAR)
+// GASNET is thread-safe by itself in PAR mode, no need to lock in UPC++ level
+#define UPCXX_CALL_GASNET(fncall) fnacall
+#else
+#define UPCXX_CALL_GASNET(fncall) do {                                \
+    upcxx_mutex_lock(&upcxx::gasnet_call_lock);                       \
+    fncall;                                                           \
+    upcxx_mutex_unlock(&upcxx::gasnet_call_lock);                     \
+  } while(0)
+#endif
+
+#define GASNET_BARRIER do {                                           \
+    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_notify(0, GASNET_BARRIERFLAG_UNNAMED)));\
+    UPCXX_CALL_GASNET(GASNET_CHECK_RV(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_UNNAMED)));  \
+  } while (0)
 
 #endif /* UPCXX_RUNTIME_H_ */

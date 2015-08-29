@@ -12,15 +12,15 @@ namespace upcxx
             src.where(), src.raw_ptr(), nbytes, dst.where(), dst.raw_ptr());
 #endif
     if (dst.where() == global_myrank()) {
-      gasnet_get_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
+      UPCXX_CALL_GASNET(gasnet_get_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes));
     } else if (src.where() == global_myrank()) {
-      gasnet_put_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
+      UPCXX_CALL_GASNET(gasnet_put_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes));
     } else {
       void *buf;
       buf = malloc(nbytes);
       assert(buf != NULL);
-      gasnet_get_bulk(buf, src.where(), src.raw_ptr(), nbytes);
-      gasnet_put_bulk(dst.where(), dst.raw_ptr(), buf, nbytes);
+      UPCXX_CALL_GASNET(gasnet_get_bulk(buf, src.where(), src.raw_ptr(), nbytes));
+      UPCXX_CALL_GASNET(gasnet_put_bulk(dst.where(), dst.raw_ptr(), buf, nbytes));
       ::free(buf);
     }
 
@@ -38,18 +38,18 @@ namespace upcxx
       // use implicit non-blocking copy for the global scope,
       // need to call gasnet_wait_syncnbi_all() to synchronize later
       if (dst.where() == global_myrank()) {
-        gasnet_get_nbi_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
+        UPCXX_CALL_GASNET(gasnet_get_nbi_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes));
       } else { // src.where().islocal() == true
-        gasnet_put_nbi_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
+        UPCXX_CALL_GASNET(gasnet_put_nbi_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes));
       }
     } else { // e != &system_event)
       // explicit non-blocking copy, need event->wait()/test() to
       // synchronize later
       gasnet_handle_t h;
       if (dst.where() == global_myrank()) {
-        h = gasnet_get_nb_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes);
+        UPCXX_CALL_GASNET(h = gasnet_get_nb_bulk(dst.raw_ptr(), src.where(), src.raw_ptr(), nbytes));
       } else { // src.where() == global_myrank()
-        h = gasnet_put_nb_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes);
+        UPCXX_CALL_GASNET(h = gasnet_put_nb_bulk(dst.where(), dst.raw_ptr(), src.raw_ptr(), nbytes));
       }
 #ifdef UPCXX_DEBUG
       fprintf(stderr, "Rank %u async_copy to add handle %p to event %p\n", myrank(), h, e);
@@ -98,7 +98,9 @@ namespace upcxx
       ((event *)signal_event)->decref(); // signal the event on the destination
     
     if (done_event != NULL) {
-      GASNET_SAFE(SHORT_REP(1,2,(token, COPY_AND_SIGNAL_REPLY, PACK(done_event))));
+      UPCXX_CALL_GASNET(
+          GASNET_CHECK_RV(
+              SHORT_REP(1,2,(token, COPY_AND_SIGNAL_REPLY, PACK(done_event)))));
     }
   }
   MEDIUM_HANDLER(copy_and_signal_request, 3, 6,
@@ -152,11 +154,12 @@ namespace upcxx
 
     // implementation based on GASNet medium AM
     if (nbytes <= gasnet_AMMaxMedium()) {
-      GASNET_SAFE(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
-                                    src.raw_ptr(), nbytes,
-                                    PACK(dst.raw_ptr()),
-                                    PACK(signal_event),
-                                    PACK(remote_completion))));
+      UPCXX_CALL_GASNET(
+          GASNET_CHECK_RV(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
+                                     src.raw_ptr(), nbytes,
+                                     PACK(dst.raw_ptr()),
+                                     PACK(signal_event),
+                                     PACK(remote_completion)))));
       if (remote_completion!= NULL) remote_completion->incref();
     } else {
       /*
