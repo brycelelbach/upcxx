@@ -21,7 +21,7 @@ namespace upcxx
     }
 
     // Acquired the lock
-#ifdef UPCXX_DEBUG
+#ifdef UPCXX_DEBUG1
     fprintf(stderr, "Rank %u is calling async_try with event %p\n", myrank(), this);
 #endif
 

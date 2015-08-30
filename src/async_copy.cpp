@@ -162,6 +162,7 @@ namespace upcxx
                                      PACK(signal_event),
                                      PACK(remote_completion)))));
     } else {
+      /*
       // assert(nbytes <= gasnet_AMMaxLongRequest());
       if (local_completion!= NULL) local_completion->incref();
       GASNET_SAFE(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
@@ -169,8 +170,8 @@ namespace upcxx
                                        PACK(NULL), // no need to copy for long AMs
                                        PACK(signal_event),
                                        PACK(local_completion))));
+      */
       // async_copy_and_set implementation based on RDMA put and local async tasks
-      /*
       event **temp_events = allocate_events(1);
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
@@ -191,7 +192,6 @@ namespace upcxx
 
       // enqueue another local task that will clean up the temp_events after e is done
       async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
-      */
     }
 
     return UPCXX_SUCCESS;
