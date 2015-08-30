@@ -93,10 +93,10 @@ namespace upcxx
       memcpy(target_addr, addr, nbytes);
       gasnett_local_wmb(); // make sure the flag is set after the data written
     }
-    
+
     if (signal_event != NULL)
       ((event *)signal_event)->decref(); // signal the event on the destination
-    
+
     if (done_event != NULL) {
       UPCXX_CALL_GASNET(
           GASNET_CHECK_RV(
@@ -106,7 +106,7 @@ namespace upcxx
   MEDIUM_HANDLER(copy_and_signal_request, 3, 6,
                  (token, addr, nbytes, UNPACK(a0),      UNPACK(a1),      UNPACK(a1)),
                  (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
-  
+
   event **allocate_events(uint32_t num_events)
   {
     event **temp_events = (event **)malloc(sizeof(event *) * num_events);
@@ -145,7 +145,7 @@ namespace upcxx
               << " remote_completion event " << remote_completion
               << "\n";
 #endif
-    
+
     // Either src or dst must be local
     if (dst.where() != global_myrank() && src.where() != global_myrank()) {
       fprintf(stderr, "async_copy error: either the src pointer or the dst ptr needs to be local.\n");
@@ -154,23 +154,23 @@ namespace upcxx
 
     // implementation based on GASNet medium AM
     if (nbytes <= gasnet_AMMaxMedium()) {
+      if (remote_completion!= NULL) remote_completion->incref();
       UPCXX_CALL_GASNET(
           GASNET_CHECK_RV(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                      src.raw_ptr(), nbytes,
                                      PACK(dst.raw_ptr()),
                                      PACK(signal_event),
                                      PACK(remote_completion)))));
-      if (remote_completion!= NULL) remote_completion->incref();
     } else {
-      /*
-      assert(nbytes <= gasnet_AMMaxLongRequest()); 
+      // assert(nbytes <= gasnet_AMMaxLongRequest());
+      if (local_completion!= NULL) local_completion->incref();
       GASNET_SAFE(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                        src.raw_ptr(), nbytes, dst.raw_ptr(),
                                        PACK(NULL), // no need to copy for long AMs
                                        PACK(signal_event),
-                                       PACK(remote_completion))));
-      */
+                                       PACK(local_completion))));
       // async_copy_and_set implementation based on RDMA put and local async tasks
+      /*
       event **temp_events = allocate_events(1);
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
@@ -191,8 +191,9 @@ namespace upcxx
 
       // enqueue another local task that will clean up the temp_events after e is done
       async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
+      */
     }
-    
+
     return UPCXX_SUCCESS;
   }
 

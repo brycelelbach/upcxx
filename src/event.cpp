@@ -8,7 +8,7 @@
 
 #include "upcxx.h"
 
-// #define DEBUG
+//#define UPCXX_DEBUG
 
 using namespace std;
 
@@ -31,7 +31,8 @@ namespace upcxx
       for (std::vector<gasnet_handle_t>::iterator it = _gasnet_handles.begin();
            it != _gasnet_handles.end();) {
 #ifdef UPCXX_DEBUG
-        fprintf(stderr, "Rank %u is async_try is checking handle %p\n", myrank(), *it);
+        fprintf(stderr, "Rank %u event %p is checking handle %p in async_try.\n",
+                myrank(), this, *it);
 #endif
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
           _gasnet_handles.erase(it); // erase increase it automatically
@@ -155,6 +156,10 @@ namespace upcxx
   void event::add_gasnet_handle(gasnet_handle_t h)
   {
     upcxx_mutex_lock(&_mutex);
+#ifdef UPCXX_DEBUG
+        fprintf(stderr, "Rank %u adds handles %p to event %p\n",
+                myrank(), h, this);
+#endif
     _gasnet_handles.push_back(h);
     upcxx_mutex_unlock(&_mutex);
     incref();

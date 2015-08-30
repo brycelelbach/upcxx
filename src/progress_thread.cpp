@@ -63,8 +63,8 @@ namespace upcxx
       if (tasks_completed ==0) {
         // pause briefly
         usleep( PROGRESS_HELPER_PAUSE_USEC );
-        // ?? gasnett_sched_yield(); // yield the cpu if there is no work
       }
+      gasnett_sched_yield(); // yield the cpu if there is no work
     }
   }
 
@@ -81,8 +81,8 @@ namespace upcxx
     // set up progress helper argument struct
     args = new progress_helper_args;
     args->tq_mutex = &_tq_mutex;
-    args->max_dispatch_in = 10;
-    args->max_dispatch_out = 10;
+    args->max_dispatch_in = 100;
+    args->max_dispatch_out = 100;
     args->progress_thread_stop = &_progress_thread_stop;
 
     // set thread as joinable
