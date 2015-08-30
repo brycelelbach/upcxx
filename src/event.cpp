@@ -17,7 +17,7 @@ namespace upcxx
   int event::async_try()
   {
     if (upcxx_mutex_trylock(&_mutex) != 0) {
-      return 0; // somebody else is holding the lock, so return not done yet
+      return isdone(); // somebody else is holding the lock
     }
 
     // Acquired the lock
@@ -36,7 +36,11 @@ namespace upcxx
 #endif
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
           _gasnet_handles.erase(it); // erase increase it automatically
+          upcxx_mutex_unlock(&_mutex);
           decref();
+          if (upcxx_mutex_trylock(&_mutex) != 0) {
+            return isdone(); // somebody else is holding the lock
+          }
         } else {
           ++it;
         }
@@ -53,7 +57,11 @@ namespace upcxx
        DMAPP_SAFE(dmapp_syncid_test(*it, &flag);
        if (flag) {
           _dmapp_handles.erase(it); // erase increase it automatically
+          upcxx_mutex_unlock(&_mutex);
           decref();
+          if (upcxx_mutex_trylock(&_mutex) != 0) {
+            return isdone(); // somebody else is holding the lock
+          }          
         } else {
           ++it;
         }
@@ -113,6 +121,8 @@ namespace upcxx
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "P %u incref event %p, c = %d, old %u\n", global_myrank(), this, c, old);
 #endif
+    upcxx_mutex_unlock(&_mutex);
+
     if (this != system_event && old == 0) {
       upcxx_mutex_lock(&outstanding_events_lock);
 #ifdef UPCXX_DEBUG
@@ -121,7 +131,6 @@ namespace upcxx
       outstanding_events->push_back(this);
       upcxx_mutex_unlock(&outstanding_events_lock);
     }
-    upcxx_mutex_unlock(&_mutex);
   }
 
   // Decrement the reference counter for the event
@@ -176,15 +185,21 @@ namespace upcxx
 
 #endif
 
+  upcxx_mutex_t events_lock = UPCXX_MUTEX_INITIALIZER;
+
   void push_event(event *e)
   {
+    upcxx_mutex_lock(&events_lock);
     events->stack.push_back(e);
+    upcxx_mutex_unlock(&events_lock);
   }
 
   void pop_event()
   {
+    upcxx_mutex_lock(&events_lock);
     assert(events->stack.back() != system_event);
     events->stack.pop_back();
+    upcxx_mutex_unlock(&events_lock);
   }
 
   event *peek_event()
@@ -195,10 +210,10 @@ namespace upcxx
   void async_wait()
   {
     while (!outstanding_events->empty()) {
-      upcxx::advance(1,10);
+      upcxx::advance(10,10);
     }
     system_event->wait();
-    gasnet_wait_syncnbi_all();
+    UPCXX_CALL_GASNET(gasnet_wait_syncnbi_all());
   }
 
   int async_try(event *e)
@@ -209,7 +224,9 @@ namespace upcxx
     int rv = e->async_try();
 
     if (e == system_event) {
-      rv = rv && gasnet_try_syncnbi_all();
+      int rv1;
+      UPCXX_CALL_GASNET(rv1 = gasnet_try_syncnbi_all());
+      rv = rv && rv1;
     }
     return rv;
   }

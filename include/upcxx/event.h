@@ -140,7 +140,6 @@ namespace upcxx
   };
   extern event_stack *events;
 
-
   inline void async_wait(event *e)
   {
     if (e != NULL) {
