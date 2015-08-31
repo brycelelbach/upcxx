@@ -14,7 +14,7 @@ using namespace std;
 
 namespace upcxx
 {
-  int event::async_try()
+  int event::_async_try(bool need_outstanding_events_lock)
   {
     if (upcxx_mutex_trylock(&_mutex) != 0) {
       return isdone(); // somebody else is holding the lock
@@ -36,11 +36,7 @@ namespace upcxx
 #endif
         if (gasnet_try_syncnb(*it) == GASNET_OK) {
           _gasnet_handles.erase(it); // erase increase it automatically
-          upcxx_mutex_unlock(&_mutex);
-          decref();
-          if (upcxx_mutex_trylock(&_mutex) != 0) {
-            return isdone(); // somebody else is holding the lock
-          }
+          _decref(1, false, need_outstanding_events_lock);
         } else {
           ++it;
         }
@@ -57,11 +53,7 @@ namespace upcxx
        DMAPP_SAFE(dmapp_syncid_test(*it, &flag);
        if (flag) {
           _dmapp_handles.erase(it); // erase increase it automatically
-          upcxx_mutex_unlock(&_mutex);
-          decref();
-          if (upcxx_mutex_trylock(&_mutex) != 0) {
-            return isdone(); // somebody else is holding the lock
-          }          
+          _decref(1, false);
         } else {
           ++it;
         }
@@ -86,7 +78,6 @@ namespace upcxx
   {
     assert (_count == 0);
 
-    upcxx_mutex_lock(&_mutex);
     // add done_cb to the task queue
     if (_num_done_cb > 0) {
       for (int i=0; i<_num_done_cb; i++) {
@@ -109,7 +100,6 @@ namespace upcxx
       }
       _num_done_cb = 0;
     }
-    upcxx_mutex_unlock(&_mutex);
   }
 
   // Increment the reference counter for the event
@@ -134,9 +124,10 @@ namespace upcxx
   }
 
   // Decrement the reference counter for the event
-  void event::decref(uint32_t c)
+  void event::_decref(uint32_t c, bool needlock, bool need_outstanding_events_lock)
   {
-    upcxx_mutex_lock(&_mutex);
+    if (needlock)
+      upcxx_mutex_lock(&_mutex);
     _count -= c;
     if (_count < 0) {
       fprintf(stderr,
@@ -145,19 +136,31 @@ namespace upcxx
       gasnet_exit(1);
     }
     int tmp = _count; // obtain the value of count before unlock
-    upcxx_mutex_unlock(&_mutex);
 
     if (tmp == 0) {
       enqueue_cb();
+      if (needlock)
+        upcxx_mutex_unlock(&_mutex);
+
       if (this != system_event) {
-        upcxx_mutex_lock(&outstanding_events_lock);
+        if (need_outstanding_events_lock)
+          upcxx_mutex_lock(&outstanding_events_lock);
 #ifdef UPCXX_DEBUG
         fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
 #endif
         outstanding_events->remove(this);
-        upcxx_mutex_unlock(&outstanding_events_lock);
+        if (need_outstanding_events_lock)
+          upcxx_mutex_unlock(&outstanding_events_lock);
       }
+    } else {
+      if (needlock)
+        upcxx_mutex_unlock(&_mutex);
     }
+  }
+
+  void event::decref(uint32_t c)
+  {
+    _decref(c, true, false);
   }
 
   event_stack *events = NULL;

@@ -436,6 +436,7 @@ namespace upcxx
     }
 
     // check outstanding events
+    upcxx_mutex_lock(&outstanding_events_lock);
     if (!outstanding_events->empty()) {
       for (std::list<event*>::iterator it = outstanding_events->begin();
            it != outstanding_events->end(); ++it) {
@@ -445,9 +446,10 @@ namespace upcxx
         fprintf(stderr, "P %u: Number of outstanding_events %u, Advance event: %p\n", 
                 global_myrank(), outstanding_events->size(), e);
 #endif
-        if (e->async_try()) break;
+        if (e->_async_try(false)) break;
       }
     }
+    upcxx_mutex_unlock(&outstanding_events_lock);
 
     return num_out + num_in;
   } // advance()

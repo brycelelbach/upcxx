@@ -104,9 +104,14 @@ namespace upcxx
     /**
      * Return 1 if the task is done; return 0 if not
      */
-    int async_try();
+    inline int async_try() { return _async_try(true); }
 
     inline int test() { return async_try(); }
+
+  private:
+    void _decref(uint32_t c, bool needlock, bool need_outstanding_events_lock);
+    int _async_try(bool need_outstanding_events_lock);
+    friend int advance(int max_in, int max_out);
   };
   /// @}
 
