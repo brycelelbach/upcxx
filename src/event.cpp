@@ -14,12 +14,8 @@ using namespace std;
 
 namespace upcxx
 {
-  int event::_async_try(bool need_outstanding_events_lock)
+  int event::_async_try()
   {
-    if (upcxx_mutex_trylock(&_mutex) != 0) {
-      return isdone(); // somebody else is holding the lock
-    }
-
     // Acquired the lock
 #ifdef UPCXX_DEBUG1
     fprintf(stderr, "Rank %u is calling async_try with event %p\n", myrank(), this);
@@ -34,9 +30,10 @@ namespace upcxx
         fprintf(stderr, "Rank %u event %p is checking handle %p in async_try.\n",
                 myrank(), this, *it);
 #endif
-        if (gasnet_try_syncnb(*it) == GASNET_OK) {
+        // It's very important Not to poll GASNet while in async_try otherwise deadlocks may happen!
+        if (gasnet_try_syncnb_nopoll(*it) == GASNET_OK) {
           _gasnet_handles.erase(it); // erase increase it automatically
-          _decref(1, false, need_outstanding_events_lock);
+          _decref(1);
         } else {
           ++it;
         }
@@ -53,7 +50,7 @@ namespace upcxx
        DMAPP_SAFE(dmapp_syncid_test(*it, &flag);
        if (flag) {
           _dmapp_handles.erase(it); // erase increase it automatically
-          _decref(1, false);
+          _decref(1);
         } else {
           ++it;
         }
@@ -61,7 +58,6 @@ namespace upcxx
     }
 #endif
 
-    upcxx_mutex_unlock(&_mutex); // trylock must be successful to get here
     return isdone();
   }
 
@@ -74,7 +70,7 @@ namespace upcxx
     }
   }
 
-  void event::enqueue_cb()
+  void event::_enqueue_cb()
   {
     assert (_count == 0);
 
@@ -103,31 +99,26 @@ namespace upcxx
   }
 
   // Increment the reference counter for the event
-  void event::incref(uint32_t c)
+  void event::_incref(uint32_t c)
   {
-    upcxx_mutex_lock(&_mutex);
     uint32_t old = _count;
     _count += c;
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "P %u incref event %p, c = %d, old %u\n", global_myrank(), this, c, old);
 #endif
-    upcxx_mutex_unlock(&_mutex);
 
     if (this != system_event && old == 0) {
-      upcxx_mutex_lock(&outstanding_events_lock);
+
 #ifdef UPCXX_DEBUG
       fprintf(stderr, "P %u Add outstanding_event %p\n", global_myrank(), this);
 #endif
       outstanding_events->push_back(this);
-      upcxx_mutex_unlock(&outstanding_events_lock);
     }
   }
 
   // Decrement the reference counter for the event
-  void event::_decref(uint32_t c, bool needlock, bool need_outstanding_events_lock)
+  void event::_decref(uint32_t c)
   {
-    if (needlock)
-      upcxx_mutex_lock(&_mutex);
     _count -= c;
     if (_count < 0) {
       fprintf(stderr,
@@ -138,43 +129,24 @@ namespace upcxx
     int tmp = _count; // obtain the value of count before unlock
 
     if (tmp == 0) {
-      enqueue_cb();
-      if (needlock)
-        upcxx_mutex_unlock(&_mutex);
-
-      if (this != system_event) {
-        if (need_outstanding_events_lock)
-          upcxx_mutex_lock(&outstanding_events_lock);
+      _enqueue_cb();
 #ifdef UPCXX_DEBUG
         fprintf(stderr, "P %u Erase outstanding_event %p\n", global_myrank(), this);
 #endif
         outstanding_events->remove(this);
-        if (need_outstanding_events_lock)
-          upcxx_mutex_unlock(&outstanding_events_lock);
-      }
-    } else {
-      if (needlock)
-        upcxx_mutex_unlock(&_mutex);
     }
-  }
-
-  void event::decref(uint32_t c)
-  {
-    _decref(c, true, false);
   }
 
   event_stack *events = NULL;
 
-  void event::add_gasnet_handle(gasnet_handle_t h)
+  void event::_add_gasnet_handle(gasnet_handle_t h)
   {
-    upcxx_mutex_lock(&_mutex);
 #ifdef UPCXX_DEBUG
         fprintf(stderr, "Rank %u adds handles %p to event %p\n",
                 myrank(), h, this);
 #endif
     _gasnet_handles.push_back(h);
-    upcxx_mutex_unlock(&_mutex);
-    incref();
+    _incref();
   }
 
 #ifdef UPCXX_USE_DMAPP
@@ -188,21 +160,21 @@ namespace upcxx
 
 #endif
 
-  upcxx_mutex_t events_lock = UPCXX_MUTEX_INITIALIZER;
+  upcxx_mutex_t events_stack_lock = UPCXX_MUTEX_INITIALIZER;
 
   void push_event(event *e)
   {
-    upcxx_mutex_lock(&events_lock);
+    upcxx_mutex_lock(&events_stack_lock);
     events->stack.push_back(e);
-    upcxx_mutex_unlock(&events_lock);
+    upcxx_mutex_unlock(&events_stack_lock);
   }
 
   void pop_event()
   {
-    upcxx_mutex_lock(&events_lock);
+    upcxx_mutex_lock(&events_stack_lock);
     assert(events->stack.back() != system_event);
     events->stack.pop_back();
-    upcxx_mutex_unlock(&events_lock);
+    upcxx_mutex_unlock(&events_stack_lock);
   }
 
   event *peek_event()

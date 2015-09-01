@@ -92,7 +92,7 @@ namespace upcxx
   upcxx_mutex_t async_lock = UPCXX_MUTEX_INITIALIZER;
   upcxx_mutex_t in_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
   upcxx_mutex_t out_task_queue_lock = UPCXX_MUTEX_INITIALIZER;
-  upcxx_mutex_t outstanding_events_lock = UPCXX_MUTEX_INITIALIZER;
+  upcxx_mutex_t all_events_lock = UPCXX_MUTEX_INITIALIZER;
   // protect gasnet calls if GASNET_PAR mode is not used
   upcxx_mutex_t gasnet_call_lock = UPCXX_MUTEX_INITIALIZER;
 #endif
@@ -436,7 +436,7 @@ namespace upcxx
     }
 
     // check outstanding events
-    upcxx_mutex_lock(&outstanding_events_lock);
+    upcxx_mutex_lock(&all_events_lock);
     if (!outstanding_events->empty()) {
       for (std::list<event*>::iterator it = outstanding_events->begin();
            it != outstanding_events->end(); ++it) {
@@ -446,10 +446,10 @@ namespace upcxx
         fprintf(stderr, "P %u: Number of outstanding_events %u, Advance event: %p\n", 
                 global_myrank(), outstanding_events->size(), e);
 #endif
-        if (e->_async_try(false)) break;
+        if (e->_async_try()) break;
       }
     }
-    upcxx_mutex_unlock(&outstanding_events_lock);
+    upcxx_mutex_unlock(&all_events_lock);
 
     return num_out + num_in;
   } // advance()

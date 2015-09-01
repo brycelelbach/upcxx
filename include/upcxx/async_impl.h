@@ -175,14 +175,14 @@ namespace upcxx
     }
     
     if (after != NULL ) {
-      after->lock();
+      upcxx_mutex_lock(&all_events_lock);
       // add task to the callback list if the event is in flight
       if (after->count() > 0) {
-        after->add_done_cb(tmp);
-        after->unlock();
+        after->_add_done_cb(tmp);
+        upcxx_mutex_unlock(&all_events_lock);
         return;
       }
-      after->unlock();
+      upcxx_mutex_unlock(&all_events_lock);
     }
     
     // enqueue the async task

@@ -26,6 +26,7 @@ namespace upcxx
   extern queue_t *in_task_queue;
   extern upcxx_mutex_t out_task_queue_lock;
   extern queue_t *out_task_queue;
+  extern upcxx_mutex_t all_events_lock;
 
 #define MAX_NUM_DONE_CB 16
 
@@ -39,9 +40,6 @@ namespace upcxx
   struct event {
     volatile int _count; // outstanding number of tasks.
     int owner;
-#if defined(UPCXX_THREAD_SAFE) || defined(GASNET_PAR)
-    upcxx_mutex_t _mutex;
-#endif
     std::vector<gasnet_handle_t> _gasnet_handles;
 #ifdef UPCXX_USE_DMAPP
     std::vector<dmapp_syncid_handle_t> _dmapp_handles;
@@ -52,7 +50,6 @@ namespace upcxx
 
     inline event() : _count(0), _num_done_cb(0), owner(0)
     {
-      upcxx_mutex_init(&_mutex);
     }
 
     inline ~event()
@@ -62,7 +59,7 @@ namespace upcxx
 
     inline int count() const { return _count; }
 
-    void enqueue_cb();
+    void _enqueue_cb();
 
     inline bool isdone() const
     {
@@ -71,29 +68,49 @@ namespace upcxx
     }
       
     // Increment the reference counter for the event
-    void incref(uint32_t c=1);
+    void incref(uint32_t c=1)
+    {
+      upcxx_mutex_lock(&all_events_lock);
+      _incref(c);
+      upcxx_mutex_unlock(&all_events_lock);
+    }
+
 
     // Decrement the reference counter for the event
-    void decref(uint32_t c=1);
+    inline void decref(uint32_t c=1)
+    {
+      upcxx_mutex_lock(&all_events_lock);
+      _decref(c);
+      upcxx_mutex_unlock(&all_events_lock);
+    }
 
-    void add_gasnet_handle(gasnet_handle_t h);
+    inline void add_gasnet_handle(gasnet_handle_t h)
+    {
+      upcxx_mutex_lock(&all_events_lock);
+      _add_gasnet_handle(h);
+      upcxx_mutex_unlock(&all_events_lock);
+    }
+
+    void _add_gasnet_handle(gasnet_handle_t h);
 
 #ifdef UPCXX_USE_DMAPP
     void add_dmapp_handle(dmapp_syncid_handle_t h);
 #endif
 
-    inline void lock() { upcxx_mutex_lock(&_mutex); }
-
-    inline void unlock() { upcxx_mutex_unlock(&_mutex); }
-
     inline int num_done_cb() const { return _num_done_cb; }
 
-    inline void add_done_cb(async_task *task)
+    inline void _add_done_cb(async_task *task)
     {
-      // _lock should be held already
       assert(_num_done_cb < MAX_NUM_DONE_CB);
       _done_cb[_num_done_cb] = task;
       _num_done_cb++;
+    }
+
+    inline void add_done_cb(async_task *task)
+    {
+      upcxx_mutex_lock(&all_events_lock);
+      _add_done_cb(task);
+      upcxx_mutex_unlock(&all_events_lock);
     }
 
     /**
@@ -104,13 +121,22 @@ namespace upcxx
     /**
      * Return 1 if the task is done; return 0 if not
      */
-    inline int async_try() { return _async_try(true); }
+    inline int async_try()
+    {
+      if (upcxx_mutex_trylock(&all_events_lock) != 0) {
+        return 0; // somebody else is holding the lock
+      }
+      int rv = _async_try();
+      upcxx_mutex_unlock(&all_events_lock);
+      return rv;
+    }
 
     inline int test() { return async_try(); }
 
   private:
-    void _decref(uint32_t c, bool needlock, bool need_outstanding_events_lock);
-    int _async_try(bool need_outstanding_events_lock);
+    void _decref(uint32_t c=1);
+    void _incref(uint32_t c=1);
+    int _async_try();
     friend int advance(int max_in, int max_out);
   };
   /// @}
@@ -130,7 +156,6 @@ namespace upcxx
 
   extern event *system_event; // defined in upcxx.cpp
   extern std::list<event *> *outstanding_events;
-  extern upcxx_mutex_t outstanding_events_lock;
 
   /* event stack interface used by finish */
   void push_event(event *);
