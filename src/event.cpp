@@ -152,10 +152,8 @@ namespace upcxx
 #ifdef UPCXX_USE_DMAPP
   void event::add_dmapp_handle(dmapp_syncid_handle_t h)
   {
-    upcxx_mutex_lock(&_mutex);
     _dmapp_handles.push_back(h);
-    upcxx_mutex_unlock(&_mutex);
-    incref();
+    _incref();
   }
 
 #endif

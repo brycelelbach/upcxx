@@ -124,7 +124,7 @@ namespace upcxx
 #define upcxx_mutex_t         gasnet_hsl_t
 #define UPCXX_MUTEX_INITIALIZER GASNET_HSL_INITIALIZER
 
-#elif defined(UPCXX_THREAD_SAFE) && !defined(GASNET_PAR)
+#elif defined(UPCXX_THREAD_SAFE) && defined(GASNET_SEQ)
 
 #include <pthread.h>
 #define upcxx_mutex_lock(X)   pthread_mutex_lock(X)
