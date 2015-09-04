@@ -23,9 +23,9 @@ namespace upcxx
               upcxx_op_t op, upcxx_datatype_t dt)
   {
     // YZ: check consistency of T and dt
-    gasnet_coll_reduce(current_gasnet_team(), root, dst, src, 0, 0,
-                       sizeof(T), count, dt, op,
-                       UPCXX_GASNET_COLL_FLAG);
+    UPCXX_CALL_GASNET(gasnet_coll_reduce(current_gasnet_team(), root, dst, src, 0, 0,
+                                         sizeof(T), count, dt, op,
+                                         UPCXX_GASNET_COLL_FLAG));
   }
   #define upcxx_reduce upcxx::reduce
   
@@ -33,15 +33,15 @@ namespace upcxx
   
   static inline void bcast(void *src, void *dst, size_t nbytes, uint32_t root)
   {
-    gasnet_coll_broadcast(current_gasnet_team(), dst, root, src,
-                          nbytes, UPCXX_GASNET_COLL_FLAG);
+    UPCXX_CALL_GASNET(gasnet_coll_broadcast(current_gasnet_team(), dst, root, src,
+                                            nbytes, UPCXX_GASNET_COLL_FLAG));
   }
   #define upcxx_bcast upcxx::bcast
   
   static inline void gather(void *src, void *dst, size_t nbytes, uint32_t root)
   {
-    gasnet_coll_gather(current_gasnet_team(), root, dst, src, nbytes,
-                       UPCXX_GASNET_COLL_FLAG);
+    UPCXX_CALL_GASNET(gasnet_coll_gather(current_gasnet_team(), root, dst, src, nbytes,
+                                         UPCXX_GASNET_COLL_FLAG));
   }
   #define upcxx_gather upcxx::gather
   
@@ -59,8 +59,8 @@ namespace upcxx
   
   static inline void alltoall(void *src, void *dst, size_t nbytes)
   {
-    gasnet_coll_exchange(current_gasnet_team(), dst, src, nbytes,
-                         UPCXX_GASNET_COLL_FLAG);
+    UPCXX_CALL_GASNET(gasnet_coll_exchange(current_gasnet_team(), dst, src, nbytes,
+                                           UPCXX_GASNET_COLL_FLAG));
   }
   #define upcxx_alltoall upcxx::alltoall
 } // end of namespace upcxx

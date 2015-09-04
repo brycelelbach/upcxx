@@ -20,7 +20,7 @@ namespace upcxx
       event e;
       e.incref();
       alloc_am_t am = { nbytes, &addr, &e };
-      GASNET_SAFE(gasnet_AMRequestMedium0(rank, ALLOC_CPU_AM, &am, sizeof(am)));
+      UPCXX_CALL_GASNET(gasnet_AMRequestMedium0(rank, ALLOC_CPU_AM, &am, sizeof(am)));
       e.wait();
     }
     global_ptr<void> ptr(addr, rank);
@@ -43,7 +43,7 @@ namespace upcxx
     } else {
       free_am_t am;
       am.ptr = ptr.raw_ptr();
-      GASNET_SAFE(gasnet_AMRequestMedium0(ptr.where(), FREE_CPU_AM, &am, sizeof(am)));
+      UPCXX_CALL_GASNET(gasnet_AMRequestMedium0(ptr.where(), FREE_CPU_AM, &am, sizeof(am)));
     }
   }
 
@@ -81,7 +81,7 @@ namespace upcxx
 #endif
 
     reply.cb_event = am->cb_event;
-    GASNET_SAFE(gasnet_AMReplyMedium0(token, ALLOC_REPLY, &reply, sizeof(reply)));
+    UPCXX_CALL_GASNET(gasnet_AMReplyMedium0(token, ALLOC_REPLY, &reply, sizeof(reply)));
   }
 
   void alloc_reply_handler(gasnet_token_t token, void *buf, size_t nbytes)
