@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <unistd.h>  // usleep
-#define PROGRESS_HELPER_PAUSE_USEC 1000 // YZ: change to 100?
+#define PROGRESS_HELPER_PAUSE_USEC 100 // \Todo: make this as an environment variable
 
 namespace upcxx
 {
@@ -60,11 +60,11 @@ namespace upcxx
 
       // pthread_mutex_unlock( args->tq_mutex );
 
-      if (tasks_completed ==0) {
+      if (tasks_completed == 0) {
         // pause briefly
         usleep( PROGRESS_HELPER_PAUSE_USEC );
       }
-      gasnett_sched_yield(); // yield the cpu if there is no work
+      // gasnett_sched_yield(); // yield the cpu if there is no work
     }
   }
 
@@ -81,8 +81,8 @@ namespace upcxx
     // set up progress helper argument struct
     args = new progress_helper_args;
     args->tq_mutex = &_tq_mutex;
-    args->max_dispatch_in = 100;
-    args->max_dispatch_out = 100;
+    args->max_dispatch_in = 10;
+    args->max_dispatch_out = 10;
     args->progress_thread_stop = &_progress_thread_stop;
 
     // set thread as joinable
