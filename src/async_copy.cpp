@@ -1,7 +1,7 @@
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 
-// #define UPCXX_DEBUG
+//#define UPCXX_DEBUG
 
 namespace upcxx
 {
@@ -60,16 +60,24 @@ namespace upcxx
   }
 
   GASNETT_INLINE(copy_and_set_reply_inner)
-  void copy_and_signal_reply_inner(gasnet_token_t token, void *done_ptr)
+  void copy_and_signal_reply_inner(gasnet_token_t token, void *local_completion, void *remote_completion)
   {
-    if (done_ptr != NULL) {
-      event *done_event = (event *) done_ptr;
-      done_event->decref();
+#ifdef UPCXX_DEBUG
+    printf("copy_and_signal_reply_inner: local_completion %p, remote_completion %p\n",
+           local_completion, remote_completion);
+#endif
+    if (local_completion != NULL) {
+      event *tmp = (event *) local_completion;
+      tmp->decref();
+    }
+    if (remote_completion != NULL) {
+      event *tmp = (event *) remote_completion;
+      tmp->decref();
     }
   }
-  SHORT_HANDLER(copy_and_signal_reply, 1, 2,
-                (token, UNPACK(a0)),
-                (token, UNPACK2(a0, a1)));
+  SHORT_HANDLER(copy_and_signal_reply, 2, 4,
+                (token, UNPACK(a0),      UNPACK(a1)),
+                (token, UNPACK2(a0, a1), UNPACK2(a2, a3)));
 
   // Use the same handler for both Medium and Long AM requests.
   // Long and Medium handlers have the same signature.
@@ -80,7 +88,8 @@ namespace upcxx
                                      size_t nbytes,
                                      void *target_addr,
                                      void *signal_event,
-                                     void *done_event)
+                                     void *local_completion,
+                                     void *remote_completion)
   {
 #ifdef UPCXX_DEBUG
     printf("copy_and_signal_request_inner: target_addr %p, signal_event %p\n",
@@ -97,15 +106,16 @@ namespace upcxx
     if (signal_event != NULL)
       ((event *)signal_event)->decref(); // signal the event on the destination
 
-    if (done_event != NULL) {
-      UPCXX_CALL_GASNET(
-          GASNET_CHECK_RV(
-              SHORT_REP(1,2,(token, COPY_AND_SIGNAL_REPLY, PACK(done_event)))));
+    if (local_completion != NULL || remote_completion != NULL) {
+      // don't put UPCXX_CALL_GASNET here as it's already inside the lock through gasnet_AMPoll()
+      GASNET_CHECK_RV(SHORT_REP(2,4,(token, COPY_AND_SIGNAL_REPLY, 
+                                     PACK(local_completion), 
+                                     PACK(remote_completion))));
     }
   }
-  MEDIUM_HANDLER(copy_and_signal_request, 3, 6,
-                 (token, addr, nbytes, UNPACK(a0),      UNPACK(a1),      UNPACK(a1)),
-                 (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5)));
+  MEDIUM_HANDLER(copy_and_signal_request, 4, 8,
+                 (token, addr, nbytes, UNPACK(a0),      UNPACK(a1),      UNPACK(a2),      UNPACK(a3)),
+                 (token, addr, nbytes, UNPACK2(a0, a1), UNPACK2(a2, a3), UNPACK2(a4, a5), UNPACK2(a6, a7)));
 
   event **allocate_events(uint32_t num_events)
   {
@@ -156,20 +166,23 @@ namespace upcxx
     if (nbytes <= gasnet_AMMaxMedium()) {
       if (remote_completion!= NULL) remote_completion->incref();
       UPCXX_CALL_GASNET(
-          GASNET_CHECK_RV(MEDIUM_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
-                                     src.raw_ptr(), nbytes,
-                                     PACK(dst.raw_ptr()),
-                                     PACK(signal_event),
-                                     PACK(remote_completion)))));
+          GASNET_CHECK_RV(MEDIUM_REQ(4, 8, (dst.where(), COPY_AND_SIGNAL_REQUEST,
+                                            src.raw_ptr(), nbytes,
+                                            PACK(dst.raw_ptr()),
+                                            PACK(signal_event),
+                                            PACK(NULL), // no need to pass local_completion
+                                            PACK(remote_completion)))));
     } else {
-      /*
       // assert(nbytes <= gasnet_AMMaxLongRequest());
+      /*
       if (local_completion!= NULL) local_completion->incref();
-      UPCXX_CALL_GASNET(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
+      if (remote_completion != NULL) remote_completion->incref();
+      UPCXX_CALL_GASNET(LONGASYNC_REQ(4, 8, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                        src.raw_ptr(), nbytes, dst.raw_ptr(),
                                        PACK(NULL), // no need to copy for long AMs
                                        PACK(signal_event),
-                                       PACK(local_completion))));
+                                       PACK(local_completion),
+                                       PACK(remote_completion)));
       */
       // async_copy_and_set implementation based on RDMA put and local async tasks
       event **temp_events = allocate_events(1);

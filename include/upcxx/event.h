@@ -99,12 +99,7 @@ namespace upcxx
 
     inline int num_done_cb() const { return _num_done_cb; }
 
-    inline void _add_done_cb(async_task *task)
-    {
-      assert(_num_done_cb < MAX_NUM_DONE_CB);
-      _done_cb[_num_done_cb] = task;
-      _num_done_cb++;
-    }
+    void _add_done_cb(async_task *task);
 
     inline void add_done_cb(async_task *task)
     {
@@ -124,7 +119,7 @@ namespace upcxx
     inline int async_try()
     {
       if (upcxx_mutex_trylock(&all_events_lock) != 0) {
-        return 0; // somebody else is holding the lock
+        return isdone(); // somebody else is holding the lock
       }
       int rv = _async_try();
       upcxx_mutex_unlock(&all_events_lock);

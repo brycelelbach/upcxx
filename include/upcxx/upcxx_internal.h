@@ -86,8 +86,8 @@ namespace upcxx
   void free_gpu_am_handler(gasnet_token_t token, void *am, size_t nbytes);
   void inc_am_handler(gasnet_token_t token, void *am, size_t nbytes);
 
-  MEDIUM_HANDLER_DECL(copy_and_signal_request, 3, 6);
-  SHORT_HANDLER_DECL(copy_and_signal_reply, 1, 2);
+  MEDIUM_HANDLER_DECL(copy_and_signal_request, 4, 8);
+  SHORT_HANDLER_DECL(copy_and_signal_reply, 2, 4);
 
   enum {
     gasneti_handleridx(copy_and_signal_request) = COPY_AND_SIGNAL_REQUEST, 
