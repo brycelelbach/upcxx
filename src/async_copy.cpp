@@ -165,7 +165,7 @@ namespace upcxx
       /*
       // assert(nbytes <= gasnet_AMMaxLongRequest());
       if (local_completion!= NULL) local_completion->incref();
-      GASNET_SAFE(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
+      UPCXX_CALL_GASNET(LONGASYNC_REQ(3, 6, (dst.where(), COPY_AND_SIGNAL_REQUEST,
                                        src.raw_ptr(), nbytes, dst.raw_ptr(),
                                        PACK(NULL), // no need to copy for long AMs
                                        PACK(signal_event),
@@ -178,20 +178,20 @@ namespace upcxx
 
       if (local_completion != NULL) {
         local_completion->incref();
-        async_after(global_myrank(), temp_events[0])(event_decref, local_completion, 1);
+        async_after(global_myrank(), temp_events[0], NULL)(event_decref, local_completion, 1);
       }
 
       if (remote_completion != NULL) {
         remote_completion->incref();
-        async_after(global_myrank(), temp_events[0])(event_decref, remote_completion, 1);
+        async_after(global_myrank(), temp_events[0], NULL)(event_decref, remote_completion, 1);
       }
 
       if (signal_event != NULL) {
-        async_after(dst.where(), temp_events[0])(event_decref, signal_event, 1);
+        async_after(dst.where(), temp_events[0], NULL)(event_decref, signal_event, 1);
       }
 
       // enqueue another local task that will clean up the temp_events after e is done
-      async_after(global_myrank(), temp_events[0])(deallocate_events, 1, temp_events);
+      async_after(global_myrank(), temp_events[0], NULL)(deallocate_events, 1, temp_events);
     }
 
     return UPCXX_SUCCESS;
