@@ -45,9 +45,7 @@ namespace upcxx
     reply.rv_addr = am->rv_addr;
     reply.cb_event = am->cb_event;
 
-    UPCXX_CALL_GASNET(
-        GASNET_CHECK_RV(
-            gasnet_AMReplyMedium0(token, LOCK_REPLY, &reply, sizeof(reply))));
+    GASNET_CHECK_RV(gasnet_AMReplyMedium0(token, LOCK_REPLY, &reply, sizeof(reply)));
   }
 
   void shared_lock::lock_reply_handler(gasnet_token_t token,

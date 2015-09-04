@@ -81,7 +81,7 @@ namespace upcxx
 #endif
 
     reply.cb_event = am->cb_event;
-    UPCXX_CALL_GASNET(gasnet_AMReplyMedium0(token, ALLOC_REPLY, &reply, sizeof(reply)));
+    GASNET_CHECK_RV(gasnet_AMReplyMedium0(token, ALLOC_REPLY, &reply, sizeof(reply)));
   }
 
   void alloc_reply_handler(gasnet_token_t token, void *buf, size_t nbytes)
