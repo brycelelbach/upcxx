@@ -119,7 +119,7 @@ namespace upcxx
     if (this == system_event) {
       num_inc_system_event += c;
       if (num_inc_system_event - num_dec_system_event != _count) {
-        fprintf(stderr, "Fatal error in _incref: Rank %u race condition happended for event %p, _count %d, num_inc %d, num_dec %d.\n",
+        fprintf(stderr, "Fatal error in _incref: Rank %u race condition happened for event %p, _count %d, num_inc %d, num_dec %d.\n",
                 myrank(), this, _count, num_inc_system_event, num_dec_system_event);
         memcpy(NULL, &c, 4); // induce a backtrace here.
       }
@@ -148,7 +148,7 @@ namespace upcxx
     if (this == system_event) {
       num_dec_system_event += c;
       if (num_inc_system_event - num_dec_system_event != _count) {
-        fprintf(stderr, "Fatal error in _decref: Rank %u race condition happended for event %p, _count %d, num_inc %d, num_dec %d.\n",
+        fprintf(stderr, "Fatal error in _decref: Rank %u race condition happened for event %p, _count %d, num_inc %d, num_dec %d.\n",
                 myrank(), this, _count, num_inc_system_event, num_dec_system_event);
         memcpy(NULL, &c, 4); // induce a backtrace here.
       }
