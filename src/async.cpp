@@ -19,6 +19,24 @@ void gasnet_launcher<rank_t>::launch(generic_fp fp,
 }
 
 template<>
+void gasnet_launcher<rank_t>::launch(generic_fp fp,
+                                     void *async_args,
+                                     size_t arg_sz,
+                                     void *rv_ptr,
+                                     bool *rv_ready_ptr,
+                                     size_t rv_sz)
+{
+  async_task task;
+  task.init_async_task(global_myrank(),
+                       _there,
+                       _ack,
+                       fp,
+                       arg_sz,
+                       async_args);
+  submit_task(&task, _after);
+}
+
+template<>
 void gasnet_launcher<range>::launch(generic_fp fp,
                                     void *async_args,
                                     size_t arg_sz)

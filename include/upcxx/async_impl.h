@@ -8,8 +8,11 @@
 
 #include "gasnet_api.h"
 #include "event.h"
-#ifndef UPCXX_HAVE_CXX11
-# include "async_templates.h"
+#include "future.h"
+#ifdef UPCXX_HAVE_CXX11
+#include <type_traits> // for std::result_of
+#else
+#include "async_templates.h"
 #endif
 #include "active_coll.h"
 #include "group.h"
@@ -55,6 +58,7 @@ namespace upcxx
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
+    std::result_of<Function>::type *rv_ptr;
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
@@ -63,7 +67,13 @@ namespace upcxx
     template<int ...S>
     void callFunc(seq<S...>)
     {
-      kernel(std::get<S>(args) ...);
+      std::result_of<Function>::type rv;
+      rv = kernel(std::get<S>(args) ...);
+      if (rv_ptr != NULL) {
+        // check rv_ptr has sufficient memory space
+        assert(sizeof(rv) < 256);
+        memcpy(rv_ptr, &rv, sizeof(rv));
+      }
     }
 
     void apply()
@@ -76,10 +86,11 @@ namespace upcxx
 
   /* Active Message wrapper function */
   template <typename Function, typename... Ts>
-  void async_wrapper(void *args) {
+  void async_wrapper(void *args, void *rv_ptr=NULL) {
     generic_arg<Function, Ts...> *a =
       (generic_arg<Function, Ts...> *) args;
 
+    a->rv_ptr = rv_ptr;
     a->apply();
   }
 #endif
@@ -95,19 +106,22 @@ namespace upcxx
     generic_fp _fp;
     void *_am_src; // active message src buffer
     void *_am_dst; // active message dst buffer
+    void *_future_ptr;
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
     
     inline async_task()
         : _caller(0), _callee(0), _ack(NULL), _fp(NULL),
-          _am_src(NULL), _am_dst(NULL), _arg_sz(0) { };
+          _am_src(NULL), _am_dst(NULL), _future_ptr(NULL),
+          _arg_sz(0) { };
 
     inline void init_async_task(rank_t caller,
                                 rank_t callee,
                                 event *ack,
                                 generic_fp fp,
                                 size_t arg_sz,
-                                void *async_args)
+                                void *async_args,
+                                void *future__ptr = NULL)
     {
       assert(arg_sz <= MAX_ASYNC_ARG_SIZE);
       // set up the task message
@@ -122,6 +136,7 @@ namespace upcxx
       this->_ack = ack;
       this->_fp = fp;
       this->_arg_sz = arg_sz;
+      this->_future__ptr = future_ptr;
       if (arg_sz > 0) {
         memcpy(&this->_args, async_args, arg_sz);
       }
@@ -158,6 +173,8 @@ namespace upcxx
   
   struct async_done_am_t {
     event *ack_event;
+    future_am_ptr *fam;
+    char future_val[0];
   };
   
   // Add a task the async queue
@@ -255,16 +272,19 @@ namespace upcxx
     
     /* launch a general kernel */
     void launch(generic_fp fp, void *async_args, size_t arg_sz,
-                void *rv, size_t rv_sz);
+                future_am_t *future_ptr);
 
 #ifndef UPCXX_HAVE_CXX11
 # include "async_impl_templates2.h"
 #else
     template<typename Function, typename... Ts>
-    inline void operator()(Function k, const Ts &... as) {
+    inline future<std::result_of<Function>::type>
+    operator()(Function k, const Ts &... as)
+    {
+      future<std::result_of<Function>::type> rv;
       generic_arg<Function, Ts...> args(k, as...);
       launch(async_wrapper<Function, Ts...>, (void *) &args,
-             (size_t) sizeof(args));
+             sizeof(args), rv.get_future_am());
     }
 #endif
   }; // gasnet_launcher

@@ -319,6 +319,13 @@ namespace upcxx
             global_myrank(), src);
 #endif
 
+    if (am->fam != NULL) {
+      future_am_t *fam = am->fam;
+      memcpy(fam->rv_ptr, am->future_val, fam->rv_sz);
+      assert(fam->rv_ready_ptr != NULL);
+      *fam->rv_ready_ptr = true;
+    }
+
     if (am->ack_event != NULL) {
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
