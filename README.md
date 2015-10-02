@@ -8,7 +8,7 @@ UPC++ is a parallel programming extension for developing C++ applications with t
 
 **Media**
 
-UPC++ enables new seismic research insights:
+UPC++ enabled new seismic research insights
 
 * [Origins of Volcanic Island Chains](https://youtu.be/tCphzt8iaWc)
 * [CT Scan of Earth Links Mantle Plumes with Volcanic Hotspots](http://cs.lbl.gov/news-media/news/2015/ct-scan-of-earth-links-mantle-plumes-with-volcanic-hotspots/)
