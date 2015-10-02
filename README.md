@@ -6,7 +6,7 @@ UPC++ is a parallel programming extension for developing C++ applications with t
 * Add useful parallel programming idioms unavailable in Unified Parallel C (UPC), such as asynchronous remote function invocation and multidimensional arrays, to support complex scientific applications
 * Offer an easy on-ramp to PGAS programming through interoperability with other existing parallel programming systems (e.g., MPI, OpenMP, CUDA)
 
-**Media**
+### Media ###
 
 UPC++ enabled new seismic research insights
 
