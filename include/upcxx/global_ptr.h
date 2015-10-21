@@ -11,12 +11,21 @@
 #include "event.h"
 #include "global_ref.h"
 
+#define UPCXX_USE_64BIT_GLOBAL_PTR
+
 namespace upcxx
 {
   bool is_memory_shared_with(rank_t r);
 
   void *pshm_remote_addr2local(rank_t r, void *addr);
 
+#ifdef UPCXX_USE_64BIT_GLOBAL_PTR
+#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR 40
+#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK      24
+#define UPCXX_GLOBAL_PTR_BITMASK_FOR_LOCAL_PTR ((0x1ull << UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR) - 1)
+#define UPCXX_GLOBAL_PTR_BITMASK_FOR_RANK      ((0x1ull << UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK) - 1)
+#endif
+  
   /// \cond SHOW_INTERNAL
   // base_ptr is the base class of global pointer types.
   template<typename T, typename place_t>
@@ -26,20 +35,40 @@ namespace upcxx
     typedef place_t place_type;
     typedef T value_type;
 
-    base_ptr(T *ptr, const place_t &pla) : _ptr(ptr), _pla(pla)
-    {}
+    base_ptr(T *ptr, const place_t &pla)
+    {
+#ifdef UPCXX_USE_64BIT_GLOBAL_PTR
+      _ptr = (uint64_t)ptr | ((uint64_t)pla << UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR);
+      ///std::cout << "ptr " << ptr << " pla " << pla << " _ptr " << (T*)_ptr << " raw_ptr " << raw_ptr() << " rank " << where() << "\n";
+      assert(((uint64_t)ptr >> UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR) == 0);
+      assert((pla >> UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK) == 0);
+#else
+      _ptr = ptr;
+      _pla = pla;
+#endif
+    }
 
-    base_ptr(const place_t &pla, T *ptr) : _ptr(ptr), _pla(pla)
-    {}
+    base_ptr(const place_t &pla, T *ptr) 
+    {
+      base_ptr(ptr, pla);
+    }
 
     place_t where() const
     {
+#ifdef UPCXX_USE_64BIT_GLOBAL_PTR
+      return _ptr >>  UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR;
+#else
       return _pla;
+#endif      
     }
 
     T* raw_ptr() const
     {
+#ifdef UPCXX_USE_64BIT_GLOBAL_PTR
+      return (T*)(_ptr & UPCXX_GLOBAL_PTR_BITMASK_FOR_LOCAL_PTR);
+#else
       return _ptr;
+#endif
     }
 
     size_t operator - (const base_ptr<T, place_t> &x) const
@@ -78,8 +107,12 @@ namespace upcxx
     }
 
   protected:
+#ifdef UPCXX_USE_64BIT_GLOBAL_PTR
+    uint64_t _ptr;
+#else
     T *_ptr;
     place_t _pla;
+#endif
   }; // close of base_ptr
   /// \endcond SHOW_INTERNAL
 
@@ -221,8 +254,6 @@ namespace upcxx
     inline global_ptr(const global_ptr<void> &p)
     : base_ptr<void, rank_t>(p) {}
 
-    // Implicit type conversion to global_ptr<void> is very
-    // dangerous!
     template<typename T2>
     inline explicit global_ptr(const global_ptr<T2> &p)
       : base_ptr<void, rank_t>(p.raw_ptr(), p.where()) {}
@@ -257,9 +288,7 @@ namespace upcxx
     template<typename T2>
     global_ptr<void>& operator = (const global_ptr<T2> &p)
     {
-      _ptr = p.raw_ptr();
-      _pla = p.where();
-      return *this;
+      return *this = global_ptr<void>(p);
     }
   };
 
