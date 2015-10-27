@@ -19,3 +19,6 @@
 
 /* define if thread safety feature is enabled */
 #undef UPCXX_THREAD_SAFE
+
+/* define if 64-bit global pointer representation is enabled */
+#undef UPCXX_USE_64BIT_GLOBAL_PTR

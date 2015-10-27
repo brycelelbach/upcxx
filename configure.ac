@@ -156,7 +156,6 @@ AS_IF([test "x$enable_dmapp" = "xyes"], [
 
 AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
 
-// UPCXX_THREAD_SAFE
 dnl Option to enable UPC++ thread safety (default is disable)
 AC_ARG_ENABLE([thread-safe],
     AS_HELP_STRING([--enable-thread-safe], [Enable thread safety for the UPC++ runtime]))
@@ -168,5 +167,17 @@ AS_IF([test "x$enable_thread_safe" = "xyes"], [
 ])
 
 AM_CONDITIONAL([UPCXX_THREAD_SAFE], [test "x$enable_thread_safe" = "xyes"])
+
+dnl Option to disable 64-bit global pointer  (default is enable)
+AC_ARG_ENABLE([64bit-global-ptr],
+    AS_HELP_STRING([--enable-64bit-global-ptr], [Enable 64-bit global pointer representation]))
+
+AS_IF([test "x$enable_64bit_global_ptr" = "xyes"], [
+  dnl Do the stuff needed for enabling 64-bit global pointer representation 
+  AC_DEFINE(UPCXX_USE_64BIT_GLOBAL_PTR, 1, [define if 64-bit global pointer representation is enabled])
+  AC_SUBST(UPCXX_USE_64BIT_GLOBAL_PTR)
+])
+
+AM_CONDITIONAL([UPCXX_USE_64BIT_GLOBAL_PTR], [test "x$enable_64bit_global_ptr" = "xyes"])
 
 AC_OUTPUT

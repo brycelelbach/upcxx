@@ -11,8 +11,6 @@
 #include "event.h"
 #include "global_ref.h"
 
-#define UPCXX_USE_64BIT_GLOBAL_PTR
-
 namespace upcxx
 {
   bool is_memory_shared_with(rank_t r);
