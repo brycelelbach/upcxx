@@ -18,8 +18,8 @@ namespace upcxx
   void *pshm_remote_addr2local(rank_t r, void *addr);
 
 #ifdef UPCXX_USE_64BIT_GLOBAL_PTR
-#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR 40
-#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK      24
+#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR 44 // support up to 16TB address space per rank
+#define UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK      20 // support up to 1M ranks
 #define UPCXX_GLOBAL_PTR_BITMASK_FOR_LOCAL_PTR ((0x1ull << UPCXX_GLOBAL_PTR_NUM_BITS_FOR_LOCAL_PTR) - 1)
 #define UPCXX_GLOBAL_PTR_BITMASK_FOR_RANK      ((0x1ull << UPCXX_GLOBAL_PTR_NUM_BITS_FOR_RANK) - 1)
 #endif
