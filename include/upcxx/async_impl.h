@@ -58,7 +58,7 @@ namespace upcxx
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
-    std::result_of<Function>::type *rv_ptr;
+    typename std::result_of<Function>::type *rv_ptr;
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
@@ -67,7 +67,7 @@ namespace upcxx
     template<int ...S>
     void callFunc(seq<S...>)
     {
-      std::result_of<Function>::type rv;
+      typename std::result_of<Function>::type rv;
       rv = kernel(std::get<S>(args) ...);
       if (rv_ptr != NULL) {
         // check rv_ptr has sufficient memory space
@@ -121,7 +121,7 @@ namespace upcxx
                                 generic_fp fp,
                                 size_t arg_sz,
                                 void *async_args,
-                                void *future__ptr = NULL)
+                                void *future_ptr = NULL)
     {
       assert(arg_sz <= MAX_ASYNC_ARG_SIZE);
       // set up the task message
@@ -136,7 +136,7 @@ namespace upcxx
       this->_ack = ack;
       this->_fp = fp;
       this->_arg_sz = arg_sz;
-      this->_future__ptr = future_ptr;
+      this->_future_ptr = future_ptr;
       if (arg_sz > 0) {
         memcpy(&this->_args, async_args, arg_sz);
       }
@@ -173,7 +173,7 @@ namespace upcxx
   
   struct async_done_am_t {
     event *ack_event;
-    future_am_ptr *fam;
+    future_am_t fam;
     char future_val[0];
   };
   
@@ -278,10 +278,10 @@ namespace upcxx
 # include "async_impl_templates2.h"
 #else
     template<typename Function, typename... Ts>
-    inline future<std::result_of<Function>::type>
+    inline future<typename std::result_of<Function>::type>
     operator()(Function k, const Ts &... as)
     {
-      future<std::result_of<Function>::type> rv;
+      future<typename std::result_of<Function>::type> rv;
       generic_arg<Function, Ts...> args(k, as...);
       launch(async_wrapper<Function, Ts...>, (void *) &args,
              sizeof(args), rv.get_future_am());
