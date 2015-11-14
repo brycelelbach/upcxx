@@ -320,10 +320,11 @@ namespace upcxx
 #endif
 
     if (am->fam != NULL) {
-      future_am_t *fam = am->fam;
-      memcpy(fam->rv_ptr, am->future_val, fam->rv_sz);
-      assert(fam->rv_ready_ptr != NULL);
-      *fam->rv_ready_ptr = true;
+      future_storage_t *fam = am->fam;
+      if (fam->data != NULL && fam->sz > 0){
+        memcpy(fam->data, am->future_val, fam->sz);
+      }
+      fam->ready = true;
     }
 
     if (am->ack_event != NULL) {

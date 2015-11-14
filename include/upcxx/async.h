@@ -61,7 +61,7 @@ namespace upcxx
    *
    */
   inline gasnet_launcher<rank_t> async_after(rank_t rank, event *after,
-                                           event *ack = peek_event())
+                                             event *ack = peek_event())
   {
     return gasnet_launcher<rank_t>(rank, ack, after);
   }

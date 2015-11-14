@@ -10,7 +10,7 @@
 #include "event.h"
 #include "future.h"
 #ifdef UPCXX_HAVE_CXX11
-#include <type_traits> // for std::result_of
+#include <type_traits> 
 #else
 #include "async_templates.h"
 #endif
@@ -58,22 +58,34 @@ namespace upcxx
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
-    typename std::result_of<Function>::type *rv_ptr;
+    //typename std::result_of<Function>::type *rv_ptr;
+    future_storage_t *rv_ptr;
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
-      kernel(k), args(as...) {}
+      kernel(k), args(as...), rv_ptr(NULL) {}
 
-    template<int ...S>
-    void callFunc(seq<S...>)
+    generic_arg(future_storage_t *f, Function k, Ts... as) :
+      kernel(k), args(as...), rv_ptr(f) {}
+
+    // The return type of Function is non-void
+    template<typename F = Function, int ...S>
+    typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type
+    callFunc(seq<S...>)
     {
-      typename std::result_of<Function>::type rv;
+      typename std::result_of<Function(Ts...)>::type rv;
       rv = kernel(std::get<S>(args) ...);
       if (rv_ptr != NULL) {
-        // check rv_ptr has sufficient memory space
-        assert(sizeof(rv) < 256);
-        memcpy(rv_ptr, &rv, sizeof(rv));
+        rv_ptr->store(rv);
       }
+    }
+
+    // The return type of Function is void
+    template<typename F = Function, int ...S>
+    typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type
+    callFunc(seq<S...>)
+    {
+      kernel(std::get<S>(args) ...);
     }
 
     void apply()
@@ -86,11 +98,9 @@ namespace upcxx
 
   /* Active Message wrapper function */
   template <typename Function, typename... Ts>
-  void async_wrapper(void *args, void *rv_ptr=NULL) {
+  void async_wrapper(void *args) {
     generic_arg<Function, Ts...> *a =
       (generic_arg<Function, Ts...> *) args;
-
-    a->rv_ptr = rv_ptr;
     a->apply();
   }
 #endif
@@ -106,22 +116,19 @@ namespace upcxx
     generic_fp _fp;
     void *_am_src; // active message src buffer
     void *_am_dst; // active message dst buffer
-    void *_future_ptr;
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
     
     inline async_task()
         : _caller(0), _callee(0), _ack(NULL), _fp(NULL),
-          _am_src(NULL), _am_dst(NULL), _future_ptr(NULL),
-          _arg_sz(0) { };
+          _am_src(NULL), _am_dst(NULL), _arg_sz(0) { };
 
     inline void init_async_task(rank_t caller,
                                 rank_t callee,
                                 event *ack,
                                 generic_fp fp,
                                 size_t arg_sz,
-                                void *async_args,
-                                void *future_ptr = NULL)
+                                void *async_args)
     {
       assert(arg_sz <= MAX_ASYNC_ARG_SIZE);
       // set up the task message
@@ -136,7 +143,6 @@ namespace upcxx
       this->_ack = ack;
       this->_fp = fp;
       this->_arg_sz = arg_sz;
-      this->_future_ptr = future_ptr;
       if (arg_sz > 0) {
         memcpy(&this->_args, async_args, arg_sz);
       }
@@ -173,7 +179,7 @@ namespace upcxx
   
   struct async_done_am_t {
     event *ack_event;
-    future_am_t fam;
+    future_storage_t *fam;
     char future_val[0];
   };
   
@@ -270,21 +276,18 @@ namespace upcxx
     /* launch a general kernel */
     void launch(generic_fp fp, void *async_args, size_t arg_sz);
     
-    /* launch a general kernel */
-    void launch(generic_fp fp, void *async_args, size_t arg_sz,
-                future_am_t *future_ptr);
-
 #ifndef UPCXX_HAVE_CXX11
 # include "async_impl_templates2.h"
 #else
     template<typename Function, typename... Ts>
-    inline future<typename std::result_of<Function>::type>
+    inline future<typename std::result_of<Function(Ts...)>::type>
     operator()(Function k, const Ts &... as)
     {
-      future<typename std::result_of<Function>::type> rv;
-      generic_arg<Function, Ts...> args(k, as...);
+      future<typename std::result_of<Function(Ts...)>::type> rv;
+      generic_arg<Function, Ts...> args(rv.ptr(), k, as...);
       launch(async_wrapper<Function, Ts...>, (void *) &args,
-             sizeof(args), rv.get_future_am());
+             sizeof(args));
+      return rv;
     }
 #endif
   }; // gasnet_launcher

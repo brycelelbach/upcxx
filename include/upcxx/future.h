@@ -8,10 +8,59 @@
 
 namespace upcxx
 {
-  struct future_am_t {
-    size_t rv_sz;
-    void *rv_ptr;
-    bool *rv_ready_ptr;
+  struct future_storage_t {
+    size_t sz;
+    void *data;
+    volatile bool ready; 
+    future_storage_t() : sz(0), data(nullptr), ready(false)
+    { }
+      
+    future_storage_t(size_t storage_sz)
+    {
+      sz = storage_sz;
+      if (sz > 0) {
+        data = malloc(sz);
+        assert(data != nullptr);
+      } else {
+        data = nullptr;
+      }
+      ready = false;
+    }
+
+    template<class T>
+    future_storage_t(typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type  t)
+    {
+      sz = sizeof(T);
+      data = malloc(sz);
+      assert(data != NULL);
+      memcpy(data, &t, sizeof(T));
+    }   
+    
+    ~future_storage_t()
+    {
+      if (data != NULL) free(data);
+    }
+
+    // template<class T>
+    // void store(typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type  t)
+    // {
+    //   if (data != NULL) free(data);
+    //   sz = sizeof(T);
+    //   data = malloc(sz);
+    //   assert(data != NULL);
+    //   memcpy(data, &t, sizeof(T));      
+    // }
+
+    template<class T>
+    void store(T t)
+    {
+      if (data != NULL) free(data);
+      sz = sizeof(T);
+      data = malloc(sz);
+      assert(data != NULL);
+      memcpy(data, &t, sizeof(T));      
+    }
+
   };
     
   /**
@@ -19,46 +68,27 @@ namespace upcxx
    * @{
    * Futures are used to get the return value of an async function
    */
-  
-  template<class T>  
-  struct _future {
-    T val;
-    volatile bool ready;
-    
-  public:
-    inline _future() : val(), ready(false)
-    {
-    }
-  
-    void wait()
-    {
-      while (!ready) {
-        advance();
-      }
-    }
-
-    inline T get() { wait(); return val; };
-
-    inline future_am_t* get_future_am()
-    {
-      future_am_t *fam = (future_am_t *)malloc(sizeof(future_am_t));
-      assert(fam != NULL);
-      fam->rv_ptr = &val;
-      fam->rv_sz = sizeof(T);
-      fam->rv_ready_ptr = &ready;
-      return fam;
-    }
-  };
-  
   template<class T>
   struct future {
-    std::shared_ptr< _future<T> > _ptr;
+    std::shared_ptr<future_storage_t> _ptr;
     
   public:
     inline future()
     {
-      _ptr = std::make_shared< _future<T> >();
+      _ptr = std::make_shared<future_storage_t>();
     }
+
+    inline void wait()
+    {
+      while (!_ptr->ready) {
+        upcxx::advance();
+      }
+    }
+
+    inline T get() { wait(); return *(T *)_ptr->data; };
+
+    inline future_storage_t *ptr() { return _ptr.get(); }
+    
   };  // end of struct future
   
   
