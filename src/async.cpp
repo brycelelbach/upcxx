@@ -6,7 +6,8 @@ using namespace upcxx;
 template<>
 void gasnet_launcher<rank_t>::launch(generic_fp fp,
                                      void *async_args,
-                                     size_t arg_sz)
+                                     size_t arg_sz,
+                                     future_storage_t *fs_ptr)
 {
   async_task task;
   task.init_async_task(global_myrank(),
@@ -14,14 +15,16 @@ void gasnet_launcher<rank_t>::launch(generic_fp fp,
                        _ack,
                        fp,
                        arg_sz,
-                       async_args);
+                       async_args,
+                       fs_ptr);
   submit_task(&task, _after);
 }
 
 template<>
 void gasnet_launcher<range>::launch(generic_fp fp,
                                     void *async_args,
-                                    size_t arg_sz)
+                                    size_t arg_sz,
+                                    future_storage_t *fs_ptr)
 {
 #if 0
   for (int i = 0; i < _there.count(); i++) {
@@ -31,7 +34,8 @@ void gasnet_launcher<range>::launch(generic_fp fp,
                          _ack,
                          fp,
                          arg_sz,
-                         async_args);
+                         async_args,
+                         fs_ptr);
     submit_task(&task, _after);
 
   }

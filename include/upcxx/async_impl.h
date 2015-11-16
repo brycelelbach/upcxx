@@ -58,14 +58,14 @@ namespace upcxx
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
-    future_storage_t *fs_ptr;
+    //future_storage_t *fs_ptr;
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
-      kernel(k), args(as...), fs_ptr(NULL) {}
+      kernel(k), args(as...) {}
 
-    generic_arg(future_storage_t *rv_ptr, Function k, Ts... as) :
-      kernel(k), args(as...), fs_ptr(rv_ptr) {}
+    // generic_arg(future_storage_t *rv_ptr, Function k, Ts... as) :
+    //   kernel(k), args(as...), fs_ptr(rv_ptr) {}
 
     // The return type of Function is non-void
     template<typename F = Function, int ...S>
@@ -74,14 +74,12 @@ namespace upcxx
     {
       typename std::result_of<Function(Ts...)>::type rv;
       rv = kernel(std::get<S>(args) ...);
-      if (fs_ptr != NULL) {
-        // This fs_ptr is the pointer on task initiator
-        // fs_ptr->store(rv);
-        future_storage_t *tmp_fs;
-        tmp_fs = new future_storage_t(rv);
-        return tmp_fs;
-      }
-      return NULL;
+      //if (fs_ptr != NULL) {
+      // This fs_ptr is the pointer on task initiator
+      // fs_ptr->store(rv);
+      future_storage_t *tmp_fs;
+      tmp_fs = new future_storage_t(rv);
+      return tmp_fs;
     }
 
     // The return type of Function is void
@@ -119,6 +117,7 @@ namespace upcxx
     rank_t _callee; // the place where the task should be executed
     event *_ack; // Acknowledgment event pointer on caller node
     generic_fp _fp;
+    future_storage_t *_fs_ptr;
     void *_am_src; // active message src buffer
     void *_am_dst; // active message dst buffer
     size_t _arg_sz;
@@ -133,7 +132,8 @@ namespace upcxx
                                 event *ack,
                                 generic_fp fp,
                                 size_t arg_sz,
-                                void *async_args)
+                                void *async_args,
+                                future_storage_t *fs_ptr=NULL)
     {
       assert(arg_sz <= MAX_ASYNC_ARG_SIZE);
       // set up the task message
@@ -147,6 +147,7 @@ namespace upcxx
       this->_callee = callee;
       this->_ack = ack;
       this->_fp = fp;
+      this->_fs_ptr = fs_ptr;
       this->_arg_sz = arg_sz;
       if (arg_sz > 0) {
         memcpy(&this->_args, async_args, arg_sz);
@@ -279,7 +280,7 @@ namespace upcxx
     }
     
     /* launch a general kernel */
-    void launch(generic_fp fp, void *async_args, size_t arg_sz);
+    void launch(generic_fp fp, void *async_args, size_t arg_sz, future_storage_t *fs_ptr=NULL);
     
 #ifndef UPCXX_HAVE_CXX11
 # include "async_impl_templates2.h"
@@ -289,9 +290,9 @@ namespace upcxx
     operator()(Function k, const Ts &... as)
     {
       future<typename std::result_of<Function(Ts...)>::type> rv;
-      generic_arg<Function, Ts...> args(rv.ptr(), k, as...);
+      generic_arg<Function, Ts...> args(k, as...);
       launch(async_wrapper<Function, Ts...>, (void *) &args,
-             sizeof(args));
+             sizeof(args), rv.ptr());
       return rv;
     }
 #endif

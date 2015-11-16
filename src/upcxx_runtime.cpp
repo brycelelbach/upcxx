@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define UPCXX_DEBUG
+//#define UPCXX_DEBUG
 
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"

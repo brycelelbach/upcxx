@@ -87,14 +87,15 @@ namespace upcxx
     return gasnet_launcher<rank_t>(rank, ack, NULL);
   }
 
-  template<>
-  void gasnet_launcher<rank_t>::launch(generic_fp fp,
-                                       void *async_args,
-                                       size_t arg_sz);
+  // template<>
+  // void gasnet_launcher<rank_t>::launch(generic_fp fp,
+  //                                      void *async_args,
+  //                                      size_t arg_sz,
+  //                                      future_storage_t *fs_ptr=NULL);
 
-  template<>
-  void gasnet_launcher<range>::launch(generic_fp fp,
-                                      void *async_args,
-                                      size_t arg_sz);
+  // template<>
+  // void gasnet_launcher<range>::launch(generic_fp fp,
+  //                                     void *async_args,
+  //                                     size_t arg_sz);
 
 } // namespace upcxx
