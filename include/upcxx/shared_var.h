@@ -176,13 +176,15 @@ namespace upcxx
       return global_ptr<T>(&_val, 0);
     }
 
+    inline size_t type_size() { return _type_size; }
+    
   }; // struct shared_var
 
   static inline void run_pending_shared_var_inits()
   {
 #ifdef UPCXX_DEBUG
     printf("Running shared_var::run_pending_inits(). pending_inits sz %lu\n",
-           pending_inits->size());
+           pending_shared_var_inits->size());
 #endif
 
 #ifdef UPCXX_HAVE_CXX11
@@ -195,7 +197,7 @@ namespace upcxx
       shared_var<char> *current = (shared_var<char> *)*it;
 #ifdef UPCXX_DEBUG
       printf("Rank %u: Init shared_var %p, size %lu\n",
-             myrank(), current, current->_type_size);
+             myrank(), current, current->type_size());
 #endif
       current->init();
     }

@@ -58,50 +58,55 @@ namespace upcxx
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
-    //typename std::result_of<Function>::type *rv_ptr;
-    future_storage_t *rv_ptr;
+    future_storage_t *fs_ptr;
     std::tuple<Ts...> args;
 
     generic_arg(Function k, Ts... as) :
-      kernel(k), args(as...), rv_ptr(NULL) {}
+      kernel(k), args(as...), fs_ptr(NULL) {}
 
-    generic_arg(future_storage_t *f, Function k, Ts... as) :
-      kernel(k), args(as...), rv_ptr(f) {}
+    generic_arg(future_storage_t *rv_ptr, Function k, Ts... as) :
+      kernel(k), args(as...), fs_ptr(rv_ptr) {}
 
     // The return type of Function is non-void
     template<typename F = Function, int ...S>
-    typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type
+    typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
     callFunc(seq<S...>)
     {
       typename std::result_of<Function(Ts...)>::type rv;
       rv = kernel(std::get<S>(args) ...);
-      if (rv_ptr != NULL) {
-        rv_ptr->store(rv);
+      if (fs_ptr != NULL) {
+        // This fs_ptr is the pointer on task initiator
+        // fs_ptr->store(rv);
+        future_storage_t *tmp_fs;
+        tmp_fs = new future_storage_t(rv);
+        return tmp_fs;
       }
+      return NULL;
     }
 
     // The return type of Function is void
     template<typename F = Function, int ...S>
-    typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type
+    typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
     callFunc(seq<S...>)
     {
       kernel(std::get<S>(args) ...);
+      return NULL;
     }
 
-    void apply()
+    void* apply()
     {
       // upcxx::apply(kernel, args);
-      callFunc(typename gens<sizeof...(Ts)>::type());
+      return callFunc(typename gens<sizeof...(Ts)>::type());
     }
   }; // close of struct generic_arg
 #endif // UPCXX_APPLY_IMPL2
 
   /* Active Message wrapper function */
   template <typename Function, typename... Ts>
-  void async_wrapper(void *args) {
+  void* async_wrapper(void *args) {
     generic_arg<Function, Ts...> *a =
       (generic_arg<Function, Ts...> *) args;
-    a->apply();
+    return a->apply();
   }
 #endif
 
@@ -179,7 +184,7 @@ namespace upcxx
   
   struct async_done_am_t {
     event *ack_event;
-    future_storage_t *fam;
+    future_storage_t *fs;
     char future_val[0];
   };
   

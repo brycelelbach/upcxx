@@ -17,7 +17,7 @@
 
 namespace upcxx 
 {    
-  typedef void (*generic_fp)(void *);
+  typedef void* (*generic_fp)(void *);
 
 #define MAX_AM_BCAST_PACKET_SIZE 4096
 

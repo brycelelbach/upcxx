@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-// #define UPCXX_DEBUG
+#define UPCXX_DEBUG
 
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
@@ -185,11 +185,6 @@ namespace upcxx
     my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
     my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
 
-#ifdef UPCXX_DEBUG
-    fprintf(stderr, "rank %u, total_shared_var_sz %lu, shared_var_addr %p\n",
-            gasnet_mynode(), total_shared_var_sz, shared_var_addr);
-#endif
-
     // Initialize Team All
     team_all.init_global_team();
 
@@ -319,12 +314,16 @@ namespace upcxx
             global_myrank(), src);
 #endif
 
-    if (am->fam != NULL) {
-      future_storage_t *fam = am->fam;
-      if (fam->data != NULL && fam->sz > 0){
-        memcpy(fam->data, am->future_val, fam->sz);
+    if (am->fs != NULL) {
+      future_storage_t *fs = am->fs;
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "Rank %u fs->sz %lu, fa->data %p\n",
+              global_myrank(), fs->sz, fs->data);
+#endif
+      if (fs->data != NULL && fs->sz > 0){
+        memcpy(fs->data, am->future_val, fs->sz);
       }
-      fam->ready = true;
+      fs->ready = true;
     }
 
     if (am->ack_event != NULL) {
@@ -376,6 +375,8 @@ namespace upcxx
             // send an ack message back to the caller of the async task
             async_done_am_t am;
             am.ack_event = task->_ack;
+            am.fs = NULL;
+            // still need to copy the future into the AM correctly
             UPCXX_CALL_GASNET(
                 GASNET_CHECK_RV(
                     gasnet_AMRequestMedium0(task->_caller,
@@ -450,8 +451,8 @@ namespace upcxx
            it != outstanding_events->end(); ++it) {
         event *e = (*it);
         assert(e != NULL);
-#ifdef UPCXX_DEBUG
-        fprintf(stderr, "P %u: Number of outstanding_events %u, Advance event: %p\n", 
+#ifdef UPCXX_DEBUG2
+        fprintf(stderr, "P %u: Number of outstanding_events %lu, Advance event: %p\n", 
                 global_myrank(), outstanding_events->size(), e);
 #endif
         if (e->_async_try()) break;
