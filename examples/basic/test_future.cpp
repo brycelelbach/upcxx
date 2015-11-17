@@ -47,7 +47,9 @@ int main(int argc, char **argv)
     
     for (uint32_t i = 0; i < ranks(); i++) {
       printf("Return value from rank %u: %d\n", i, all_futures[i].get());
-    }    
+    }
+
+    delete [] all_futures;
   }
 
   upcxx::finalize();
