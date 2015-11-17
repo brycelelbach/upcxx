@@ -157,11 +157,11 @@ namespace upcxx
     cerr << "gasnet_attach()\n";
 #endif
     UPCXX_CALL_GASNET(
-        GASNET_CHECK_RV(
-            gasnet_attach(AMtable,
-                          sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
-                          gasnet_getMaxLocalSegmentSize(),
-                          0)));
+                      GASNET_CHECK_RV(
+                                      gasnet_attach(AMtable,
+                                                    sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
+                                                    gasnet_getMaxLocalSegmentSize(),
+                                                    0)));
 
     // The following collectives initialization only works with SEG build
     // \TODO: add support for the PAR-SYNC build
@@ -305,23 +305,24 @@ namespace upcxx
   {
     async_done_am_t *am = (async_done_am_t *)buf;
 
-    assert(nbytes == sizeof(async_done_am_t));
+    assert(nbytes == am->nbytes());
 
 #ifdef UPCXX_DEBUG
     gasnet_node_t src;
     gasnet_AMGetMsgSource(token, &src);
-    fprintf(stderr, "Rank %u receives async done from %u",
+    fprintf(stderr, "Rank %u receives async done from %u\n",
             global_myrank(), src);
 #endif
 
-    if (am->fs != NULL) {
-      future_storage_t *fs = am->fs;
+    if (am->fu_ptr != NULL) {
+      future_storage_t *fs = ((future<void> *)am->fu_ptr)->ptr();
 #ifdef UPCXX_DEBUG
-      fprintf(stderr, "Rank %u fs->sz %lu, fa->data %p\n",
-              global_myrank(), fs->sz, fs->data);
+      fprintf(stderr, "Rank %u fu_ptr %p, fs %p, fs->sz %lu, fs->data %p\n",
+              global_myrank(), am->fu_ptr, fs, fs->sz, fs->data);
 #endif
-      if (fs->data != NULL && fs->sz > 0){
-        memcpy(fs->data, am->future_val, fs->sz);
+      assert(fs != NULL);
+      if (am->fu_sz > 0) {
+        fs->store(am->future_val, am->fu_sz);
       }
       fs->ready = true;
     }
@@ -330,7 +331,7 @@ namespace upcxx
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
 #ifdef UPCXX_DEBUG
-      fprintf(stderr, "Rank %u receives async done from %u. event count %d\n",
+      fprintf(stderr, "Rank %u receives async done from %u, event count %d\n",
               global_myrank(), src, am->ack_event->_count);
 #endif
     }
@@ -358,36 +359,64 @@ namespace upcxx
       cerr << *task << "\n";
 #endif
 
-        // execute the async task
-        if (task->_fp) {
-          (*task->_fp)(task->_args);
-        }
+      // execute the async task
+      future_storage_t *rv_fs;
+      if (task->_fp) {
+        rv_fs = (future_storage_t*)(*task->_fp)(task->_args);
+      }
 
-        if (task->_ack != NULL) {
-          if (task->_caller == global_myrank()) {
-            // local event acknowledgment
-            task->_ack->decref(); // need to enqueue callback tasks
+      async_done_am_t reply_am;
+
+      if (rv_fs != NULL) {
+        if (task->_caller == global_myrank()) {
 #ifdef UPCXX_DEBUG
-            fprintf(stderr, "Rank %u completes a local task. event count %d\n",
-                    global_myrank(), task->_ack->_count);
-#endif
-          } else {
-            // send an ack message back to the caller of the async task
-            async_done_am_t am;
-            am.ack_event = task->_ack;
-            am.fs = NULL;
-            // still need to copy the future into the AM correctly
-            UPCXX_CALL_GASNET(
-                GASNET_CHECK_RV(
-                    gasnet_AMRequestMedium0(task->_caller,
-                                            ASYNC_DONE_AM,
-                                            &am,
-                                            sizeof(am))));
+        printf("Rank %u begins processing local future...\n", myrank());
+        std::cout << *(future<void>*)task->_fu_ptr << "\n";
+#endif          
+          if (task->_fu_ptr != NULL) {
+            memcpy(((future<void> *)task->_fu_ptr)->ptr(), rv_fs, sizeof(future_storage_t));            
           }
+          ((future<void> *)task->_fu_ptr)->ptr()->ready = true;
+          free(rv_fs); // be careful, we used "new" to allocate it but we don't want to call the destructor here
+          delete (future<void> *)task->_fu_ptr;
+        } else {
+#ifdef UPCXX_DEBUG
+        printf("Rank %u begins processing remote future...\n", myrank());
+        std::cout << *rv_fs;
+        std::cout << "Remote future " << task->_fu_ptr << "\n";
+#endif          
+          reply_am.init(task->_ack, task->_fu_ptr, rv_fs->sz, rv_fs->data);
         }
-        delete task;
-        num_dispatched++;
-        if (num_dispatched >= max_dispatched) break;
+      } else {
+        reply_am.init(task->_ack, NULL, 0, NULL);   
+      }
+
+#ifdef UPCXX_DEBUG
+        printf("Rank %u after processing future...\n", myrank());
+#endif
+      
+      if (task->_ack != NULL) {
+        if (task->_caller == global_myrank()) {
+          // local event acknowledgment
+          task->_ack->decref(); // need to enqueue callback tasks
+#ifdef UPCXX_DEBUG
+          fprintf(stderr, "Rank %u completes a local task. event count %d\n",
+                  global_myrank(), task->_ack->_count);
+#endif
+        } else {
+          // send an ack message back to the caller of the async task
+          // still need to copy the future into the AM correctly
+          UPCXX_CALL_GASNET(
+                            GASNET_CHECK_RV(
+                                            gasnet_AMRequestMedium0(task->_caller,
+                                                                    ASYNC_DONE_AM,
+                                                                    &reply_am,
+                                                                    reply_am.nbytes())));
+        }
+      }
+      delete task;
+      num_dispatched++;
+      if (num_dispatched >= max_dispatched) break;
     }; // end of while (!queue_is_empty(inq))
 
     return num_dispatched;
@@ -415,9 +444,9 @@ namespace upcxx
       // remote async task
       // Send AM "there" to request async task execution
       UPCXX_CALL_GASNET(
-          GASNET_CHECK_RV(
-              gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
-                                      task, task->nbytes())));
+                        GASNET_CHECK_RV(
+                                        gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
+                                                                task, task->nbytes())));
 
       delete task;
       num_dispatched++;
@@ -503,8 +532,8 @@ namespace upcxx
     inc_am_t am;
     am.ptr = ptr.raw_ptr();
     UPCXX_CALL_GASNET(
-        GASNET_CHECK_RV(
-            gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am))));
+                      GASNET_CHECK_RV(
+                                      gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am))));
     return UPCXX_SUCCESS;
   }
 

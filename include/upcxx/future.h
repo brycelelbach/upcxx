@@ -12,28 +12,17 @@ namespace upcxx
     size_t sz;
     void *data;
     volatile bool ready; 
+
     future_storage_t() : sz(0), data(nullptr), ready(false)
     { }
-      
-    future_storage_t(size_t storage_sz)
-    {
-      sz = storage_sz;
-      if (sz > 0) {
-        data = malloc(sz);
-        assert(data != nullptr);
-      } else {
-        data = nullptr;
-      }
-      ready = false;
-    }
 
     template<class T>
-    future_storage_t(typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type  t)
+    explicit future_storage_t(const T& val)
     {
       sz = sizeof(T);
       data = malloc(sz);
       assert(data != NULL);
-      memcpy(data, &t, sizeof(T));
+      memcpy(data, &val, sizeof(T));
     }   
     
     ~future_storage_t()
@@ -51,16 +40,25 @@ namespace upcxx
     //   memcpy(data, &t, sizeof(T));      
     // }
 
-    template<class T>
-    void store(T t)
+    // template<class T>
+    // void store(T t)
+    // {
+    //   if (data != NULL) free(data);
+    //   sz = sizeof(T);
+    //   data = malloc(sz);
+    //   assert(data != NULL);
+    //   memcpy(data, &t, sizeof(T));      
+    // }
+
+    inline void store(void *val, size_t val_sz)
     {
+      assert(val != NULL);
       if (data != NULL) free(data);
-      sz = sizeof(T);
+      sz = val_sz;
       data = malloc(sz);
       assert(data != NULL);
-      memcpy(data, &t, sizeof(T));      
+      memcpy(data, val, sz);      
     }
-
   };
     
   /**
@@ -85,13 +83,53 @@ namespace upcxx
       }
     }
 
-    inline T get() { wait(); return *(T *)_ptr->data; };
+    inline T get()
+    {
+      wait();
+      assert(_ptr->data != NULL);
+      return *(T *)_ptr->data;
+    }
 
     inline future_storage_t *ptr() { return _ptr.get(); }
     
   };  // end of struct future
+
+  inline
+  std::ostream& operator<<(std::ostream& out, const future_storage_t& fs)
+  {
+    return out << "future_storage_t: sz " << fs.sz
+               << " data " << fs.data
+               << " ready " << fs.ready
+               << "\n";
+  }
   
-  
+  template<typename T>
+  inline
+  std::ostream& operator<<(std::ostream& out, const future<T>& f)
+  {
+    out << "future: use_count: " << f._ptr.use_count() 
+        << " storage ptr: " << f._ptr.get();
+    if (f._ptr.get() != NULL) {
+      out << " ready: " << f._ptr.get()->ready 
+          << " sz: " << f._ptr.get()->sz
+          << " val: "<< *(T*)(f._ptr.get()->data);
+    }
+    return out << "\n";;    
+  }
+
+  template<>
+  inline
+  std::ostream& operator<<(std::ostream& out, const future<void>& f)
+  {
+    out << "future: use_count: " << f._ptr.use_count() 
+        << " storage ptr: " << f._ptr.get();
+    if (f._ptr.get() != NULL) {
+      out << " ready: " << f._ptr.get()->ready
+          << " sz: " << f._ptr.get()->sz;
+    }
+    return out << "\n";;
+  }
+
   /// @}
 
 } // end of namespace upcxx
