@@ -20,9 +20,6 @@ void update()
   int np = ranks();
   int myid = myrank();
 
-  printf("Rank %d in update\n", myrank());
-  printf("Rank %d after shared array A.init\n", myrank());
-  barrier();
   printf("myid %d is updating...\n", myid);
 
   for (size_t i=myid; i<ARRAY_SIZE; i+=np) {
