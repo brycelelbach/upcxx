@@ -4,10 +4,10 @@
 using namespace upcxx;
 
 template<>
-void gasnet_launcher<rank_t>::launch(generic_fp fp,
-                                     void *async_args,
-                                     size_t arg_sz,
-                                     void *fu_ptr)
+void upcxx::gasnet_launcher<rank_t>::launch(generic_fp fp,
+                                            void *async_args,
+                                            size_t arg_sz,
+                                            void *fu_ptr)
 {
   async_task task;
   task.init_async_task(global_myrank(),
@@ -21,10 +21,10 @@ void gasnet_launcher<rank_t>::launch(generic_fp fp,
 }
 
 template<>
-void gasnet_launcher<range>::launch(generic_fp fp,
-                                    void *async_args,
-                                    size_t arg_sz,
-                                    void *fu_ptr)
+void upcxx::gasnet_launcher<range>::launch(generic_fp fp,
+                                           void *async_args,
+                                           size_t arg_sz,
+                                           void *fu_ptr)
 {
 #if 0
   for (int i = 0; i < _there.count(); i++) {
@@ -49,3 +49,4 @@ void gasnet_launcher<range>::launch(generic_fp fp,
   am_bcast(_there, _ack, fp, arg_sz, async_args, _after, global_myrank());
 #endif
 }
+
