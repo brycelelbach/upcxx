@@ -22,7 +22,7 @@
 #include "utils.h"
 
 // #define UPCXX_DEBUG
-#define UPCXX_APPLY_IMPL2
+#define UPCXX_APPLY_IMPL1
 
 namespace upcxx
 {
@@ -37,8 +37,23 @@ namespace upcxx
     generic_arg(Function k, Ts... as) :
       kernel(k), args{as...} {}
 
-    void apply() {
+    // The return type of Function is non-void
+    template<typename F = Function>
+    typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
+    apply() {
+      typename std::result_of<Function(Ts...)>::type rv;
+      rv = upcxx::apply(kernel, args);
+      future_storage_t *tmp_fs;
+      tmp_fs = new future_storage_t(rv);
+      return tmp_fs;
+    }
+
+    // The return type of Function is void
+    template<typename F = Function>
+    typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
+    apply() {
       upcxx::apply(kernel, args);
+      return NULL;
     }
   };
 #endif // UPCXX_APPLY_IMPL1
