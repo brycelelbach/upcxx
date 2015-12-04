@@ -163,7 +163,7 @@ namespace upcxx
     }
 
     // implementation based on GASNet medium AM
-    if (nbytes <= gasnet_AMMaxMedium()) {
+    if (src.where() == global_myrank() && nbytes <= gasnet_AMMaxMedium()) {
       if (remote_completion!= NULL) remote_completion->incref();
       UPCXX_CALL_GASNET(
           GASNET_CHECK_RV(MEDIUM_REQ(4, 8, (dst.where(), COPY_AND_SIGNAL_REQUEST,
@@ -185,6 +185,7 @@ namespace upcxx
                                        PACK(remote_completion)));
       */
       // async_copy_and_set implementation based on RDMA put and local async tasks
+      // this works for signaling get as well
       event **temp_events = allocate_events(1);
       // start the async copy of the payload
       async_copy(src, dst, nbytes, temp_events[0]);
