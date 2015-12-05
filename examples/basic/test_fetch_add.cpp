@@ -31,7 +31,7 @@ int main(int argc, char **argv)
       global_ptr<upcxx::atomic<uint64_t> > obj = &counters[t];
       old_val = fetch_add(obj, 10);
       if (old_val % 1000 == 0) {
-        printf("Rank %u, t = %d fetch_add old value =  %llu\n",
+        printf("Rank %u, t = %d fetch_add old value =  %lu\n",
                myrank(), t, old_val);
       }
       for (int j = 0; j < 1000; j++) dummy ^= old_val + j;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
   if (myrank() == 0) {
     for (int t = 0; t < ranks(); t++) {
       if (counters[t].get().load() != (uint64_t)1000 * ranks()) {
-        printf("Verification error, counters[%d]=%llu, but expected %llu\n",
+        printf("Verification error, counters[%d]=%lu, but expected %lu\n",
                t, counters[t].get().load(), (uint64_t)1000 *ranks());
       }
     }
