@@ -6,6 +6,7 @@
 
 #include <upcxx.h>
 #include <iostream>
+#include <inttypes.h>
 
 using namespace upcxx;
 
@@ -16,8 +17,8 @@ uint64_t dummy = 0;
 int main(int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
-  printf("Rank %u of %u starts test_fetch_add...\n",
-         myrank(), ranks());
+  std::cout << "Rank " << myrank() << " of " << ranks()
+            << " starts test_fetch_add...\n";
 
   counters.init(ranks());
   // counters[myrank()] = 0;
@@ -31,8 +32,9 @@ int main(int argc, char **argv)
       global_ptr<upcxx::atomic<uint64_t> > obj = &counters[t];
       old_val = fetch_add(obj, 10);
       if (old_val % 1000 == 0) {
-        printf("Rank %u, t = %d fetch_add old value =  %lu\n",
-               myrank(), t, old_val);
+        std::cout << "Rank " << myrank() << " t = " << t
+                  << " fetch_add old value =  " << old_val << "\n";
+
       }
       for (int j = 0; j < 1000; j++) dummy ^= old_val + j;
     }
@@ -43,17 +45,18 @@ int main(int argc, char **argv)
   if (myrank() == 0) {
     for (int t = 0; t < ranks(); t++) {
       if (counters[t].get().load() != (uint64_t)1000 * ranks()) {
-        printf("Verification error, counters[%d]=%lu, but expected %lu\n",
-               t, counters[t].get().load(), (uint64_t)1000 *ranks());
+        std::cout << "Verification error, counters[ " << t << "]="
+                  << counters[t].get().load() << ", but expected " <<
+            (uint64_t)1000 *ranks() << "\n";
       }
     }
   }
 
-  printf("Rank %u passed test_fetch_add!\n", (unsigned int) myrank());
+  std::cout << "Rank " << myrank() << "passed test_fetch_add!\n";
 
   barrier();
   if (myrank() == 0)
-    printf("test_fetch_add passed!\n");
+    std::cout << "test_fetch_add passed!\n";
 
   upcxx::finalize();
   return 0;
