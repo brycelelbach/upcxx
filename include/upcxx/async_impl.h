@@ -41,17 +41,6 @@ namespace upcxx
 #endif // UPCXX_APPLY_IMPL1
 
 #ifdef UPCXX_APPLY_IMPL2
-  template<int ...>
-  struct seq { };
-
-  template<int N, int ...S>
-  struct gens : gens<N-1, N-1, S...> { };
-
-  template<int ...S>
-  struct gens<0, S...> {
-    typedef seq<S...> type;
-  };
-
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
@@ -61,15 +50,14 @@ namespace upcxx
       kernel(k), args(as...) {}
 
     template<int ...S>
-    void callFunc(seq<S...>)
+    inline void call(util::seq<S...>)
     {
       kernel(std::get<S>(args) ...);
     }
 
     void apply()
     {
-      // upcxx::apply(kernel, args);
-      callFunc(typename gens<sizeof...(Ts)>::type());
+      call(typename util::gens<sizeof...(Ts)>::type());
     }
   }; // close of struct generic_arg
 #endif // UPCXX_APPLY_IMPL2

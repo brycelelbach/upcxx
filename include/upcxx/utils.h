@@ -46,5 +46,19 @@ namespace upcxx {
     decltype(applier<sizeof...(Ts)>::call(k, t)) {
     return applier<sizeof...(Ts)>::call(k, t);
   }
+
+  namespace util {
+    template<int ...>
+    struct seq { };
+
+    template<int N, int ...S>
+    struct gens : gens<N-1, N-1, S...> { };
+
+    template<int ...S>
+    struct gens<0, S...> {
+      typedef seq<S...> type;
+    };
+  } // end of helper namespace
+
 #endif
 } // namespace upcxx
