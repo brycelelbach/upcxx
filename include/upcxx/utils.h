@@ -26,7 +26,7 @@ namespace upcxx {
   template<size_t N>
   struct applier {
     template<typename Function, typename... Ts, typename... Ts2>
-    static auto call(Function k, std::tuple<Ts...> t, Ts2... as) ->
+    static auto call(Function k, const std::tuple<Ts...>& t, Ts2... as) ->
       decltype(applier<N-1>::call(k, t, std::get<N-1>(t), as...)) {
       return applier<N-1>::call(k, t, std::get<N-1>(t), as...);
     }
@@ -35,14 +35,14 @@ namespace upcxx {
   template<>
   struct applier<0> {
     template<typename Function, typename... Ts, typename... Ts2>
-    static auto call(Function k, std::tuple<Ts...> t, Ts2... as) ->
+    static auto call(Function k, const std::tuple<Ts...>& t, Ts2... as) ->
       decltype(k(as...)) {
       return k(as...);
     }
   };
 
   template<typename Function, typename... Ts>
-  auto apply(Function k, std::tuple<Ts...> t) ->
+  auto apply(Function k, const std::tuple<Ts...>& t) ->
     decltype(applier<sizeof...(Ts)>::call(k, t)) {
     return applier<sizeof...(Ts)>::call(k, t);
   }
