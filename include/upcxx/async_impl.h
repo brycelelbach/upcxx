@@ -28,17 +28,18 @@ namespace upcxx
 {
 #ifdef UPCXX_HAVE_CXX11
 
-#ifdef UPCXX_APPLY_IMPL1
   template<typename Function, typename... Ts>
   struct generic_arg {
     Function kernel;
     std::tuple<Ts...> args;
 
-    generic_arg(Function k, Ts... as) :
+    generic_arg(const Function& k, const Ts&... as) :
       kernel(k), args{as...} {}
 
+#ifdef UPCXX_APPLY_IMPL1
     // The return type of Function is non-void
     template<typename F = Function>
+    inline
     typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
     apply() {
       typename std::result_of<Function(Ts...)>::type rv;
@@ -50,38 +51,18 @@ namespace upcxx
 
     // The return type of Function is void
     template<typename F = Function>
+    inline
     typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
     apply() {
       upcxx::apply(kernel, args);
       return NULL;
     }
-  };
-#endif // UPCXX_APPLY_IMPL1
-
-#ifdef UPCXX_APPLY_IMPL2
-  template<int ...>
-  struct seq { };
-
-  template<int N, int ...S>
-  struct gens : gens<N-1, N-1, S...> { };
-
-  template<int ...S>
-  struct gens<0, S...> {
-    typedef seq<S...> type;
-  };
-
-  template<typename Function, typename... Ts>
-  struct generic_arg {
-    Function kernel;
-    std::tuple<Ts...> args;
-
-    generic_arg(Function k, Ts... as) :
-      kernel(k), args(as...) {}
-
+#else // UPCXX_APPLY_IMPL2
     // The return type of Function is non-void
     template<typename F = Function, int ...S>
+    inline
     typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
-    callFunc(seq<S...>)
+    call(util::seq<S...>)
     {
       typename std::result_of<Function(Ts...)>::type rv;
       rv = kernel(std::get<S>(args) ...);
@@ -92,20 +73,20 @@ namespace upcxx
 
     // The return type of Function is void
     template<typename F = Function, int ...S>
+    inline
     typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
-    callFunc(seq<S...>)
+    call(util::seq<S...>)
     {
       kernel(std::get<S>(args) ...);
       return NULL;
     }
 
-    void* apply()
+    inline void* apply()
     {
-      // upcxx::apply(kernel, args);
-      return callFunc(typename gens<sizeof...(Ts)>::type());
+      call(typename util::gens<sizeof...(Ts)>::type());
     }
-  }; // close of struct generic_arg
-#endif // UPCXX_APPLY_IMPL2
+#endif
+  }; // end of struct generic_arg
 
   /* Active Message wrapper function */
   template <typename Function, typename... Ts>
@@ -173,7 +154,7 @@ namespace upcxx
 #else
     template<typename Function, typename... Ts>
     inline async_task(rank_t caller, rank_t callee, event *ack,
-                      Function k, const Ts &... as) {
+                      const Function& k, const Ts &... as) {
       generic_arg<Function, Ts...> args(k, as...);
       init_async_task(caller, callee, ack, async_wrapper<Function, Ts...>,
                       (size_t) sizeof(args), (void *) &args);

@@ -104,7 +104,7 @@ dnl Check for GCC
 AC_MSG_CHECKING([if compiling with g++])
 AC_COMPILE_IFELSE(
 [AC_LANG_PROGRAM([], [[
-#if !defined(__GNUG__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#if !defined(__GNUG__) || defined(__INTEL_COMPILER) || defined(__clang__) || defined(__PGI)
        not g++
 #endif
 ]])], [GCC=yes], [GCC=no])
