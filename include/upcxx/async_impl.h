@@ -22,7 +22,7 @@
 #include "utils.h"
 
 // #define UPCXX_DEBUG
-#define UPCXX_APPLY_IMPL1
+// #define UPCXX_APPLY_IMPL1
 
 namespace upcxx
 {
@@ -83,7 +83,7 @@ namespace upcxx
 
     inline void* apply()
     {
-      call(typename util::gens<sizeof...(Ts)>::type());
+      return call(typename util::gens<sizeof...(Ts)>::type());
     }
 #endif
   }; // end of struct generic_arg
@@ -108,14 +108,12 @@ namespace upcxx
     event *_ack; // Acknowledgment event pointer on caller node
     generic_fp _fp;
     void *_fu_ptr;
-    void *_am_src; // active message src buffer
-    void *_am_dst; // active message dst buffer
     size_t _arg_sz;
     char _args[MAX_ASYNC_ARG_SIZE];
     
     inline async_task()
         : _caller(0), _callee(0), _ack(NULL), _fp(NULL),
-          _am_src(NULL), _am_dst(NULL), _arg_sz(0) { };
+          _fu_ptr(NULL), _arg_sz(0) { };
 
     inline void init_async_task(rank_t caller,
                                 rank_t callee,
