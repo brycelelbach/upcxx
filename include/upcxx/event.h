@@ -44,11 +44,14 @@ namespace upcxx
 #ifdef UPCXX_USE_DMAPP
     std::vector<dmapp_syncid_handle_t> _dmapp_handles;
 #endif
+    void *_rv_ptr; // pointer to the return value
+    size_t _rv_sz; // size of the return value
     int _num_done_cb;
     async_task *_done_cb[MAX_NUM_DONE_CB];  
     // std::vector<async_task &> _cont_tasks;
 
-    inline event() : _count(0), _num_done_cb(0), owner(0)
+    inline event(void *rv_ptr = NULL, size_t rv_sz = 0)
+      : _count(0), _num_done_cb(0), owner(0), _rv_ptr(rv_ptr), _rv_sz(rv_sz)
     {
     }
 
@@ -138,8 +141,6 @@ namespace upcxx
 
   void event_incref(event *e, uint32_t c=1);
   void event_decref(event *e, uint32_t c=1);
-
-  typedef struct event future;
 
   inline
   std::ostream& operator<<(std::ostream& out, const event& e)

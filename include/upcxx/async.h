@@ -8,7 +8,6 @@
 
 namespace upcxx
 {
-
   /**
    * \ingroup asyncgroup
    *
@@ -61,40 +60,9 @@ namespace upcxx
    *
    */
   inline gasnet_launcher<rank_t> async_after(rank_t rank, event *after,
-                                           event *ack = peek_event())
+                                             event *ack = peek_event())
   {
     return gasnet_launcher<rank_t>(rank, ack, after);
   }
-
-  
-  /**
-   * \ingroup asyncgroup
-   *
-   * async for Active Message style communication
-   * ~~~~~~~~~~~~~~~{.cpp}
-   * async(uint32_t rank, void *src, size_t nbytes, event *ack)
-          (function, arg1, arg2, ...);
-   * ~~~~~~~~~~~~~~~
-   * \see test_async_am.cpp
-   *
-   */
-  inline gasnet_launcher<rank_t> async(uint32_t rank,
-                                       void *am_dst,
-                                       void *am_src,
-                                       size_t nbytes,
-                                       event *ack)
-  {
-    return gasnet_launcher<rank_t>(rank, ack, NULL);
-  }
-
-  template<>
-  void gasnet_launcher<rank_t>::launch(generic_fp fp,
-                                       void *async_args,
-                                       size_t arg_sz);
-
-  template<>
-  void gasnet_launcher<range>::launch(generic_fp fp,
-                                      void *async_args,
-                                      size_t arg_sz);
 
 } // namespace upcxx

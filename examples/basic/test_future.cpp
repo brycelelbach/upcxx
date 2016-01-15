@@ -1,48 +1,57 @@
 /**
- * \example test_future.cpp -- Test futures
+ * \example test_future.cpp
+ *
+ * Test returning a future value from an asynchronous task execution
+ *
  */
 
+#include <upcxx.h>
 #include <iostream>
-#include <stdio.h>
 
-#include "degas.h"
-#include "startup.h" // for single-thread execution model emulation
+using namespace upcxx;
 
-void callback()
+int task(int n)
 {
-  cout << "All events are completed, my node: " << upcxx::my_node;
-  cout << "\n";
-}
-
-int task(int task_id)
-{
-  cout << "my node: " << upcxx::my_node <<  ", task_id: " << task_id << "\n";
+  printf("Rank %d n %d\n", myrank(), n);
+  return (myrank()*1000 + n); 
 }
 
 int main(int argc, char **argv)
 {
-  future ft;
-  async_task cb = async_task(upcxx::my_node.id(),
-                             upcxx::my_node.id(),
-                             NULL,
-                             callback);
-  submit_task(cb, &e);
+  upcxx::init(&argc, &argv);
 
-  cerr << e << "\n";
+  if (myrank() == 0) {
 
-  printf("Node %d will spawn %d tasks...\n",
-         upcxx::my_node.id(), upcxx::global_machine.node_count());
+    upcxx::future<int> *all_futures = new upcxx::future<int> [ranks()];
+    
+    printf("Rank %u will spawn %d tasks...\n",
+           myrank(), ranks());
 
-  for (int i = 0; i < upcxx::global_machine.node_count(); i++) {
-    printf("Node %d spawns a task at place %d\n",
-           my_node.id(), i);
+    for (uint32_t i = 0; i < ranks(); i++) {
 
-    ft = async(i, &e)(task, 1000+i);
+#ifndef UPCXX_HAVE_CXX11
+      printf("Rank %u calls a named function on rank %d\n", myrank(), i);
+      all_futures[i] = async(i)(task, i*2);
+#else
+      printf("Rank %u calls a lambda function on rank %d\n", myrank(), i);
+      all_futures[i]
+        = async(i)([=]() -> int
+          {
+            int n = i*2;
+            printf("Rank %d n %d\n", myrank(), n);
+            return myrank()*1000 + n;
+          }
+          );
+#endif
+    }
+    
+    for (uint32_t i = 0; i < ranks(); i++) {
+      printf("Return value from rank %u: %d\n", i, all_futures[i].get());
+    }
+
+    delete [] all_futures;
   }
 
-  ft.wait();
-
-  cout << "Return value from future: " << ft.get();
-  
+  upcxx::finalize();
   return 0;
 }

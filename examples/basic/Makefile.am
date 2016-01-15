@@ -23,6 +23,7 @@ bin_PROGRAMS = \
   test_event2 \
   test_fetch_add \
   test_finish \
+  test_future \
   test_global_ptr \
   test_lock \
   test_memberof \
@@ -47,6 +48,7 @@ test_event_SOURCES = test_event.cpp
 test_event2_SOURCES = test_event2.cpp
 test_fetch_add_SOURCES = test_fetch_add.cpp
 test_finish_SOURCES = test_finish.cpp
+test_future_SOURCES = test_future.cpp
 test_global_ptr_SOURCES = test_global_ptr.cpp
 test_lock_SOURCES = test_lock.cpp
 test_memberof_SOURCES = test_memberof.cpp

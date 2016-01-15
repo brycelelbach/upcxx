@@ -27,7 +27,7 @@ namespace upcxx
    *                      void *async_args, size_t arg_sz)
    *
    */
-  void am_bcast_launch(void *args)
+  void* am_bcast_launch(void *args)
   {
     am_bcast_arg *bcast_arg = (am_bcast_arg *) args;
     uint32_t root_index = bcast_arg->root_index;
@@ -57,7 +57,7 @@ namespace upcxx
                                  bcast_arg->nbytes(),
                                  bcast_arg);
       submit_task(&bcast_task);
-      return;
+      return NULL;
     }
 
     
@@ -98,6 +98,7 @@ namespace upcxx
       task._callee = global_myrank();
       submit_task(&task);
     }
+    return NULL;
   }  // am_bcast_launch
 
   void am_bcast(range target,
