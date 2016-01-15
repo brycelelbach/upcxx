@@ -8,7 +8,6 @@
 
 namespace upcxx
 {
-
   /**
    * \ingroup asyncgroup
    *

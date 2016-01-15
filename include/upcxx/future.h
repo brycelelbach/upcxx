@@ -8,6 +8,10 @@
 
 namespace upcxx
 {
+  /**
+   * \ingroup internalgroup
+   * Internal objects for storing the values of futures
+   */
   struct future_storage_t {
     size_t sz;
     void *data;
@@ -29,26 +33,6 @@ namespace upcxx
     {
       if (data != NULL) free(data);
     }
-
-    // template<class T>
-    // void store(typename std::enable_if<std::is_trivially_copyable<T>::value, T>::type  t)
-    // {
-    //   if (data != NULL) free(data);
-    //   sz = sizeof(T);
-    //   data = malloc(sz);
-    //   assert(data != NULL);
-    //   memcpy(data, &t, sizeof(T));      
-    // }
-
-    // template<class T>
-    // void store(T t)
-    // {
-    //   if (data != NULL) free(data);
-    //   sz = sizeof(T);
-    //   data = malloc(sz);
-    //   assert(data != NULL);
-    //   memcpy(data, &t, sizeof(T));      
-    // }
 
     inline void store(void *val, size_t val_sz)
     {

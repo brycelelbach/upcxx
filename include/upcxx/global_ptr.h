@@ -46,10 +46,12 @@ namespace upcxx
 #endif
     }
 
+    /*
     base_ptr(const place_t &pla, T *ptr) 
     {
       base_ptr(ptr, pla);
     }
+    */
 
     place_t where() const
     {

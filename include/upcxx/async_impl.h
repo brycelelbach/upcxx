@@ -8,8 +8,8 @@
 
 #include "gasnet_api.h"
 #include "event.h"
-#include "future.h"
 #ifdef UPCXX_HAVE_CXX11
+#include "future.h"
 #include <type_traits> 
 #else
 #include "async_templates.h"
