@@ -58,8 +58,8 @@ int test_bcast(const team &t, size_t count)
   dst = allocate<T>(myrank(), count);
 
 #ifdef DEBUG
-  cerr << global_myrank() << " scr: " << src << "\n";
-  cerr << global_myrank() << " dst: " << dst << "\n";
+  std::cerr << global_myrank() << " scr: " << src << "\n";
+  std::cerr << global_myrank() << " dst: " << dst << "\n";
 #endif
 
   t.barrier();

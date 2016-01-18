@@ -314,6 +314,7 @@ namespace upcxx
             global_myrank(), src);
 #endif
 
+#ifdef UPCXX_HAVE_CXX11
     if (am->fu_ptr != NULL) {
       future_storage_t *fs = ((future<void> *)am->fu_ptr)->ptr();
 #ifdef UPCXX_DEBUG
@@ -326,6 +327,7 @@ namespace upcxx
       }
       fs->ready = true;
     }
+#endif
 
     if (am->ack_event != NULL) {
       am->ack_event->decref();
@@ -359,22 +361,23 @@ namespace upcxx
       cerr << *task << "\n";
 #endif
 
+      async_done_am_t reply_am;
+
+#ifdef UPCXX_HAVE_CXX11
       // execute the async task
       future_storage_t *rv_fs;
       if (task->_fp) {
         rv_fs = (future_storage_t*)(*task->_fp)(task->_args);
       }
 
-      async_done_am_t reply_am;
-
       if (rv_fs != NULL) {
         if (task->_caller == global_myrank()) {
 #ifdef UPCXX_DEBUG
         printf("Rank %u begins processing local future...\n", myrank());
         std::cout << *(future<void>*)task->_fu_ptr << "\n";
-#endif          
+#endif
           if (task->_fu_ptr != NULL) {
-            memcpy(((future<void> *)task->_fu_ptr)->ptr(), rv_fs, sizeof(future_storage_t));            
+            memcpy(((future<void> *)task->_fu_ptr)->ptr(), rv_fs, sizeof(future_storage_t));
           }
           ((future<void> *)task->_fu_ptr)->ptr()->ready = true;
           free(rv_fs); // be careful, we used "new" to allocate it but we don't want to call the destructor here
@@ -384,17 +387,19 @@ namespace upcxx
         printf("Rank %u begins processing remote future...\n", myrank());
         std::cout << *rv_fs;
         std::cout << "Remote future " << task->_fu_ptr << "\n";
-#endif          
+#endif
           reply_am.init(task->_ack, task->_fu_ptr, rv_fs->sz, rv_fs->data);
         }
-      } else {
-        reply_am.init(task->_ack, NULL, 0, NULL);   
+      } else
+#endif // end of UPCXX_HAVE_CXX11
+      {
+        reply_am.init(task->_ack, NULL, 0, NULL);
       }
 
 #ifdef UPCXX_DEBUG
         printf("Rank %u after processing future...\n", myrank());
 #endif
-      
+
       if (task->_ack != NULL) {
         if (task->_caller == global_myrank()) {
           // local event acknowledgment
@@ -481,7 +486,7 @@ namespace upcxx
         event *e = (*it);
         assert(e != NULL);
 #ifdef UPCXX_DEBUG2
-        fprintf(stderr, "P %u: Number of outstanding_events %lu, Advance event: %p\n", 
+        fprintf(stderr, "P %u: Number of outstanding_events %lu, Advance event: %p\n",
                 global_myrank(), outstanding_events->size(), e);
 #endif
         if (e->_async_try()) break;

@@ -273,7 +273,7 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
 
   // assume circular boundary which is simpler
   for (int l=0; l<total_levels; l++) {
-#if DEBUG
+#ifdef DEBUG
     printf("Rank %u starts level %d of %d\n", myrank(), l, total_levels);
 #endif
 
@@ -334,7 +334,7 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
     }
 
     // proceed to the next level
-#if DEBUG
+#ifdef DEBUG
     printf("Rank %u finished level %d\n", myrank(), l);
 #endif
   } // end of for l loop
