@@ -7,12 +7,14 @@
 #include "gasnet_api.h"
 #include "allocate.h"
 
+// #define UPCXX_DEBUG
+
 namespace upcxx
 {
   // **************************************************************************
-  // Implement global address space shared variable template  
+  // Implement global address space shared variable template
   // **************************************************************************
-  
+
   extern std::vector<void *> *pending_shared_var_inits;
 
   /**
@@ -27,7 +29,7 @@ namespace upcxx
    * system doesn't have a general mechanism to perform deep copy
    * across nodes.
    *
-   * Example usage: 
+   * Example usage:
    *   shared_var<int> x=123;
    *
    *   void foo() { // can be executed on any cpu place
@@ -55,7 +57,7 @@ namespace upcxx
         enqueue_init();
       }
     }
-      
+
     inline shared_var(const T &val) : _type_size(sizeof(T)), _val(val)
     {
       if (upcxx::is_init()) {
@@ -79,6 +81,10 @@ namespace upcxx
     // init is a collective operation
     inline void init(rank_t where=0)
     {
+#ifdef UPCXX_DEBUG
+      std::cerr << "shared_var.init() " << myrank() << ": where " << where
+                << " _type_size " << _type_size << "\n";
+#endif
       // allocate the data space in bytes
       if (myrank() == where) {
         _ptr = allocate(where, _type_size);
@@ -90,9 +96,14 @@ namespace upcxx
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
         advance(); // need to keep polling the task queue while waiting
       }
-      assert(_ptr != NULL);
 #ifdef UPCXX_DEBUG
-      std::cout << myrank() << ": _ptr " << _ptr << "\n";
+      std::cerr << "shared_var.init() " << myrank() << ": _ptr " << _ptr << std::endl;
+#endif
+
+#ifdef UPCXX_HAVE_CXX11
+      assert(_ptr != nullptr);
+#else
+      assert(_ptr.raw_ptr() != NULL);
 #endif
     }
 
@@ -110,14 +121,14 @@ namespace upcxx
       copy<T>(_ptr, &_val, 1);
       return _val;
     }
-    
+
     void put(const T &val)
     {
       _val = val;
       // gasnet_put(0, (char *)shared_var_addr+_my_offset, &_val, sizeof(T));
       copy<T>(&_val, _ptr, 1);
     }
-      
+
     shared_var<T>& operator =(const T &val)
     {
       put(val);
@@ -156,7 +167,7 @@ namespace upcxx
 
     //////
 
-    // copy assignment 
+    // copy assignment
     shared_var<T>& operator =(shared_var<T> &g)
     {
       if (this != &g) {
@@ -164,10 +175,10 @@ namespace upcxx
       }
       return *this;
     }
-        
+
     // type conversion operator
-    operator T() 
-    { 
+    operator T()
+    {
       return get();
     }
 
@@ -177,7 +188,7 @@ namespace upcxx
     }
 
     inline size_t type_size() { return _type_size; }
-    
+
   }; // struct shared_var
 
   static inline void run_pending_shared_var_inits()
@@ -203,4 +214,3 @@ namespace upcxx
     }
   }
 } // namespace upcxx
-

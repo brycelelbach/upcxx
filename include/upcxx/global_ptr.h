@@ -293,9 +293,9 @@ namespace upcxx
   };
 
   template<typename T>
-  std::ostream& operator<<(std::ostream& out, global_ptr<T> ptr)
+  std::ostream& operator<<(std::ostream& out, const global_ptr<T>& ptr)
   {
-    return out << "{ " << ptr.where() << " addr: " << ptr.raw_ptr() << " }";
+    return out << "{ where: " << ptr.where() << " raw_ptr: " << (void *)ptr.raw_ptr() << " }";
   }
 
   int remote_inc(global_ptr<long> ptr);

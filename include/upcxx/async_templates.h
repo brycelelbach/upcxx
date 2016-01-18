@@ -351,120 +351,131 @@ namespace upcxx
 
 
   template<typename Function>
-  void async_wrapper0(void *args)
+  void* async_wrapper0(void *args)
   {
     generic_arg0<Function> *a =
       (generic_arg0<Function> *)args;
 
     a->kernel();
+    return NULL;
   }
 
   template<typename Function, typename T1>
-  void async_wrapper1(void *args)
+  void* async_wrapper1(void *args)
   {
     generic_arg1<Function, T1> *a =
       (generic_arg1<Function, T1> *)args;
 
     a->kernel(a->arg1);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2>
-  void async_wrapper2(void *args)
+  void* async_wrapper2(void *args)
   {
     generic_arg2<Function, T1, T2> *a =
       (generic_arg2<Function, T1, T2> *)args;
 
     a->kernel(a->arg1, a->arg2);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3>
-  void async_wrapper3(void *args)
+  void* async_wrapper3(void *args)
   {
     generic_arg3<Function, T1, T2, T3> *a =
       (generic_arg3<Function, T1, T2, T3> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4>
-  void async_wrapper4(void *args)
+  void* async_wrapper4(void *args)
   {
     generic_arg4<Function, T1, T2, T3, T4> *a =
       (generic_arg4<Function, T1, T2, T3, T4> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5>
-  void async_wrapper5(void *args)
+  void* async_wrapper5(void *args)
   {
     generic_arg5<Function, T1, T2, T3, T4, T5> *a =
       (generic_arg5<Function, T1, T2, T3, T4, T5> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6>
-  void async_wrapper6(void *args)
+  void* async_wrapper6(void *args)
   {
     generic_arg6<Function, T1, T2, T3, T4, T5, T6> *a =
       (generic_arg6<Function, T1, T2, T3, T4, T5, T6> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7>
-  void async_wrapper7(void *args)
+  void* async_wrapper7(void *args)
   {
     generic_arg7<Function, T1, T2, T3, T4, T5, T6, T7> *a =
       (generic_arg7<Function, T1, T2, T3, T4, T5, T6, T7> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8>
-  void async_wrapper8(void *args)
+  void* async_wrapper8(void *args)
   {
     generic_arg8<Function, T1, T2, T3, T4, T5, T6, T7, T8> *a =
       (generic_arg8<Function, T1, T2, T3, T4, T5, T6, T7, T8> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9>
-  void async_wrapper9(void *args)
+  void* async_wrapper9(void *args)
   {
     generic_arg9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9> *a =
       (generic_arg9<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10>
-  void async_wrapper10(void *args)
+  void* async_wrapper10(void *args)
   {
     generic_arg10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> *a =
       (generic_arg10<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> *)args;
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11>
-  void async_wrapper11(void *args)
+  void* async_wrapper11(void *args)
   {
     generic_arg11<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> *a =
       (generic_arg11<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10,
@@ -472,12 +483,13 @@ namespace upcxx
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11, typename T12>
-  void async_wrapper12(void *args)
+  void* async_wrapper12(void *args)
   {
     generic_arg12<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,
         T12> *a =
@@ -486,12 +498,13 @@ namespace upcxx
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11, typename T12, typename T13>
-  void async_wrapper13(void *args)
+  void* async_wrapper13(void *args)
   {
     generic_arg13<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
         T13> *a =
@@ -500,13 +513,14 @@ namespace upcxx
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11, typename T12, typename T13,
       typename T14>
-  void async_wrapper14(void *args)
+  void* async_wrapper14(void *args)
   {
     generic_arg14<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
         T13, T14> *a =
@@ -515,13 +529,14 @@ namespace upcxx
 
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11, typename T12, typename T13,
       typename T14, typename T15>
-  void async_wrapper15(void *args)
+  void* async_wrapper15(void *args)
   {
     generic_arg15<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
         T13, T14, T15> *a =
@@ -531,13 +546,14 @@ namespace upcxx
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14,
         a->arg15);
+    return NULL;
   }
 
   template<typename Function, typename T1, typename T2, typename T3,
       typename T4, typename T5, typename T6, typename T7, typename T8,
       typename T9, typename T10, typename T11, typename T12, typename T13,
       typename T14, typename T15, typename T16>
-  void async_wrapper16(void *args)
+  void* async_wrapper16(void *args)
   {
     generic_arg16<Function, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12,
         T13, T14, T15, T16> *a =
@@ -547,6 +563,7 @@ namespace upcxx
     a->kernel(a->arg1, a->arg2, a->arg3, a->arg4, a->arg5, a->arg6, a->arg7,
         a->arg8, a->arg9, a->arg10, a->arg11, a->arg12, a->arg13, a->arg14,
         a->arg15, a->arg16);
+    return NULL;
   }
 
 } // end of namespace upcxx

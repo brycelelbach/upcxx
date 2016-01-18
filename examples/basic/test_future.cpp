@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 {
   upcxx::init(&argc, &argv);
 
+#ifdef UPCXX_HAVE_CXX11
   if (myrank() == 0) {
 
     upcxx::future<int> *all_futures = new upcxx::future<int> [ranks()];
@@ -51,7 +52,17 @@ int main(int argc, char **argv)
 
     delete [] all_futures;
   }
+#else
+  if (myrank() == 0) {
+    printf("The future feature requires C++11 support but the current UPC++ installation doesn't have it.\n");
+    printf("Please reconfigure UPC++ with a C++11 compiler.\n");
+  }
+#endif
 
+  if (myrank() == 0) {
+    printf("test_future passed!\n");
+  }
+  
   upcxx::finalize();
   return 0;
 }
