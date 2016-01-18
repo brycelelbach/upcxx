@@ -286,7 +286,7 @@ namespace upcxx
     }
     
     /* launch a general kernel */
-    void launch(generic_fp fp, void *async_args, size_t arg_sz, void *fu_ptr=NULL);
+    void launch(generic_fp fp, void *async_args, size_t arg_sz, void *fu_ptr);
     
 #ifndef UPCXX_HAVE_CXX11
 # include "async_impl_templates2.h"

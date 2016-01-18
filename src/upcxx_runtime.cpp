@@ -102,6 +102,8 @@ namespace upcxx
   queue_t *out_task_queue = NULL;
   event *system_event;
   bool init_flag = false;  //  equals 1 if the backend is initialized
+  bool init_gasnet_flag = false;
+  size_t requested_gasnet_segment_size = 0;
   std::list<event*> *outstanding_events;
   std::vector<void *> *pending_shared_var_inits;
 
@@ -112,6 +114,57 @@ namespace upcxx
   int env_use_dmapp;
 
   std::vector<void*> *pending_array_inits = NULL;
+
+  inline int init_gasnet(int *pargc, char ***pargv)
+  {
+    static upcxx_mutex_t init_lock = UPCXX_MUTEX_INITIALIZER;
+    upcxx_mutex_lock(&init_lock);
+
+    if (init_gasnet_flag) {
+      upcxx_mutex_unlock(&init_lock);
+      return UPCXX_SUCCESS;
+    }
+
+#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
+    gasnet_init(NULL, NULL);
+#else
+    if (pargc != NULL && pargv != NULL) {
+      gasnet_init(pargc, pargv);
+    } else {
+      int dummy_argc = 1;
+      char *dummy_argv = new char[6]; // "upcxx"
+      char **p_dummy_argv = &dummy_argv;
+      gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
+    }
+#endif
+
+    _global_ranks = gasnet_nodes();
+    _global_myrank = gasnet_mynode();
+
+
+    init_gasnet_flag = true;
+    upcxx_mutex_unlock(&init_lock);
+    return UPCXX_SUCCESS;
+  }
+
+  int request_my_global_memory_size(size_t request_size)
+  {
+    if (!init_gasnet_flag) {
+      init_gasnet(NULL, NULL);
+    }
+
+    if (request_size > gasnet_getMaxLocalSegmentSize()) {
+      std::cerr << "Warning: The application is trying to request "
+          << request_size << " bytes of global memory on rank "
+          << global_myrank() << " but only " << gasnet_getMaxLocalSegmentSize()
+          << " bytes are available!\n";
+      return UPCXX_ERROR;
+    }
+
+    requested_gasnet_segment_size = request_size;
+
+    return UPCXX_SUCCESS;
+  }
 
   int init(int *pargc, char ***pargv)
   {
@@ -134,24 +187,17 @@ namespace upcxx
     cerr << "gasnet_init()\n";
 #endif
 
-#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
-    gasnet_init(NULL, NULL); // init gasnet
-#else
-    if (pargc != NULL && pargv != NULL) {
-      gasnet_init(pargc, pargv); // init gasnet
-    } else {
-      int dummy_argc = 1;
-      char *dummy_argv = new char[6]; // "upcxx"
-      char **p_dummy_argv = &dummy_argv;
-      gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
-    }
-#endif
+    // Init gasnet in case it'not yet done
+    init_gasnet(pargc, pargv);
 
     // allocate UPC++ internal global variable before anything else
     _team_stack = new std::vector<team *>;
     system_event = new event;
     outstanding_events = new std::list<event *>;
     events = new event_stack;
+
+    if (requested_gasnet_segment_size == 0)
+      requested_gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
 
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
@@ -160,7 +206,7 @@ namespace upcxx
                       GASNET_CHECK_RV(
                                       gasnet_attach(AMtable,
                                                     sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
-                                                    gasnet_getMaxLocalSegmentSize(),
+                                                    requested_gasnet_segment_size,
                                                     0)));
 
     // The following collectives initialization only works with SEG build
@@ -171,8 +217,6 @@ namespace upcxx
 #endif
     init_collectives();
 
-    _global_ranks = gasnet_nodes();
-    _global_myrank = gasnet_mynode();
 
     // Get gasnet_nodeinfo for PSHM support
     all_gasnet_nodeinfo
