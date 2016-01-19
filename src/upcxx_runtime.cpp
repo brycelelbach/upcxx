@@ -115,13 +115,13 @@ namespace upcxx
 
   std::vector<void*> *pending_array_inits = NULL;
 
-  inline int init_gasnet(int *pargc, char ***pargv)
+  static inline int init_gasnet(int *pargc=NULL, char ***pargv=NULL)
   {
-    static upcxx_mutex_t init_lock = UPCXX_MUTEX_INITIALIZER;
-    upcxx_mutex_lock(&init_lock);
+    static upcxx_mutex_t init_gasnet_lock = UPCXX_MUTEX_INITIALIZER;
+    upcxx_mutex_lock(&init_gasnet_lock);
 
     if (init_gasnet_flag) {
-      upcxx_mutex_unlock(&init_lock);
+      upcxx_mutex_unlock(&init_gasnet_lock);
       return UPCXX_SUCCESS;
     }
 
@@ -141,13 +141,36 @@ namespace upcxx
     _global_ranks = gasnet_nodes();
     _global_myrank = gasnet_mynode();
 
-
     init_gasnet_flag = true;
-    upcxx_mutex_unlock(&init_lock);
+    upcxx_mutex_unlock(&init_gasnet_lock);
     return UPCXX_SUCCESS;
   }
 
-  int request_my_global_memory_size(size_t request_size)
+  static inline void init_gasnet_seg_mspace()
+  {
+    all_gasnet_seginfo =
+        (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
+    assert(all_gasnet_seginfo != NULL);
+
+    int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());
+    assert(rv == GASNET_OK);
+
+    my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
+
+    _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
+                                             my_gasnet_seginfo->size, 1);
+    assert(_gasnet_mspace != 0);
+
+    // Set the mspace limit to the gasnet segment size so it won't go outside.
+    mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
+  }
+
+  size_t query_my_max_global_memory_size()
+  {
+    return gasnet_getMaxLocalSegmentSize();
+  }
+
+  size_t request_my_global_memory_size(size_t request_size)
   {
     if (!init_gasnet_flag) {
       init_gasnet(NULL, NULL);
@@ -158,12 +181,27 @@ namespace upcxx
           << request_size << " bytes of global memory on rank "
           << global_myrank() << " but only " << gasnet_getMaxLocalSegmentSize()
           << " bytes are available!\n";
-      return UPCXX_ERROR;
+      requested_gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
+    } else {
+      requested_gasnet_segment_size = request_size;
     }
 
-    requested_gasnet_segment_size = request_size;
+    return requested_gasnet_segment_size;
+  }
 
-    return UPCXX_SUCCESS;
+  // Return the size of the global memory partition for rank
+  size_t query_global_memory_size(uint32_t rank)
+  {
+    if (all_gasnet_seginfo == NULL) {
+      std::cerr << "Error: please call upcxx::init before calling query_global_memory_size.\n";
+      return 0;
+    }
+    if (rank > global_ranks()) {
+      std::cerr << "Error: query_global_memory_size's argument rank (" << rank
+                << ")should be less than the maximum rank " << global_ranks() << ".\n";
+      return 0;
+    }
+    return all_gasnet_seginfo[rank].size;
   }
 
   int init(int *pargc, char ***pargv)
@@ -208,6 +246,8 @@ namespace upcxx
                                                     sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
                                                     requested_gasnet_segment_size,
                                                     0)));
+
+    init_gasnet_seg_mspace();
 
     // The following collectives initialization only works with SEG build
     // \TODO: add support for the PAR-SYNC build
@@ -302,13 +342,17 @@ namespace upcxx
 
   uint32_t global_ranks()
   {
-    assert(init_flag == true);
+    if (init_gasnet_flag == false)
+      init_gasnet();
+
     return _global_ranks;
   }
 
   uint32_t global_myrank()
   {
-    assert(init_flag == true);
+    if(init_gasnet_flag == false)
+      init_gasnet();
+
     return _global_myrank;
   }
 
@@ -609,14 +653,9 @@ namespace upcxx
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment)
   {
     upcxx_mutex_lock(&upcxxi_mutex_for_memory);
-
-    if (_gasnet_mspace== 0) {
-      init_gasnet_seg_mspace();
-    }
+    assert(_gasnet_mspace != 0);
     void *m = mspace_memalign(_gasnet_mspace, alignment, nbytes);
-
     upcxx_mutex_unlock(&upcxxi_mutex_for_memory);
-
     return m;
   }
 

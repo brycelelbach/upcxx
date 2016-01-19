@@ -37,7 +37,7 @@ namespace upcxx
    *
    * \see hello.cpp
    */
-  int init(int *argc, char ***argv);
+  int init(int *argc=NULL, char ***argv=NULL);
 
   /**
    * \ingroup initgroup
@@ -113,6 +113,13 @@ namespace upcxx
    * Barrier synchronization of all nodes
    */
   int barrier();
+
+  size_t query_my_max_global_memory_size();
+
+  size_t request_my_global_memory_size(size_t request_size);
+
+  size_t query_global_memory_size(uint32_t rank);
+
 } // namespace upcxx
 
 #if defined(GASNET_PAR)

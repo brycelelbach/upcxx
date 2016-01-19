@@ -113,26 +113,6 @@ namespace upcxx
   extern int env_use_am_for_copy_and_set; // defined in upcxx_runtime.cpp
   extern int env_use_dmapp; // defined in upcxx_runtime.cpp
 
-
-  static inline void init_gasnet_seg_mspace()
-  {
-    all_gasnet_seginfo =
-      (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
-    assert(all_gasnet_seginfo != NULL);
-
-    int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());
-    assert(rv == GASNET_OK);
-
-    my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
-
-    _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
-                                             my_gasnet_seginfo->size, 1);
-    assert(_gasnet_mspace != 0);
-
-    // Set the mspace limit to the gasnet segment size so it won't go outside.
-    mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
-  }
-
   void gasnet_seg_free(void *p);
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment);
   void *gasnet_seg_alloc(size_t nbytes);
