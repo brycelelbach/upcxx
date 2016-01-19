@@ -30,18 +30,17 @@ int main(int argc, char **argv)
       printf("Rank %u global_memory_size %lu bytes.\n",
              i, global_memory_size_on_rank(i));
       // each rank allocates a multiple of 32MB space (4M doubles)
-      size_t count = ((i%8)+1) * 8*1024*1024;
+      size_t count = ((i%8)+1) * 6*1024*1024;
       ptrs[i] = allocate<double>(i, count);
 #ifdef UPCXX_HAVE_CXX11
       if (ptrs[i] == nullptr) {
+#else
+      if (ptrs[i].raw_ptr() == NULL) {
+#endif
         std::cout << "Failed to allocate " << count*sizeof(double)
                   << " bytes of data on rank " << myrank() << "!\n";
+        exit(1);
       }
-      assert(ptrs[i] != nullptr);
-      assert(ptrs[i].raw_ptr() != NULL);
-#else
-      assert(ptrs[i].raw_ptr() != NULL);
-#endif
       std::cout << "ptrs[" << i << "] " << ptrs[i] << std::endl;
     }
   }

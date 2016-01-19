@@ -2,18 +2,11 @@
  * UPC++ runtime interface
  */
 
-
 /**
  * \section intro Introduction
  */
 
-#ifndef UPCXX_RUNTIME_H_
-#define UPCXX_RUNTIME_H_
-
-#include <cstring>
-#include <cassert>
-#include <ios>
-// #include <stdint.h>
+#pragma once
 
 #include "upcxx_types.h"
 #include "queue.h"
@@ -46,10 +39,25 @@ namespace upcxx
    */
   int finalize();
 
+  /**
+   * \ingroup initgroup
+   *
+   * @return true if upcxx is initialized or false otherwise
+   */
   bool is_init();
 
+  /**
+   * \ingroup initgroup
+   *
+   * @return the total number of ranks in the whole parallel job
+   */
   rank_t global_ranks();
 
+  /**
+   * \ingroup initgroup
+   *
+   * @return my rank id in the whole parallel job
+   */
   rank_t global_myrank();
 
   extern queue_t *in_task_queue;
@@ -110,16 +118,16 @@ namespace upcxx
 
   /**
    * \ingroup syncgroup
-   * Barrier synchronization of all nodes
+   * Barrier synchronization of all ranks in the parallel job
    */
   int barrier();
 
   /**
    * \ingroup initgroup
    * Query the estimated maximum size of my global memory partition.
-   * This function can be used before upcxx::init() to help determine
+   * This function can be used before init() to help determine
    * the value for request_my_global_memory_size().
-   * After upcxx::init() is called, it's recommended to use
+   * After init() is called, it's recommended to use
    * my_usable_global_memory_size() to query the actual available global
    * memory size.
    *
@@ -130,7 +138,7 @@ namespace upcxx
   /**
    * \ingroup initgroup
    * Query the current usable size of my global memory partition.
-   * This function should be used after upcxx::init().
+   * This function should be used after init().
    * Note that the usable size of global memory changes at runtime as
    * the user and the system allocate and deallocate global memory.
    * Due to memory fragmentation, it may not be possible to allocate a
@@ -140,8 +148,25 @@ namespace upcxx
    */
   size_t my_usable_global_memory_size();
 
+  /**
+   * \ingroup initgroup
+   * Try to request the size of my global memory partition.
+   * If this is not set, UPC++ will use the maximum size of global memory
+   * supported by the system.
+   * request_my_global_memory_size() should be called before init().
+   *
+   * @param request_size the desirable size of global memory of the calling rank
+   * @return the actual global memory size that can be reserved, which may be smaller than the request_size
+   */
   size_t request_my_global_memory_size(size_t request_size);
 
+  /**
+   * ingroup initgroup
+   * Query the global memory size of a specific rank
+   *
+   * @param rank which rank of the global memory partition to query
+   * @return the size of the global memory partition on that rank
+   */
   size_t global_memory_size_on_rank(uint32_t rank);
 
 } // namespace upcxx
@@ -200,4 +225,3 @@ namespace upcxx {
     UPCXX_CALL_GASNET(gasnet_barrier_wait(0, GASNET_BARRIERFLAG_UNNAMED));  \
   } while (0)
 
-#endif /* UPCXX_RUNTIME_H_ */
