@@ -104,6 +104,7 @@ namespace upcxx
   bool init_flag = false;  //  equals 1 if the backend is initialized
   bool init_gasnet_flag = false;
   size_t requested_gasnet_segment_size = 0;
+  const size_t reserved_gasnet_segment_size = 4*1024*1024;
   std::list<event*> *outstanding_events;
   std::vector<void *> *pending_shared_var_inits;
 
@@ -165,9 +166,22 @@ namespace upcxx
     mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
   }
 
-  size_t query_my_max_global_memory_size()
+  size_t my_max_global_memory_size()
   {
-    return gasnet_getMaxLocalSegmentSize();
+    if (!init_gasnet_flag) {
+      init_gasnet(NULL, NULL);
+    }
+
+    return gasnet_getMaxLocalSegmentSize() - reserved_gasnet_segment_size;
+  }
+
+  size_t my_usable_global_memory_size()
+  {
+    assert(_gasnet_mspace != 0);
+
+    struct mallinfo minfo = mspace_mallinfo(_gasnet_mspace);
+    // return (minfo.fordblks > requested_gasnet_segment_size) ? requested_gasnet_segment_size : minfo.fordblks;
+    return (minfo.fordblks < reserved_gasnet_segment_size) ? 0: (minfo.fordblks - reserved_gasnet_segment_size);
   }
 
   size_t request_my_global_memory_size(size_t request_size)
@@ -176,12 +190,14 @@ namespace upcxx
       init_gasnet(NULL, NULL);
     }
 
-    if (request_size > gasnet_getMaxLocalSegmentSize()) {
+    size_t max_gasnet_segment_size_for_user = gasnet_getMaxLocalSegmentSize() - reserved_gasnet_segment_size;
+    if (request_size > max_gasnet_segment_size_for_user) {
       std::cerr << "Warning: The application is trying to request "
           << request_size << " bytes of global memory on rank "
-          << global_myrank() << " but only " << gasnet_getMaxLocalSegmentSize()
+          << global_myrank() << " but only " << max_gasnet_segment_size_for_user
           << " bytes are available!\n";
-      requested_gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
+
+      requested_gasnet_segment_size = max_gasnet_segment_size_for_user;
     } else {
       requested_gasnet_segment_size = request_size;
     }
@@ -190,18 +206,18 @@ namespace upcxx
   }
 
   // Return the size of the global memory partition for rank
-  size_t query_global_memory_size(uint32_t rank)
+  size_t global_memory_size_on_rank(uint32_t rank)
   {
     if (all_gasnet_seginfo == NULL) {
-      std::cerr << "Error: please call upcxx::init before calling query_global_memory_size.\n";
+      std::cerr << "Error: please call upcxx::init before calling global_memory_size_on_rank.\n";
       return 0;
     }
     if (rank > global_ranks()) {
-      std::cerr << "Error: query_global_memory_size's argument rank (" << rank
+      std::cerr << "Error: global_memory_size_on_rank's argument (" << rank
                 << ")should be less than the maximum rank " << global_ranks() << ".\n";
       return 0;
     }
-    return all_gasnet_seginfo[rank].size;
+    return all_gasnet_seginfo[rank].size - reserved_gasnet_segment_size;
   }
 
   int init(int *pargc, char ***pargv)
@@ -234,8 +250,12 @@ namespace upcxx
     outstanding_events = new std::list<event *>;
     events = new event_stack;
 
-    if (requested_gasnet_segment_size == 0)
-      requested_gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
+    size_t gasnet_segment_size;
+    if (requested_gasnet_segment_size == 0) {
+      gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
+    } else {
+      gasnet_segment_size = requested_gasnet_segment_size + reserved_gasnet_segment_size;
+    }
 
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
@@ -244,7 +264,7 @@ namespace upcxx
                       GASNET_CHECK_RV(
                                       gasnet_attach(AMtable,
                                                     sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
-                                                    requested_gasnet_segment_size,
+                                                    gasnet_segment_size,
                                                     0)));
 
     init_gasnet_seg_mspace();

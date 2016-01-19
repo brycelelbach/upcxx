@@ -4,8 +4,10 @@
  */
 #include <upcxx.h>
 #include <iostream>
+#include <assert.h>
 
 using namespace upcxx;
+shared_lock output_mutex;
 
 int main(int argc, char **argv)
 {
@@ -14,23 +16,62 @@ int main(int argc, char **argv)
   request_my_global_memory_size(request_size);
   init();
 
+  output_mutex.lock();
+  std::cout << "Rank " << myrank () << " my_usable_global_memory_size after init is "
+            << my_usable_global_memory_size() << " bytes\n";
+  output_mutex.unlock();
+
+  barrier();
+
+  global_ptr<double> *ptrs;
   if (myrank() == 0) {
-    global_ptr<double> *ptrs = new global_ptr<double>[ranks()];
+    ptrs = new global_ptr<double>[ranks()];
     for (uint32_t i = 0; i < ranks(); i++) {
       printf("Rank %u global_memory_size %lu bytes.\n",
-             i, query_global_memory_size(i));
-      ptrs[i] = allocate<double>(0, ((i%8)+1) * 1024);
+             i, global_memory_size_on_rank(i));
+      // each rank allocates a multiple of 32MB space (4M doubles)
+      size_t count = ((i%8)+1) * 8*1024*1024;
+      ptrs[i] = allocate<double>(i, count);
 #ifdef UPCXX_HAVE_CXX11
-      assert(ptr[i] != nullptr);
+      if (ptrs[i] == nullptr) {
+        std::cout << "Failed to allocate " << count*sizeof(double)
+                  << " bytes of data on rank " << myrank() << "!\n";
+      }
+      assert(ptrs[i] != nullptr);
+      assert(ptrs[i].raw_ptr() != NULL);
 #else
-      assert(ptr[i].raw_ptr() != NULL);
+      assert(ptrs[i].raw_ptr() != NULL);
 #endif
+      std::cout << "ptrs[" << i << "] " << ptrs[i] << std::endl;
+    }
+  }
+
+  barrier();
+
+  output_mutex.lock();
+  std::cout << "Rank " << myrank () << " my_usable_global_memory_size after allocate is "
+            << my_usable_global_memory_size() << " bytes\n";
+  output_mutex.unlock();
+
+  barrier();
+
+  if (myrank() == 0) {
+    for (uint32_t i = 0; i < ranks(); i++) {
+
       deallocate(ptrs[i]);
     }
     delete [] ptrs;
   }
 
   barrier();
+
+  output_mutex.lock();
+  std::cout << "Rank " << myrank () << " my_usable_global_memory_size after deallocate is "
+              << my_usable_global_memory_size() << " bytes\n";
+  output_mutex.unlock();
+
+  barrier();
+
   if (myrank() == 0) {
     printf("test_asymmetric_partition passed!\n");
   }

@@ -114,11 +114,35 @@ namespace upcxx
    */
   int barrier();
 
-  size_t query_my_max_global_memory_size();
+  /**
+   * \ingroup initgroup
+   * Query the estimated maximum size of my global memory partition.
+   * This function can be used before upcxx::init() to help determine
+   * the value for request_my_global_memory_size().
+   * After upcxx::init() is called, it's recommended to use
+   * my_usable_global_memory_size() to query the actual available global
+   * memory size.
+   *
+   * @return the maximum size of my global memory partition in bytes
+   */
+  size_t my_max_global_memory_size();
+
+  /**
+   * \ingroup initgroup
+   * Query the current usable size of my global memory partition.
+   * This function should be used after upcxx::init().
+   * Note that the usable size of global memory changes at runtime as
+   * the user and the system allocate and deallocate global memory.
+   * Due to memory fragmentation, it may not be possible to allocate a
+   * contiguous chunk of memory equal to the size of current usable memory.
+   *
+   * @return the usable size of my global memory partition in bytes
+   */
+  size_t my_usable_global_memory_size();
 
   size_t request_my_global_memory_size(size_t request_size);
 
-  size_t query_global_memory_size(uint32_t rank);
+  size_t global_memory_size_on_rank(uint32_t rank);
 
 } // namespace upcxx
 

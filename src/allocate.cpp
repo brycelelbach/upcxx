@@ -13,9 +13,6 @@ namespace upcxx
 #else
       addr = malloc(nbytes);
 #endif
-      if (addr == NULL) {
-        fprintf(stderr, "Memory allocation error");
-      }
     } else {
       event e;
       e.incref();
