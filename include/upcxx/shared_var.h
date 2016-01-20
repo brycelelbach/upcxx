@@ -18,8 +18,8 @@ namespace upcxx
   extern std::vector<void *> *pending_shared_var_inits;
 
   /**
-   * \ingroup gasgroup
-   * \brief globally shared variable
+   * @ingroup gasgroup
+   * @brief globally shared variable
    *
    * shared_var variables can only be defined in the file scope
    * (not inside a function).  Global data reside on CPU place 0

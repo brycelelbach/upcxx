@@ -16,8 +16,8 @@ namespace upcxx
   extern std::vector<void*> *pending_array_inits;
 
   /**
-   * \ingroup gasgroup
-   * \brief shared 1-D array with 1-D block-cyclic distribution
+   * @ingroup gasgroup
+   * @brief shared 1-D array with 1-D block-cyclic distribution
    *
    * In the current implementation, the application needs to call
    * the init() member function for each shared array object after
@@ -85,8 +85,8 @@ namespace upcxx
      * array allocated would have undefined behavior (e.g., segmentation fault
      * due to insufficient memory allocated on some ranks).
      *
-     * \param sz total size (# of elements) of the shared array
-     * \param blk_sz the blocking factor (# of elements per block)
+     * @param sz total size (# of elements) of the shared array
+     * @param blk_sz the blocking factor (# of elements per block)
      */
     void init(size_t sz, size_t blk_sz)
     {
@@ -158,8 +158,8 @@ namespace upcxx
      * number of elements as argument whereas all_alloc takes the total number
      * of blocks as argument (similar to upc_all_alloc).
      *
-     * \param nblocks total number of blocks
-     * \param blk_sz the blocking factor (# of elements per block)
+     * @param nblocks total number of blocks
+     * @param blk_sz the blocking factor (# of elements per block)
      */
     void all_alloc(size_t nblocks, size_t blk_sz=BLK_SZ)
     {

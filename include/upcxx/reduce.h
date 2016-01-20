@@ -1,6 +1,6 @@
 /**
  * reduce.h - provides higher-level interface to reductions
- * \see collective.h for low-level reduction interface
+ * @see collective.h for low-level reduction interface
  */
 
 #pragma once

@@ -9,7 +9,7 @@
 namespace upcxx
 {
   /**
-   * \ingroup internalgroup
+   * @ingroup internalgroup
    * Internal objects for storing the values of futures
    */
   struct future_storage_t {

@@ -34,4 +34,4 @@ namespace upcxx
   }
 } // upcxx
 
-/// \endcond
+/// @endcond

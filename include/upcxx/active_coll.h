@@ -23,7 +23,7 @@ namespace upcxx
 
   /// \cond SHOW_INTERNAL
   /**
-   * \ingroup internalgroup Internal API
+   * @ingroup internalgroup Internal API
    * This group of API is intended for internal use within the UPCXX lib.
    * @{
    */
@@ -32,13 +32,13 @@ namespace upcxx
    *
    * Initiate Active Message Broadcast
    *
-   * \param [in] target the set of target nodes
-   * \param [in] ack the acknowledgment event
-   * \param [in] fp the pointer to the function to be executed
-   * \param [in] arg_sz the size of the function arguments in bytes
-   * \param [in] args the pointer to the function arguments
-   * \param [in] after the dependent event
-   * \param [in] root_index the node id of the AM bcast root
+   * @param [in] target the set of target nodes
+   * @param [in] ack the acknowledgment event
+   * @param [in] fp the pointer to the function to be executed
+   * @param [in] arg_sz the size of the function arguments in bytes
+   * @param [in] args the pointer to the function arguments
+   * @param [in] after the dependent event
+   * @param [in] root_index the node id of the AM bcast root
    */
   void am_bcast(range target,
                 event *ack,
@@ -49,6 +49,6 @@ namespace upcxx
                 int root_index);
 
    /** @} */ // end of internalgroup
-  /// \endcond
+  /// @endcond
 } // namespace upcxx
 

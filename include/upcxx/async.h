@@ -9,15 +9,16 @@
 namespace upcxx
 {
   /**
-   * \ingroup asyncgroup
+   * @ingroup asyncgroup
    *
    * Asynchronous function execution
    * Optionally signal the event "ack" for task completion
    *
-   * ~~~~~~~~~~~~~~~{.cpp}
+   * @code{.cpp}
    * async(rank_t rank, event *ack)(function, arg1, arg2, ...);
-   * ~~~~~~~~~~~~~~~
-   * \see test_async.cpp
+   * @endcode
+   *
+   * @see test_async.cpp
    *
    */
   inline gasnet_launcher<rank_t> async(rank_t rank,
@@ -27,14 +28,15 @@ namespace upcxx
   }
 
   /**
-   * \ingroup asyncgroup
+   * @ingroup asyncgroup
    *
    * Asynchronous function execution
    *
-   * ~~~~~~~~~~~~~~~{.cpp}
+   * @code{.cpp}
    * async(range ranks)(function, arg1, arg2, ...);
-   * ~~~~~~~~~~~~~~~
-   * \see test_am_bcast.cpp
+   * @endcode
+   *
+   * @see test_am_bcast.cpp
    *
    */
   inline gasnet_launcher<range> async(range r,
@@ -46,17 +48,18 @@ namespace upcxx
   }
 
   /**
-   * \ingroup asyncgroup
+   * @ingroup asyncgroup
    *
    * Conditional asynchronous function execution
    * The task will be automatically enqueued for execution after
    * the event "after" is signaled.
    * Optionally signal the event "ack" for task completion
    *
-   * ~~~~~~~~~~~~~~~{.cpp}
+   * @code{.cpp}
    * async_after(uint32_t rank, event *after, event *ack)(function, arg1, arg2, ...);
-   * ~~~~~~~~~~~~~~~
-   * \see test_async.cpp
+   * @endcode
+   *
+   * @see test_async.cpp
    *
    */
   inline gasnet_launcher<rank_t> async_after(rank_t rank, event *after,

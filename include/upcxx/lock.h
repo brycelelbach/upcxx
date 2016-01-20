@@ -21,7 +21,7 @@ namespace upcxx
    */
 
   /**
-   * \ingroup syncgroup
+   * @ingroup syncgroup
    * global address space lock implemented by active messages and local handler-safe locks.
    */
   struct  shared_lock {
@@ -70,7 +70,7 @@ namespace upcxx
     /// \cond SHOW_INTERNAL
 
     /**
-     * \return 1 if the lock is hold by the calling process
+     * @return 1 if the lock is hold by the calling process
      */
     int islocked();
 
@@ -84,7 +84,7 @@ namespace upcxx
     static void lock_reply_handler(gasnet_token_t token, void *buf, size_t nbytes);
     static void unlock_am_handler(gasnet_token_t token, void *buf, size_t nbytes);
 
-    /// \endcond
+    /// @endcond
   };
 
   struct lock_reply_t; // partial declaration of using its pointer type

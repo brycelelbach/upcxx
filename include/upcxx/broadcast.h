@@ -6,7 +6,7 @@
  * that global_type. Also implements bulk broadcasts over any array
  * that defines a local_elem_type typedef and storage_ptr() and size()
  * methods.
- * \see collective.h for low-level broadcast interface
+ * @see collective.h for low-level broadcast interface
  */
 
 #pragma once

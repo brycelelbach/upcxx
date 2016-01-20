@@ -1,8 +1,8 @@
 /**
  * interfaces_internal.h - contains internal logic for implementing
  * the UPC++ globalization and local array interfaces.
- * \see interfaces.h for user-level interfaces
- * \see broadcast.h for an example of how the interface is used
+ * @see interfaces.h for user-level interfaces
+ * @see broadcast.h for an example of how the interface is used
  */
 
 #pragma once

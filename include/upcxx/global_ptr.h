@@ -114,7 +114,7 @@ namespace upcxx
     place_t _pla;
 #endif
   }; // close of base_ptr
-  /// \endcond SHOW_INTERNAL
+  /// @endcond SHOW_INTERNAL
 
   /**
    * \defgroup gasgroup Global Address Space primitives
@@ -123,13 +123,13 @@ namespace upcxx
    */
 
   /**
-   * \ingroup gasgroup
-   * \brief Global address space pointer type
+   * @ingroup gasgroup
+   * @brief Global address space pointer type
    *
    * \tparam T element type of the data being pointed to
    * \tparam place_t the type of the location where the data resides
    *
-   * \see test_global_ptr.cpp
+   * @see test_global_ptr.cpp
    */
   template<typename T>
   class global_ptr : public base_ptr<T, rank_t>

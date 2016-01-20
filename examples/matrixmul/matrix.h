@@ -20,7 +20,7 @@ using namespace upcxx;
 namespace upcxx
 {
   /**
-   * \brief Dense Matrix (column-major storage)
+   * @brief Dense Matrix (column-major storage)
    */
   template <typename T>
   class matrix

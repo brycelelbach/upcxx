@@ -6,7 +6,7 @@
 namespace upcxx
 {
   /**
-   * \brief data structure for describing a range of integers
+   * @brief data structure for describing a range of integers
    *
    * UPC++ range is left-closed and right-open: the first (begin)
    * element is inclusive while the last (end) element is exclusive.

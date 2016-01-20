@@ -254,7 +254,7 @@ namespace upcxx
   inline size_t aux_type_size<void>() { return 0; }
   
   /**
-   * \ingroup internalgroup
+   * @ingroup internalgroup
    * ganset_launcher internal function object for storing async function
    * state for later execution
    *
@@ -305,5 +305,5 @@ namespace upcxx
 #endif
   }; // gasnet_launcher
   
-  /// \endcond
+  /// @endcond
 } // namespace upcxx
