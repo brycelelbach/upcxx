@@ -79,8 +79,16 @@ namespace upcxx
       return (_team_id == 0); // team_all has team_id 0
     }
 
-    // void create_gasnet_team();
+    /**
+     * Split a team into new teams
+     *
+     * @param color processes with the same color will be in the same team
+     * @param relrank the new rank of the calling process in the new team.  Note that it's different than the 'key' argument in MPI_Comm_split
+     * @param new_team where the new team pointer will be written for the caller to use the new team
+     * @return error value UPCXX_SUCCESS or UPCXX_ERROR
+     */
     int split(uint32_t color, uint32_t relrank, team *&new_team);
+
     int split(uint32_t color, uint32_t relrank);
     
     inline int barrier() const

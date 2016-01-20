@@ -30,7 +30,7 @@ namespace upcxx
 #define TEAM_ID_SEQ_MASK 0xFF
 
   int team::split(uint32_t color,
-                  uint32_t key,
+                  uint32_t relrank,
                   team *&new_team)
   {
     // Performs the team split operation
@@ -45,12 +45,12 @@ namespace upcxx
 
 
     gasnet_team_handle_t new_gasnet_team
-      = gasnete_coll_team_split(_gasnet_team, color, key, &scratch_seg GASNETE_THREAD_GET);
+      = gasnete_coll_team_split(_gasnet_team, color, relrank, &scratch_seg GASNETE_THREAD_GET);
     assert(new_gasnet_team != NULL);
 
     uint32_t team_sz = gasnet_coll_team_size(new_gasnet_team);
     // range r_tmp = range(0,0,0);
-    new_team = new team(this, team_sz, key, color, new_gasnet_team);
+    new_team = new team(this, team_sz, relrank, color, new_gasnet_team);
 
     assert(new_team != NULL);
 
