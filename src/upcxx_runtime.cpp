@@ -681,7 +681,7 @@ namespace upcxx
 
   void *gasnet_seg_alloc(size_t nbytes)
   {
-    return gasnet_seg_memalign(nbytes, 64);
+    return gasnet_seg_memalign(nbytes, 16);
   }
 
   // Return true if they physical memory of rank r can be shared and
