@@ -1,4 +1,4 @@
-AC_INIT([upcxx], [0.1], [yzheng@lbl.gov], [upcxx], [https://bitbucket.org/upcxx/upcxx])
+AC_INIT([upcxx], [0.1], [upcxx@googlegroups.com], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
 AM_INIT_AUTOMAKE([1.10 no-define foreign subdir-objects])
@@ -49,41 +49,64 @@ AC_ARG_WITH([gasnet],
 
 AC_LANG(C++)
 
-dnl option to disable using C++11  (default is enable auto detection)
-AC_ARG_ENABLE([cxx11],
-    AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
+dnl option to disable using C++14  (default is enable auto detection)
+AC_ARG_ENABLE([cxx14],
+    AS_HELP_STRING([--disable-cxx14], [Disable C++14 features]))
 
-AS_IF([test "x$enable_cxx11" = "xno"],
+AS_IF([test "x$enable_cxx14" = "xno"],
       [:], 
-      [ dnl Do the stuff needed for enabling C++11
-        dnl Check for C++11   
-        AX_CXX_COMPILE_STDCXX_11(noext,optional)
-        if test "$HAVE_CXX11" = 1; then
+      [ dnl Do the stuff needed for enabling C++14
+        dnl Check for C++14   
+        AX_CXX_COMPILE_STDCXX(14, noext,optional)
+        if test "$HAVE_CXX14" = 1; then
+          AC_DEFINE(UPCXX_HAVE_CXX14, 1, [define if the C++14 features are enabled])
+          AC_SUBST(UPCXX_HAVE_CXX14)
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          AC_SUBST(CXX11FLAG)
-          dnl Check for support for is_trivially_destructible
-          AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-                #include <type_traits>
-                bool test = std::is_trivially_destructible<double>::value;
-                ])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
-          AC_MSG_RESULT([$TRIVIALDESTRUCT])
-          if test "x$TRIVIALDESTRUCT" = "xyes"; then
-            AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
-          fi
-          dnl Check for support for initializer lists
-          AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-                #include <initializer_list>
-                void test(std::initializer_list<double> &ilist) {}
-                ])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
-          AC_MSG_RESULT([$INITIALIZERLIST])
-          if test "x$INITIALIZERLIST" = "xyes"; then
-            AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
-          fi
+          AC_SUBST(CXX14FLAG)
         fi
       ])
+
+
+if test "x$UPCXX_HAVE_CXX14" = "xno"; then
+  dnl option to disable using C++11  (default is enable auto detection)
+  AC_ARG_ENABLE([cxx11],
+      AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
+
+  AS_IF([test "x$enable_cxx11" = "xno"],
+        [:], 
+        [ dnl Do the stuff needed for enabling C++11
+          dnl Check for C++11   
+          AX_CXX_COMPILE_STDCXX_11(noext,optional)
+          if test "$HAVE_CXX11" = 1; then
+            AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
+            AC_SUBST(UPCXX_HAVE_CXX11)
+            AC_SUBST(CXX11FLAG)
+          fi
+        ])
+fi
+
+dnl Check for support for is_trivially_destructible
+AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+    #include <type_traits>
+    bool test = std::is_trivially_destructible<double>::value;
+  ])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
+AC_MSG_RESULT([$TRIVIALDESTRUCT])
+if test "x$TRIVIALDESTRUCT" = "xyes"; then
+  AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
+fi
+
+dnl Check for support for initializer lists
+AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+    #include <initializer_list>
+    void test(std::initializer_list<double> &ilist) {}
+  ])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
+AC_MSG_RESULT([$INITIALIZERLIST])
+if test "x$INITIALIZERLIST" = "xyes"; then
+ AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
+fi
 
 dnl Check for Clang
 AC_MSG_CHECKING([if compiling with clang])
