@@ -67,8 +67,7 @@ AS_IF([test "x$enable_cxx14" = "xno"],
         fi
       ])
 
-
-if test "x$UPCXX_HAVE_CXX14" = "xno"; then
+if test "HAVE_CXX14" != 1; then
   dnl option to disable using C++11  (default is enable auto detection)
   AC_ARG_ENABLE([cxx11],
       AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
