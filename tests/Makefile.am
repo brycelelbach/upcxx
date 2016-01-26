@@ -24,7 +24,6 @@ TESTS = \
   ../examples/basic/test_event2 \
   ../examples/basic/test_fetch_add \
   ../examples/basic/test_finish \
-  ../examples/basic/test_future \
   ../examples/basic/test_global_ptr \
   ../examples/basic/test_lock \
   ../examples/basic/test_memberof \
