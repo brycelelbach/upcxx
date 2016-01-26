@@ -25,6 +25,7 @@ AC_CONFIG_FILES([
   examples/samplesort/Makefile
   examples/spmv/Makefile
   examples/stencil/Makefile
+  tests/Makefile
 ])
 
 AC_PROG_CXX
