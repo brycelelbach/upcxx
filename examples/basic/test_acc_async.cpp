@@ -24,6 +24,11 @@ int main(int argc, char** argv)
 {
   init(&argc, &argv);
 
+  if (ranks() < 2) {
+    finalize();
+    return 0;
+  }
+  
   if (myrank() == 0) {
 
     point<2> upper_left  = PT(4,4); 

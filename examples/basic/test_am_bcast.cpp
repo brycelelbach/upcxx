@@ -50,14 +50,16 @@ int main(int argc, char **argv)
 
       upcxx::async_wait();
 
-      range odd(1, ranks(), 2);
+      if (ranks() >= 2) {
+        range odd(1, ranks(), 2);
 
-      cout << "Odd nodes: " << odd << "\n";
+        cout << "Odd nodes: " << odd << "\n";
 
-      async(odd)(print_task, 456, my_string("odd nodes"));
+        async(odd)(print_task, 456, my_string("odd nodes"));
 
-      upcxx::async_wait();
-
+        upcxx::async_wait();
+      }
+      
       range even(0, ranks(), 2);
 
       cout << "Even nodes: " << even << "\n";
