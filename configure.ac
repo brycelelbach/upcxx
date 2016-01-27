@@ -41,6 +41,10 @@ AC_ARG_WITH([gasnet],
       sed -i.BAK 's/-Wl,--whole-archive,-lhugetlbfs,--no-whole-archive/-lhugetlbfs/' $gasnet_makefile
       AC_SUBST([GASNET_MAKEFILE], ["$gasnet_makefile"])
       dnl AC_SUBST([GASNET_MAKEFILE], ["$withval"])
+      dnl AM_CONDITIONAL([UPCXX_MPI_CONDUIT], [echo $withval | grep mpi-conduit])
+      if echo $withval | grep mpi-conduit; then
+        AC_SUBST([UPCXX_TESTS_MPIRUN], ["mpirun -n 4"])
+      fi
     else    
       AC_MSG_FAILURE([Could not find GASNet Makefile.])
     fi

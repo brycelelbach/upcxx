@@ -1,5 +1,7 @@
 ## define test suite
 
+TESTS_ENVIRONMENT = @UPCXX_TESTS_MPIRUN@
+
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_TESTS = \
    ../examples/basic/test_acc_async \
