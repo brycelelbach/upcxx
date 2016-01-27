@@ -26,7 +26,7 @@ namespace upcxx
                                              size_t arg_sz,
                                              void *fu_ptr)
   {
-#if 0
+#if 1
     for (int i = 0; i < _there.count(); i++) {
       async_task task;
       task.init_async_task(global_myrank(),

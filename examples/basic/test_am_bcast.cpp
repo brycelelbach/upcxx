@@ -37,7 +37,7 @@ void print_task(int task_id, my_string arg2)
 int main(int argc, char **argv)
 {
   init(&argc, &argv);
-  for (int i = 0; i < ranks(); i++) {
+  for (int i = 1; i < ranks(); i++) {
     if (myrank() == i) {
       printf("Node %d spawns %d tasks with AM bcast...\n",
              myrank(), ranks());

@@ -1,5 +1,7 @@
 ## define test suite
 
+TESTS_ENVIRONMENT = mpirun -np 2
+
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_TESTS = \
    ../examples/basic/test_acc_async \

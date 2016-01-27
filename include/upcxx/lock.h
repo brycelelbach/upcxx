@@ -83,6 +83,7 @@ namespace upcxx
     static void lock_am_handler(gasnet_token_t token, void *buf, size_t nbytes);
     static void lock_reply_handler(gasnet_token_t token, void *buf, size_t nbytes);
     static void unlock_am_handler(gasnet_token_t token, void *buf, size_t nbytes);
+    static void unlock_reply_handler(gasnet_token_t token, void *buf, size_t nbytes);
 
     /// @endcond
   };
@@ -109,5 +110,11 @@ namespace upcxx
 
   struct unlock_am_t {
     shared_lock *lock;
+    event *cb_event;
   };
+
+  struct unlock_reply_t {
+    event *cb_event;
+  };
+
 } // namespace upcxx
