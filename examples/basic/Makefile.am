@@ -79,4 +79,4 @@ AM_LDFLAGS = \
 
 LDADD = $(top_builddir)/src/.libs/libupcxx.a $(GASNET_LIBS)
 
-test_progress_thread_LDFLAGS = -pthread
+test_progress_thread_LDFLAGS = $(GASNET_LDFLAGS) -pthread
