@@ -107,7 +107,7 @@ namespace upcxx
   size_t requested_gasnet_segment_size = 0;
   const size_t reserved_gasnet_segment_size = 4*1024*1024;
   std::list<event*> *outstanding_events;
-  std::vector<void *> *pending_shared_var_inits;
+  std::vector<void *> *pending_shared_var_inits = NULL;
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
