@@ -103,7 +103,7 @@ namespace upcxx
   event *system_event;
   bool init_flag = false;  //  equals 1 if the backend is initialized
   std::list<event*> *outstanding_events;
-  std::vector<void *> *pending_shared_var_inits;
+  std::vector<void *> *pending_shared_var_inits = NULL;
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
