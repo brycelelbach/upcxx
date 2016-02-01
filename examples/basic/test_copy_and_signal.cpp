@@ -172,8 +172,13 @@ struct SendInfo {
 
   void check()
   {
-    assert(src_ptr != NULL);
-    assert(dst_ptr != NULL);
+#if UPCXX_HAVE_CXX11
+    assert(src_ptr != nullptr);
+    assert(dst_ptr != nullptr);
+#else
+    assert(src_ptr.raw_ptr() != NULL);
+    assert(dst_ptr.raw_ptr() != NULL);
+#endif
     assert(nbytes > 0);
     assert(signal_event != NULL);
     assert(local_completion != NULL);
@@ -190,7 +195,7 @@ void pgas_send(global_ptr<void> src,
                event *signal_event,
                event *local_completion)
 {
-#ifdef DEBUG1
+#ifdef DEBUG
   std::cout << "myrank " << myrank() << " pgas_send: src " << src << " dst " << dst << " nbytes " << nbytes
             << " SeqNum " << SeqNum << " signal_event " << signal_event
             << " local_completion " << local_completion << "\n";
@@ -307,15 +312,26 @@ void test_async_copy_and_set(int count, uint32_t nrows, uint32_t ncols)
                 &my_send_event);
     }
 
-    // printf("start waiting...\n");
-    my_recv_event.wait();
-    // printf("done waiting recv\n");
-    
     /* Need to Make sure all sends are started before waiting on the event! */
-    while (num_sends < NUM_PEERS)
+    while (num_sends < NUM_PEERS) {
+      // printf("num_sends %d\n", num_sends);
       advance();
-    my_send_event.wait(); // only wait for the send have been started 
-    // printf("done waiting send\n");
+    }
+
+
+#ifdef DEBUG
+    printf("start waiting...\n");
+#endif
+
+    my_send_event.wait(); // only wait for the send have been started
+   #ifdef DEBUG
+       printf("done waiting send\n");
+   #endif
+
+    my_recv_event.wait();
+#ifdef DEBUG
+    printf("done waiting recv\n");
+#endif
 
     // All data should have arrived
     for (uint32_t peer = 0; peer < NUM_PEERS; peer++) {

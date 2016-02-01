@@ -464,6 +464,7 @@ namespace upcxx
 
       if (task == NULL) break;
       assert (task->_callee == global_myrank());
+      assert (task->_fp != NULL);
 
 #ifdef UPCXX_DEBUG
       cerr << "Rank " << global_myrank() << " is about to execute async task.\n";
@@ -475,10 +476,12 @@ namespace upcxx
 #ifdef UPCXX_HAVE_CXX11
       // execute the async task
       future_storage_t *rv_fs;
-      if (task->_fp) {
-        rv_fs = (future_storage_t*)(*task->_fp)(task->_args);
-      }
+      rv_fs = (future_storage_t*)(*task->_fp)(task->_args);
+#else
+      (*task->_fp)(task->_args);
+#endif
 
+#ifdef UPCXX_HAVE_CXX11
       if (rv_fs != NULL) {
         if (task->_caller == global_myrank()) {
 #ifdef UPCXX_DEBUG

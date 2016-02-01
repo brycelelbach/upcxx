@@ -109,7 +109,7 @@ namespace upcxx
 
     inline void enqueue_init()
     {
-      if (pending_shared_var_inits== NULL)
+      if (pending_shared_var_inits == NULL)
         pending_shared_var_inits = new std::vector<void*>;
       assert(pending_shared_var_inits!= NULL);
       pending_shared_var_inits->push_back((void *)this);
