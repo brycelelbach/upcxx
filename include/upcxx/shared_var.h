@@ -122,11 +122,15 @@ namespace upcxx
       return _val;
     }
 
-    void put(const T &val)
+    void put(const T& val)
     {
       _val = val;
-      // gasnet_put(0, (char *)shared_var_addr+_my_offset, &_val, sizeof(T));
       copy<T>(&_val, _ptr, 1);
+    }
+
+    inline void set(const T& val)
+    {
+      put(val);
     }
 
     shared_var<T>& operator =(const T &val)
