@@ -106,6 +106,46 @@ namespace upcxx
       return (raw_ptr() == NULL);
     }
 
+    bool is_local() const
+    {
+      if (this->where() == global_myrank()) {
+        return true;
+      }
+#if GASNET_PSHM
+      return is_memory_shared_with(this->where());
+#else
+      return false;
+#endif
+    }
+
+    T *localize() const
+    {
+      if (is_local())
+        return this->operator T*();
+      else
+        return this->raw_ptr();
+    }
+
+    // type casting operator for local pointers
+#ifdef UPCXX_HAVE_CXX11
+    explicit
+#endif
+    operator T*() const
+    {
+      if (this->where() == global_myrank()) {
+        // return raw_ptr if the data pointed to is on the same rank
+        return this->raw_ptr();
+      }
+
+#if GASNET_PSHM
+      return (T*)pshm_remote_addr2local(this->where(), this->raw_ptr());
+#else
+      // return NULL if this global address can't casted to a valid
+      // local address
+      return NULL;
+#endif
+    }
+
   protected:
 #ifdef UPCXX_USE_64BIT_GLOBAL_PTR
     uint64_t _ptr;
@@ -157,46 +197,6 @@ namespace upcxx
     inline
     global_ptr(const global_ptr<T> &p)
     : base_ptr<T, rank_t>(p.raw_ptr(), p.where()) {}
-
-    // type casting operator for local pointers
-#ifdef UPCXX_HAVE_CXX11
-    explicit
-#endif
-    operator T*() const
-    {
-      if (this->where() == global_myrank()) {
-        // return raw_ptr if the data pointed to is on the same rank
-        return this->raw_ptr();
-      }
-
-#if GASNET_PSHM
-      return (T*)pshm_remote_addr2local(this->where(), this->raw_ptr());
-#else
-      // return NULL if this global address can't casted to a valid
-      // local address
-      return NULL;
-#endif
-    }
-
-    T *localize() const
-    {
-      if (is_local())
-        return this->operator T*();
-      else
-        return this->raw_ptr();
-    }
-
-    bool is_local() const
-    {
-      if (this->where() == global_myrank()) {
-        return true;
-      }
-#if GASNET_PSHM
-      return is_memory_shared_with(this->where());
-#else
-      return false;
-#endif
-    }
 
     template <typename T2>
     global_ref<T> operator [] (T2 i) const
@@ -257,26 +257,6 @@ namespace upcxx
     template<typename T2>
     inline explicit global_ptr(const global_ptr<T2> &p)
       : base_ptr<void, rank_t>(p.raw_ptr(), p.where()) {}
-
-    // type casting operator for local pointers
-#ifdef UPCXX_HAVE_CXX11
-    explicit
-#endif
-    operator void*()
-    {
-      if (this->where() == global_myrank()) {
-        // return raw_ptr if the data pointed to is on the same rank
-        return this->raw_ptr();
-      }
-      
-#if GASNET_PSHM
-      return pshm_remote_addr2local(this->where(), this->raw_ptr());
-#else
-      // return NULL if this global address can't casted to a valid
-      // local address
-      return NULL;
-#endif
-    }
 
     // type casting operator for placed pointers
     template<typename T2>
