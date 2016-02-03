@@ -90,7 +90,12 @@ namespace upcxx
       while(gasnet_coll_try_sync(h) != GASNET_OK) {
         advance(); // need to keep polling the task queue while waiting
       }
-      assert(_ptr != NULL);
+#ifdef UPCXX_HAVE_CXX11
+      assert(_ptr != nullptr);
+#else
+      assert(_ptr.raw_ptr() != NULL);
+#endif
+
 #ifdef UPCXX_DEBUG
       std::cout << myrank() << ": _ptr " << _ptr << "\n";
 #endif
