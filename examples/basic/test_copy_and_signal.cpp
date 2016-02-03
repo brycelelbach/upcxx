@@ -172,8 +172,8 @@ struct SendInfo {
 
   void check()
   {
-    assert(src_ptr != NULL);
-    assert(dst_ptr != NULL);
+    assert(src_ptr.raw_ptr() != NULL);
+    assert(dst_ptr.raw_ptr() != NULL);
     assert(nbytes > 0);
     assert(signal_event != NULL);
     assert(local_completion != NULL);
