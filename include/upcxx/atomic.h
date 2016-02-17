@@ -10,6 +10,9 @@
 #include "event.h"
 #include "global_ptr.h"
 
+#include <iostream>
+
+
 namespace upcxx
 {
   template<typename T>
@@ -111,4 +114,14 @@ namespace upcxx
 
     return old_val;
   }
+
+  inline uint64_t my_fetch_add(global_ptr<uint64_t> obj, uint64_t add_val)
+  {
+    uint64_t old_val;
+
+    old_val = gasnetX_fetchadd_u64_val(obj.where(), obj.raw_ptr(), add_val);
+
+    return old_val;
+  }
+
 } // end of upcxx
