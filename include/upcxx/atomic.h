@@ -115,6 +115,7 @@ namespace upcxx
     return old_val;
   }
 
+#if GASNETC_GNI_FETCHOP
   inline uint64_t my_fetch_add(global_ptr<uint64_t> obj, uint64_t add_val)
   {
     uint64_t old_val;
@@ -123,5 +124,5 @@ namespace upcxx
 
     return old_val;
   }
-
+#endif
 } // end of upcxx
