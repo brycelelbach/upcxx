@@ -12,9 +12,6 @@
 
 #include <iostream>
 
-//extern "C" {
-//  uint64_t gasnetX_fetchadd_u64_val(gasnet_node_t node, void *source_addr, uint64_t op);
-//}
 
 namespace upcxx
 {
@@ -121,8 +118,6 @@ namespace upcxx
   inline uint64_t my_fetch_add(global_ptr<uint64_t> obj, uint64_t add_val)
   {
     uint64_t old_val;
-
-    //std::cout << "HERE 0, " << obj.where() << ", " << obj.raw_ptr() << ", " << add_val << std::endl;
 
     old_val = gasnetX_fetchadd_u64_val(obj.where(), obj.raw_ptr(), add_val);
 
