@@ -15,6 +15,7 @@ endif
 bin_PROGRAMS = \
   hello \
   test_am_bcast \
+  test_asymmetric_partition \
   test_async \
   test_copy_closure \
   test_copy_and_signal \
@@ -23,6 +24,7 @@ bin_PROGRAMS = \
   test_event2 \
   test_fetch_add \
   test_finish \
+  test_future \
   test_global_ptr \
   test_lock \
   test_memberof \
@@ -40,6 +42,7 @@ bin_PROGRAMS = \
 hello_SOURCES = hello.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
 test_async_SOURCES = test_async.cpp
+test_asymmetric_partition_SOURCES = test_asymmetric_partition.cpp
 test_copy_closure_SOURCES = test_copy_closure.cpp
 test_copy_and_signal_SOURCES = test_copy_and_signal.cpp
 test_dynamic_finish_SOURCES = test_dynamic_finish.cpp
@@ -47,6 +50,7 @@ test_event_SOURCES = test_event.cpp
 test_event2_SOURCES = test_event2.cpp
 test_fetch_add_SOURCES = test_fetch_add.cpp
 test_finish_SOURCES = test_finish.cpp
+test_future_SOURCES = test_future.cpp
 test_global_ptr_SOURCES = test_global_ptr.cpp
 test_lock_SOURCES = test_lock.cpp
 test_memberof_SOURCES = test_memberof.cpp
@@ -78,3 +82,5 @@ AM_LDFLAGS = \
   $(GASNET_LDFLAGS) 
 
 LDADD = $(top_builddir)/src/.libs/libupcxx.a $(GASNET_LIBS)
+
+test_progress_thread_LDFLAGS = $(GASNET_LDFLAGS) -pthread

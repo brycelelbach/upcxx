@@ -30,6 +30,7 @@ upcxxinclude_HEADERS =  \
   upcxx/event.h \
   upcxx/finish.h \
   upcxx/forkjoin.h \
+  upcxx/future.h \
   upcxx/gasnet_api.h \
   upcxx/global_ptr.h \
   upcxx/global_ref.h \

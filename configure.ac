@@ -1,4 +1,4 @@
-AC_INIT([upcxx], [0.1], [yzheng@lbl.gov], [upcxx], [https://bitbucket.org/upcxx/upcxx])
+AC_INIT([upcxx], [0.1], [upcxx@googlegroups.com], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
 AM_INIT_AUTOMAKE([1.10 no-define foreign subdir-objects])
@@ -25,6 +25,7 @@ AC_CONFIG_FILES([
   examples/samplesort/Makefile
   examples/spmv/Makefile
   examples/stencil/Makefile
+  tests/Makefile
 ])
 
 AC_PROG_CXX
@@ -40,6 +41,10 @@ AC_ARG_WITH([gasnet],
       sed -i.BAK 's/-Wl,--whole-archive,-lhugetlbfs,--no-whole-archive/-lhugetlbfs/' $gasnet_makefile
       AC_SUBST([GASNET_MAKEFILE], ["$gasnet_makefile"])
       dnl AC_SUBST([GASNET_MAKEFILE], ["$withval"])
+      dnl AM_CONDITIONAL([UPCXX_MPI_CONDUIT], [echo $withval | grep mpi-conduit])
+      if echo $withval | grep mpi-conduit; then
+        AC_SUBST([UPCXX_TESTS_MPIRUN], ["mpirun -n 4"])
+      fi
     else    
       AC_MSG_FAILURE([Could not find GASNet Makefile.])
     fi
@@ -49,41 +54,63 @@ AC_ARG_WITH([gasnet],
 
 AC_LANG(C++)
 
-dnl option to disable using C++11  (default is enable auto detection)
-AC_ARG_ENABLE([cxx11],
-    AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
+dnl option to disable using C++14  (default is enable auto detection)
+AC_ARG_ENABLE([cxx14],
+    AS_HELP_STRING([--disable-cxx14], [Disable C++14 features]))
 
-AS_IF([test "x$enable_cxx11" = "xno"],
+AS_IF([test "x$enable_cxx14" = "xno"],
       [:], 
-      [ dnl Do the stuff needed for enabling C++11
-        dnl Check for C++11   
-        AX_CXX_COMPILE_STDCXX_11(noext,optional)
-        if test "$HAVE_CXX11" = 1; then
+      [ dnl Do the stuff needed for enabling C++14
+        dnl Check for C++14   
+        AX_CXX_COMPILE_STDCXX(14, noext,optional)
+        if test "$HAVE_CXX14" = 1; then
+          AC_DEFINE(UPCXX_HAVE_CXX14, 1, [define if the C++14 features are enabled])
+          AC_SUBST(UPCXX_HAVE_CXX14)
           AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
           AC_SUBST(UPCXX_HAVE_CXX11)
-          AC_SUBST(CXX11FLAG)
-          dnl Check for support for is_trivially_destructible
-          AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-                #include <type_traits>
-                bool test = std::is_trivially_destructible<double>::value;
-                ])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
-          AC_MSG_RESULT([$TRIVIALDESTRUCT])
-          if test "x$TRIVIALDESTRUCT" = "xyes"; then
-            AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
-          fi
-          dnl Check for support for initializer lists
-          AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-                #include <initializer_list>
-                void test(std::initializer_list<double> &ilist) {}
-                ])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
-          AC_MSG_RESULT([$INITIALIZERLIST])
-          if test "x$INITIALIZERLIST" = "xyes"; then
-            AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
-          fi
+          AC_SUBST(CXX14FLAG)
         fi
       ])
+
+if test "HAVE_CXX14" != 1; then
+  dnl option to disable using C++11  (default is enable auto detection)
+  AC_ARG_ENABLE([cxx11],
+      AS_HELP_STRING([--disable-cxx11], [Disable C++11 features]))
+
+  AS_IF([test "x$enable_cxx11" = "xno"],
+        [:], 
+        [ dnl Do the stuff needed for enabling C++11
+          dnl Check for C++11   
+          AX_CXX_COMPILE_STDCXX_11(noext,optional)
+          if test "$HAVE_CXX11" = 1; then
+            AC_DEFINE(UPCXX_HAVE_CXX11, 1, [define if the C++11 features are enabled])
+            AC_SUBST(UPCXX_HAVE_CXX11)
+            AC_SUBST(CXX11FLAG)
+          fi
+        ])
+fi
+
+dnl Check for support for is_trivially_destructible
+AC_MSG_CHECKING([whether $CXX supports std::is_trivially_destructible])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+    #include <type_traits>
+    bool test = std::is_trivially_destructible<double>::value;
+  ])], [TRIVIALDESTRUCT=yes], [TRIVIALDESTRUCT=no])
+AC_MSG_RESULT([$TRIVIALDESTRUCT])
+if test "x$TRIVIALDESTRUCT" = "xyes"; then
+  AC_DEFINE(UPCXX_HAVE_TRIVIALLY_DESTRUCTIBLE, 1, [define if libcxx implements std::is_trivially_destructible])
+fi
+
+dnl Check for support for initializer lists
+AC_MSG_CHECKING([whether $CXX supports std::initializer_list])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+    #include <initializer_list>
+    void test(std::initializer_list<double> &ilist) {}
+  ])], [INITIALIZERLIST=yes], [INITIALIZERLIST=no])
+AC_MSG_RESULT([$INITIALIZERLIST])
+if test "x$INITIALIZERLIST" = "xyes"; then
+ AC_DEFINE(UPCXX_HAVE_INITIALIZER_LIST, 1, [define if libcxx implements std::initializer_list])
+fi
 
 dnl Check for Clang
 AC_MSG_CHECKING([if compiling with clang])
@@ -104,7 +131,7 @@ dnl Check for GCC
 AC_MSG_CHECKING([if compiling with g++])
 AC_COMPILE_IFELSE(
 [AC_LANG_PROGRAM([], [[
-#if !defined(__GNUG__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#if !defined(__GNUG__) || defined(__INTEL_COMPILER) || defined(__clang__) || defined(__PGI)
        not g++
 #endif
 ]])], [GCC=yes], [GCC=no])
@@ -156,7 +183,6 @@ AS_IF([test "x$enable_dmapp" = "xyes"], [
 
 AM_CONDITIONAL([UPCXX_USE_DMAPP], [test "x$enable_dmapp" = "xyes"])
 
-// UPCXX_THREAD_SAFE
 dnl Option to enable UPC++ thread safety (default is disable)
 AC_ARG_ENABLE([thread-safe],
     AS_HELP_STRING([--enable-thread-safe], [Enable thread safety for the UPC++ runtime]))
@@ -168,5 +194,17 @@ AS_IF([test "x$enable_thread_safe" = "xyes"], [
 ])
 
 AM_CONDITIONAL([UPCXX_THREAD_SAFE], [test "x$enable_thread_safe" = "xyes"])
+
+dnl Option to disable 64-bit global pointer  (default is enable)
+AC_ARG_ENABLE([64bit-global-ptr],
+    AS_HELP_STRING([--enable-64bit-global-ptr], [Enable 64-bit global pointer representation]))
+
+AS_IF([test "x$enable_64bit_global_ptr" = "xyes"], [
+  dnl Do the stuff needed for enabling 64-bit global pointer representation 
+  AC_DEFINE(UPCXX_USE_64BIT_GLOBAL_PTR, 1, [define if 64-bit global pointer representation is enabled])
+  AC_SUBST(UPCXX_USE_64BIT_GLOBAL_PTR)
+])
+
+AM_CONDITIONAL([UPCXX_USE_64BIT_GLOBAL_PTR], [test "x$enable_64bit_global_ptr" = "xyes"])
 
 AC_OUTPUT

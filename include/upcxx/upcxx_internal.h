@@ -38,17 +38,17 @@ namespace upcxx
   {
     void *ptr;
   };
-  /// \endcond SHOW_INTERNAL
+  /// @endcond SHOW_INTERNAL
 
   /**
-   * \ingroup internal
+   * @ingroup internal
    * Advance the outgoing task queue by processing local tasks
    *
    * Note that some local tasks may take
    *
-   * \param max_dispatched the maximum number of tasks to be processed
+   * @param max_dispatched the maximum number of tasks to be processed
    *
-   * \return the number of tasks that have been processed
+   * @return the number of tasks that have been processed
    */
   int advance_out_task_queue(queue_t *outq, int max_dispatched);
 
@@ -58,16 +58,16 @@ namespace upcxx
   }
 
   /*
-   * \ingroup internal
+   * @ingroup internal
    * Advance the incoming task queue by sending out remote task requests
    *
    * Note that advance_out_task_queue() shouldn't be be called in
    * any GASNet AM handlers because it calls gasnet_AMPoll() and
    * may result in a deadlock.
    *
-   * \param max_dispatched the maximum number of tasks to send
+   * @param max_dispatched the maximum number of tasks to send
    *
-   * \return the number of tasks that have been sent
+   * @return the number of tasks that have been sent
    */
   int advance_in_task_queue(queue_t *inq, int max_dispatched);
 
@@ -112,26 +112,6 @@ namespace upcxx
 
   extern int env_use_am_for_copy_and_set; // defined in upcxx_runtime.cpp
   extern int env_use_dmapp; // defined in upcxx_runtime.cpp
-
-
-  static inline void init_gasnet_seg_mspace()
-  {
-    all_gasnet_seginfo =
-      (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
-    assert(all_gasnet_seginfo != NULL);
-
-    int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());
-    assert(rv == GASNET_OK);
-
-    my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
-
-    _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
-                                             my_gasnet_seginfo->size, 1);
-    assert(_gasnet_mspace != 0);
-
-    // Set the mspace limit to the gasnet segment size so it won't go outside.
-    mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
-  }
 
   void gasnet_seg_free(void *p);
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment);

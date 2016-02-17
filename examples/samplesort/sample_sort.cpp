@@ -260,7 +260,11 @@ void redistribute(uint64_t key_count)
     if (myrank() == k) {
       printf("Thread %d:\n", k);
       for (i = 0; i < MIN(64, sorted_key_counts[k]); i++) {
+#ifdef UPCXX_HAVE_CXX11
         printf("my_sorted[%d]=%llu ", i, sorted[k][i].get());
+#else
+        printf("my_sorted[%d]=%llu ", i, sorted[k].get()[i].get());
+#endif
       }
       printf("\n");
     }
@@ -440,7 +444,11 @@ int main(int argc, char **argv)
     for (t = 0; t < ranks(); t++) {
       printf("sorted_key_counts[%d] = %llu\n", t, sorted_key_counts[t].get());
       for (i = 0; i < MIN(64, sorted_key_counts[t]); i++) {
+#ifdef UPCXX_HAVE_CXX11
         printf("sorted[%d]=%llu, ", i, sorted[t][i].get());
+#else
+        printf("sorted[%d]=%llu, ", i, sorted[t].get()[i].get());
+#endif
       }
       printf("\n");
     }

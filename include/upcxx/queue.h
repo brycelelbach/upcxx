@@ -217,4 +217,4 @@ extern "C"
 } // end of extern "C"
 
 
-/// \endcond
+/// @endcond

@@ -7,6 +7,8 @@
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 
+/// #define UPCXX_DEBUG
+
 namespace upcxx
 {
   void shared_lock::lock_am_handler(gasnet_token_t token,
@@ -23,7 +25,7 @@ namespace upcxx
     if (!am->queryonly) {
       upcxx_mutex_lock(&lock->_mutex);
 #ifdef UPCXX_DEBUG
-      printf("lock_am_handler() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
+      fprintf(stderr, "lock_am_handler() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
              global_myrank(), lock, lock->_locked, lock->_holder, lock->_owner);
 #endif
 
@@ -58,7 +60,13 @@ namespace upcxx
 
     reply->rv_addr->holder = reply->rv.holder;
     reply->rv_addr->islocked = reply->rv.islocked;
+    gasnett_local_wmb();
     reply->cb_event->decref();
+
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "lock_reply_handler() rank %u, rv_addr %p, rv.holder %u,  rv.islocked %d\n",
+              global_myrank(), reply->rv_addr, reply->rv_addr->holder, reply->rv_addr->islocked);
+#endif
   }
 
   void shared_lock::unlock_am_handler(gasnet_token_t token,
@@ -82,7 +90,25 @@ namespace upcxx
     am->lock->_holder = global_myrank();
     am->lock->_locked = 0;
     upcxx_mutex_unlock(&am->lock->_mutex);
+
+    unlock_reply_t reply;
+    reply.cb_event = am->cb_event;
+    GASNET_CHECK_RV(gasnet_AMReplyMedium0(token, UNLOCK_REPLY, &reply, sizeof(reply)));
   }
+
+  void shared_lock::unlock_reply_handler(gasnet_token_t token,
+                                         void *buf,
+                                         size_t nbytes)
+  {
+
+    unlock_reply_t *reply = (unlock_reply_t *)buf;
+    assert(nbytes == sizeof(unlock_reply_t));
+    reply->cb_event->decref();
+#ifdef UPCXX_DEBUG
+    fprintf(stderr,"%u Unlock Reply handler\n", myrank());
+#endif
+  }
+
 
   int shared_lock::trylock()
   {
@@ -96,12 +122,18 @@ namespace upcxx
     am.cb_event = &e;
 
 #ifdef UPCXX_DEBUG
-    printf("trylock() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
+    fprintf(stderr, "trylock() rank %u, lock %p, _locked %d, _holder %u, _owner %u\n",
             global_myrank(), this, _locked, _holder, _owner);
 #endif
 
     GASNET_CHECK_RV(gasnet_AMRequestMedium0(get_owner(), LOCK_AM, &am, sizeof(am)));
     e.wait();
+
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "trylock() rank %u, lock %p, rv.holder %u, rv.islocked %u\n",
+            global_myrank(), this, rv.holder, rv.islocked);
+#endif
+
 
     if (rv.holder == global_myrank() && rv.islocked) {
       return 1;
@@ -113,21 +145,23 @@ namespace upcxx
   void shared_lock::lock()
   {
     GASNET_BLOCKUNTIL(trylock() == 1);
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "Rank %u gets the lock successfully.\n", myrank());
+#endif
   }
 
   void shared_lock::unlock()
   {
+    event e;
     unlock_am_t am;
     am.lock = myself;
+    e.incref();
+    am.cb_event = &e;
     GASNET_CHECK_RV(gasnet_AMRequestMedium0(get_owner(), UNLOCK_AM, &am, sizeof(am)));
-
-    // If Active Messages may be delivered out-of-order, we need
-    // to wait for a reply from the lock master node (0) before
-    // proceeding.  Otherwise, a later lock AM may fail if it is
-    // delivered to the master node ahead of a preceding unlock AM
-    // from the same source node.  We would need to add a reply
-    // event in the unlock AM struct.
-
+    e.wait();
+#ifdef UPCXX_DEBUG
+    fprintf(stderr, "Rank %u releases the lock successfully.\n", myrank());
+#endif
   }
 
   int shared_lock::islocked()

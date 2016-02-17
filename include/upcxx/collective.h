@@ -1,6 +1,6 @@
 /**
  * collective.h - provide global collective operations
- * \see team.h for team collective operations
+ * @see team.h for team collective operations
  */
 
 #pragma once

@@ -35,6 +35,7 @@ enum upcxxi_am_index_t {
   LOCK_AM,          // inter-node lock
   LOCK_REPLY,       // reply message for LOCK_AM
   UNLOCK_AM,        // inter-node unlock
+  UNLOCK_REPLY,     // reply message for UNLOCK_AM
   AM_BCAST,         // active broadcast
   AM_BCAST_REPLY,   // active broadcast reply
   INC_AM,           // remote increment

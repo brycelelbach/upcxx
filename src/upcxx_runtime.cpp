@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-// #define UPCXX_DEBUG
+//#define UPCXX_DEBUG
 
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
@@ -52,6 +52,7 @@ namespace upcxx
     {LOCK_AM,                 (void (*)())shared_lock::lock_am_handler},
     {LOCK_REPLY,              (void (*)())shared_lock::lock_reply_handler},
     {UNLOCK_AM,               (void (*)())shared_lock::unlock_am_handler},
+    {UNLOCK_REPLY,            (void (*)())shared_lock::unlock_reply_handler},
     {INC_AM,                  (void (*)())inc_am_handler},
     {FETCH_ADD_U64_AM,        (void (*)())fetch_add_am_handler<uint64_t>},
     {FETCH_ADD_U64_REPLY,     (void (*)())fetch_add_reply_handler<uint64_t>},
@@ -102,8 +103,11 @@ namespace upcxx
   queue_t *out_task_queue = NULL;
   event *system_event;
   bool init_flag = false;  //  equals 1 if the backend is initialized
+  bool init_gasnet_flag = false;
+  size_t requested_gasnet_segment_size = 0;
+  const size_t reserved_gasnet_segment_size = 4*1024*1024;
   std::list<event*> *outstanding_events;
-  std::vector<void *> *pending_shared_var_inits;
+  std::vector<void *> *pending_shared_var_inits = NULL;
 
   rank_t _global_ranks; /**< total ranks of the parallel job */
   rank_t _global_myrank; /**< my rank in the global universe */
@@ -112,6 +116,110 @@ namespace upcxx
   int env_use_dmapp;
 
   std::vector<void*> *pending_array_inits = NULL;
+
+  static inline int init_gasnet(int *pargc=NULL, char ***pargv=NULL)
+  {
+    static upcxx_mutex_t init_gasnet_lock = UPCXX_MUTEX_INITIALIZER;
+    upcxx_mutex_lock(&init_gasnet_lock);
+
+    if (init_gasnet_flag) {
+      upcxx_mutex_unlock(&init_gasnet_lock);
+      return UPCXX_SUCCESS;
+    }
+
+#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
+    gasnet_init(NULL, NULL);
+#else
+    if (pargc != NULL && pargv != NULL) {
+      gasnet_init(pargc, pargv);
+    } else {
+      int dummy_argc = 1;
+      char *dummy_argv = new char[6]; // "upcxx"
+      char **p_dummy_argv = &dummy_argv;
+      gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
+    }
+#endif
+
+    _global_ranks = gasnet_nodes();
+    _global_myrank = gasnet_mynode();
+
+    init_gasnet_flag = true;
+    upcxx_mutex_unlock(&init_gasnet_lock);
+    return UPCXX_SUCCESS;
+  }
+
+  static inline void init_gasnet_seg_mspace()
+  {
+    all_gasnet_seginfo =
+        (gasnet_seginfo_t *)malloc(sizeof(gasnet_seginfo_t) * gasnet_nodes());
+    assert(all_gasnet_seginfo != NULL);
+
+    int rv = gasnet_getSegmentInfo(all_gasnet_seginfo, gasnet_nodes());
+    assert(rv == GASNET_OK);
+
+    my_gasnet_seginfo = &all_gasnet_seginfo[gasnet_mynode()];
+
+    _gasnet_mspace = create_mspace_with_base(my_gasnet_seginfo->addr,
+                                             my_gasnet_seginfo->size, 1);
+    assert(_gasnet_mspace != 0);
+
+    // Set the mspace limit to the gasnet segment size so it won't go outside.
+    mspace_set_footprint_limit(_gasnet_mspace, my_gasnet_seginfo->size);
+  }
+
+  size_t my_max_global_memory_size()
+  {
+    if (!init_gasnet_flag) {
+      init_gasnet(NULL, NULL);
+    }
+
+    return gasnet_getMaxLocalSegmentSize() - reserved_gasnet_segment_size;
+  }
+
+  size_t my_usable_global_memory_size()
+  {
+    assert(_gasnet_mspace != 0);
+
+    struct mallinfo minfo = mspace_mallinfo(_gasnet_mspace);
+    // return (minfo.fordblks > requested_gasnet_segment_size) ? requested_gasnet_segment_size : minfo.fordblks;
+    return (minfo.fordblks < reserved_gasnet_segment_size) ? 0: (minfo.fordblks - reserved_gasnet_segment_size);
+  }
+
+  size_t request_my_global_memory_size(size_t request_size)
+  {
+    if (!init_gasnet_flag) {
+      init_gasnet(NULL, NULL);
+    }
+
+    size_t max_gasnet_segment_size_for_user = gasnet_getMaxLocalSegmentSize() - reserved_gasnet_segment_size;
+    if (request_size > max_gasnet_segment_size_for_user) {
+      std::cerr << "Warning: The application is trying to request "
+          << request_size << " bytes of global memory on rank "
+          << global_myrank() << " but only " << max_gasnet_segment_size_for_user
+          << " bytes are available!\n";
+
+      requested_gasnet_segment_size = max_gasnet_segment_size_for_user;
+    } else {
+      requested_gasnet_segment_size = request_size;
+    }
+
+    return requested_gasnet_segment_size;
+  }
+
+  // Return the size of the global memory partition for rank
+  size_t global_memory_size_on_rank(uint32_t rank)
+  {
+    if (all_gasnet_seginfo == NULL) {
+      std::cerr << "Error: please call upcxx::init before calling global_memory_size_on_rank.\n";
+      return 0;
+    }
+    if (rank > global_ranks()) {
+      std::cerr << "Error: global_memory_size_on_rank's argument (" << rank
+                << ")should be less than the maximum rank " << global_ranks() << ".\n";
+      return 0;
+    }
+    return all_gasnet_seginfo[rank].size - reserved_gasnet_segment_size;
+  }
 
   int init(int *pargc, char ***pargv)
   {
@@ -134,18 +242,8 @@ namespace upcxx
     cerr << "gasnet_init()\n";
 #endif
 
-#if (GASNET_RELEASE_VERSION_MINOR > 24 || GASNET_RELEASE_VERSION_MAJOR > 1)
-    gasnet_init(NULL, NULL); // init gasnet
-#else
-    if (pargc != NULL && pargv != NULL) {
-      gasnet_init(pargc, pargv); // init gasnet
-    } else {
-      int dummy_argc = 1;
-      char *dummy_argv = new char[6]; // "upcxx"
-      char **p_dummy_argv = &dummy_argv;
-      gasnet_init(&dummy_argc, &p_dummy_argv); // init gasnet
-    }
-#endif
+    // Init gasnet in case it'not yet done
+    init_gasnet(pargc, pargv);
 
     // allocate UPC++ internal global variable before anything else
     _team_stack = new std::vector<team *>;
@@ -153,15 +251,24 @@ namespace upcxx
     outstanding_events = new std::list<event *>;
     events = new event_stack;
 
+    size_t gasnet_segment_size;
+    if (requested_gasnet_segment_size == 0) {
+      gasnet_segment_size = gasnet_getMaxLocalSegmentSize();
+    } else {
+      gasnet_segment_size = requested_gasnet_segment_size + reserved_gasnet_segment_size;
+    }
+
 #ifdef UPCXX_DEBUG
     cerr << "gasnet_attach()\n";
 #endif
     UPCXX_CALL_GASNET(
-        GASNET_CHECK_RV(
-            gasnet_attach(AMtable,
-                          sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
-                          gasnet_getMaxLocalSegmentSize(),
-                          0)));
+                      GASNET_CHECK_RV(
+                                      gasnet_attach(AMtable,
+                                                    sizeof(AMtable)/sizeof(gasnet_handlerentry_t),
+                                                    gasnet_segment_size,
+                                                    0)));
+
+    init_gasnet_seg_mspace();
 
     // The following collectives initialization only works with SEG build
     // \TODO: add support for the PAR-SYNC build
@@ -171,8 +278,6 @@ namespace upcxx
 #endif
     init_collectives();
 
-    _global_ranks = gasnet_nodes();
-    _global_myrank = gasnet_mynode();
 
     // Get gasnet_nodeinfo for PSHM support
     all_gasnet_nodeinfo
@@ -184,11 +289,6 @@ namespace upcxx
     }
     my_gasnet_nodeinfo = &all_gasnet_nodeinfo[_global_myrank];
     my_gasnet_supernode = my_gasnet_nodeinfo->supernode;
-
-#ifdef UPCXX_DEBUG
-    fprintf(stderr, "rank %u, total_shared_var_sz %lu, shared_var_addr %p\n",
-            gasnet_mynode(), total_shared_var_sz, shared_var_addr);
-#endif
 
     // Initialize Team All
     team_all.init_global_team();
@@ -263,13 +363,17 @@ namespace upcxx
 
   uint32_t global_ranks()
   {
-    assert(init_flag == true);
+    if (init_gasnet_flag == false)
+      init_gasnet();
+
     return _global_ranks;
   }
 
   uint32_t global_myrank()
   {
-    assert(init_flag == true);
+    if(init_gasnet_flag == false)
+      init_gasnet();
+
     return _global_myrank;
   }
 
@@ -310,20 +414,35 @@ namespace upcxx
   {
     async_done_am_t *am = (async_done_am_t *)buf;
 
-    assert(nbytes == sizeof(async_done_am_t));
+    assert(nbytes == am->nbytes());
 
 #ifdef UPCXX_DEBUG
     gasnet_node_t src;
     gasnet_AMGetMsgSource(token, &src);
-    fprintf(stderr, "Rank %u receives async done from %u",
+    fprintf(stderr, "Rank %u receives async done from %u\n",
             global_myrank(), src);
+#endif
+
+#ifdef UPCXX_HAVE_CXX11
+    if (am->fu_ptr != NULL) {
+      future_storage_t *fs = ((future<void> *)am->fu_ptr)->ptr();
+#ifdef UPCXX_DEBUG
+      fprintf(stderr, "Rank %u fu_ptr %p, fs %p, fs->sz %lu, fs->data %p\n",
+              global_myrank(), am->fu_ptr, fs, fs->sz, fs->data);
+#endif
+      assert(fs != NULL);
+      if (am->fu_sz > 0) {
+        fs->store(am->future_val, am->fu_sz);
+      }
+      fs->ready = true;
+    }
 #endif
 
     if (am->ack_event != NULL) {
       am->ack_event->decref();
       // am->future->_rv = am->_rv;
 #ifdef UPCXX_DEBUG
-      fprintf(stderr, "Rank %u receives async done from %u. event count %d\n",
+      fprintf(stderr, "Rank %u receives async done from %u, event count %d\n",
               global_myrank(), src, am->ack_event->_count);
 #endif
     }
@@ -345,40 +464,76 @@ namespace upcxx
 
       if (task == NULL) break;
       assert (task->_callee == global_myrank());
+      assert (task->_fp != NULL);
 
 #ifdef UPCXX_DEBUG
       cerr << "Rank " << global_myrank() << " is about to execute async task.\n";
       cerr << *task << "\n";
 #endif
 
-        // execute the async task
-        if (task->_fp) {
-          (*task->_fp)(task->_args);
-        }
+      async_done_am_t reply_am;
 
-        if (task->_ack != NULL) {
-          if (task->_caller == global_myrank()) {
-            // local event acknowledgment
-            task->_ack->decref(); // need to enqueue callback tasks
-#ifdef UPCXX_DEBUG
-            fprintf(stderr, "Rank %u completes a local task. event count %d\n",
-                    global_myrank(), task->_ack->_count);
+#ifdef UPCXX_HAVE_CXX11
+      // execute the async task
+      future_storage_t *rv_fs;
+      rv_fs = (future_storage_t*)(*task->_fp)(task->_args);
+#else
+      (*task->_fp)(task->_args);
 #endif
-          } else {
-            // send an ack message back to the caller of the async task
-            async_done_am_t am;
-            am.ack_event = task->_ack;
-            UPCXX_CALL_GASNET(
-                GASNET_CHECK_RV(
-                    gasnet_AMRequestMedium0(task->_caller,
-                                            ASYNC_DONE_AM,
-                                            &am,
-                                            sizeof(am))));
+
+#ifdef UPCXX_HAVE_CXX11
+      if (rv_fs != NULL) {
+        if (task->_caller == global_myrank()) {
+#ifdef UPCXX_DEBUG
+        printf("Rank %u begins processing local future...\n", myrank());
+        std::cout << *(future<void>*)task->_fu_ptr << "\n";
+#endif
+          if (task->_fu_ptr != NULL) {
+            memcpy(((future<void> *)task->_fu_ptr)->ptr(), rv_fs, sizeof(future_storage_t));
           }
+          ((future<void> *)task->_fu_ptr)->ptr()->ready = true;
+          free(rv_fs); // be careful, we used "new" to allocate it but we don't want to call the destructor here
+          delete (future<void> *)task->_fu_ptr;
+        } else {
+#ifdef UPCXX_DEBUG
+        printf("Rank %u begins processing remote future...\n", myrank());
+        std::cout << *rv_fs;
+        std::cout << "Remote future " << task->_fu_ptr << "\n";
+#endif
+          reply_am.init(task->_ack, task->_fu_ptr, rv_fs->sz, rv_fs->data);
         }
-        delete task;
-        num_dispatched++;
-        if (num_dispatched >= max_dispatched) break;
+      } else
+#endif // end of UPCXX_HAVE_CXX11
+      {
+        reply_am.init(task->_ack, NULL, 0, NULL);
+      }
+
+#ifdef UPCXX_DEBUG
+        printf("Rank %u after processing future...\n", myrank());
+#endif
+
+      if (task->_ack != NULL) {
+        if (task->_caller == global_myrank()) {
+          // local event acknowledgment
+          task->_ack->decref(); // need to enqueue callback tasks
+#ifdef UPCXX_DEBUG
+          fprintf(stderr, "Rank %u completes a local task. event count %d\n",
+                  global_myrank(), task->_ack->_count);
+#endif
+        } else {
+          // send an ack message back to the caller of the async task
+          // still need to copy the future into the AM correctly
+          UPCXX_CALL_GASNET(
+                            GASNET_CHECK_RV(
+                                            gasnet_AMRequestMedium0(task->_caller,
+                                                                    ASYNC_DONE_AM,
+                                                                    &reply_am,
+                                                                    reply_am.nbytes())));
+        }
+      }
+      delete task;
+      num_dispatched++;
+      if (num_dispatched >= max_dispatched) break;
     }; // end of while (!queue_is_empty(inq))
 
     return num_dispatched;
@@ -406,9 +561,9 @@ namespace upcxx
       // remote async task
       // Send AM "there" to request async task execution
       UPCXX_CALL_GASNET(
-          GASNET_CHECK_RV(
-              gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
-                                      task, task->nbytes())));
+                        GASNET_CHECK_RV(
+                                        gasnet_AMRequestMedium0(task->_callee, ASYNC_AM,
+                                                                task, task->nbytes())));
 
       delete task;
       num_dispatched++;
@@ -442,8 +597,8 @@ namespace upcxx
            it != outstanding_events->end(); ++it) {
         event *e = (*it);
         assert(e != NULL);
-#ifdef UPCXX_DEBUG
-        fprintf(stderr, "P %u: Number of outstanding_events %u, Advance event: %p\n", 
+#ifdef UPCXX_DEBUG2
+        fprintf(stderr, "P %u: Number of outstanding_events %lu, Advance event: %p\n",
                 global_myrank(), outstanding_events->size(), e);
 #endif
         if (e->_async_try()) break;
@@ -494,8 +649,8 @@ namespace upcxx
     inc_am_t am;
     am.ptr = ptr.raw_ptr();
     UPCXX_CALL_GASNET(
-        GASNET_CHECK_RV(
-            gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am))));
+                      GASNET_CHECK_RV(
+                                      gasnet_AMRequestMedium0(ptr.where(), INC_AM, &am, sizeof(am))));
     return UPCXX_SUCCESS;
   }
 
@@ -522,20 +677,15 @@ namespace upcxx
   void *gasnet_seg_memalign(size_t nbytes, size_t alignment)
   {
     upcxx_mutex_lock(&upcxxi_mutex_for_memory);
-
-    if (_gasnet_mspace== 0) {
-      init_gasnet_seg_mspace();
-    }
+    assert(_gasnet_mspace != 0);
     void *m = mspace_memalign(_gasnet_mspace, alignment, nbytes);
-
     upcxx_mutex_unlock(&upcxxi_mutex_for_memory);
-
     return m;
   }
 
   void *gasnet_seg_alloc(size_t nbytes)
   {
-    return gasnet_seg_memalign(nbytes, 64);
+    return gasnet_seg_memalign(nbytes, 16);
   }
 
   // Return true if they physical memory of rank r can be shared and

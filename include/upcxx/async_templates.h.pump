@@ -44,12 +44,13 @@ namespace upcxx
   $range j 1..i
   
   template<typename Function$for j [[, typename T$j]]>
-  void async_wrapper$i(void *args)
+  void* async_wrapper$i(void *args)
   {
     generic_arg$i<Function$for j [[, T$j]]> *a = 
       (generic_arg$i<Function$for j [[, T$j]]> *)args;
 
     a->kernel($for j, [[a->arg$j]]);
+    return NULL;
   }
   ]] $$ end of for i
 

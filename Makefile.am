@@ -1,4 +1,4 @@
-SUBDIRS = include src examples
+SUBDIRS = include src examples . tests
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -11,5 +11,3 @@ install-exec-hook:
 	python $(srcdir)/scripts/set_upcxx_vars.py -c -f $(prefix)/include/upcxx.mak > $(prefix)/bin/upcxx_vars.csh
 	chmod a+rx $(builddir)/scripts/upc++
 	cp $(builddir)/scripts/upc++ $(prefix)/bin/
-
-

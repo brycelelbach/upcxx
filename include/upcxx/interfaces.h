@@ -43,8 +43,8 @@
  * metaprogramming can be used to define both a local type and its
  * corresponding global type with a single class template definition.
  *
- * \see reduce.h for code that makes use of the local array interface
- * \see broadcast.h for code that makes use of both interfaces
+ * @see reduce.h for code that makes use of the local array interface
+ * @see broadcast.h for code that makes use of both interfaces
  */
 
 #pragma once

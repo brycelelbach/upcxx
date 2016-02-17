@@ -11,27 +11,27 @@
 namespace upcxx
 {
   /**
-   * \ingroup gasgroup
-   * \brief transfer data between processes
+   * @ingroup gasgroup
+   * @brief transfer data between processes
    *
    * \tparam T type of the element
-   * \param src the pointer of src data
-   * \param dst the pointer of dst data
-   * \param nbytes the number of bytes to be transferred
+   * @param src the pointer of src data
+   * @param dst the pointer of dst data
+   * @param nbytes the number of bytes to be transferred
    *
    */
   int copy(global_ptr<void> src, global_ptr<void> dst, size_t nbytes);
 
   /**
-   * \ingroup gasgroup
-   * \brief transfer data between processes
+   * @ingroup gasgroup
+   * @brief transfer data between processes
    *
    * \tparam T type of the element
-   * \param src the pointer of src data
-   * \param dst the pointer of dst data
-   * \param count the number of element to be transferred
+   * @param src the pointer of src data
+   * @param dst the pointer of dst data
+   * @param count the number of element to be transferred
    *
-   * \see test_global_ptr.cpp
+   * @see test_global_ptr.cpp
    */
   template<typename T>
   int copy(global_ptr<T> src, global_ptr<T> dst, size_t count)
@@ -58,14 +58,14 @@ namespace upcxx
                  event *done_event = peek_event());
 
   /**
-   * \ingroup gasgroup
-   * \brief Non-blocking transfer data between processes
+   * @ingroup gasgroup
+   * @brief Non-blocking transfer data between processes
    *
    * \tparam T type of the element
-   * \param src the pointer of src data
-   * \param dst the pointer of dst data
-   * \param count the number of element to be copied
-   * \param done_event the event to be signaled after transfer completion 
+   * @param src the pointer of src data
+   * @param dst the pointer of dst data
+   * @param count the number of element to be copied
+   * @param done_event the event to be signaled after transfer completion 
    */
   template<typename T>
   int async_copy(global_ptr<T> src,
@@ -95,20 +95,20 @@ namespace upcxx
   }
 
   /**
-   * \ingroup gasgroup
-   * \brief Non-blocking signaling copy, which first performs an async copy
+   * @ingroup gasgroup
+   * @brief Non-blocking signaling copy, which first performs an async copy
    * and then signal an event on the destination rank
    *
    * The remote rank can wait on the event to check if the corresponding
    * async_copy data have arrived.
    *
    * \tparam T type of the element
-   * \param src the pointer of src data
-   * \param dst the pointer of dst data
-   * \param nbytes the number of bytes to be transferred
-   * \param signal_event the event to be signaled on the dst rank after transfer
-   * \param local_completion sender event when the local buffer can be reused
-   * \param remote_completion sender event when the dst buffer is written
+   * @param src the pointer of src data
+   * @param dst the pointer of dst data
+   * @param nbytes the number of bytes to be transferred
+   * @param signal_event the event to be signaled on the dst rank after transfer
+   * @param local_completion sender event when the local buffer can be reused
+   * @param remote_completion sender event when the dst buffer is written
    */
   int async_copy_and_signal(global_ptr<void> src,
                             global_ptr<void> dst,
@@ -118,8 +118,8 @@ namespace upcxx
                             event *remote_completion = peek_event());
 
   /**
-   * \ingroup gasgroup
-   * \brief Non-blocking signaling copy, which first performs an async copy
+   * @ingroup gasgroup
+   * @brief Non-blocking signaling copy, which first performs an async copy
    * and then signal an event on the destination rank
    *
    * The remote rank can wait on the event to check if the corresponding
@@ -129,11 +129,11 @@ namespace upcxx
    * async_copy data have arrived.
    *
    * \tparam T type of the element
-   * \param src the pointer of src data
-   * \param dst the pointer of dst data
-   * \param count the number of element to be transferred
-   * \param signal_event the event to be signaled on the dst rank
-   * \param done_event the event to be signaled after copy completion
+   * @param src the pointer of src data
+   * @param dst the pointer of dst data
+   * @param count the number of element to be transferred
+   * @param signal_event the event to be signaled on the dst rank
+   * @param done_event the event to be signaled after copy completion
    */
   template<typename T>
   int async_copy_and_signal(global_ptr<T> src,

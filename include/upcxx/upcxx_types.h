@@ -2,14 +2,14 @@
 #define UPCXX_TYPES_H_
 
 /**
- * \brief Return status of UPCXX functions
+ * @brief Return status of UPCXX functions
  * \todo extend the set of return values to indicate different types of errors
  */
 #define UPCXX_SUCCESS 0
 #define UPCXX_ERROR 1
 
 /**
- * \brief Built-in UPCXX operations for collectives
+ * @brief Built-in UPCXX operations for collectives
  */
 typedef enum {
   UPCXX_MAX = 0,
@@ -26,7 +26,7 @@ typedef enum {
 } upcxx_op_t;
 
 /**
- * \brief Built-in UPCXX data types for collectives.
+ * @brief Built-in UPCXX data types for collectives.
  */
 typedef enum
 {

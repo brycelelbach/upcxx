@@ -14,7 +14,7 @@
 using namespace std;
 using namespace upcxx;
 
-shared_var < global_ptr<double> > tmp_ptr;
+shared_array < global_ptr<double> > tmp_ptrs;
 
 int main (int argc, char **argv)
 {
@@ -25,13 +25,17 @@ int main (int argc, char **argv)
 
   upcxx::init(&argc, &argv);
 
-  if (myrank() == 0) {
-    ptr1 = allocate<double>(0, count);
-    ptr2 = allocate<double>(1, count);
+  tmp_ptrs.init(ranks());
+  
+  uint32_t dst_rank = (myrank()+1)%ranks();
+  
+  {
+    ptr1 = allocate<double>(myrank(), count);
+    ptr2 = allocate<double>(dst_rank, count);
 
     cerr << "ptr1 " << ptr1 << "\n";
     cerr << "ptr2 " << ptr2 << "\n";
-    tmp_ptr = ptr2;
+    tmp_ptrs[dst_rank] = ptr2;
 
     // Initialize data pointed by ptr by a local pointer
     double *local_ptr1 = (double *)ptr1;
@@ -44,8 +48,8 @@ int main (int argc, char **argv)
 
   barrier();
 
-  if (myrank() == 1) {
-    ptr2 = tmp_ptr;
+  {
+    ptr2 = tmp_ptrs[myrank()];
     // verify data
     double *local_ptr2 = (double *)ptr2;
     for (int i=0; i<16; i++) {

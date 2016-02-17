@@ -1,14 +1,14 @@
 /**
- *\mainpage UPCXX
- * UPCXX is a global address space programming system implemented as a C++ library.
+ * @mainpage UPCXX
+ * UPC++ is a global address space programming system implemented as a C++ library.
  *
- * UPCXX clients should include \c upcxx.h, which includes all other
+ * UPC++ clients should include @c upcxx.h, which includes all other
  * necessary headers.
  */
 
 
 /**
- * \section intro Introduction
+ * @section intro Introduction
  */
 
 #ifndef UPCXX_H_

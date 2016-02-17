@@ -121,7 +121,7 @@ namespace upcxx
       if (num_inc_system_event - num_dec_system_event != _count) {
         fprintf(stderr, "Fatal error in _incref: Rank %u race condition happened for event %p, _count %d, num_inc %d, num_dec %d.\n",
                 myrank(), this, _count, num_inc_system_event, num_dec_system_event);
-        memcpy(NULL, &c, 4); // induce a backtrace here.
+        gasnet_exit(1);
       }
     }
 
@@ -150,7 +150,7 @@ namespace upcxx
       if (num_inc_system_event - num_dec_system_event != _count) {
         fprintf(stderr, "Fatal error in _decref: Rank %u race condition happened for event %p, _count %d, num_inc %d, num_dec %d.\n",
                 myrank(), this, _count, num_inc_system_event, num_dec_system_event);
-        memcpy(NULL, &c, 4); // induce a backtrace here.
+        gasnet_exit(1);
       }
     }
 
@@ -161,8 +161,7 @@ namespace upcxx
       fprintf(stderr,
               "Fatal error: Rank %u this event %p, _count %d, c %u, system_event %p, num_inc %d, num_dec %d.\n",
               global_myrank(), this, _count, c, system_event, num_inc_system_event, num_dec_system_event);
-      memcpy(NULL, &c, 4); // induce a backtrace here.
-      // gasnet_exit(1);
+      gasnet_exit(1);
     }
     if (_count == 0  && this != system_event) {
       _enqueue_cb();

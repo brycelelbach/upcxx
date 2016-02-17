@@ -165,7 +165,7 @@ namespace upcxx
     T *_ptr;
     place_t _pla;
   }; // struct global_ref_base
-  /// \endcond
+  /// @endcond
 
   template<typename T, typename place_t = rank_t>
   struct global_ref : public global_ref_base<T, place_t>
