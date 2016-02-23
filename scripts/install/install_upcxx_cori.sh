@@ -17,15 +17,24 @@ BUILD_DIR=$HOME/build
 GASNET_BUILD_DIR=$BUILD_DIR/gasnet-$NERSC_HOST/$gasnet_ver
 UPCXX_BUILD_DIR=$BUILD_DIR/upcxx-$NERSC_HOST/$upcxx_ver
 
-#PROJECT_DIR=/usr/common/usg/degas
-PROJECT_DIR=$HOME/public
-GASNET_INSTALL_DIR=$PROJECT_DIR/gasnet-$NERSC_HOST/$gasnet_ver
-UPCXX_INSTALL_DIR=$PROJECT_DIR/upcxx-$NERSC_HOST/$upcxx_ver
+if [ "$pe_env" == "intel" ]; then
+    COMPILER_VERSION=$INTEL_VERSION
+fi
+
+if [ "$pe_env" == "gnu" ]; then
+    COMPILER_VERSION=$GNU_VERSION
+fi
+
+INSTALL_ROOT_DIR=/usr/common/ftg/upcxx/$today/hsw/$pe_env/PrgEnv-$pe_env-$CRAYOS_VERSION-$COMPILER_VERSION
+#INSTALL_ROOT_DIR=$HOME/public
+
+GASNET_INSTALL_DIR=$INSTALL_ROOT_DIR/gasnet
+UPCXX_INSTALL_DIR=$INSTALL_ROOT_DIR
 
 INSTALL_GASNET="${INSTALL_GASNET:-yes}"
 echo Install GASNet? $INSTALL_GASNET
 
-UPDATE_BUILD_STATUS="${UPDATE_BUILD_STATUS:-no}"
+UPDATE_BUILD_STATUS="${UPDATE_BUILD_STATUS:-yes}"
 echo Update Bitbucket Build Status? $UPDATE_BUILD_STATUS
 
 ## Build and install GASNet
@@ -78,3 +87,5 @@ echo "}" >> $build_status_tmp_file
 if [ "$UPDATE_BUILD_STATUS" == "yes" ]; then
     curl -u $UPCXX_REPO_USER:$UPCXX_REPO_KEY -H "Content-Type: application/json" -X POST https://api.bitbucket.org/2.0/repositories/upcxx/upcxx/commit/$UPCXX_GIT_COMMIT/statuses/build -d @$build_status_tmp_file
 fi
+
+echo ""
