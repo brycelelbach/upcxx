@@ -32,10 +32,11 @@ TESTS = \
   ../examples/basic/test_memberof2 \
   ../examples/basic/test_memberof3 \
   ../examples/basic/test_process_shared_mem \
+  ../examples/basic/test_process_shared_mem2 \
   ../examples/basic/test_progress_thread \
   ../examples/basic/test_remote_inc \
   ../examples/basic/test_shared_array \
   ../examples/basic/test_shared_array2 \
   ../examples/basic/test_shared_var \
   ../examples/basic/test_team \
-	../examples/basic/testperf2 $(UPCXX_MD_ARRAY_TESTS)
+  ../examples/basic/testperf2 $(UPCXX_MD_ARRAY_TESTS)
