@@ -23,6 +23,7 @@ endif
 libupcxx_la_SOURCES = \
   dl_malloc.c        \
   active_coll.cpp    \
+  active_message.cpp \
   allocate.cpp       \
   async.cpp          \
   async_copy.cpp     \

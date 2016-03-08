@@ -59,6 +59,8 @@ namespace upcxx
 
     gasneti_handler_tableentry_with_bits(copy_and_signal_request),
     gasneti_handler_tableentry_with_bits(copy_and_signal_reply),
+    gasneti_handler_tableentry_with_bits(am_request2),
+    gasneti_handler_tableentry_with_bits(am_request4),
 
 #ifdef UPCXX_HAVE_MD_ARRAY
     /* array_bulk.c */

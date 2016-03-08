@@ -15,6 +15,7 @@ endif
 upcxxincludedir = $(includedir)/upcxx
 upcxxinclude_HEADERS =  \
   upcxx/active_coll.h \
+  upcxx/active_message.h \
   upcxx/allocate.h \
   upcxx/async.h \
   upcxx/async_copy.h \

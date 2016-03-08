@@ -43,6 +43,8 @@ enum upcxxi_am_index_t {
   FETCH_ADD_U64_REPLY, // reply message for FETCH_ADD_U64_AM
   COPY_AND_SIGNAL_REQUEST, // transfer data and signal a remote event
   COPY_AND_SIGNAL_REPLY,   // reply a COPY_AND_SIGNAL_REQUEST
+  GENERIC_AM_REQUEST2,
+  GENERIC_AM_REQUEST4,
 
   /* array_bulk.c */
   ARRAY_MISC_DELETE_REQUEST,

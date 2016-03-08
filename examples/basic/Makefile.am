@@ -12,8 +12,9 @@ else
 UPCXX_MD_ARRAY_BIN_FILES =
 endif
 
-check_PROGRAMS = \
+bin_PROGRAMS = \
   hello \
+  test_active_message \
   test_am_bcast \
   test_asymmetric_partition \
   test_async \
@@ -41,6 +42,7 @@ check_PROGRAMS = \
   testperf2 $(UPCXX_MD_ARRAY_BIN_FILES)
 
 hello_SOURCES = hello.cpp
+test_active_message_SOURCES = test_active_message.cpp
 test_am_bcast_SOURCES = test_am_bcast.cpp
 test_async_SOURCES = test_async.cpp
 test_asymmetric_partition_SOURCES = test_asymmetric_partition.cpp
