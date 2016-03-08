@@ -7,6 +7,12 @@ namespace upcxx
   {
     void *addr;
 
+#ifdef UPCXX_HAVE_CXX11
+    if (nbytes == 0) return global_ptr<void>(nullptr, rank);
+#else
+    if (nbytes == 0) return global_ptr<void>(NULL, rank);
+#endif
+
     if (rank == global_myrank()) {
 #ifdef USE_GASNET_FAST_SEGMENT
       addr = gasnet_seg_alloc(nbytes);
