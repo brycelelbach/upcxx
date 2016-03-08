@@ -701,11 +701,16 @@ namespace upcxx
   // pointed to is on the same supernode (shared-memory node)
   void *pshm_remote_addr2local(rank_t r, void *addr)
   {
+    assert(r < global_ranks());
 #if GASNET_PSHM
     if (is_memory_shared_with(r) == false)
       return NULL;
 
-    return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
+    if (addr >= all_gasnet_seginfo[r].addr
+        && addr < all_gasnet_seginfo[r].addr + all_gasnet_seginfo[r].size)
+      return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
+    else
+      return NULL;
 #else
     return NULL; // always return NULL if no PSHM support
 #endif
