@@ -37,6 +37,8 @@ namespace upcxx
 
   void deallocate(global_ptr<void> ptr)
   {
+    if (ptr.raw_ptr() == NULL) return;
+
     if (ptr.where() == global_myrank()) {
 #ifdef USE_GASNET_FAST_SEGMENT
       gasnet_seg_free(ptr.raw_ptr());
@@ -52,6 +54,8 @@ namespace upcxx
 
   void deallocate(void *ptr)
   {
+    if (ptr == NULL) return;
+
 #ifdef USE_GASNET_FAST_SEGMENT
     gasnet_seg_free(ptr);
 #else
