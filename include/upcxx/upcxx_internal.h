@@ -90,12 +90,14 @@ namespace upcxx
   SHORT_HANDLER_DECL(copy_and_signal_reply, 2, 4);
   MEDIUM_HANDLER_DECL(am_request2, 3, 4);
   MEDIUM_HANDLER_DECL(am_request4, 5, 6);
+  MEDIUM_HANDLER_DECL(am_request2p2i, 5, 8);
 
   enum {
     gasneti_handleridx(copy_and_signal_request) = COPY_AND_SIGNAL_REQUEST, 
     gasneti_handleridx(copy_and_signal_reply) = COPY_AND_SIGNAL_REPLY, 
     gasneti_handleridx(am_request2) = GENERIC_AM_REQUEST2,
     gasneti_handleridx(am_request4) = GENERIC_AM_REQUEST4,
+    gasneti_handleridx(am_request2p2i) = GENERIC_AM_REQUEST2P2I,
   };
   
   //typedef struct {
