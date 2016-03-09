@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = gups
+noinst_PROGRAMS = gups
 
 gups_SOURCES = gups.cpp
 

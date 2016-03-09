@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   sample_sort
 
 sample_sort_SOURCES = sample_sort.cpp 

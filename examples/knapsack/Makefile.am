@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   knap
 
 knap_SOURCES = knap.cpp

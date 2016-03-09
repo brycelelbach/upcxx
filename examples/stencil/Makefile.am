@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   stencil
 
 stencil_SOURCES = stencil.cpp

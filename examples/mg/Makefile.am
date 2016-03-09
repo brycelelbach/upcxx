@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   mg
 
 mg_SOURCES = MGDriver.cpp MG.cpp Grid.cpp Test.cpp

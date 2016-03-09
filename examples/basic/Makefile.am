@@ -12,7 +12,7 @@ else
 UPCXX_MD_ARRAY_BIN_FILES =
 endif
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   hello \
   test_active_message \
   test_am_bcast \

@@ -16,6 +16,7 @@ endif
 
 TESTS = \
   ../examples/basic/hello \
+  ../examples/basic/test_active_message \
   ../examples/basic/test_am_bcast \
   ../examples/basic/test_asymmetric_partition \
   ../examples/basic/test_async \

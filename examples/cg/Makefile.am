@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
   cg
 
 cg_SOURCES = CGDriver.cpp Random.cpp Vector.cpp LocalSparseMat.cpp \

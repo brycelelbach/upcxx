@@ -1,6 +1,6 @@
 include ../../$(GASNET_MAKEFILE)
 
-bin_PROGRAMS = spmv
+noinst_PROGRAMS = spmv
 
 spmv_SOURCES = spmv.cpp 
 
