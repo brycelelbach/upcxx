@@ -12,8 +12,10 @@ else
 UPCXX_MD_ARRAY_BIN_FILES =
 endif
 
+bin_PROGRAMS = \
+  hello
+
 noinst_PROGRAMS = \
-  hello \
   test_active_message \
   test_am_bcast \
   test_asymmetric_partition \
