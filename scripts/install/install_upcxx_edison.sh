@@ -17,22 +17,36 @@ BUILD_DIR=$HOME/build
 GASNET_BUILD_DIR=$BUILD_DIR/gasnet-$NERSC_HOST/$gasnet_ver
 UPCXX_BUILD_DIR=$BUILD_DIR/upcxx-$NERSC_HOST/$upcxx_ver
 
-PROJECT_DIR=/usr/common/usg/degas
-#PROJECT_DIR=$HOME/public
-GASNET_INSTALL_DIR=$PROJECT_DIR/gasnet-$NERSC_HOST/$gasnet_ver
-UPCXX_INSTALL_DIR=$PROJECT_DIR/upcxx-$NERSC_HOST/$upcxx_ver
+if [ "$pe_env" == "intel" ]; then
+    COMPILER_VERSION=$INTEL_VERSION
+fi
+
+if [ "$pe_env" == "gnu" ]; then
+    COMPILER_VERSION=$GNU_VERSION
+fi
+
+if [ "$pe_env" == "cray" ]; then
+    COMPILER_VERSION=$CRAY_CC_VERSION
+fi
+
+INSTALL_ROOT_DIR=/usr/common/ftg/upcxx/$today/PrgEnv-$pe_env-$CRAYOS_VERSION-$COMPILER_VERSION
+#INSTALL_ROOT_DIR=$HOME/public
+
+GASNET_INSTALL_DIR=$INSTALL_ROOT_DIR/gasnet
+UPCXX_INSTALL_DIR=$INSTALL_ROOT_DIR
+
 
 INSTALL_GASNET="${INSTALL_GASNET:-yes}"
 echo Install GASNet? $INSTALL_GASNET
 
-UPDATE_BUILD_STATUS="${UPDATE_BUILD_STATUS:-no}"
+UPDATE_BUILD_STATUS="${UPDATE_BUILD_STATUS:-yes}"
 echo Update Bitbucket Build Status? $UPDATE_BUILD_STATUS
 
 ## Build and install GASNet
 if [ "$INSTALL_GASNET" == "yes" ]; then
     mkdir -p $GASNET_BUILD_DIR
     cd $GASNET_BUILD_DIR
-    $GASNET_SRC_DIR/cross-configure-crayxc-linux MPIRUN_CMD="srun -K0 %V -m block:block --cpu_bind=cores -n%N %C" CC="cc -g" --prefix=${GASNET_INSTALL_DIR} --disable-pshm-hugetlbfs --enable-pshm-xpmem
+    $GASNET_SRC_DIR/cross-configure-crayxc-linux MPIRUN_CMD="srun -K0 %V -m block:block --cpu_bind=cores -n%N %C" CC="cc -g" --prefix=${GASNET_INSTALL_DIR} --disable-pshm-hugetlbfs --enable-pshm-xpmem --disable-smp --disable-mpi
     make
     make install
 fi
