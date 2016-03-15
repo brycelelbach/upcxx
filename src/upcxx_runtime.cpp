@@ -600,6 +600,7 @@ namespace upcxx
            it != outstanding_events->end(); ++it) {
         event *e = (*it);
         assert(e != NULL);
+        assert(e->count() != 0);
 #ifdef UPCXX_DEBUG2
         fprintf(stderr, "P %u: Number of outstanding_events %lu, Advance event: %p\n",
                 global_myrank(), outstanding_events->size(), e);

@@ -108,13 +108,15 @@ namespace upcxx
   // Increment the reference counter for the event
   void event::_incref(uint32_t c)
   {
+    if (c == 0) return;
+
     // upcxx_mutex_lock(&extra_event_lock);
     uint32_t old = _count;
     _count += c;
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "P %u _incref event %p, c = %d, old %u\n", global_myrank(), this, c, old);
 #endif
-    
+
     // some sanity check
     if (this == system_event) {
       num_inc_system_event += c;
@@ -138,6 +140,8 @@ namespace upcxx
   // Decrement the reference counter for the event
   void event::_decref(uint32_t c)
   {
+    if (c == 0) return;
+
 #ifdef UPCXX_DEBUG
     fprintf(stderr, "P %u _decref event %p, c = %d, old %u\n", global_myrank(), this, c, _count);
 #endif
