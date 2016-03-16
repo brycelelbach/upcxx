@@ -2,6 +2,8 @@
  * UPCXX collectives
  */
 
+#include <complex>
+
 #include <assert.h>
 #include "upcxx/collective.h"
 
@@ -116,6 +118,38 @@ namespace upcxx {
     }
   } // end of _float_reduce_fn
 
+  template<class T>
+  void _complex_reduce_fn(void *results, size_t result_count,
+                        const void *left_operands, size_t left_count,
+                        const void *right_operands,
+                        size_t elem_size, int flags, int arg)
+  {
+    size_t i;
+    T *res = (T *) results;
+    const T *src1 = (const T *)left_operands;
+    const T *src2 = (const T *)right_operands;
+    assert(elem_size == sizeof(T));
+    assert(result_count == left_count);
+
+    upcxx_op_t op_t = (upcxx_op_t)arg;
+    switch(op_t) {
+    case UPCXX_SUM:
+      for(i=0; i<result_count; i++) {
+        res[i] = src1[i] + src2[i];
+      } break;
+    case UPCXX_PROD:
+      for(i=0; i<result_count; i++) {
+        res[i] = src1[i] * src2[i];
+      } break;
+    case UPCXX_MAX:
+    case UPCXX_MIN:
+    default:
+      fprintf(stderr, "Reduction op %s is not supported!\n",
+              upcxx_op_strs[op_t]);
+      gasnet_exit(1);
+    }
+  } // end of _complex_reduce_fn
+
   void init_collectives()
   {
     gasnet_coll_fn_entry_t fntable[UPCXX_DATATYPE_COUNT];
@@ -144,6 +178,10 @@ namespace upcxx {
     fntable[UPCXX_FLOAT].flags = 0;
     fntable[UPCXX_DOUBLE].fnptr = _float_reduce_fn<double>;
     fntable[UPCXX_DOUBLE].flags = 0;
+    fntable[UPCXX_COMPLEX_FLOAT].fnptr = _complex_reduce_fn< std::complex<float> >;
+    fntable[UPCXX_COMPLEX_FLOAT].flags = 0;
+    fntable[UPCXX_COMPLEX_DOUBLE].fnptr = _complex_reduce_fn< std::complex<double> >;
+    fntable[UPCXX_COMPLEX_DOUBLE].flags = 0;
 
     gasnet_coll_init(NULL, 0, fntable, UPCXX_DATATYPE_COUNT, 0);
   }
