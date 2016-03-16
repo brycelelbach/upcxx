@@ -42,6 +42,8 @@ typedef enum
   UPCXX_ULONG_LONG, /* unsigned integer, 8 bytes */
   UPCXX_FLOAT, /* IEEE floating point, 4 bytes */
   UPCXX_DOUBLE, /* IEEE double precision, 8 bytes */
+  UPCXX_COMPLEX_FLOAT, /* Pair of FLOATs {Re, Im}, 8 bytes */
+  UPCXX_COMPLEX_DOUBLE, /* Pair of DOUBLEs {Re, Im}, 16 bytes */
   UPCXX_DATATYPE_COUNT
 } upcxx_datatype_t;
 
