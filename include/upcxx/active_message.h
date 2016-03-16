@@ -11,6 +11,8 @@
 
 namespace upcxx
 {
+
+  inline size_t max_am_payload_size() { return gasnet_AMMaxMedium() - 32; };
   typedef void (*am_handler2i_t)(uint32_t, void*, size_t, int, int);
   void am_send(rank_t dst_rank, am_handler2i_t am_handler_fp, void *payload, size_t nbytes,
                int arg0, int arg1);
