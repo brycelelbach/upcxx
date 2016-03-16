@@ -46,7 +46,7 @@ echo Update Bitbucket Build Status? $UPDATE_BUILD_STATUS
 if [ "$INSTALL_GASNET" == "yes" ]; then
     mkdir -p $GASNET_BUILD_DIR
     cd $GASNET_BUILD_DIR
-    $GASNET_SRC_DIR/cross-configure-crayxc-linux MPIRUN_CMD="srun -K0 %V -m block:block --cpu_bind=cores -n%N %C" CC="cc -g" --prefix=${GASNET_INSTALL_DIR} --disable-pshm-hugetlbfs --enable-pshm-xpmem --disable-smp --disable-mpi
+    $GASNET_SRC_DIR/cross-configure-crayxc-linux MPIRUN_CMD="srun -K0 %V -m block:block --cpu_bind=cores -n%N %C" CC="cc -g" --prefix=${GASNET_INSTALL_DIR} --disable-pshm-hugetlbfs --enable-pshm-xpmem --disable-smp --disable-mpi --with-gni-max-medium=4032
     make
     make install
 fi
