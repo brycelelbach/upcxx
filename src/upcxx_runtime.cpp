@@ -710,8 +710,8 @@ namespace upcxx
     if (is_memory_shared_with(r) == false)
       return NULL;
 
-    if (addr >= all_gasnet_seginfo[r].addr
-        && addr < all_gasnet_seginfo[r].addr + all_gasnet_seginfo[r].size)
+    if ((uintptr_t)addr >= (uintptr_t)all_gasnet_seginfo[r].addr
+        && (uintptr_t)addr < (uintptr_t)all_gasnet_seginfo[r].addr + all_gasnet_seginfo[r].size)
       return (void *)((char *)addr + all_gasnet_nodeinfo[r].offset);
     else
       return NULL;
