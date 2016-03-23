@@ -22,7 +22,6 @@
 #include "utils.h"
 
 // #define UPCXX_DEBUG
-// #define UPCXX_APPLY_IMPL1
 
 namespace upcxx
 {
@@ -36,7 +35,6 @@ namespace upcxx
     generic_arg(const Function& k, const Ts&... as) :
       kernel(k), args{as...} {}
 
-#ifdef UPCXX_APPLY_IMPL1
     // The return type of Function is non-void
     template<typename F = Function>
     inline
@@ -57,35 +55,6 @@ namespace upcxx
       upcxx::apply(kernel, args);
       return NULL;
     }
-#else // UPCXX_APPLY_IMPL2
-    // The return type of Function is non-void
-    template<typename F = Function, int ...S>
-    inline
-    typename std::enable_if<!std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
-    call(util::seq<S...>)
-    {
-      typename std::result_of<Function(Ts...)>::type rv;
-      rv = kernel(std::get<S>(args) ...);
-      future_storage_t *tmp_fs;
-      tmp_fs = new future_storage_t(rv);
-      return tmp_fs;
-    }
-
-    // The return type of Function is void
-    template<typename F = Function, int ...S>
-    inline
-    typename std::enable_if<std::is_void<typename std::result_of<F(Ts...)>::type>::value>::type*
-    call(util::seq<S...>)
-    {
-      kernel(std::get<S>(args) ...);
-      return NULL;
-    }
-
-    inline void* apply()
-    {
-      return call(typename util::gens<sizeof...(Ts)>::type());
-    }
-#endif
   }; // end of struct generic_arg
 
   /* Active Message wrapper function */
