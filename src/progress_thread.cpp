@@ -23,7 +23,7 @@ namespace upcxx
     int max_dispatch_in, max_dispatch_out;
   };
   
-  bool _progress_thread_running;
+  bool _progress_thread_running = false;
   pthread_t _progress_thread;
   
   enum ThreadState { START, PAUSE, STOP };
@@ -47,7 +47,7 @@ namespace upcxx
       /* Wait for state START or STOP */
       pthread_mutex_lock(&my_mutex);
       while (state != START && state != STOP) {
-          pthread_cond_wait(&signal_condition, &my_mutex);
+        pthread_cond_wait(&signal_condition, &my_mutex);
       }
       pthread_mutex_unlock(&my_mutex);
       
@@ -84,7 +84,8 @@ namespace upcxx
       args = new progress_helper_args;
       args->max_dispatch_in = 10;
       args->max_dispatch_out = 10;
-  
+      state = START;
+
       // set thread as joinable
       pthread_attr_init( &th_attr );
       pthread_attr_setdetachstate( &th_attr, PTHREAD_CREATE_JOINABLE );
@@ -109,6 +110,8 @@ namespace upcxx
   void
   progress_thread_pause()
   {
+    assert(_start_called);
+    assert(state == START);
     /* Set state to PAUSE and wake up helper thread */
     pthread_mutex_lock(&my_mutex);
     state = PAUSE;
@@ -122,6 +125,8 @@ namespace upcxx
   void
   progress_thread_stop()
   {
+    assert(_start_called);
+    assert(state == START);
     /* Set state to STOP and wake up helper thread */
     pthread_mutex_lock(&my_mutex);
     state = STOP;
@@ -129,6 +134,7 @@ namespace upcxx
     pthread_mutex_unlock(&my_mutex);
     // wait for thread to stop
     assert( pthread_join( _progress_thread, NULL ) == 0 );
+    _start_called = false;
     _progress_thread_running = false;
   }
 
