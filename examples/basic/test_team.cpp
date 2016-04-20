@@ -468,10 +468,12 @@ int main(int argc, char **argv)
 
   test_alltoall<uint32_t>(*row_team, 600);
 
-  if (myrank() == 0)
-    std::cout << "Testing team reduce on row teams...\n";
+  for (size_t sz = 1; sz < 4096*1024; sz *=4) {
+    if (myrank() == 0)
+      std::cout << "Testing team reduce (sz=" << sz << " bytes) on row teams...\n";
 
-  test_reduce<int>(*row_team, 123);
+    test_reduce<int>(*row_team, sz);
+  }
 
   if (myrank() == 0)
     std::cout << "Passed testing collectives on row teams...\n";
@@ -506,10 +508,12 @@ int main(int argc, char **argv)
 
   test_alltoall<double>(*col_team, 311);
 
-  if (myrank() == 0)
-    std::cout << "Testing team reduce on column teams...\n";
+  for (size_t sz = 1; sz < 4096*1024; sz *=4) {
+    if (myrank() == 0)
+      std::cout << "Testing team reduce (sz=" << sz << " bytes) on column teams...\n";
 
-  test_reduce<double>(*col_team, 4096);
+    test_reduce<double>(*col_team, sz);
+  }
 
   if (myrank() == 0)
     std::cout << "Passed testing collectives on column teams...\n";

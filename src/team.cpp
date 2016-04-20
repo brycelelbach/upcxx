@@ -5,10 +5,6 @@
 #include "upcxx.h"
 #include "upcxx/upcxx_internal.h"
 
-#ifndef GASNET_COLL_SCRATCH_SEG_SIZE
-#define GASNET_COLL_SCRATCH_SEG_SIZE (2048*1024)
-#endif
-
 using namespace std;
 
 namespace upcxx
@@ -35,7 +31,8 @@ namespace upcxx
   {
     // Performs the team split operation
     gasnet_seginfo_t scratch_seg;
-    scratch_seg.size = GASNET_COLL_SCRATCH_SEG_SIZE;
+    scratch_seg.size = gasnett_getenv_int_withdefault("GASNET_COLL_SCRATCH_SIZE",
+                                                      2048*1024,1);
 #ifdef USE_GASNET_FAST_SEGMENT
     scratch_seg.addr = gasnet_seg_alloc(scratch_seg.size);
 #else
