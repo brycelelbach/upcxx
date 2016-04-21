@@ -16,7 +16,7 @@ namespace upcxx
                          int arg0,
                          int arg1)
   {
-    uint32_t src_rank;
+    gasnet_node_t src_rank;
     int rv = gasnet_AMGetMsgSource(token, &src_rank);
     assert(rv == GASNET_OK);
     assert(fp != NULL);
@@ -37,7 +37,7 @@ namespace upcxx
                          int arg2,
                          int arg3)
   {
-    uint32_t src_rank;
+    gasnet_node_t src_rank;
     int rv = gasnet_AMGetMsgSource(token, &src_rank);
     assert(rv == GASNET_OK);
     assert(fp != NULL);
@@ -58,7 +58,7 @@ namespace upcxx
                             int arg0,
                             int arg1)
     {
-      uint32_t src_rank;
+      gasnet_node_t src_rank;
       int rv = gasnet_AMGetMsgSource(token, &src_rank);
       assert(rv == GASNET_OK);
       assert(fp != NULL);
