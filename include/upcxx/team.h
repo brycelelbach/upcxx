@@ -167,6 +167,15 @@ namespace upcxx
       return UPCXX_SUCCESS;
     }
     
+    template<class T>
+    int allreduce(T *src, T *dst, size_t count, upcxx_op_t op) const
+    {
+      // Reduce to 0 and then broadcast
+      reduce(src, dst, count, 0, op);
+      bcast(dst, dst, count*sizeof(T), 0);
+      return UPCXX_SUCCESS;
+    }
+
     /**
      * Translate a rank in a team to its global rank
      */

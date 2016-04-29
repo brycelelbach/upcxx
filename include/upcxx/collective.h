@@ -63,4 +63,13 @@ namespace upcxx
                                            UPCXX_GASNET_COLL_FLAG));
   }
   #define upcxx_alltoall upcxx::alltoall
+
+  template<class T>
+  void allreduce(T *src, T *dst, size_t count, upcxx_op_t op, upcxx_datatype_t dt)
+  {
+    // Reduce to 0 and then broadcast
+    upcxx::reduce(src, dst, count, 0, op, dt);
+    upcxx::bcast(dst, dst, count*sizeof(T), 0);
+  }
+    #define upcxx_allreduce upcxx::allreduce
 } // end of namespace upcxx
