@@ -518,14 +518,14 @@ int main(int argc, char **argv)
 
   for (size_t sz = 1; sz < 2048*1024; sz *=4) {
     if (myrank() == 0)
-      std::cout << "Testing team reduce (sz=" << sz << " bytes) on row teams...\n";
+      std::cout << "Testing team reduce (sz=" << sz << " ints) on row teams...\n";
 
     test_reduce<int>(*row_team, sz);
   }
 
   for (size_t sz = 1; sz < 1024*1024; sz *=4) {
     if (myrank() == 0)
-      std::cout << "Testing team allreduce (sz=" << sz << " bytes) on row teams...\n";
+      std::cout << "Testing team allreduce (sz=" << sz << " doubles) on row teams...\n";
 
     test_allreduce<double>(*row_team, sz);
   }
@@ -565,14 +565,14 @@ int main(int argc, char **argv)
 
   for (size_t sz = 1; sz < 2048*1024; sz *=4) {
     if (myrank() == 0)
-      std::cout << "Testing team reduce (sz=" << sz << " bytes) on column teams...\n";
+      std::cout << "Testing team reduce (sz=" << sz << " ints) on column teams...\n";
 
     test_reduce<int>(*col_team, sz);
   }
 
   for (size_t sz = 1; sz < 1024*1024; sz *=4) {
     if (myrank() == 0)
-      std::cout << "Testing team allreduce (sz=" << sz << " bytes) on column teams...\n";
+      std::cout << "Testing team allreduce (sz=" << sz << " doubles) on column teams...\n";
 
     test_allreduce<double>(*col_team, sz);
   }
