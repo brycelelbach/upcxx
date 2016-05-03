@@ -1,4 +1,4 @@
-AC_INIT([upcxx], [0.1], [upcxx@googlegroups.com], [upcxx], [https://bitbucket.org/upcxx/upcxx])
+AC_INIT([upcxx], [0.2], [upcxx@googlegroups.com], [upcxx], [https://bitbucket.org/upcxx/upcxx])
 AC_PREREQ([2.59])
 
 AM_INIT_AUTOMAKE([1.10 no-define foreign subdir-objects])

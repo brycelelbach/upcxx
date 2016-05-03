@@ -4,7 +4,7 @@
  * Test teams and collective operations on teams
  *
  * Need to increase the default size for the scratch space for team collectives:
- *   export GASNET_COLL_SCRATCH_SIZE=16MB
+ *   export GASNET_COLL_SCRATCH_SIZE=32MB
  *
  */
 
@@ -516,14 +516,14 @@ int main(int argc, char **argv)
 
   test_alltoall<uint32_t>(*row_team, 600);
 
-  for (size_t sz = 1; sz < 2048*1024; sz *=4) {
+  for (size_t sz = 1; sz <= 2048*1024; sz *=4) {
     if (myrank() == 0)
       std::cout << "Testing team reduce (sz=" << sz << " ints) on row teams...\n";
 
     test_reduce<int>(*row_team, sz);
   }
 
-  for (size_t sz = 1; sz < 1024*1024; sz *=4) {
+  for (size_t sz = 1; sz <= 1024*1024; sz *=4) {
     if (myrank() == 0)
       std::cout << "Testing team allreduce (sz=" << sz << " doubles) on row teams...\n";
 
@@ -563,14 +563,14 @@ int main(int argc, char **argv)
 
   test_alltoall<double>(*col_team, 311);
 
-  for (size_t sz = 1; sz < 2048*1024; sz *=4) {
+  for (size_t sz = 1; sz <= 2048*1024; sz *=4) {
     if (myrank() == 0)
       std::cout << "Testing team reduce (sz=" << sz << " ints) on column teams...\n";
 
     test_reduce<int>(*col_team, sz);
   }
 
-  for (size_t sz = 1; sz < 1024*1024; sz *=4) {
+  for (size_t sz = 1; sz <= 1024*1024; sz *=4) {
     if (myrank() == 0)
       std::cout << "Testing team allreduce (sz=" << sz << " doubles) on column teams...\n";
 
