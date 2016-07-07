@@ -25,6 +25,7 @@ if [ "$pe_env" == "gnu" ]; then
     COMPILER_VERSION=$GNU_VERSION
 fi
 
+CRAYOS_VERSION=$(echo $LOADEDMODULES|tr : '\n'|grep ^PrgEnv|cut -d/ -f2)
 INSTALL_ROOT_DIR=/usr/common/ftg/upcxx/$today/hsw/$pe_env/PrgEnv-$pe_env-$CRAYOS_VERSION-$COMPILER_VERSION
 #INSTALL_ROOT_DIR=$HOME/public
 
