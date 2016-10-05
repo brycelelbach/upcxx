@@ -1,6 +1,14 @@
 ## define test suite
 
-TESTS_ENVIRONMENT = @UPCXX_TESTS_MPIRUN@
+TEST_SPAWNCMD = @UPCXX_TEST_SPAWNCMD@
+TESTS_ENVIRONMENT = echo "$(TEST_SPAWNCMD) $$tst" > $$tst.run ; chmod +x $$tst.run ; tst="$$tst.run" ;
+
+# the above relies on an undocumented behavior of automake, but is believed to work in automake 1.10..1.15
+# An alternate solution would be to instead put generated wrapper scripts in $(TESTS), ie:
+# TESTS=$(all_tests:=.sh)
+# $(TESTS) : %.sh : %
+# 	@(echo "#!/bin/sh"; echo "$${TEST_SPAWNCMD:-$(TEST_SPAWNCMD)} $<") > $@
+# 	@chmod +x $@
 
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_TESTS = \
@@ -41,3 +49,7 @@ TESTS = \
   ../examples/basic/test_shared_var \
   ../examples/basic/test_team \
   ../examples/basic/testperf2 $(UPCXX_MD_ARRAY_TESTS)
+
+# clean any run scripts
+CLEANFILES=$(TESTS:=.run)
+
