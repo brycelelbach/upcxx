@@ -53,7 +53,7 @@ AC_ARG_WITH([gasnet],
       if test -x "$gasnet_spawn" ; then
         gasnet_spawn="$gasnet_spawn -np 4"
       elif test "$gasnet_conduit" = "smp" ; then
-        gasnet_spawn=""
+        gasnet_spawn="env GASNET_PSHM_NODES=4"
       elif test "$gasnet_conduit" = "mpi" ; then
         gasnet_spawn="mpirun -np 4"
       else
