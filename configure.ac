@@ -42,14 +42,31 @@ AC_ARG_WITH([gasnet],
       AC_SUBST([GASNET_MAKEFILE], ["$gasnet_makefile"])
       dnl AC_SUBST([GASNET_MAKEFILE], ["$withval"])
       dnl AM_CONDITIONAL([UPCXX_MPI_CONDUIT], [echo $withval | grep mpi-conduit])
-      if echo $withval | grep mpi-conduit; then
-        AC_SUBST([UPCXX_TESTS_MPIRUN], ["mpirun -n 4"])
+      AC_MSG_CHECKING(for test spawn command)
+      gasnet_conduit=$(basename $withval -seq.mak)
+      gasnet_bindir=$(dirname $withval)/../../bin
+      gasnet_bindir=`(cd "$gasnet_bindir" && pwd || echo "$gasnet_bindir") 2>/dev/null` # canonical path
+      case "$gasnet_conduit" in 
+        udp)  gasnet_spawn="$gasnet_bindir/amudprun" ;;
+	*)    gasnet_spawn="$gasnet_bindir/gasnetrun_$gasnet_conduit" ;;
+      esac
+      if test -x "$gasnet_spawn" ; then
+        gasnet_spawn="$gasnet_spawn -np 4"
+      elif test "$gasnet_conduit" = "smp" ; then
+        gasnet_spawn=""
+      elif test "$gasnet_conduit" = "mpi" ; then
+        gasnet_spawn="mpirun -np 4"
+      else
+        AC_MSG_WARN([Unable to automatically determine correct spawner for this GASNet conduit])
+        gasnet_spawn=""
       fi
+      AC_MSG_RESULT([$gasnet_spawn])
+      AC_SUBST([UPCXX_TEST_SPAWNCMD], [$gasnet_spawn])
     else    
       AC_MSG_FAILURE([Could not find GASNet Makefile.])
     fi
   ],
-  [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=$gasnet_install_path/mpi-conduit/mpi-seq.mak or $bupc_install_path/opt/include/smp-conduit/mpi-seq.mak])]
+  [AC_MSG_FAILURE([No GASNet Makefile specified. Re-configure with --with-gasnet=$gasnet_install_path/mpi-conduit/mpi-seq.mak or $bupc_install_path/opt/include/smp-conduit/smp-seq.mak])]
 )
 
 AC_LANG(C++)

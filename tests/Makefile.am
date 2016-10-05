@@ -1,6 +1,7 @@
 ## define test suite
 
-TESTS_ENVIRONMENT = @UPCXX_TESTS_MPIRUN@
+TEST_SPAWNCMD = @UPCXX_TEST_SPAWNCMD@
+TESTS_ENVIRONMENT = echo "$(TEST_SPAWNCMD) $$tst" > $$tst.run ; chmod +x $$tst.run ; tst="$$tst.run" ;
 
 if UPCXX_MD_ARRAY
 UPCXX_MD_ARRAY_TESTS = \
@@ -41,3 +42,7 @@ TESTS = \
   ../examples/basic/test_shared_var \
   ../examples/basic/test_team \
   ../examples/basic/testperf2 $(UPCXX_MD_ARRAY_TESTS)
+
+# clean any run scripts
+CLEANFILES=$(TESTS:=.run)
+
