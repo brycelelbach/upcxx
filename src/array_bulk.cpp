@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <portable_inttypes.h>
 #include "upcxx/allocate.h"
 #include "upcxx/array_bulk.h"
 #include "upcxx/array_bulk_internal.h"
