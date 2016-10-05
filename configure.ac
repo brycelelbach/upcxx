@@ -37,7 +37,7 @@ AC_ARG_WITH([gasnet],
     if test -f "$withval" ; then
       cp $withval .
       gasnet_makefile=$(basename $withval)
-      chmod o+w $gasnet_makefile
+      chmod u+w $gasnet_makefile
       sed -i.BAK 's/-Wl,--whole-archive,-lhugetlbfs,--no-whole-archive/-lhugetlbfs/' $gasnet_makefile
       AC_SUBST([GASNET_MAKEFILE], ["$gasnet_makefile"])
       dnl AC_SUBST([GASNET_MAKEFILE], ["$withval"])
