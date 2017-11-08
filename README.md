@@ -1,3 +1,8 @@
+# *Legacy* UPC++ Version 0.1
+
+In November 2016, we froze this UPC++ repository as part of a transition from UPC++ 0.1 to UPC++ 1.0.  
+Please visit the [new Wiki](https://bitbucket.org/berkeleylab/upcxx/wiki/Home) for information about, and downloads of, UPC++ 1.0.
+
 ### UPC\+\+: a PGAS extension for C\+\+ ###
 
 UPC++ is a parallel programming extension for developing C++ applications with the partitioned global address space (PGAS) model.  UPC++ has three main objectives: 
